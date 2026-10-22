@@ -7,6 +7,7 @@ import android.graphics.RectF
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.PointF
 import androidx.compose.runtime.*
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.Modifier
@@ -28,6 +29,7 @@ import org.maplibre.android.MapLibre
 import org.maplibre.android.annotations.Icon
 import org.maplibre.android.annotations.IconFactory
 import org.maplibre.android.annotations.MarkerOptions
+import org.maplibre.android.annotations.PolylineOptions
 import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLngBounds
@@ -314,7 +316,23 @@ fun NativeTransitMap(
                 IconFactory.getInstance(context).fromBitmap(bitmap)
             }
         }
-        StopMapClustering.groups(stops, viewport, nativeMap.cameraPosition.zoom).forEach { group ->
+        val stopGroups = StopMapClustering.groups(stops, viewport, zoom)
+        val detailLayout = if (zoom >= StopMapClustering.DETAIL_ZOOM) StopMarkerLayout.layout(
+            stopGroups.flatten().map { stop ->
+                val point = nativeMap.projection.toScreenLocation(LatLng(stop.position.lat, stop.position.lon))
+                StopMarkerLayout.Node(stop, point.x.toDouble(), point.y.toDouble())
+            }, density.toDouble()
+        ) else emptyList()
+        fun screenLocation(x: Double, y: Double) = nativeMap.projection.fromScreenLocation(PointF(x.toFloat(), y.toFloat()))
+        detailLayout.filter { it.members.size > 1 }.forEach { group ->
+            val points = group.members.map { screenLocation(it.x, it.y) }
+            nativeMap.addPolyline(PolylineOptions().addAll(points).width(6f)
+                .color(if (darkTheme) android.graphics.Color.rgb(21, 27, 36) else android.graphics.Color.WHITE))
+            nativeMap.addPolyline(PolylineOptions().addAll(points).width(2.5f)
+                .color(if (darkTheme) android.graphics.Color.rgb(171, 184, 198) else android.graphics.Color.rgb(91, 111, 130)))
+        }
+        val placements = detailLayout.flatMap { it.members }.associateBy { it.stop.id }
+        stopGroups.forEach { group ->
             if (group.size > 1) {
                 val center = LatLng(group.map { it.position.lat }.average(), group.map { it.position.lon }.average())
                 val marker = nativeMap.addMarker(MarkerOptions().position(center)
@@ -325,7 +343,10 @@ fun NativeTransitMap(
                 val stop = group.single()
                 val selected = stop.id == selectedStopId
                 val provider = if (stop.providerIds.size > 1) "shared" else stop.providerId
-                val marker = nativeMap.addMarker(MarkerOptions().position(LatLng(stop.position.lat, stop.position.lon))
+                val placement = placements[stop.id]
+                val displayPosition = placement?.let { screenLocation(it.x, it.y) }
+                    ?: LatLng(stop.position.lat, stop.position.lon)
+                val marker = nativeMap.addMarker(MarkerOptions().position(displayPosition)
                     .title(stop.name).snippet(stop.platformCode?.let { context.getString(R.string.emma_platform, it) }
                         ?: stop.id.takeIf { it.startsWith("emma:") }?.let { context.getString(R.string.emma_stop_code, it.substringAfterLast(":")) })
                     .icon(dotIcon(provider, selected, onLine = stop.id in lineStopIds)))
