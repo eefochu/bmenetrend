@@ -13,7 +13,7 @@ import java.time.Instant
 /** Static national stop index cached on disk; departure boards always query the selected platform. */
 class EmmaStopsRepository(context: Context) {
     private val graphql = EmmaGraphqlClient()
-    private val file = File(context.filesDir, "emma-stop-index-v1.json")
+    private val file = File(context.filesDir, "emma-stop-index-v2.json")
     private var memory: Index? = null
     private val indexMutex = Mutex()
     data class Index(val catalogue: EmmaStopsParser.Catalogue, val fetchedAt: Instant, val stale: Boolean = false)
@@ -22,7 +22,9 @@ class EmmaStopsRepository(context: Context) {
         val now = Instant.now()
         var saved = memory ?: withContext(Dispatchers.IO) {
             runCatching {
-                if (!file.isFile) null else Index(EmmaStopsParser.index(file.readText()), Instant.ofEpochMilli(file.lastModified()))
+                val cached = if (file.isFile) file else File(file.parentFile, "emma-stop-index-v1.json")
+                if (!cached.isFile) null else Index(EmmaStopsParser.index(cached.readText()),
+                    if (cached == file) Instant.ofEpochMilli(cached.lastModified()) else Instant.EPOCH)
             }.getOrNull()
         }
         if (saved != null && Duration.between(saved.fetchedAt, now).seconds in 0..86_399) {
@@ -56,4 +58,5 @@ class EmmaStopsRepository(context: Context) {
         val text = graphql.execute(EmmaStopsParser.BOARD_QUERY, variables)
         return withContext(Dispatchers.Default) { EmmaStopsParser.board(text, stopId, now, windowMinutes) }
     }
+
 }

@@ -8,8 +8,8 @@ import java.time.Duration
 
 object EmmaStopsParser {
     const val ROUTE_FIELDS = "gtfsId shortName longName mode color"
-    const val STOP_FIELDS = "gtfsId name lat lon platformCode locationType parentStation { gtfsId name } routes { $ROUTE_FIELDS }"
-    const val INDEX_QUERY = "{stops {gtfsId name lat lon platformCode locationType parentStation {gtfsId name}}}"
+    const val STOP_FIELDS = "gtfsId name lat lon vehicleMode platformCode locationType parentStation { gtfsId name } routes { $ROUTE_FIELDS }"
+    const val INDEX_QUERY = "{stops {gtfsId name lat lon vehicleMode platformCode locationType parentStation {gtfsId name}}}"
     val AREA_QUERY = """query StopsInArea(${'$'}south: Float!, ${'$'}west: Float!, ${'$'}north: Float!, ${'$'}east: Float!) {
         stopsByBbox(minLat:${'$'}south,minLon:${'$'}west,maxLat:${'$'}north,maxLon:${'$'}east) { $STOP_FIELDS }
     }""".trimIndent()
@@ -59,7 +59,8 @@ object EmmaStopsParser {
             serving.forEach { routes[it.id] = it }
             TransitStop("emma:$source", name, GeoPoint(lat, lon), serving.map { it.id }, provider,
                 sourceStopIds = listOf(source), platformCode = row.text("platformCode"), station = station,
-                parentStationId = row.optJSONObject("parentStation")?.text("gtfsId")?.let { "emma:$it" })
+                parentStationId = row.optJSONObject("parentStation")?.text("gtfsId")?.let { "emma:$it" },
+                transportMode = row.text("vehicleMode") ?: serving.mapNotNull { it.transportMode }.distinct().singleOrNull())
         }.distinctBy { it.id }
         return Catalogue(stops, routes.values.toList())
     }

@@ -29,6 +29,11 @@ class EmmaStopsTest {
         assertEquals("emma:hkir:station", parsed.stops.first().parentStationId)
         assertEquals("bkk", parsed.stops.last().providerId)
     }
+    @Test fun stopIndexPreservesSourceTransportTypeForStationDots() {
+        val parsed = EmmaStopsParser.index(index(stop("BKK:tram").put("vehicleMode", "TRAM"),
+            stop("BKK:trolley").put("vehicleMode", "TROLLEYBUS"), stop().put("vehicleMode", "COACH")))
+        assertEquals(listOf("TRAM", "TROLLEYBUS", "COACH"), parsed.stops.map { it.transportMode })
+    }
     @Test fun indexRejectsPartialErrorsNullAndEmptyResponses() {
         listOf("""{"data":{"stops":null}}""", """{"data":{"stops":[]}}""",
             JSONObject(index(stop())).put("errors", JSONArray().put(JSONObject().put("message", "failed"))).toString()).forEach { text ->
@@ -87,12 +92,12 @@ class EmmaStopsTest {
         assertTrue(EmmaStopsParser.freshDepartures(board, "emma:BKK:other", now, 60).isEmpty())
         assertTrue(EmmaStopsParser.freshDepartures(board, id, now.minusSeconds(1), 60).isEmpty())
     }
-    @Test fun broadMapApproximatesStopsButDetailedMapKeepsPlatformsSeparate() {
+    @Test fun everyZoomKeepsIndividualPlatformIdentities() {
         val stops = EmmaStopsParser.index(index(stop(), stop("hkir:platform2"), stop("BKK:other").put("lon", 19.2))).stops
         val bounds = MapBounds(19.0, 47.4, 19.1, 47.5)
         val broad = StopMapClustering.groups(stops, bounds, 8.0)
-        assertEquals(1, broad.size)
-        assertEquals(2, broad.single().size)
+        assertEquals(2, broad.size)
+        assertTrue(broad.all { it.size == 1 })
         assertEquals(2, StopMapClustering.groups(stops, bounds, 13.0).size)
         assertEquals(2, StopMapClustering.groups(stops, bounds, 15.0).size)
         assertTrue(StopMapClustering.groups(stops, null, 8.0).isEmpty())

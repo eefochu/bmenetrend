@@ -43,7 +43,7 @@ object EmmaRouteParser {
     }
     val QUERY = """query LineDetails(${'$'}id:String!, ${'$'}date:String!) {
         route(id:${'$'}id) { gtfsId shortName longName mode color
-            patterns { code name directionId headsign tripsForDate(serviceDate:${'$'}date) { gtfsId } stops { gtfsId name lat lon platformCode } geometry { lat lon } }
+            patterns { code name directionId headsign tripsForDate(serviceDate:${'$'}date) { gtfsId } stops { gtfsId name lat lon vehicleMode platformCode parentStation { gtfsId } } geometry { lat lon } }
         }
     }""".trimIndent()
     fun parse(text: String, expectedRouteId: String): LineDetails {
@@ -68,7 +68,8 @@ object EmmaRouteParser {
                 require(EmmaStopsParser.provider(id) == provider)
                 val point = point(stop.getDouble("lat"), stop.getDouble("lon"))
                 TransitStop("emma:$id", stop.getString("name"), point, listOf(expectedRouteId), provider,
-                    sourceStopIds = listOf(id), platformCode = stop.text("platformCode"))
+                    sourceStopIds = listOf(id), platformCode = stop.text("platformCode"), transportMode = stop.text("vehicleMode") ?: mode,
+                    parentStationId = stop.optJSONObject("parentStation")?.text("gtfsId")?.let { "emma:$it" })
             }
             if (stops.size < 2) return@mapNotNull null
             val geometry = pattern.optJSONArray("geometry")?.let { points -> (0 until points.length()).map { index ->
