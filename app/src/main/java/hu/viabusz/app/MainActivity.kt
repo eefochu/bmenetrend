@@ -28,6 +28,8 @@ import hu.viabusz.app.data.GeoPoint
 import hu.viabusz.app.map.NativeTransitMap
 import hu.viabusz.app.ui.ViaBuszScreen
 import hu.viabusz.app.ui.ViaBuszTheme
+import hu.viabusz.app.ui.lineColor
+import androidx.compose.ui.graphics.toArgb
 import kotlinx.coroutines.awaitCancellation
 
 class MainActivity : ComponentActivity() {
@@ -88,8 +90,25 @@ class MainActivity : ComponentActivity() {
                     onVehicleClosed = model::closeVehicle,
                     onAccentColorChanged = model::setAccentColor,
                     onCustomAccentChanged = model::setCustomAccentColor,
+                    onLineOpened = model::loadLine,
+                    onBoardingStop = model::selectBoardingStop,
+                    onClearBoarding = model::clearBoardingSelection,
+                    onShowWholeRoute = model::showWholeRoute,
+                    onJourneyBoardingStop = model::selectJourneyBoardingStop,
+                    onVehicleOpened = model::selectVehicle,
                 ) { modifier, bottomPaddingPx ->
-                    NativeTransitMap(state.network, state.vehicles, state.selectedStopId, state.userLocation, modifier, model::selectStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, state.selectedVehicle)
+                    val vehicle = state.selectedVehicle
+                    val pattern = state.boardingSelection?.pattern
+                    val route = state.routes.find { it.id == state.boardingSelection?.routeId }
+                    val geometry = if (vehicle != null) state.vehicleJourney?.geometry.orEmpty() else pattern?.geometry.orEmpty()
+                    val stops = if (vehicle != null) state.vehicleJourney?.stops.orEmpty() else pattern?.stops.orEmpty()
+                    val color = if (vehicle != null) lineColor(vehicle.providerId, vehicle.transportMode, vehicle.markerColor)
+                        else route?.let(::lineColor) ?: androidx.compose.ui.graphics.Color(0xFF199DCF)
+                    val onMapStop: (String) -> Unit = { id ->
+                        if (state.selectedVehicle != null && state.vehicleJourney?.stops?.any { it.id == id } == true) model.selectJourneyBoardingStop(id)
+                        else model.selectStop(id)
+                    }
+                    NativeTransitMap(state.network, state.vehicles, state.selectedStopId, state.userLocation, modifier, onMapStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, state.selectedVehicle, routeGeometry = geometry, routeStops = stops, routeColor = color.toArgb(), fitRouteRequest = state.fitRouteRequest)
                 }
             }
         }

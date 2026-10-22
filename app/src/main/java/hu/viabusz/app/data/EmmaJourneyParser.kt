@@ -8,12 +8,14 @@ data class VehicleJourney(
     val routeName: String?,
     val destination: String?,
     val stops: List<TransitStop>,
+    val geometry: List<GeoPoint> = emptyList(),
+    val patternCode: String? = null,
 )
 
 /** The actual vehicle trip's ordered stops, never a guessed route variant or nearest-stop path. */
 object EmmaJourneyParser {
     val QUERY = """query VehicleTrip(${'$'}id: String!) {
-        trip(id:${'$'}id) { gtfsId tripHeadsign route { gtfsId shortName longName mode }
+        trip(id:${'$'}id) { gtfsId tripHeadsign geometry pattern { code } route { gtfsId shortName longName mode }
             stops { gtfsId name lat lon platformCode }
         }
     }""".trimIndent()
@@ -36,7 +38,7 @@ object EmmaJourneyParser {
                 sourceStopIds = listOf(source), platformCode = row.text("platformCode"))
         }
         // Repeated stop occurrences matter on loop routes, so keep their exact source order.
-        return VehicleJourney(expectedTripId, route.text("shortName"), route.text("longName"), trip.text("tripHeadsign"), stops)
+        return VehicleJourney(expectedTripId, route.text("shortName"), route.text("longName"), trip.text("tripHeadsign"), stops, runCatching { EmmaRouteParser.tripGeometry(trip.optJSONArray("geometry")) }.getOrDefault(emptyList()), trip.optJSONObject("pattern").text("code"))
     }
     private fun JSONObject?.text(key: String) = this?.optString(key)?.takeUnless { it.isBlank() || it == "null" }
 }

@@ -1,0 +1,16 @@
+<resources>
+    <string name="line_vehicle_here">Jármű helyzete</string>
+    <string name="line_on_the_way">Úton a következő megállóhoz</string>
+    <string name="line_choose_boarding">Hol szállsz fel?</string>
+    <string name="line_load_error">A menetirányok nem tölthetők be. Próbáld újra.</string>
+    <string name="line_no_directions">Ehhez a vonalhoz jelenleg nem érhető el menetirány.</string>
+    <string name="line_from">Innen: %1$s</string>
+    <string name="line_all_departures">Minden vonal indulásai ennél a megállónál</string>
+    <string name="line_change_direction">Menetirány vagy felszállóhely módosítása</string>
+    <string name="line_scheduled_delay">Menetrend: %1$s · %2$s perc</string>
+    <string name="line_accessible">Akadálymentes</string>
+    <string name="line_bikes">Kerékpár szállítható</string>
+    <string name="line_show_route">Teljes útvonal a térképen</string>
+    <string name="line_direction_hint">Válassz célállomást, majd jelöld ki a felszállóhelyet.</string>
+    <string name="line_starting_point">Eltérő kiindulóhelyek</string>
+</resources>

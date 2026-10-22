@@ -5,6 +5,8 @@ import hu.viabusz.app.data.GeoPoint
 import hu.viabusz.app.data.TransitNetwork
 import hu.viabusz.app.data.TransitRoute
 import hu.viabusz.app.data.TransitStop
+import hu.viabusz.app.data.LineDetails
+import hu.viabusz.app.data.BoardingSelection
 import hu.viabusz.app.data.VehicleJourney
 import hu.viabusz.app.data.Vehicle
 import java.time.Instant
@@ -15,6 +17,11 @@ data class UiState(
     val departures: List<Departure> = emptyList(),
     val vehicles: List<Vehicle> = emptyList(),
     val selectedVehicle: Vehicle? = null,
+    val lineDetails: Map<String, LineDetails> = emptyMap(),
+    val loadingLineId: String? = null,
+    val lineErrorId: String? = null,
+    val boardingSelection: BoardingSelection? = null,
+    val fitRouteRequest: Int = 0,
     val vehicleJourney: VehicleJourney? = null,
     val vehicleJourneyLoading: Boolean = false,
     val vehicleJourneyError: Boolean = false,

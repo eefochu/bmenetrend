@@ -93,9 +93,18 @@ object EmmaParser {
         }
     }
 
-    fun routeCatalogue(vehicles: List<Vehicle>, local: List<TransitRoute>): List<TransitRoute> =
-        (local + vehicles.mapNotNull { vehicle ->
-            val id = vehicle.routeId ?: return@mapNotNull null
-            TransitRoute(id, vehicle.routeNumber ?: "?", vehicle.routeName ?: vehicle.destination.orEmpty(), emptyList(), vehicle.providerId, transportMode = vehicle.transportMode)
-        }).distinctBy { it.id }
+    fun routeCatalogue(vehicles: List<Vehicle>, local: List<TransitRoute>): List<TransitRoute> {
+        val routes = local.associateBy { it.id }.toMutableMap()
+        vehicles.forEach { vehicle ->
+            val id = vehicle.routeId ?: return@forEach
+            val existing = routes[id]
+            val name = existing?.name?.takeIf { it.isNotBlank() && it != existing.number }
+                ?: vehicle.routeName ?: vehicle.destination.orEmpty()
+            routes[id] = existing?.copy(name = name.ifBlank { existing.name },
+                transportMode = existing.transportMode ?: vehicle.transportMode, color = existing.color ?: vehicle.markerColor)
+                ?: TransitRoute(id, vehicle.routeNumber ?: "?", name, emptyList(), vehicle.providerId,
+                    transportMode = vehicle.transportMode, color = vehicle.markerColor)
+        }
+        return routes.values.toList()
+    }
 }

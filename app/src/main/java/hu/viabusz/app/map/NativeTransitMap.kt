@@ -30,9 +30,15 @@ import org.maplibre.android.annotations.IconFactory
 import org.maplibre.android.annotations.MarkerOptions
 import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.camera.CameraUpdateFactory
+import org.maplibre.android.geometry.LatLngBounds
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapView
+import org.maplibre.android.style.sources.GeoJsonSource
+import org.maplibre.geojson.Feature
+import org.maplibre.geojson.FeatureCollection
+import org.maplibre.geojson.LineString
+import org.maplibre.geojson.Point
 import org.maplibre.android.maps.Style
 import org.maplibre.android.style.layers.FillLayer
 import org.maplibre.android.style.layers.LineLayer
@@ -58,6 +64,10 @@ fun NativeTransitMap(
     onMapZoomChanged: (Double) -> Unit = {},
     onVehicleSelected: (String) -> Unit = {},
     selectedVehicle: Vehicle? = null,
+    routeGeometry: List<GeoPoint> = emptyList(),
+    routeStops: List<TransitStop> = emptyList(),
+    routeColor: Int = 0xFF199DCF.toInt(),
+    fitRouteRequest: Int = 0,
 ) {
     val darkTheme = isSystemInDarkTheme()
     val styleUri = if (darkTheme) "https://tiles.openfreemap.org/styles/dark" else "https://tiles.openfreemap.org/styles/positron"
@@ -200,9 +210,38 @@ fun NativeTransitMap(
             }
         } finally { active = false }
     }
+    LaunchedEffect(map, styleLoaded, routeGeometry, routeColor) {
+        val ready = map ?: return@LaunchedEffect
+        if (!styleLoaded) return@LaunchedEffect
+        val style = ready.style ?: return@LaunchedEffect
+        val features = if (routeGeometry.size < 2) emptyArray() else arrayOf(Feature.fromGeometry(
+            LineString.fromLngLats(routeGeometry.map { Point.fromLngLat(it.lon, it.lat) })))
+        val collection = FeatureCollection.fromFeatures(features)
+        val source = style.getSourceAs<GeoJsonSource>("selected-line")
+        if (source != null) source.setGeoJson(collection) else {
+            style.addSource(GeoJsonSource("selected-line", collection))
+            val casing = LineLayer("selected-line-casing", "selected-line").withProperties(
+                PropertyFactory.lineColor(if (darkTheme) "#17212D" else "#FFFFFF"), PropertyFactory.lineWidth(8f),
+                PropertyFactory.lineCap("round"), PropertyFactory.lineJoin("round"))
+            val line = LineLayer("selected-line-stroke", "selected-line").withProperties(
+                PropertyFactory.lineColor(routeColor), PropertyFactory.lineWidth(5f),
+                PropertyFactory.lineCap("round"), PropertyFactory.lineJoin("round"))
+            val labelLayer = style.layers.firstOrNull { it is SymbolLayer }?.id
+            if (labelLayer != null) style.addLayerBelow(casing, labelLayer) else style.addLayer(casing)
+            style.addLayerAbove(line, "selected-line-casing")
+        }
+        style.getLayerAs<LineLayer>("selected-line-stroke")?.setProperties(PropertyFactory.lineColor(routeColor))
+    }
+    LaunchedEffect(map, styleLoaded, fitRouteRequest) {
+        val ready = map ?: return@LaunchedEffect
+        if (styleLoaded && fitRouteRequest > 0 && routeGeometry.size >= 2) {
+            val bounds = LatLngBounds.Builder().includes(routeGeometry.map { LatLng(it.lat, it.lon) }).build()
+            ready.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, (40 * context.resources.displayMetrics.density).toInt()), 650)
+        }
+    }
     AndroidView(factory = { mapView }, modifier = modifier)
 
-    LaunchedEffect(map, styleLoaded, viewport, network, additionalStops, vehicles, selectedVehicle?.id, selectedStopId, userLocation, cameraRequest, bottomPaddingPx) {
+    LaunchedEffect(map, styleLoaded, viewport, network, additionalStops, vehicles, routeStops, routeColor, selectedVehicle?.id, selectedStopId, userLocation, cameraRequest, bottomPaddingPx) {
         val nativeMap = map ?: return@LaunchedEffect
         if (!styleLoaded) return@LaunchedEffect
         nativeMap.setPadding(0, 0, 0, bottomPaddingPx)
@@ -213,9 +252,10 @@ fun NativeTransitMap(
         if (iconCache.size > 256) iconCache.clear()
         val zoom = nativeMap.cameraPosition.zoom
         val density = context.resources.displayMetrics.density
-        fun dotIcon(provider: String, selected: Boolean = false, location: Boolean = false): Icon {
+        val lineStopIds = routeStops.map { it.id }.toSet()
+        fun dotIcon(provider: String, selected: Boolean = false, location: Boolean = false, onLine: Boolean = false): Icon {
             val sizeDp = if (location) 18 else if (selected) { if (zoom >= 14) 32 else if (zoom >= 12.5) 28 else 16 } else if (zoom >= 14) 22 else if (zoom >= 12.5) 16 else 6
-            val key = "dot-$provider-$sizeDp-$selected-$location"
+            val key = "dot-$provider-$sizeDp-$selected-$location-$onLine-$routeColor"
             return iconCache.getOrPut(key) {
                 val size = (sizeDp * density).toInt().coerceAtLeast(1)
                 val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
@@ -223,7 +263,7 @@ fun NativeTransitMap(
                 val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.WHITE }
                 val radius = size / 2f
                 canvas.drawCircle(radius, radius, radius, paint)
-                paint.color = if (location) android.graphics.Color.rgb(53, 109, 219) else when (provider) {
+                paint.color = if (onLine) routeColor else if (location) android.graphics.Color.rgb(53, 109, 219) else when (provider) {
                     "volan" -> android.graphics.Color.rgb(249, 185, 0)
                     "bkk" -> android.graphics.Color.rgb(25, 157, 207)
                     "kanyargo" -> android.graphics.Color.rgb(103, 80, 164)
@@ -288,7 +328,7 @@ fun NativeTransitMap(
                 val marker = nativeMap.addMarker(MarkerOptions().position(LatLng(stop.position.lat, stop.position.lon))
                     .title(stop.name).snippet(stop.platformCode?.let { context.getString(R.string.emma_platform, it) }
                         ?: stop.id.takeIf { it.startsWith("emma:") }?.let { context.getString(R.string.emma_stop_code, it.substringAfterLast(":")) })
-                    .icon(dotIcon(provider, selected)))
+                    .icon(dotIcon(provider, selected, onLine = stop.id in lineStopIds)))
                 markerStops[marker.id] = stop.id
             }
         }

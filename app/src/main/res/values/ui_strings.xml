@@ -47,7 +47,7 @@
     <string name="ui_no_live_update">No successful live update yet</string>
     <string name="ui_live_stop_signal">Live stop update</string>
     <string name="ui_live_stop_explanation">The source does not identify the route; this update cannot reliably be matched to the departures below.</string>
-    <string name="ui_live_arrival">Live arrival</string>
+    <string name="ui_live_arrival">Live prediction</string>
     <string name="ui_scheduled">Scheduled</string>
     <string name="ui_no_departures_title">No upcoming departures</string>
     <string name="ui_no_departures_body">No departures are available in the next %1$d minutes. Choose a longer time window or another stop.</string>

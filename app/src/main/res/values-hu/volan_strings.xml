@@ -26,7 +26,7 @@
     <string name="emma_board_loading">EMMA-indulások betöltése…</string>
     <string name="emma_board_stale">Az EMMA-indulások frissítése sikertelen. A legutóbbi adatokat mutatjuk, és automatikusan újrapróbáljuk.</string>
     <string name="emma_board_unavailable">Ennél a megállónál az EMMA-indulások nem érhetők el. Automatikusan újrapróbáljuk.</string>
-    <string name="emma_board_limit">Legfeljebb 100, az EMMA által megadott indulás látható.</string>
+    <string name="emma_board_limit">A forrás indulási korlátját elértük. Egyes későbbi indulások hiányozhatnak.</string>
     <string name="emma_stops_saved">A mentett EMMA-megállók láthatók. A lista automatikusan frissül.</string>
     <string name="emma_stops_unavailable">Az EMMA-megállók betöltése sikertelen. Automatikusan újrapróbáljuk.</string>
     <string name="emma_platform">Kocsiállás: %1$s</string>
