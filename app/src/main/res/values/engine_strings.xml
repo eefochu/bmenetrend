@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name" translatable="false">BMenetrend</string>
+    <string name="engine_location_denied">Without location access, choose a stop on the map or search for it.</string>
+    <string name="engine_locating">Finding your location…</string>
+    <string name="engine_location_disabled">Location is turned off. Choose a stop or turn on location.</string>
+    <string name="engine_location_disabled_browsing">Location is turned off. You can still use the map and search.</string>
+    <string name="engine_location_required">Location access is needed to find your nearest stop.</string>
+    <string name="engine_live_unavailable">Live data is currently unavailable. Check your connection; we will retry automatically.</string>
+    <string name="engine_live_positions">Live vehicle positions · departures by route are scheduled</string>
+    <string name="engine_no_live_positions">No recent vehicle positions · scheduled departures</string>
+    <string name="engine_map_unavailable">The map could not load. You can still find stops using search.</string>
+    <string name="engine_vehicle_bus">BUS</string>
+    <string name="engine_no_vehicle_route">The source does not identify the route</string>
+    <string name="engine_gps_time">GPS: %1$s</string>
+    <string name="engine_you_are_here">You are here</string>
+</resources>

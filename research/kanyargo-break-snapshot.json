@@ -1,0 +1,3236 @@
+{
+  "source": "https://kanyargo.paty.hu/documents/menetrend-KanyarGO-2026-aug-10-tanszuneti.pdf",
+  "validFrom": "2026-08-10",
+  "calendar": "tanítási szüneti munkanapokon, visszavonásig",
+  "routeLabels": [
+    "1V",
+    "1T",
+    "1MV",
+    "1A"
+  ],
+  "columns": [
+    {
+      "column": 1,
+      "routeLabel": "1V",
+      "stopTimes": [
+        {
+          "stopId": "2",
+          "minuteOfDay": 346,
+          "stopName": "Iskola utca",
+          "pdfRow": 1,
+          "clock": "5:46"
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 347,
+          "stopName": "Telki elágazás",
+          "pdfRow": 2,
+          "clock": "5:47"
+        },
+        {
+          "stopId": "4",
+          "minuteOfDay": 348,
+          "stopName": "Harangláb",
+          "pdfRow": 3,
+          "clock": "5:48"
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 349,
+          "stopName": "Kossuth utca",
+          "pdfRow": 4,
+          "clock": "5:49"
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 351,
+          "stopName": "Burgondia utca",
+          "pdfRow": 5,
+          "clock": "5:51"
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 352,
+          "stopName": "Bánya utca",
+          "pdfRow": 10,
+          "clock": "5:52"
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 353,
+          "stopName": "Rét köz",
+          "pdfRow": 11,
+          "clock": "5:53"
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 354,
+          "stopName": "Páskom utca",
+          "pdfRow": 12,
+          "clock": "5:54"
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 355,
+          "stopName": "Füzespatak utca",
+          "pdfRow": 13,
+          "clock": "5:55"
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 356,
+          "stopName": "Völgy utca",
+          "pdfRow": 14,
+          "clock": "5:56"
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 357,
+          "stopName": "Nyírfa utca",
+          "pdfRow": 15,
+          "clock": "5:57"
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 359,
+          "stopName": "Játszótér",
+          "pdfRow": 16,
+          "clock": "5:59"
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 360,
+          "stopName": "Árpád utca",
+          "pdfRow": 17,
+          "clock": "6:00"
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 361,
+          "stopName": "Petőfi Sándor utca",
+          "pdfRow": 18,
+          "clock": "6:01"
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 362,
+          "stopName": "Iskola utca",
+          "pdfRow": 21,
+          "clock": "6:02"
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 364,
+          "stopName": "Rendőrség",
+          "pdfRow": 26,
+          "clock": "6:04"
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 365,
+          "stopName": "Torbágyi út 10. Vasútállomás felé",
+          "pdfRow": 27,
+          "clock": "6:05"
+        },
+        {
+          "stopId": "28",
+          "minuteOfDay": 366,
+          "stopName": "Téglagyár Vasútállomás felé",
+          "pdfRow": 28,
+          "clock": "6:06"
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 369,
+          "stopName": "Biatorbágy, Vendel tér",
+          "pdfRow": 29,
+          "clock": "6:09"
+        },
+        {
+          "stopId": "29",
+          "minuteOfDay": 370,
+          "stopName": "Biatorbágy VÁ (érkezés)",
+          "pdfRow": 30,
+          "clock": "6:10"
+        },
+        {
+          "stopId": "30",
+          "minuteOfDay": 382,
+          "stopName": "Biatorbágy VÁ (indulás)",
+          "pdfRow": 31,
+          "clock": "6:22"
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 383,
+          "stopName": "Biatorbágy, Vendel tér",
+          "pdfRow": 32,
+          "clock": "6:23"
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 385,
+          "stopName": "Téglagyár Páty felé",
+          "pdfRow": 33,
+          "clock": "6:25"
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 386,
+          "stopName": "Torbágyi út 10. Páty felé",
+          "pdfRow": 34,
+          "clock": "6:26"
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 388,
+          "stopName": "Községháza",
+          "pdfRow": 35,
+          "clock": "6:28"
+        }
+      ]
+    },
+    {
+      "column": 2,
+      "routeLabel": "1V",
+      "stopTimes": [
+        {
+          "stopId": "2",
+          "minuteOfDay": 389,
+          "stopName": "Iskola utca",
+          "pdfRow": 1,
+          "clock": "6:29"
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 390,
+          "stopName": "Telki elágazás",
+          "pdfRow": 2,
+          "clock": "6:30"
+        },
+        {
+          "stopId": "4",
+          "minuteOfDay": 391,
+          "stopName": "Harangláb",
+          "pdfRow": 3,
+          "clock": "6:31"
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 392,
+          "stopName": "Kossuth utca",
+          "pdfRow": 4,
+          "clock": "6:32"
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 394,
+          "stopName": "Burgondia utca",
+          "pdfRow": 5,
+          "clock": "6:34"
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 395,
+          "stopName": "Bánya utca",
+          "pdfRow": 10,
+          "clock": "6:35"
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 396,
+          "stopName": "Rét köz",
+          "pdfRow": 11,
+          "clock": "6:36"
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 397,
+          "stopName": "Páskom utca",
+          "pdfRow": 12,
+          "clock": "6:37"
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 398,
+          "stopName": "Füzespatak utca",
+          "pdfRow": 13,
+          "clock": "6:38"
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 399,
+          "stopName": "Völgy utca",
+          "pdfRow": 14,
+          "clock": "6:39"
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 400,
+          "stopName": "Nyírfa utca",
+          "pdfRow": 15,
+          "clock": "6:40"
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 402,
+          "stopName": "Játszótér",
+          "pdfRow": 16,
+          "clock": "6:42"
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 403,
+          "stopName": "Árpád utca",
+          "pdfRow": 17,
+          "clock": "6:43"
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 404,
+          "stopName": "Petőfi Sándor utca",
+          "pdfRow": 18,
+          "clock": "6:44"
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 405,
+          "stopName": "Iskola utca",
+          "pdfRow": 21,
+          "clock": "6:45"
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 407,
+          "stopName": "Rendőrség",
+          "pdfRow": 26,
+          "clock": "6:47"
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 408,
+          "stopName": "Torbágyi út 10. Vasútállomás felé",
+          "pdfRow": 27,
+          "clock": "6:48"
+        },
+        {
+          "stopId": "28",
+          "minuteOfDay": 409,
+          "stopName": "Téglagyár Vasútállomás felé",
+          "pdfRow": 28,
+          "clock": "6:49"
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 412,
+          "stopName": "Biatorbágy, Vendel tér",
+          "pdfRow": 29,
+          "clock": "6:52"
+        },
+        {
+          "stopId": "29",
+          "minuteOfDay": 413,
+          "stopName": "Biatorbágy VÁ (érkezés)",
+          "pdfRow": 30,
+          "clock": "6:53"
+        },
+        {
+          "stopId": "30",
+          "minuteOfDay": 415,
+          "stopName": "Biatorbágy VÁ (indulás)",
+          "pdfRow": 31,
+          "clock": "6:55"
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 416,
+          "stopName": "Biatorbágy, Vendel tér",
+          "pdfRow": 32,
+          "clock": "6:56"
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 418,
+          "stopName": "Téglagyár Páty felé",
+          "pdfRow": 33,
+          "clock": "6:58"
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 419,
+          "stopName": "Torbágyi út 10. Páty felé",
+          "pdfRow": 34,
+          "clock": "6:59"
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 421,
+          "stopName": "Községháza",
+          "pdfRow": 35,
+          "clock": "7:01"
+        }
+      ]
+    },
+    {
+      "column": 3,
+      "routeLabel": "1T",
+      "stopTimes": [
+        {
+          "stopId": "36",
+          "minuteOfDay": 423,
+          "stopName": "Töki út",
+          "pdfRow": 22,
+          "clock": "7:03"
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 424,
+          "stopName": "Boglárka utca",
+          "pdfRow": 23,
+          "clock": "7:04"
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 426,
+          "stopName": "Vízműtelep",
+          "pdfRow": 24,
+          "clock": "7:06"
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 429,
+          "stopName": "Rendőrség",
+          "pdfRow": 26,
+          "clock": "7:09"
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 430,
+          "stopName": "Községháza",
+          "pdfRow": 35,
+          "clock": "7:10"
+        }
+      ]
+    },
+    {
+      "column": 4,
+      "routeLabel": "1MV",
+      "stopTimes": [
+        {
+          "stopId": "2",
+          "minuteOfDay": 431,
+          "stopName": "Iskola utca",
+          "pdfRow": 1,
+          "clock": "7:11"
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 432,
+          "stopName": "Telki elágazás",
+          "pdfRow": 2,
+          "clock": "7:12"
+        },
+        {
+          "stopId": "4",
+          "minuteOfDay": 433,
+          "stopName": "Harangláb",
+          "pdfRow": 3,
+          "clock": "7:13"
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 434,
+          "stopName": "Kossuth utca",
+          "pdfRow": 4,
+          "clock": "7:14"
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 436,
+          "stopName": "Burgondia utca",
+          "pdfRow": 5,
+          "clock": "7:16"
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 438,
+          "stopName": "Galagonya utca",
+          "pdfRow": 6,
+          "clock": "7:18"
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 439,
+          "stopName": "Rigó utca",
+          "pdfRow": 7,
+          "clock": "7:19"
+        },
+        {
+          "stopId": "43",
+          "minuteOfDay": 440,
+          "stopName": "Hársfa utca",
+          "pdfRow": 8,
+          "clock": "7:20"
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 441,
+          "stopName": "Mézeshegy",
+          "pdfRow": 9,
+          "clock": "7:21"
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 443,
+          "stopName": "Bánya utca",
+          "pdfRow": 10,
+          "clock": "7:23"
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 444,
+          "stopName": "Rét köz",
+          "pdfRow": 11,
+          "clock": "7:24"
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 445,
+          "stopName": "Páskom utca",
+          "pdfRow": 12,
+          "clock": "7:25"
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 446,
+          "stopName": "Füzespatak utca",
+          "pdfRow": 13,
+          "clock": "7:26"
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 447,
+          "stopName": "Völgy utca",
+          "pdfRow": 14,
+          "clock": "7:27"
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 448,
+          "stopName": "Nyírfa utca",
+          "pdfRow": 15,
+          "clock": "7:28"
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 450,
+          "stopName": "Játszótér",
+          "pdfRow": 16,
+          "clock": "7:30"
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 451,
+          "stopName": "Árpád utca",
+          "pdfRow": 17,
+          "clock": "7:31"
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 452,
+          "stopName": "Petőfi Sándor utca",
+          "pdfRow": 18,
+          "clock": "7:32"
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 453,
+          "stopName": "Iskola utca",
+          "pdfRow": 21,
+          "clock": "7:33"
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 455,
+          "stopName": "Rendőrség",
+          "pdfRow": 26,
+          "clock": "7:35"
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 456,
+          "stopName": "Torbágyi út 10. Vasútállomás felé",
+          "pdfRow": 27,
+          "clock": "7:36"
+        },
+        {
+          "stopId": "28",
+          "minuteOfDay": 457,
+          "stopName": "Téglagyár Vasútállomás felé",
+          "pdfRow": 28,
+          "clock": "7:37"
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 460,
+          "stopName": "Biatorbágy, Vendel tér",
+          "pdfRow": 29,
+          "clock": "7:40"
+        },
+        {
+          "stopId": "29",
+          "minuteOfDay": 465,
+          "stopName": "Biatorbágy VÁ (érkezés)",
+          "pdfRow": 30,
+          "clock": "7:45"
+        },
+        {
+          "stopId": "30",
+          "minuteOfDay": 475,
+          "stopName": "Biatorbágy VÁ (indulás)",
+          "pdfRow": 31,
+          "clock": "7:55"
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 476,
+          "stopName": "Biatorbágy, Vendel tér",
+          "pdfRow": 32,
+          "clock": "7:56"
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 478,
+          "stopName": "Téglagyár Páty felé",
+          "pdfRow": 33,
+          "clock": "7:58"
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 479,
+          "stopName": "Torbágyi út 10. Páty felé",
+          "pdfRow": 34,
+          "clock": "7:59"
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 481,
+          "stopName": "Községháza",
+          "pdfRow": 35,
+          "clock": "8:01"
+        }
+      ]
+    },
+    {
+      "column": 5,
+      "routeLabel": "1MV",
+      "stopTimes": [
+        {
+          "stopId": "25",
+          "minuteOfDay": 585,
+          "stopName": "Levendula otthon",
+          "pdfRow": 0,
+          "clock": "9:45"
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 586,
+          "stopName": "Iskola utca",
+          "pdfRow": 1,
+          "clock": "9:46"
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 587,
+          "stopName": "Telki elágazás",
+          "pdfRow": 2,
+          "clock": "9:47"
+        },
+        {
+          "stopId": "4",
+          "minuteOfDay": 588,
+          "stopName": "Harangláb",
+          "pdfRow": 3,
+          "clock": "9:48"
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 589,
+          "stopName": "Kossuth utca",
+          "pdfRow": 4,
+          "clock": "9:49"
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 591,
+          "stopName": "Burgondia utca",
+          "pdfRow": 5,
+          "clock": "9:51"
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 593,
+          "stopName": "Galagonya utca",
+          "pdfRow": 6,
+          "clock": "9:53"
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 594,
+          "stopName": "Rigó utca",
+          "pdfRow": 7,
+          "clock": "9:54"
+        },
+        {
+          "stopId": "43",
+          "minuteOfDay": 595,
+          "stopName": "Hársfa utca",
+          "pdfRow": 8,
+          "clock": "9:55"
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 596,
+          "stopName": "Mézeshegy",
+          "pdfRow": 9,
+          "clock": "9:56"
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 598,
+          "stopName": "Bánya utca",
+          "pdfRow": 10,
+          "clock": "9:58"
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 599,
+          "stopName": "Rét köz",
+          "pdfRow": 11,
+          "clock": "9:59"
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 600,
+          "stopName": "Páskom utca",
+          "pdfRow": 12,
+          "clock": "10:00"
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 601,
+          "stopName": "Füzespatak utca",
+          "pdfRow": 13,
+          "clock": "10:01"
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 602,
+          "stopName": "Völgy utca",
+          "pdfRow": 14,
+          "clock": "10:02"
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 603,
+          "stopName": "Nyírfa utca",
+          "pdfRow": 15,
+          "clock": "10:03"
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 605,
+          "stopName": "Játszótér",
+          "pdfRow": 16,
+          "clock": "10:05"
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 606,
+          "stopName": "Árpád utca",
+          "pdfRow": 17,
+          "clock": "10:06"
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 607,
+          "stopName": "Petőfi Sándor utca",
+          "pdfRow": 18,
+          "clock": "10:07"
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 609,
+          "stopName": "Iskola utca",
+          "pdfRow": 21,
+          "clock": "10:09"
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 611,
+          "stopName": "Rendőrség",
+          "pdfRow": 26,
+          "clock": "10:11"
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 612,
+          "stopName": "Torbágyi út 10. Vasútállomás felé",
+          "pdfRow": 27,
+          "clock": "10:12"
+        },
+        {
+          "stopId": "28",
+          "minuteOfDay": 613,
+          "stopName": "Téglagyár Vasútállomás felé",
+          "pdfRow": 28,
+          "clock": "10:13"
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 616,
+          "stopName": "Biatorbágy, Vendel tér",
+          "pdfRow": 29,
+          "clock": "10:16"
+        },
+        {
+          "stopId": "29",
+          "minuteOfDay": 617,
+          "stopName": "Biatorbágy VÁ (érkezés)",
+          "pdfRow": 30,
+          "clock": "10:17"
+        },
+        {
+          "stopId": "30",
+          "minuteOfDay": 661,
+          "stopName": "Biatorbágy VÁ (indulás)",
+          "pdfRow": 31,
+          "clock": "11:01"
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 662,
+          "stopName": "Biatorbágy, Vendel tér",
+          "pdfRow": 32,
+          "clock": "11:02"
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 665,
+          "stopName": "Téglagyár Páty felé",
+          "pdfRow": 33,
+          "clock": "11:05"
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 666,
+          "stopName": "Torbágyi út 10. Páty felé",
+          "pdfRow": 34,
+          "clock": "11:06"
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 668,
+          "stopName": "Községháza",
+          "pdfRow": 35,
+          "clock": "11:08"
+        }
+      ]
+    },
+    {
+      "column": 6,
+      "routeLabel": "1A",
+      "stopTimes": [
+        {
+          "stopId": "2",
+          "minuteOfDay": 669,
+          "stopName": "Iskola utca",
+          "pdfRow": 1,
+          "clock": "11:09"
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 670,
+          "stopName": "Telki elágazás",
+          "pdfRow": 2,
+          "clock": "11:10"
+        },
+        {
+          "stopId": "4",
+          "minuteOfDay": 671,
+          "stopName": "Harangláb",
+          "pdfRow": 3,
+          "clock": "11:11"
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 672,
+          "stopName": "Kossuth utca",
+          "pdfRow": 4,
+          "clock": "11:12"
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 674,
+          "stopName": "Burgondia utca",
+          "pdfRow": 5,
+          "clock": "11:14"
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 675,
+          "stopName": "Bánya utca",
+          "pdfRow": 10,
+          "clock": "11:15"
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 676,
+          "stopName": "Rét köz",
+          "pdfRow": 11,
+          "clock": "11:16"
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 677,
+          "stopName": "Páskom utca",
+          "pdfRow": 12,
+          "clock": "11:17"
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 678,
+          "stopName": "Füzespatak utca",
+          "pdfRow": 13,
+          "clock": "11:18"
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 679,
+          "stopName": "Völgy utca",
+          "pdfRow": 14,
+          "clock": "11:19"
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 680,
+          "stopName": "Nyírfa utca",
+          "pdfRow": 15,
+          "clock": "11:20"
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 681,
+          "stopName": "Játszótér",
+          "pdfRow": 16,
+          "clock": "11:21"
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 682,
+          "stopName": "Árpád utca",
+          "pdfRow": 17,
+          "clock": "11:22"
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 683,
+          "stopName": "Petőfi Sándor utca",
+          "pdfRow": 18,
+          "clock": "11:23"
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 686,
+          "stopName": "Iskola utca",
+          "pdfRow": 21,
+          "clock": "11:26"
+        },
+        {
+          "stopId": "36",
+          "minuteOfDay": 688,
+          "stopName": "Töki út",
+          "pdfRow": 22,
+          "clock": "11:28"
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 689,
+          "stopName": "Boglárka utca",
+          "pdfRow": 23,
+          "clock": "11:29"
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 691,
+          "stopName": "Vízműtelep",
+          "pdfRow": 24,
+          "clock": "11:31"
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 693,
+          "stopName": "Levendula otthon",
+          "pdfRow": 25,
+          "clock": "11:33"
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 695,
+          "stopName": "Rendőrség",
+          "pdfRow": 26,
+          "clock": "11:35"
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 696,
+          "stopName": "Községháza",
+          "pdfRow": 35,
+          "clock": "11:36"
+        }
+      ]
+    },
+    {
+      "column": 7,
+      "routeLabel": "1MV",
+      "stopTimes": [
+        {
+          "stopId": "2",
+          "minuteOfDay": 799,
+          "stopName": "Iskola utca",
+          "pdfRow": 1,
+          "clock": "13:19"
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 800,
+          "stopName": "Telki elágazás",
+          "pdfRow": 2,
+          "clock": "13:20"
+        },
+        {
+          "stopId": "4",
+          "minuteOfDay": 801,
+          "stopName": "Harangláb",
+          "pdfRow": 3,
+          "clock": "13:21"
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 802,
+          "stopName": "Kossuth utca",
+          "pdfRow": 4,
+          "clock": "13:22"
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 804,
+          "stopName": "Burgondia utca",
+          "pdfRow": 5,
+          "clock": "13:24"
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 806,
+          "stopName": "Galagonya utca",
+          "pdfRow": 6,
+          "clock": "13:26"
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 807,
+          "stopName": "Rigó utca",
+          "pdfRow": 7,
+          "clock": "13:27"
+        },
+        {
+          "stopId": "43",
+          "minuteOfDay": 808,
+          "stopName": "Hársfa utca",
+          "pdfRow": 8,
+          "clock": "13:28"
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 809,
+          "stopName": "Mézeshegy",
+          "pdfRow": 9,
+          "clock": "13:29"
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 811,
+          "stopName": "Bánya utca",
+          "pdfRow": 10,
+          "clock": "13:31"
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 812,
+          "stopName": "Rét köz",
+          "pdfRow": 11,
+          "clock": "13:32"
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 813,
+          "stopName": "Páskom utca",
+          "pdfRow": 12,
+          "clock": "13:33"
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 814,
+          "stopName": "Füzespatak utca",
+          "pdfRow": 13,
+          "clock": "13:34"
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 815,
+          "stopName": "Völgy utca",
+          "pdfRow": 14,
+          "clock": "13:35"
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 816,
+          "stopName": "Nyírfa utca",
+          "pdfRow": 15,
+          "clock": "13:36"
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 817,
+          "stopName": "Játszótér",
+          "pdfRow": 16,
+          "clock": "13:37"
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 818,
+          "stopName": "Árpád utca",
+          "pdfRow": 17,
+          "clock": "13:38"
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 819,
+          "stopName": "Petőfi Sándor utca",
+          "pdfRow": 18,
+          "clock": "13:39"
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 821,
+          "stopName": "Iskola utca",
+          "pdfRow": 21,
+          "clock": "13:41"
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 823,
+          "stopName": "Rendőrség",
+          "pdfRow": 26,
+          "clock": "13:43"
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 824,
+          "stopName": "Torbágyi út 10. Vasútállomás felé",
+          "pdfRow": 27,
+          "clock": "13:44"
+        },
+        {
+          "stopId": "28",
+          "minuteOfDay": 825,
+          "stopName": "Téglagyár Vasútállomás felé",
+          "pdfRow": 28,
+          "clock": "13:45"
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 828,
+          "stopName": "Biatorbágy, Vendel tér",
+          "pdfRow": 29,
+          "clock": "13:48"
+        },
+        {
+          "stopId": "29",
+          "minuteOfDay": 829,
+          "stopName": "Biatorbágy VÁ (érkezés)",
+          "pdfRow": 30,
+          "clock": "13:49"
+        },
+        {
+          "stopId": "30",
+          "minuteOfDay": 839,
+          "stopName": "Biatorbágy VÁ (indulás)",
+          "pdfRow": 31,
+          "clock": "13:59"
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 840,
+          "stopName": "Biatorbágy, Vendel tér",
+          "pdfRow": 32,
+          "clock": "14:00"
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 843,
+          "stopName": "Téglagyár Páty felé",
+          "pdfRow": 33,
+          "clock": "14:03"
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 844,
+          "stopName": "Torbágyi út 10. Páty felé",
+          "pdfRow": 34,
+          "clock": "14:04"
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 846,
+          "stopName": "Községháza",
+          "pdfRow": 35,
+          "clock": "14:06"
+        }
+      ]
+    },
+    {
+      "column": 8,
+      "routeLabel": "1A",
+      "stopTimes": [
+        {
+          "stopId": "2",
+          "minuteOfDay": 847,
+          "stopName": "Iskola utca",
+          "pdfRow": 1,
+          "clock": "14:07"
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 848,
+          "stopName": "Telki elágazás",
+          "pdfRow": 2,
+          "clock": "14:08"
+        },
+        {
+          "stopId": "4",
+          "minuteOfDay": 849,
+          "stopName": "Harangláb",
+          "pdfRow": 3,
+          "clock": "14:09"
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 850,
+          "stopName": "Kossuth utca",
+          "pdfRow": 4,
+          "clock": "14:10"
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 852,
+          "stopName": "Burgondia utca",
+          "pdfRow": 5,
+          "clock": "14:12"
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 853,
+          "stopName": "Bánya utca",
+          "pdfRow": 10,
+          "clock": "14:13"
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 854,
+          "stopName": "Rét köz",
+          "pdfRow": 11,
+          "clock": "14:14"
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 855,
+          "stopName": "Páskom utca",
+          "pdfRow": 12,
+          "clock": "14:15"
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 856,
+          "stopName": "Füzespatak utca",
+          "pdfRow": 13,
+          "clock": "14:16"
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 857,
+          "stopName": "Völgy utca",
+          "pdfRow": 14,
+          "clock": "14:17"
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 858,
+          "stopName": "Nyírfa utca",
+          "pdfRow": 15,
+          "clock": "14:18"
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 860,
+          "stopName": "Játszótér",
+          "pdfRow": 16,
+          "clock": "14:20"
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 861,
+          "stopName": "Árpád utca",
+          "pdfRow": 17,
+          "clock": "14:21"
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 862,
+          "stopName": "Petőfi Sándor utca",
+          "pdfRow": 18,
+          "clock": "14:22"
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 864,
+          "stopName": "Iskola utca",
+          "pdfRow": 21,
+          "clock": "14:24"
+        }
+      ]
+    },
+    {
+      "column": 9,
+      "routeLabel": "1MV",
+      "stopTimes": [
+        {
+          "stopId": "2",
+          "minuteOfDay": 931,
+          "stopName": "Iskola utca",
+          "pdfRow": 1,
+          "clock": "15:31"
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 932,
+          "stopName": "Telki elágazás",
+          "pdfRow": 2,
+          "clock": "15:32"
+        },
+        {
+          "stopId": "4",
+          "minuteOfDay": 933,
+          "stopName": "Harangláb",
+          "pdfRow": 3,
+          "clock": "15:33"
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 934,
+          "stopName": "Kossuth utca",
+          "pdfRow": 4,
+          "clock": "15:34"
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 936,
+          "stopName": "Burgondia utca",
+          "pdfRow": 5,
+          "clock": "15:36"
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 938,
+          "stopName": "Galagonya utca",
+          "pdfRow": 6,
+          "clock": "15:38"
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 939,
+          "stopName": "Rigó utca",
+          "pdfRow": 7,
+          "clock": "15:39"
+        },
+        {
+          "stopId": "43",
+          "minuteOfDay": 940,
+          "stopName": "Hársfa utca",
+          "pdfRow": 8,
+          "clock": "15:40"
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 941,
+          "stopName": "Mézeshegy",
+          "pdfRow": 9,
+          "clock": "15:41"
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 943,
+          "stopName": "Bánya utca",
+          "pdfRow": 10,
+          "clock": "15:43"
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 944,
+          "stopName": "Rét köz",
+          "pdfRow": 11,
+          "clock": "15:44"
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 945,
+          "stopName": "Páskom utca",
+          "pdfRow": 12,
+          "clock": "15:45"
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 946,
+          "stopName": "Füzespatak utca",
+          "pdfRow": 13,
+          "clock": "15:46"
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 947,
+          "stopName": "Völgy utca",
+          "pdfRow": 14,
+          "clock": "15:47"
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 948,
+          "stopName": "Nyírfa utca",
+          "pdfRow": 15,
+          "clock": "15:48"
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 950,
+          "stopName": "Játszótér",
+          "pdfRow": 16,
+          "clock": "15:50"
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 951,
+          "stopName": "Árpád utca",
+          "pdfRow": 17,
+          "clock": "15:51"
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 952,
+          "stopName": "Petőfi Sándor utca",
+          "pdfRow": 18,
+          "clock": "15:52"
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 954,
+          "stopName": "Iskola utca",
+          "pdfRow": 21,
+          "clock": "15:54"
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 956,
+          "stopName": "Rendőrség",
+          "pdfRow": 26,
+          "clock": "15:56"
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 958,
+          "stopName": "Torbágyi út 10. Vasútállomás felé",
+          "pdfRow": 27,
+          "clock": "15:58"
+        },
+        {
+          "stopId": "28",
+          "minuteOfDay": 959,
+          "stopName": "Téglagyár Vasútállomás felé",
+          "pdfRow": 28,
+          "clock": "15:59"
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 962,
+          "stopName": "Biatorbágy, Vendel tér",
+          "pdfRow": 29,
+          "clock": "16:02"
+        },
+        {
+          "stopId": "29",
+          "minuteOfDay": 963,
+          "stopName": "Biatorbágy VÁ (érkezés)",
+          "pdfRow": 30,
+          "clock": "16:03"
+        },
+        {
+          "stopId": "30",
+          "minuteOfDay": 964,
+          "stopName": "Biatorbágy VÁ (indulás)",
+          "pdfRow": 31,
+          "clock": "16:04"
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 965,
+          "stopName": "Biatorbágy, Vendel tér",
+          "pdfRow": 32,
+          "clock": "16:05"
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 968,
+          "stopName": "Téglagyár Páty felé",
+          "pdfRow": 33,
+          "clock": "16:08"
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 969,
+          "stopName": "Torbágyi út 10. Páty felé",
+          "pdfRow": 34,
+          "clock": "16:09"
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 971,
+          "stopName": "Községháza",
+          "pdfRow": 35,
+          "clock": "16:11"
+        }
+      ]
+    },
+    {
+      "column": 10,
+      "routeLabel": "1A",
+      "stopTimes": [
+        {
+          "stopId": "2",
+          "minuteOfDay": 972,
+          "stopName": "Iskola utca",
+          "pdfRow": 1,
+          "clock": "16:12"
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 973,
+          "stopName": "Telki elágazás",
+          "pdfRow": 2,
+          "clock": "16:13"
+        },
+        {
+          "stopId": "4",
+          "minuteOfDay": 974,
+          "stopName": "Harangláb",
+          "pdfRow": 3,
+          "clock": "16:14"
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 975,
+          "stopName": "Kossuth utca",
+          "pdfRow": 4,
+          "clock": "16:15"
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 977,
+          "stopName": "Burgondia utca",
+          "pdfRow": 5,
+          "clock": "16:17"
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 978,
+          "stopName": "Bánya utca",
+          "pdfRow": 10,
+          "clock": "16:18"
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 979,
+          "stopName": "Rét köz",
+          "pdfRow": 11,
+          "clock": "16:19"
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 980,
+          "stopName": "Páskom utca",
+          "pdfRow": 12,
+          "clock": "16:20"
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 981,
+          "stopName": "Füzespatak utca",
+          "pdfRow": 13,
+          "clock": "16:21"
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 982,
+          "stopName": "Völgy utca",
+          "pdfRow": 14,
+          "clock": "16:22"
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 983,
+          "stopName": "Nyírfa utca",
+          "pdfRow": 15,
+          "clock": "16:23"
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 985,
+          "stopName": "Játszótér",
+          "pdfRow": 16,
+          "clock": "16:25"
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 986,
+          "stopName": "Árpád utca",
+          "pdfRow": 17,
+          "clock": "16:26"
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 987,
+          "stopName": "Petőfi Sándor utca",
+          "pdfRow": 18,
+          "clock": "16:27"
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 989,
+          "stopName": "Iskola utca",
+          "pdfRow": 21,
+          "clock": "16:29"
+        }
+      ]
+    },
+    {
+      "column": 11,
+      "routeLabel": "1MV",
+      "stopTimes": [
+        {
+          "stopId": "2",
+          "minuteOfDay": 1006,
+          "stopName": "Iskola utca",
+          "pdfRow": 1,
+          "clock": "16:46"
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 1007,
+          "stopName": "Telki elágazás",
+          "pdfRow": 2,
+          "clock": "16:47"
+        },
+        {
+          "stopId": "4",
+          "minuteOfDay": 1008,
+          "stopName": "Harangláb",
+          "pdfRow": 3,
+          "clock": "16:48"
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 1009,
+          "stopName": "Kossuth utca",
+          "pdfRow": 4,
+          "clock": "16:49"
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 1011,
+          "stopName": "Burgondia utca",
+          "pdfRow": 5,
+          "clock": "16:51"
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 1013,
+          "stopName": "Galagonya utca",
+          "pdfRow": 6,
+          "clock": "16:53"
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 1014,
+          "stopName": "Rigó utca",
+          "pdfRow": 7,
+          "clock": "16:54"
+        },
+        {
+          "stopId": "43",
+          "minuteOfDay": 1015,
+          "stopName": "Hársfa utca",
+          "pdfRow": 8,
+          "clock": "16:55"
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 1016,
+          "stopName": "Mézeshegy",
+          "pdfRow": 9,
+          "clock": "16:56"
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 1018,
+          "stopName": "Bánya utca",
+          "pdfRow": 10,
+          "clock": "16:58"
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 1019,
+          "stopName": "Rét köz",
+          "pdfRow": 11,
+          "clock": "16:59"
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 1020,
+          "stopName": "Páskom utca",
+          "pdfRow": 12,
+          "clock": "17:00"
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 1021,
+          "stopName": "Füzespatak utca",
+          "pdfRow": 13,
+          "clock": "17:01"
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 1022,
+          "stopName": "Völgy utca",
+          "pdfRow": 14,
+          "clock": "17:02"
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 1023,
+          "stopName": "Nyírfa utca",
+          "pdfRow": 15,
+          "clock": "17:03"
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 1025,
+          "stopName": "Játszótér",
+          "pdfRow": 16,
+          "clock": "17:05"
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 1026,
+          "stopName": "Árpád utca",
+          "pdfRow": 17,
+          "clock": "17:06"
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 1027,
+          "stopName": "Petőfi Sándor utca",
+          "pdfRow": 18,
+          "clock": "17:07"
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 1029,
+          "stopName": "Iskola utca",
+          "pdfRow": 21,
+          "clock": "17:09"
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 1031,
+          "stopName": "Rendőrség",
+          "pdfRow": 26,
+          "clock": "17:11"
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 1032,
+          "stopName": "Torbágyi út 10. Vasútállomás felé",
+          "pdfRow": 27,
+          "clock": "17:12"
+        },
+        {
+          "stopId": "28",
+          "minuteOfDay": 1033,
+          "stopName": "Téglagyár Vasútállomás felé",
+          "pdfRow": 28,
+          "clock": "17:13"
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 1036,
+          "stopName": "Biatorbágy, Vendel tér",
+          "pdfRow": 29,
+          "clock": "17:16"
+        },
+        {
+          "stopId": "29",
+          "minuteOfDay": 1037,
+          "stopName": "Biatorbágy VÁ (érkezés)",
+          "pdfRow": 30,
+          "clock": "17:17"
+        },
+        {
+          "stopId": "30",
+          "minuteOfDay": 1052,
+          "stopName": "Biatorbágy VÁ (indulás)",
+          "pdfRow": 31,
+          "clock": "17:32"
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 1053,
+          "stopName": "Biatorbágy, Vendel tér",
+          "pdfRow": 32,
+          "clock": "17:33"
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 1056,
+          "stopName": "Téglagyár Páty felé",
+          "pdfRow": 33,
+          "clock": "17:36"
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 1057,
+          "stopName": "Torbágyi út 10. Páty felé",
+          "pdfRow": 34,
+          "clock": "17:37"
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 1059,
+          "stopName": "Községháza",
+          "pdfRow": 35,
+          "clock": "17:39"
+        }
+      ]
+    },
+    {
+      "column": 12,
+      "routeLabel": "1V",
+      "stopTimes": [
+        {
+          "stopId": "2",
+          "minuteOfDay": 1060,
+          "stopName": "Iskola utca",
+          "pdfRow": 1,
+          "clock": "17:40"
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 1061,
+          "stopName": "Telki elágazás",
+          "pdfRow": 2,
+          "clock": "17:41"
+        },
+        {
+          "stopId": "4",
+          "minuteOfDay": 1062,
+          "stopName": "Harangláb",
+          "pdfRow": 3,
+          "clock": "17:42"
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 1063,
+          "stopName": "Kossuth utca",
+          "pdfRow": 4,
+          "clock": "17:43"
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 1065,
+          "stopName": "Burgondia utca",
+          "pdfRow": 5,
+          "clock": "17:45"
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 1066,
+          "stopName": "Bánya utca",
+          "pdfRow": 10,
+          "clock": "17:46"
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 1067,
+          "stopName": "Rét köz",
+          "pdfRow": 11,
+          "clock": "17:47"
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 1068,
+          "stopName": "Páskom utca",
+          "pdfRow": 12,
+          "clock": "17:48"
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 1069,
+          "stopName": "Füzespatak utca",
+          "pdfRow": 13,
+          "clock": "17:49"
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 1070,
+          "stopName": "Völgy utca",
+          "pdfRow": 14,
+          "clock": "17:50"
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 1071,
+          "stopName": "Nyírfa utca",
+          "pdfRow": 15,
+          "clock": "17:51"
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 1073,
+          "stopName": "Játszótér",
+          "pdfRow": 16,
+          "clock": "17:53"
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 1074,
+          "stopName": "Árpád utca",
+          "pdfRow": 17,
+          "clock": "17:54"
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 1075,
+          "stopName": "Petőfi Sándor utca",
+          "pdfRow": 18,
+          "clock": "17:55"
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 1077,
+          "stopName": "Iskola utca",
+          "pdfRow": 21,
+          "clock": "17:57"
+        },
+        {
+          "stopId": "36",
+          "minuteOfDay": 1079,
+          "stopName": "Töki út",
+          "pdfRow": 22,
+          "clock": "17:59"
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 1080,
+          "stopName": "Boglárka utca",
+          "pdfRow": 23,
+          "clock": "18:00"
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 1082,
+          "stopName": "Vízműtelep",
+          "pdfRow": 24,
+          "clock": "18:02"
+        }
+      ]
+    }
+  ],
+  "trips": [
+    {
+      "id": "break-c01-outbound",
+      "routeLabel": "1V",
+      "column": 1,
+      "segment": "outbound",
+      "endpointKind": "STATION_ARRIVAL",
+      "stopTimes": [
+        {
+          "stopId": "2",
+          "minuteOfDay": 346
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 347
+        },
+        {
+          "stopId": "4",
+          "minuteOfDay": 348
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 349
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 351
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 352
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 353
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 354
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 355
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 356
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 357
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 359
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 360
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 361
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 362
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 364
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 365
+        },
+        {
+          "stopId": "28",
+          "minuteOfDay": 366
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 369
+        },
+        {
+          "stopId": "29",
+          "minuteOfDay": 370
+        }
+      ]
+    },
+    {
+      "id": "break-c01-inbound",
+      "routeLabel": "1V",
+      "column": 1,
+      "segment": "inbound",
+      "endpointKind": "CONTINUES_NEXT_COLUMN",
+      "stopTimes": [
+        {
+          "stopId": "30",
+          "minuteOfDay": 382
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 383
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 385
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 386
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 388
+        }
+      ]
+    },
+    {
+      "id": "break-c02-outbound",
+      "routeLabel": "1V",
+      "column": 2,
+      "segment": "outbound",
+      "endpointKind": "STATION_ARRIVAL",
+      "stopTimes": [
+        {
+          "stopId": "2",
+          "minuteOfDay": 389
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 390
+        },
+        {
+          "stopId": "4",
+          "minuteOfDay": 391
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 392
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 394
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 395
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 396
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 397
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 398
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 399
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 400
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 402
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 403
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 404
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 405
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 407
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 408
+        },
+        {
+          "stopId": "28",
+          "minuteOfDay": 409
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 412
+        },
+        {
+          "stopId": "29",
+          "minuteOfDay": 413
+        }
+      ]
+    },
+    {
+      "id": "break-c02-inbound",
+      "routeLabel": "1V",
+      "column": 2,
+      "segment": "inbound",
+      "endpointKind": "CONTINUES_NEXT_COLUMN",
+      "stopTimes": [
+        {
+          "stopId": "30",
+          "minuteOfDay": 415
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 416
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 418
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 419
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 421
+        }
+      ]
+    },
+    {
+      "id": "break-c03-local",
+      "routeLabel": "1T",
+      "column": 3,
+      "segment": "local",
+      "endpointKind": "CONTINUES_NEXT_COLUMN",
+      "stopTimes": [
+        {
+          "stopId": "36",
+          "minuteOfDay": 423
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 424
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 426
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 429
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 430
+        }
+      ]
+    },
+    {
+      "id": "break-c04-outbound",
+      "routeLabel": "1MV",
+      "column": 4,
+      "segment": "outbound",
+      "endpointKind": "STATION_ARRIVAL",
+      "stopTimes": [
+        {
+          "stopId": "2",
+          "minuteOfDay": 431
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 432
+        },
+        {
+          "stopId": "4",
+          "minuteOfDay": 433
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 434
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 436
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 438
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 439
+        },
+        {
+          "stopId": "43",
+          "minuteOfDay": 440
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 441
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 443
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 444
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 445
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 446
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 447
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 448
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 450
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 451
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 452
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 453
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 455
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 456
+        },
+        {
+          "stopId": "28",
+          "minuteOfDay": 457
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 460
+        },
+        {
+          "stopId": "29",
+          "minuteOfDay": 465
+        }
+      ]
+    },
+    {
+      "id": "break-c04-inbound",
+      "routeLabel": "1MV",
+      "column": 4,
+      "segment": "inbound",
+      "endpointKind": "TERMINUS",
+      "stopTimes": [
+        {
+          "stopId": "30",
+          "minuteOfDay": 475
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 476
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 478
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 479
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 481
+        }
+      ]
+    },
+    {
+      "id": "break-c05-outbound",
+      "routeLabel": "1MV",
+      "column": 5,
+      "segment": "outbound",
+      "endpointKind": "STATION_ARRIVAL",
+      "stopTimes": [
+        {
+          "stopId": "25",
+          "minuteOfDay": 585
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 586
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 587
+        },
+        {
+          "stopId": "4",
+          "minuteOfDay": 588
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 589
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 591
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 593
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 594
+        },
+        {
+          "stopId": "43",
+          "minuteOfDay": 595
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 596
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 598
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 599
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 600
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 601
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 602
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 603
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 605
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 606
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 607
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 609
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 611
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 612
+        },
+        {
+          "stopId": "28",
+          "minuteOfDay": 613
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 616
+        },
+        {
+          "stopId": "29",
+          "minuteOfDay": 617
+        }
+      ]
+    },
+    {
+      "id": "break-c05-inbound",
+      "routeLabel": "1MV",
+      "column": 5,
+      "segment": "inbound",
+      "endpointKind": "CONTINUES_NEXT_COLUMN",
+      "stopTimes": [
+        {
+          "stopId": "30",
+          "minuteOfDay": 661
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 662
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 665
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 666
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 668
+        }
+      ]
+    },
+    {
+      "id": "break-c06-local",
+      "routeLabel": "1A",
+      "column": 6,
+      "segment": "local",
+      "endpointKind": "TERMINUS",
+      "stopTimes": [
+        {
+          "stopId": "2",
+          "minuteOfDay": 669
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 670
+        },
+        {
+          "stopId": "4",
+          "minuteOfDay": 671
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 672
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 674
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 675
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 676
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 677
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 678
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 679
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 680
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 681
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 682
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 683
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 686
+        },
+        {
+          "stopId": "36",
+          "minuteOfDay": 688
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 689
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 691
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 693
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 695
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 696
+        }
+      ]
+    },
+    {
+      "id": "break-c07-outbound",
+      "routeLabel": "1MV",
+      "column": 7,
+      "segment": "outbound",
+      "endpointKind": "STATION_ARRIVAL",
+      "stopTimes": [
+        {
+          "stopId": "2",
+          "minuteOfDay": 799
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 800
+        },
+        {
+          "stopId": "4",
+          "minuteOfDay": 801
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 802
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 804
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 806
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 807
+        },
+        {
+          "stopId": "43",
+          "minuteOfDay": 808
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 809
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 811
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 812
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 813
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 814
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 815
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 816
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 817
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 818
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 819
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 821
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 823
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 824
+        },
+        {
+          "stopId": "28",
+          "minuteOfDay": 825
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 828
+        },
+        {
+          "stopId": "29",
+          "minuteOfDay": 829
+        }
+      ]
+    },
+    {
+      "id": "break-c07-inbound",
+      "routeLabel": "1MV",
+      "column": 7,
+      "segment": "inbound",
+      "endpointKind": "CONTINUES_NEXT_COLUMN",
+      "stopTimes": [
+        {
+          "stopId": "30",
+          "minuteOfDay": 839
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 840
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 843
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 844
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 846
+        }
+      ]
+    },
+    {
+      "id": "break-c08-local",
+      "routeLabel": "1A",
+      "column": 8,
+      "segment": "local",
+      "endpointKind": "TERMINUS",
+      "stopTimes": [
+        {
+          "stopId": "2",
+          "minuteOfDay": 847
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 848
+        },
+        {
+          "stopId": "4",
+          "minuteOfDay": 849
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 850
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 852
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 853
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 854
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 855
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 856
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 857
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 858
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 860
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 861
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 862
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 864
+        }
+      ]
+    },
+    {
+      "id": "break-c09-outbound",
+      "routeLabel": "1MV",
+      "column": 9,
+      "segment": "outbound",
+      "endpointKind": "STATION_ARRIVAL",
+      "stopTimes": [
+        {
+          "stopId": "2",
+          "minuteOfDay": 931
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 932
+        },
+        {
+          "stopId": "4",
+          "minuteOfDay": 933
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 934
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 936
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 938
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 939
+        },
+        {
+          "stopId": "43",
+          "minuteOfDay": 940
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 941
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 943
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 944
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 945
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 946
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 947
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 948
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 950
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 951
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 952
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 954
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 956
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 958
+        },
+        {
+          "stopId": "28",
+          "minuteOfDay": 959
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 962
+        },
+        {
+          "stopId": "29",
+          "minuteOfDay": 963
+        }
+      ]
+    },
+    {
+      "id": "break-c09-inbound",
+      "routeLabel": "1MV",
+      "column": 9,
+      "segment": "inbound",
+      "endpointKind": "CONTINUES_NEXT_COLUMN",
+      "stopTimes": [
+        {
+          "stopId": "30",
+          "minuteOfDay": 964
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 965
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 968
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 969
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 971
+        }
+      ]
+    },
+    {
+      "id": "break-c10-local",
+      "routeLabel": "1A",
+      "column": 10,
+      "segment": "local",
+      "endpointKind": "TERMINUS",
+      "stopTimes": [
+        {
+          "stopId": "2",
+          "minuteOfDay": 972
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 973
+        },
+        {
+          "stopId": "4",
+          "minuteOfDay": 974
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 975
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 977
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 978
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 979
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 980
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 981
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 982
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 983
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 985
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 986
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 987
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 989
+        }
+      ]
+    },
+    {
+      "id": "break-c11-outbound",
+      "routeLabel": "1MV",
+      "column": 11,
+      "segment": "outbound",
+      "endpointKind": "STATION_ARRIVAL",
+      "stopTimes": [
+        {
+          "stopId": "2",
+          "minuteOfDay": 1006
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 1007
+        },
+        {
+          "stopId": "4",
+          "minuteOfDay": 1008
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 1009
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 1011
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 1013
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 1014
+        },
+        {
+          "stopId": "43",
+          "minuteOfDay": 1015
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 1016
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 1018
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 1019
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 1020
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 1021
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 1022
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 1023
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 1025
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 1026
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 1027
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 1029
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 1031
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 1032
+        },
+        {
+          "stopId": "28",
+          "minuteOfDay": 1033
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 1036
+        },
+        {
+          "stopId": "29",
+          "minuteOfDay": 1037
+        }
+      ]
+    },
+    {
+      "id": "break-c11-inbound",
+      "routeLabel": "1MV",
+      "column": 11,
+      "segment": "inbound",
+      "endpointKind": "CONTINUES_NEXT_COLUMN",
+      "stopTimes": [
+        {
+          "stopId": "30",
+          "minuteOfDay": 1052
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 1053
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 1056
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 1057
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 1059
+        }
+      ]
+    },
+    {
+      "id": "break-c12-local",
+      "routeLabel": "1V",
+      "column": 12,
+      "segment": "local",
+      "endpointKind": "TERMINUS",
+      "stopTimes": [
+        {
+          "stopId": "2",
+          "minuteOfDay": 1060
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 1061
+        },
+        {
+          "stopId": "4",
+          "minuteOfDay": 1062
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 1063
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 1065
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 1066
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 1067
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 1068
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 1069
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 1070
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 1071
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 1073
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 1074
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 1075
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 1077
+        },
+        {
+          "stopId": "36",
+          "minuteOfDay": 1079
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 1080
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 1082
+        }
+      ]
+    }
+  ],
+  "notes": [
+    "Official stop ID 42 aggregates both Vendel tér directions; preserved rather than inferring empty ID53.",
+    "Both Iskola utca occurrences use official ID2, preserving occurrence order.",
+    "Station arrival29 is an endpoint; departure30 is an origin after the wait.",
+    "No Vitamin-domb row or clock times exist in this PDF; no times are assigned to it.",
+    "Column12 is labeled1V in the PDF but terminates at Vízműtelep18:02; label retained verbatim.",
+    "PDF is a school-break timetable; do not combine with school-term trips on one service date."
+  ]
+}

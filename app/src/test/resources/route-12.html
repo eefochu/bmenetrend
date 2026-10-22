@@ -1,0 +1,820 @@
+<html><body><select id="routeSelect" name="routeSelect" onchange="selectRoute();"><option value="10">1 - Vasútállomás &gt; Ország út &gt; Bia &gt; Szily Kálmán út &gt; Vasútállomás</option><option value="11">1P - Vasútállomás &gt; Ország út &gt; Pecató &gt; Ürgehegy &gt; Szily Kálmán út &gt; Vasútállomás</option><option selected="" value="12">2 - Vasútállomás &gt; Szily Kálmán út &gt; Bia &gt; Ország út &gt; Vasútállomás</option><option value="13">3 - Vasútállomás &gt; Iharos &gt; Szarvasugrás &gt; Vasútállomás</option><option value="14">4 - Vasútállomás &gt; Katalin-hegy &gt; Vasútállomás</option></select><div id="BusStopsDiv">
+<h3>Munkanapokon</h3>
+<img src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png"/> - <strong>Menetrend megtekintése</strong><br/>
+<img src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png"/> - <strong>Keresés a térképen</strong><br/>
+<div id="line-2-timetable" style="overflow-x: auto;">
+<table id="timeTableData">
+<tr id="headerRow">
+<th>Menetidő<br/>(perc)</th>
+<th>Megállóhelyek</th>
+<th></th>
+<th style="text-align: right;">Várható indulás (perc)</th>
+</tr>
+<tr directionid="2" routeid="12">
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBoxMP1_2')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"> <span style="cursor:default"></span>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.83397900,47.47982100);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen">
+</img></img></td>
+<td>
+<span style="cursor:default"> Vasútállomás</span>
+</td>
+<td style="text-align:center"></td> <!--  <td rowspan="4" style="background-color: #fff;border: 1px solid #000"><img src=" siteUrl images/road01.png"></td>-->
+<td class="digitalClock" id="bsClock1">'5</td>
+</tr>
+<tr directionid="2" routeid="12">
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBoxMP2_2')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"> <span style="cursor:default"></span>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.82939381,47.47816558);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen">
+</img></img></td>
+<td>
+<span style="cursor:default"> Vendel tér (Ellenirány)</span>
+</td>
+<td style="text-align:center"></td> <!--  <td rowspan="4" style="background-color: #fff;border: 1px solid #000"><img src=" siteUrl images/road01.png"></td>-->
+<td class="digitalClock" id="bsClock69"></td>
+</tr>
+<tr directionid="2" routeid="12">
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBoxMP3_2')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"> <span style="cursor:default"></span>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.82795300,47.48034400);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen">
+</img></img></td>
+<td>
+<span style="cursor:default"> Kishíd (Ellenirány)</span>
+</td>
+<td style="text-align:center"></td> <!--  <td rowspan="4" style="background-color: #fff;border: 1px solid #000"><img src=" siteUrl images/road01.png"></td>-->
+<td class="digitalClock" id="bsClock45"></td>
+</tr>
+<tr directionid="2" routeid="12">
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBoxMP4_2')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"> <span style="cursor:default"></span>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.82641300,47.48166100);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen">
+</img></img></td>
+<td>
+<span style="cursor:default"> Pipacs utca (Ellenirány)</span>
+</td>
+<td style="text-align:center"></td> <!--  <td rowspan="4" style="background-color: #fff;border: 1px solid #000"><img src=" siteUrl images/road01.png"></td>-->
+<td class="digitalClock" id="bsClock46"></td>
+</tr>
+<tr directionid="2" routeid="12">
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBoxMP5_2')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"> <span style="cursor:default"></span>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.82451040,47.48359587);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen">
+</img></img></td>
+<td>
+<span style="cursor:default"> Szent László utca (Ellenirány)</span>
+</td>
+<td style="text-align:center"></td> <!--  <td rowspan="4" style="background-color: #fff;border: 1px solid #000"><img src=" siteUrl images/road01.png"></td>-->
+<td class="digitalClock" id="bsClock70"></td>
+</tr>
+<tr directionid="2" routeid="12">
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBoxMP6_2')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"></span>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.81864420,47.48174159);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+</td>
+<td>
+<span style="cursor:default"> Tavasz utca (Ellenirány)</span>
+</td>
+<td style="text-align:center"></td> <!--  <td rowspan="4" style="background-color: #fff;border: 1px solid #000"><img src=" siteUrl images/road01.png"></td>-->
+<td class="digitalClock" id="bsClock71"></td>
+</tr>
+<tr directionid="2" routeid="12">
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBoxMP7_2')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"></span>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.81531480,47.48062726);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+</td>
+<td>
+<span style="cursor:default"> Ybl Miklós sétány (Ellenirány)</span>
+</td>
+<td style="text-align:center"></td> <!--  <td rowspan="4" style="background-color: #fff;border: 1px solid #000"><img src=" siteUrl images/road01.png"></td>-->
+<td class="digitalClock" id="bsClock72"></td>
+</tr>
+<tr directionid="2" routeid="12">
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBoxMP8_2')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"></span>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.81146558,47.47886048);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+</td>
+<td>
+<span style="cursor:default"> Juhász Gyula utca (Ellenirány)</span>
+</td>
+<td style="text-align:center"></td> <!--  <td rowspan="4" style="background-color: #fff;border: 1px solid #000"><img src=" siteUrl images/road01.png"></td>-->
+<td class="digitalClock" id="bsClock67"></td>
+</tr>
+<tr directionid="2" routeid="12">
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBoxMP9_2')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"></span>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.81302700,47.47776700);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+</td>
+<td>
+<span style="cursor:default"> Hámory Imre utca (Ellenirány)</span>
+</td>
+<td style="text-align:center"></td> <!--  <td rowspan="4" style="background-color: #fff;border: 1px solid #000"><img src=" siteUrl images/road01.png"></td>-->
+<td class="digitalClock" id="bsClock19"></td>
+</tr>
+<tr directionid="2" routeid="12">
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBoxMP10_2')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"></span>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.81643471,47.47712128);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+</td>
+<td>
+<span style="cursor:default"> Meserét Óvoda (Ellenirány)</span>
+</td>
+<td style="text-align:center"></td> <!--  <td rowspan="4" style="background-color: #fff;border: 1px solid #000"><img src=" siteUrl images/road01.png"></td>-->
+<td class="digitalClock" id="bsClock68"></td>
+</tr>
+<tr directionid="2" routeid="12">
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBoxMP11_2')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"></span>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.81933373,47.47589884);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+</td>
+<td>
+<span style="cursor:default"> Akácfa utca (Ellenirány)</span>
+</td>
+<td style="text-align:center"></td> <!--  <td rowspan="4" style="background-color: #fff;border: 1px solid #000"><img src=" siteUrl images/road01.png"></td>-->
+<td class="digitalClock" id="bsClock73"></td>
+</tr>
+<tr directionid="2" routeid="12">
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBoxMP12_2')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"></span>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.82223836,47.47398899);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+</td>
+<td>
+<span style="cursor:default"> Mester utca (Ellenirány)</span>
+</td>
+<td style="text-align:center"></td> <!--  <td rowspan="4" style="background-color: #fff;border: 1px solid #000"><img src=" siteUrl images/road01.png"></td>-->
+<td class="digitalClock" id="bsClock74"></td>
+</tr>
+<tr directionid="2" routeid="12">
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBoxMP13_2')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"></span>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.81794548,47.47205451);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+</td>
+<td>
+<span style="cursor:default"> Jókai utca (Ellenirány)</span>
+</td>
+<td style="text-align:center"></td> <!--  <td rowspan="4" style="background-color: #fff;border: 1px solid #000"><img src=" siteUrl images/road01.png"></td>-->
+<td class="digitalClock" id="bsClock75"></td>
+</tr>
+<tr directionid="2" routeid="12">
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBoxMP14_2')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"></span>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.81312153,47.46989423);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+</td>
+<td>
+<span style="cursor:default"> József Attila utca (Ellenirány)</span>
+</td>
+<td style="text-align:center"></td> <!--  <td rowspan="4" style="background-color: #fff;border: 1px solid #000"><img src=" siteUrl images/road01.png"></td>-->
+<td class="digitalClock" id="bsClock76"></td>
+</tr>
+<tr directionid="2" routeid="12">
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBoxMP15_2')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"></span>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.81529315,47.46720461);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+</td>
+<td>
+<span style="cursor:default"> Gyógyszertár</span>
+</td>
+<td style="text-align:center"></td> <!--  <td rowspan="4" style="background-color: #fff;border: 1px solid #000"><img src=" siteUrl images/road01.png"></td>-->
+<td class="digitalClock" id="bsClock65">'14</td>
+</tr>
+<tr directionid="2" routeid="12">
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBoxMP16_2')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"></span>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.81242281,47.46668583);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+</td>
+<td>
+<span style="cursor:default"> Orvosi rendelő (Ellenirány)</span>
+</td>
+<td style="text-align:center"></td> <!--  <td rowspan="4" style="background-color: #fff;border: 1px solid #000"><img src=" siteUrl images/road01.png"></td>-->
+<td class="digitalClock" id="bsClock77"></td>
+</tr>
+<tr directionid="2" routeid="12">
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBoxMP17_2')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"></span>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.80814398,47.46719418);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+</td>
+<td>
+<span style="cursor:default"> Csicsergő Óvoda (Ellenirány)</span>
+</td>
+<td style="text-align:center"></td> <!--  <td rowspan="4" style="background-color: #fff;border: 1px solid #000"><img src=" siteUrl images/road01.png"></td>-->
+<td class="digitalClock" id="bsClock78"></td>
+</tr>
+<tr directionid="2" routeid="12">
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBoxMP18_2')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"></span>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.80517800,47.46889300);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+</td>
+<td>
+<span style="cursor:default"> Biai katolikus temető (Ellenirány)</span>
+</td>
+<td style="text-align:center"></td> <!--  <td rowspan="4" style="background-color: #fff;border: 1px solid #000"><img src=" siteUrl images/road01.png"></td>-->
+<td class="digitalClock" id="bsClock50"></td>
+</tr>
+<tr directionid="2" routeid="12">
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBoxMP19_2')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"></span>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.80838800,47.46494253);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+</td>
+<td>
+<span style="cursor:default"> Szentháromság tér (dél felé)</span>
+</td>
+<td style="text-align:center"></td> <!--  <td rowspan="4" style="background-color: #fff;border: 1px solid #000"><img src=" siteUrl images/road01.png"></td>-->
+<td class="digitalClock" id="bsClock66">'119</td>
+</tr>
+<tr directionid="2" routeid="12">
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBoxMP20_2')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"></span>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.81258842,47.46167496);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+</td>
+<td>
+<span style="cursor:default"> Kálvin tér (Sándor utca)</span>
+</td>
+<td style="text-align:center"></td> <!--  <td rowspan="4" style="background-color: #fff;border: 1px solid #000"><img src=" siteUrl images/road01.png"></td>-->
+<td class="digitalClock" id="bsClock48"></td>
+</tr>
+<tr directionid="2" routeid="12">
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBoxMP21_2')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"></span>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.81728700,47.46112075);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+</td>
+<td>
+<span style="cursor:default"> Barackvirág utca (Ellenirány)</span>
+</td>
+<td style="text-align:center"></td> <!--  <td rowspan="4" style="background-color: #fff;border: 1px solid #000"><img src=" siteUrl images/road01.png"></td>-->
+<td class="digitalClock" id="bsClock79"></td>
+</tr>
+<tr directionid="2" routeid="12">
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBoxMP22_2')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"></span>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.81989100,47.46621900);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+</td>
+<td>
+<span style="cursor:default"> Füzes utca (Ellenirány)</span>
+</td>
+<td style="text-align:center"></td> <!--  <td rowspan="4" style="background-color: #fff;border: 1px solid #000"><img src=" siteUrl images/road01.png"></td>-->
+<td class="digitalClock" id="bsClock49"></td>
+</tr>
+<tr directionid="2" routeid="12">
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBoxMP23_2')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"></span>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.81882413,47.46822456);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+</td>
+<td>
+<span style="cursor:default"> Kolozsvári utca (Ellenirány)</span>
+</td>
+<td style="text-align:center"></td> <!--  <td rowspan="4" style="background-color: #fff;border: 1px solid #000"><img src=" siteUrl images/road01.png"></td>-->
+<td class="digitalClock" id="bsClock80"></td>
+</tr>
+<tr directionid="2" routeid="12">
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBoxMP24_2')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"></span>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.82467514,47.47140816);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+</td>
+<td>
+<span style="cursor:default"> Vasút utca (Ellenirány)</span>
+</td>
+<td style="text-align:center"></td> <!--  <td rowspan="4" style="background-color: #fff;border: 1px solid #000"><img src=" siteUrl images/road01.png"></td>-->
+<td class="digitalClock" id="bsClock81"></td>
+</tr>
+<tr directionid="2" routeid="12">
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBoxMP25_2')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"></span>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.82459065,47.47328102);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+</td>
+<td>
+<span style="cursor:default"> Faluház (Ellenirány)</span>
+</td>
+<td style="text-align:center"></td> <!--  <td rowspan="4" style="background-color: #fff;border: 1px solid #000"><img src=" siteUrl images/road01.png"></td>-->
+<td class="digitalClock" id="bsClock82"></td>
+</tr>
+<tr directionid="2" routeid="12">
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBoxMP26_2')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"></span>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.83231604,47.47231080);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+</td>
+<td>
+<span style="cursor:default"> Völgyhíd (Ellenirány)</span>
+</td>
+<td style="text-align:center"></td> <!--  <td rowspan="4" style="background-color: #fff;border: 1px solid #000"><img src=" siteUrl images/road01.png"></td>-->
+<td class="digitalClock" id="bsClock83"></td>
+</tr>
+<tr directionid="2" routeid="12">
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBoxMP27_2')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"></span>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.83581859,47.47383208);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+</td>
+<td>
+<span style="cursor:default"> Meggyfa utca (Ellenirány)</span>
+</td>
+<td style="text-align:center"></td> <!--  <td rowspan="4" style="background-color: #fff;border: 1px solid #000"><img src=" siteUrl images/road01.png"></td>-->
+<td class="digitalClock" id="bsClock84"></td>
+</tr>
+<tr directionid="2" routeid="12">
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBoxMP28_2')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"></span>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.83211714,47.47750323);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+</td>
+<td>
+<span style="cursor:default"> Ritsmann Iskola (Ellenirány)</span>
+</td>
+<td style="text-align:center"></td> <!--  <td rowspan="4" style="background-color: #fff;border: 1px solid #000"><img src=" siteUrl images/road01.png"></td>-->
+<td class="digitalClock" id="bsClock85">'8</td>
+</tr>
+<tr directionid="2" routeid="12">
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBoxMP29_2')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"></span>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.83397900,47.47982100);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+</td>
+<td>
+<span style="cursor:default"> Vasútállomás</span>
+</td>
+<td style="text-align:center"></td> <!--  <td rowspan="4" style="background-color: #fff;border: 1px solid #000"><img src=" siteUrl images/road01.png"></td>-->
+<td class="digitalClock" id="bsClock1">'5</td>
+</tr>
+</table>
+<table style="display:none">
+<tr>
+<th>Menetidő<br/>(perc)</th>
+<th>Megállóhelyek</th>
+<th style="text-align: right;">Várható indulás (perc)</th>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox280')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.83397900,47.47982100);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Vasútállomás</span>
+</td>
+<td class="digitalClock" id="bsClock280"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox281')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.83211200,47.47743300);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Ritsmann Iskola</span>
+</td>
+<td class="digitalClock" id="bsClock281"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox282')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.83527000,47.47368700);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Meggyfa utca</span>
+</td>
+<td class="digitalClock" id="bsClock282"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox283')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.82459600,47.47335200);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Fő tér</span>
+</td>
+<td class="digitalClock" id="bsClock283"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox284')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.82460300,47.47139400);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Vasút utca</span>
+</td>
+<td class="digitalClock" id="bsClock284"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox285')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.81829000,47.46810300);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Kolozsvári utca</span>
+</td>
+<td class="digitalClock" id="bsClock285"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox286')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.82198600,47.46400700);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Patak utca</span>
+</td>
+<td class="digitalClock" id="bsClock286"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox287')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.81711600,47.46116900);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Barackvirág utca</span>
+</td>
+<td class="digitalClock" id="bsClock287"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox288')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.81179200,47.46174800);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Kálvin tér</span>
+</td>
+<td class="digitalClock" id="bsClock288"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox289')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.80840800,47.46511300);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Szentháromság tér</span>
+</td>
+<td class="digitalClock" id="bsClock289"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox290')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.80402100,47.46932600);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Biai katolikus temető</span>
+</td>
+<td class="digitalClock" id="bsClock290"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox291')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.80804500,47.46711400);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Csicsergő Óvoda</span>
+</td>
+<td class="digitalClock" id="bsClock291"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox292')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.81193700,47.46653300);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Orvosi rendelő</span>
+</td>
+<td class="digitalClock" id="bsClock292"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox293')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.81319900,47.46984100);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> József Attila utca</span>
+</td>
+<td class="digitalClock" id="bsClock293"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox294')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.81804600,47.47205300);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Jókai utca</span>
+</td>
+<td class="digitalClock" id="bsClock294"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox295')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.82227400,47.47396100);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Mester utca</span>
+</td>
+<td class="digitalClock" id="bsClock295"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox296')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.81935100,47.47600200);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Akácfa utca</span>
+</td>
+<td class="digitalClock" id="bsClock296"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox297')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.81630800,47.47716400);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Meserét Óvoda</span>
+</td>
+<td class="digitalClock" id="bsClock297"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox298')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.81385600,47.47711500);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Hochwart Mihály utca</span>
+</td>
+<td class="digitalClock" id="bsClock298"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox299')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.81161400,47.47880500);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Juhász Gyula utca</span>
+</td>
+<td class="digitalClock" id="bsClock299"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox300')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.81485600,47.48037700);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Ybl Miklós sétány</span>
+</td>
+<td class="digitalClock" id="bsClock300"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox301')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.81915700,47.48183100);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Tavasz utca</span>
+</td>
+<td class="digitalClock" id="bsClock301"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox302')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.82444600,47.48357400);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Szent László utca</span>
+</td>
+<td class="digitalClock" id="bsClock302"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox303')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.82587900,47.47977700);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Diófa utca</span>
+</td>
+<td class="digitalClock" id="bsClock303"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox304')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.82596500,47.47731700);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Táncsics Mihály utca</span>
+</td>
+<td class="digitalClock" id="bsClock304"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox305')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.82920600,47.47802900);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Vendel tér</span>
+</td>
+<td class="digitalClock" id="bsClock305"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox306')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.82459600,47.47335200);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Faluház</span>
+</td>
+<td class="digitalClock" id="bsClock306"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox307')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.83826700,47.48263500);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Torbágyi temető</span>
+</td>
+<td class="digitalClock" id="bsClock307"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox308')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.83959400,47.48617800);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Anikó utca</span>
+</td>
+<td class="digitalClock" id="bsClock308"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox309')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.84165200,47.48440300);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Gréta utca</span>
+</td>
+<td class="digitalClock" id="bsClock309"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox310')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(,);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Boltok</span>
+</td>
+<td class="digitalClock" id="bsClock310"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox311')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(,);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Csodaszarvas utca</span>
+</td>
+<td class="digitalClock" id="bsClock311"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox312')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(,);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Iharos</span>
+</td>
+<td class="digitalClock" id="bsClock312"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox313')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.83228400,47.47238800);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Völgyhíd</span>
+</td>
+<td class="digitalClock" id="bsClock313"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox314')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(,);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Autóbusz-forduló</span>
+</td>
+<td class="digitalClock" id="bsClock314"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox315')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.81427400,47.43792600);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Pecató Kertbarátok t.</span>
+</td>
+<td class="digitalClock" id="bsClock315"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox316')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.83199800,47.43810800);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Ürgehegy, Oportó </span>
+</td>
+<td class="digitalClock" id="bsClock316"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox317')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.82895200,47.43727500);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Csabagyöngye</span>
+</td>
+<td class="digitalClock" id="bsClock317"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox318')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.82384100,47.43599800);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Kadarka utca</span>
+</td>
+<td class="digitalClock" id="bsClock318"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox319')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(,);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Kálvin tér (Nagy u.)</span>
+</td>
+<td class="digitalClock" id="bsClock319"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox320')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.81302700,47.47776700);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Hámory Imre utca</span>
+</td>
+<td class="digitalClock" id="bsClock320"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox321')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.82795300,47.48034400);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Kishíd</span>
+</td>
+<td class="digitalClock" id="bsClock321"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox322')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.82641300,47.48166100);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Pipacs utca</span>
+</td>
+<td class="digitalClock" id="bsClock322"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox323')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(,);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Kossuth Ferenc utca</span>
+</td>
+<td class="digitalClock" id="bsClock323"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox324')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(,);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Kálvin tér (Sándor utca)</span>
+</td>
+<td class="digitalClock" id="bsClock324"></td>
+</tr>
+<tr>
+<td><img alt="Menetrend megtekintése" onclick="loadMainPopup('busStopPopupBox325')" src="https://viabusz.biatorbagy.hu/images/icon_table_16x16.png" style="cursor:pointer;" title="Menetrend megtekintése"/> <span style="cursor:default"> </span></td>
+<td>
+<img alt="Keresés térképen" onclick="javascript:zoomMapToPoint(18.81989100,47.46621900);" src="https://viabusz.biatorbagy.hu/images/icon_searc_globe_16x16.png" style="cursor:pointer;" title="Keresés térképen"/>
+<span style="cursor:default"> Füzes utca</span>
+</td>
+<td class="digitalClock" id="bsClock325"></td>
+</tr>
+</table>
+</div>
+</div><div class="popup_box popuptext" id="busStopPopupBoxMPST404" style="width:600px;height:300px;">
+<h2>Járat menetrendje</h2>
+<h3>2</h3> <br/>
+<p ;"="" style="text-align: left; font-weight: bold;color: #F00">Megállóhelyek szerinti indulási idők megtekintéséhez kattintson a megállóhely nevére.</p>
+<div id="line-2-timetable-popup" style="overflow-y: auto;max-height:400px;">
+<table>
+<tr><th colspan="10" style="position: sticky; top: 0;">Indulási idő: 7:00</th></tr>
+<tr><td onclick="unloadPopupBox('busStopPopupBoxMPST404');loadMainPopup('busStopPopupBoxMP1_2');" style="cursor:pointer;">Vasútállomás</td><td id="startTimeTD18278">7:00</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST404');loadMainPopup('busStopPopupBoxMP2_2');" style="cursor:pointer;">Vendel tér (Ellenirány)</td><td id="startTimeTD18279">7:01</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST404');loadMainPopup('busStopPopupBoxMP3_2');" style="cursor:pointer;">Kishíd (Ellenirány)</td><td id="startTimeTD18280">7:02</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST404');loadMainPopup('busStopPopupBoxMP4_2');" style="cursor:pointer;">Pipacs utca (Ellenirány)</td><td id="startTimeTD18281">7:04</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST404');loadMainPopup('busStopPopupBoxMP5_2');" style="cursor:pointer;">Szent László utca (Ellenirány)</td><td id="startTimeTD18282">7:05</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST404');loadMainPopup('busStopPopupBoxMP6_2');" style="cursor:pointer;">Tavasz utca (Ellenirány)</td><td id="startTimeTD18283">7:06</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST404');loadMainPopup('busStopPopupBoxMP7_2');" style="cursor:pointer;">Ybl Miklós sétány (Ellenirány)</td><td id="startTimeTD18284">7:07</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST404');loadMainPopup('busStopPopupBoxMP8_2');" style="cursor:pointer;">Juhász Gyula utca (Ellenirány)</td><td id="startTimeTD18285">7:08</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST404');loadMainPopup('busStopPopupBoxMP9_2');" style="cursor:pointer;">Hámory Imre utca (Ellenirány)</td><td id="startTimeTD18286">7:09</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST404');loadMainPopup('busStopPopupBoxMP10_2');" style="cursor:pointer;">Meserét Óvoda (Ellenirány)</td><td id="startTimeTD18287">7:10</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST404');loadMainPopup('busStopPopupBoxMP11_2');" style="cursor:pointer;">Akácfa utca (Ellenirány)</td><td id="startTimeTD18288">7:11</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST404');loadMainPopup('busStopPopupBoxMP12_2');" style="cursor:pointer;">Mester utca (Ellenirány)</td><td id="startTimeTD18289">7:12</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST404');loadMainPopup('busStopPopupBoxMP13_2');" style="cursor:pointer;">Jókai utca (Ellenirány)</td><td id="startTimeTD18290">7:13</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST404');loadMainPopup('busStopPopupBoxMP14_2');" style="cursor:pointer;">József Attila utca (Ellenirány)</td><td id="startTimeTD18291">7:14</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST404');loadMainPopup('busStopPopupBoxMP15_2');" style="cursor:pointer;">Gyógyszertár</td><td id="startTimeTD18292">7:15</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST404');loadMainPopup('busStopPopupBoxMP16_2');" style="cursor:pointer;">Orvosi rendelő (Ellenirány)</td><td id="startTimeTD18293">7:16</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST404');loadMainPopup('busStopPopupBoxMP17_2');" style="cursor:pointer;">Csicsergő Óvoda (Ellenirány)</td><td id="startTimeTD18294">7:17</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST404');loadMainPopup('busStopPopupBoxMP18_2');" style="cursor:pointer;">Biai katolikus temető (Ellenirány)</td><td id="startTimeTD18295">7:19</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST404');loadMainPopup('busStopPopupBoxMP19_2');" style="cursor:pointer;">Szentháromság tér (dél felé)</td><td id="startTimeTD18296">7:21</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST404');loadMainPopup('busStopPopupBoxMP20_2');" style="cursor:pointer;">Kálvin tér (Sándor utca)</td><td id="startTimeTD18297">7:23</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST404');loadMainPopup('busStopPopupBoxMP21_2');" style="cursor:pointer;">Barackvirág utca (Ellenirány)</td><td id="startTimeTD18298">7:25</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST404');loadMainPopup('busStopPopupBoxMP22_2');" style="cursor:pointer;">Füzes utca (Ellenirány)</td><td id="startTimeTD18299">7:27</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST404');loadMainPopup('busStopPopupBoxMP23_2');" style="cursor:pointer;">Kolozsvári utca (Ellenirány)</td><td id="startTimeTD18300">7:29</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST404');loadMainPopup('busStopPopupBoxMP24_2');" style="cursor:pointer;">Vasút utca (Ellenirány)</td><td id="startTimeTD18301">7:30</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST404');loadMainPopup('busStopPopupBoxMP25_2');" style="cursor:pointer;">Faluház (Ellenirány)</td><td id="startTimeTD18302">7:32</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST404');loadMainPopup('busStopPopupBoxMP26_2');" style="cursor:pointer;">Völgyhíd (Ellenirány)</td><td id="startTimeTD18303">7:33</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST404');loadMainPopup('busStopPopupBoxMP27_2');" style="cursor:pointer;">Meggyfa utca (Ellenirány)</td><td id="startTimeTD18304">7:39</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST404');loadMainPopup('busStopPopupBoxMP28_2');" style="cursor:pointer;">Ritsmann Iskola (Ellenirány)</td><td id="startTimeTD18305">7:40</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST404');loadMainPopup('busStopPopupBoxMP29_2');" style="cursor:pointer;">Vasútállomás</td><td id="startTimeTD18306">7:42</td></tr> </table>
+</div>
+<a class="popupBoxClose" id="busStopPopupBoxMPST404" onclick="unloadPopupBox('busStopPopupBoxMPST404')">X</a>
+</div><div class="popup_box popuptext" id="busStopPopupBoxMPST405" style="width:600px;height:300px;">
+<h2>Járat menetrendje</h2>
+<h3>2</h3> <br/>
+<p ;"="" style="text-align: left; font-weight: bold;color: #F00">Megállóhelyek szerinti indulási idők megtekintéséhez kattintson a megállóhely nevére.</p>
+<div id="line-2-timetable-popup" style="overflow-y: auto;max-height:400px;">
+<table>
+<tr><th colspan="10" style="position: sticky; top: 0;">Indulási idő: 7:05</th></tr>
+<tr><td onclick="unloadPopupBox('busStopPopupBoxMPST405');loadMainPopup('busStopPopupBoxMP1_2');" style="cursor:pointer;">Vasútállomás</td><td id="startTimeTD18307">7:05</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST405');loadMainPopup('busStopPopupBoxMP2_2');" style="cursor:pointer;">Vendel tér (Ellenirány)</td><td id="startTimeTD18308">7:06</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST405');loadMainPopup('busStopPopupBoxMP3_2');" style="cursor:pointer;">Kishíd (Ellenirány)</td><td id="startTimeTD18309">7:07</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST405');loadMainPopup('busStopPopupBoxMP4_2');" style="cursor:pointer;">Pipacs utca (Ellenirány)</td><td id="startTimeTD18310">7:09</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST405');loadMainPopup('busStopPopupBoxMP5_2');" style="cursor:pointer;">Szent László utca (Ellenirány)</td><td id="startTimeTD18311">7:10</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST405');loadMainPopup('busStopPopupBoxMP6_2');" style="cursor:pointer;">Tavasz utca (Ellenirány)</td><td id="startTimeTD18312">7:11</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST405');loadMainPopup('busStopPopupBoxMP7_2');" style="cursor:pointer;">Ybl Miklós sétány (Ellenirány)</td><td id="startTimeTD18313">7:12</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST405');loadMainPopup('busStopPopupBoxMP8_2');" style="cursor:pointer;">Juhász Gyula utca (Ellenirány)</td><td id="startTimeTD18314">7:13</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST405');loadMainPopup('busStopPopupBoxMP9_2');" style="cursor:pointer;">Hámory Imre utca (Ellenirány)</td><td id="startTimeTD18315">7:14</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST405');loadMainPopup('busStopPopupBoxMP10_2');" style="cursor:pointer;">Meserét Óvoda (Ellenirány)</td><td id="startTimeTD18316">7:15</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST405');loadMainPopup('busStopPopupBoxMP11_2');" style="cursor:pointer;">Akácfa utca (Ellenirány)</td><td id="startTimeTD18317">7:16</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST405');loadMainPopup('busStopPopupBoxMP12_2');" style="cursor:pointer;">Mester utca (Ellenirány)</td><td id="startTimeTD18318">7:17</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST405');loadMainPopup('busStopPopupBoxMP13_2');" style="cursor:pointer;">Jókai utca (Ellenirány)</td><td id="startTimeTD18319">7:18</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST405');loadMainPopup('busStopPopupBoxMP14_2');" style="cursor:pointer;">József Attila utca (Ellenirány)</td><td id="startTimeTD18320">7:19</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST405');loadMainPopup('busStopPopupBoxMP15_2');" style="cursor:pointer;">Gyógyszertár</td><td id="startTimeTD18321">7:20</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST405');loadMainPopup('busStopPopupBoxMP16_2');" style="cursor:pointer;">Orvosi rendelő (Ellenirány)</td><td id="startTimeTD18322">7:21</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST405');loadMainPopup('busStopPopupBoxMP17_2');" style="cursor:pointer;">Csicsergő Óvoda (Ellenirány)</td><td id="startTimeTD18323">7:22</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST405');loadMainPopup('busStopPopupBoxMP18_2');" style="cursor:pointer;">Biai katolikus temető (Ellenirány)</td><td id="startTimeTD18324">7:24</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST405');loadMainPopup('busStopPopupBoxMP19_2');" style="cursor:pointer;">Szentháromság tér (dél felé)</td><td id="startTimeTD18325">7:26</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST405');loadMainPopup('busStopPopupBoxMP20_2');" style="cursor:pointer;">Kálvin tér (Sándor utca)</td><td id="startTimeTD18326">7:28</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST405');loadMainPopup('busStopPopupBoxMP21_2');" style="cursor:pointer;">Barackvirág utca (Ellenirány)</td><td id="startTimeTD18327">7:30</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST405');loadMainPopup('busStopPopupBoxMP22_2');" style="cursor:pointer;">Füzes utca (Ellenirány)</td><td id="startTimeTD18328">7:32</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST405');loadMainPopup('busStopPopupBoxMP23_2');" style="cursor:pointer;">Kolozsvári utca (Ellenirány)</td><td id="startTimeTD18329">7:34</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST405');loadMainPopup('busStopPopupBoxMP24_2');" style="cursor:pointer;">Vasút utca (Ellenirány)</td><td id="startTimeTD18330">7:35</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST405');loadMainPopup('busStopPopupBoxMP25_2');" style="cursor:pointer;">Faluház (Ellenirány)</td><td id="startTimeTD18331">7:37</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST405');loadMainPopup('busStopPopupBoxMP26_2');" style="cursor:pointer;">Völgyhíd (Ellenirány)</td><td id="startTimeTD18332">7:38</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST405');loadMainPopup('busStopPopupBoxMP27_2');" style="cursor:pointer;">Meggyfa utca (Ellenirány)</td><td id="startTimeTD18333">7:44</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST405');loadMainPopup('busStopPopupBoxMP28_2');" style="cursor:pointer;">Ritsmann Iskola (Ellenirány)</td><td id="startTimeTD18334">7:45</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST405');loadMainPopup('busStopPopupBoxMP29_2');" style="cursor:pointer;">Vasútállomás</td><td id="startTimeTD18335">7:47</td></tr> </table>
+</div>
+<a class="popupBoxClose" id="busStopPopupBoxMPST405" onclick="unloadPopupBox('busStopPopupBoxMPST405')">X</a>
+</div><div class="popup_box popuptext" id="busStopPopupBoxMPST406" style="width:600px;height:300px;">
+<h2>Járat menetrendje</h2>
+<h3>2</h3> <br/>
+<p ;"="" style="text-align: left; font-weight: bold;color: #F00">Megállóhelyek szerinti indulási idők megtekintéséhez kattintson a megállóhely nevére.</p>
+<div id="line-2-timetable-popup" style="overflow-y: auto;max-height:400px;">
+<table>
+<tr><th colspan="10" style="position: sticky; top: 0;">Indulási idő: 7:55</th></tr>
+<tr><td onclick="unloadPopupBox('busStopPopupBoxMPST406');loadMainPopup('busStopPopupBoxMP1_2');" style="cursor:pointer;">Vasútállomás</td><td id="startTimeTD18336">7:55</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST406');loadMainPopup('busStopPopupBoxMP2_2');" style="cursor:pointer;">Vendel tér (Ellenirány)</td><td id="startTimeTD18337">7:56</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST406');loadMainPopup('busStopPopupBoxMP3_2');" style="cursor:pointer;">Kishíd (Ellenirány)</td><td id="startTimeTD18338">7:57</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST406');loadMainPopup('busStopPopupBoxMP4_2');" style="cursor:pointer;">Pipacs utca (Ellenirány)</td><td id="startTimeTD18339">7:59</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST406');loadMainPopup('busStopPopupBoxMP5_2');" style="cursor:pointer;">Szent László utca (Ellenirány)</td><td id="startTimeTD18340">8:00</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST406');loadMainPopup('busStopPopupBoxMP6_2');" style="cursor:pointer;">Tavasz utca (Ellenirány)</td><td id="startTimeTD18341">8:01</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST406');loadMainPopup('busStopPopupBoxMP7_2');" style="cursor:pointer;">Ybl Miklós sétány (Ellenirány)</td><td id="startTimeTD18342">8:02</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST406');loadMainPopup('busStopPopupBoxMP8_2');" style="cursor:pointer;">Juhász Gyula utca (Ellenirány)</td><td id="startTimeTD18343">8:03</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST406');loadMainPopup('busStopPopupBoxMP9_2');" style="cursor:pointer;">Hámory Imre utca (Ellenirány)</td><td id="startTimeTD18344">8:04</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST406');loadMainPopup('busStopPopupBoxMP10_2');" style="cursor:pointer;">Meserét Óvoda (Ellenirány)</td><td id="startTimeTD18345">8:05</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST406');loadMainPopup('busStopPopupBoxMP11_2');" style="cursor:pointer;">Akácfa utca (Ellenirány)</td><td id="startTimeTD18346">8:06</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST406');loadMainPopup('busStopPopupBoxMP12_2');" style="cursor:pointer;">Mester utca (Ellenirány)</td><td id="startTimeTD18347">8:07</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST406');loadMainPopup('busStopPopupBoxMP13_2');" style="cursor:pointer;">Jókai utca (Ellenirány)</td><td id="startTimeTD18348">8:08</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST406');loadMainPopup('busStopPopupBoxMP14_2');" style="cursor:pointer;">József Attila utca (Ellenirány)</td><td id="startTimeTD18349">8:09</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST406');loadMainPopup('busStopPopupBoxMP15_2');" style="cursor:pointer;">Gyógyszertár</td><td id="startTimeTD18350">8:10</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST406');loadMainPopup('busStopPopupBoxMP16_2');" style="cursor:pointer;">Orvosi rendelő (Ellenirány)</td><td id="startTimeTD18351">8:11</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST406');loadMainPopup('busStopPopupBoxMP17_2');" style="cursor:pointer;">Csicsergő Óvoda (Ellenirány)</td><td id="startTimeTD18352">8:12</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST406');loadMainPopup('busStopPopupBoxMP18_2');" style="cursor:pointer;">Biai katolikus temető (Ellenirány)</td><td id="startTimeTD18353">8:14</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST406');loadMainPopup('busStopPopupBoxMP19_2');" style="cursor:pointer;">Szentháromság tér (dél felé)</td><td id="startTimeTD18354">8:16</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST406');loadMainPopup('busStopPopupBoxMP20_2');" style="cursor:pointer;">Kálvin tér (Sándor utca)</td><td id="startTimeTD18355">8:18</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST406');loadMainPopup('busStopPopupBoxMP21_2');" style="cursor:pointer;">Barackvirág utca (Ellenirány)</td><td id="startTimeTD18356">8:20</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST406');loadMainPopup('busStopPopupBoxMP22_2');" style="cursor:pointer;">Füzes utca (Ellenirány)</td><td id="startTimeTD18357">8:22</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST406');loadMainPopup('busStopPopupBoxMP23_2');" style="cursor:pointer;">Kolozsvári utca (Ellenirány)</td><td id="startTimeTD18358">8:24</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST406');loadMainPopup('busStopPopupBoxMP24_2');" style="cursor:pointer;">Vasút utca (Ellenirány)</td><td id="startTimeTD18359">8:25</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST406');loadMainPopup('busStopPopupBoxMP25_2');" style="cursor:pointer;">Faluház (Ellenirány)</td><td id="startTimeTD18360">8:27</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST406');loadMainPopup('busStopPopupBoxMP26_2');" style="cursor:pointer;">Völgyhíd (Ellenirány)</td><td id="startTimeTD18361">8:28</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST406');loadMainPopup('busStopPopupBoxMP27_2');" style="cursor:pointer;">Meggyfa utca (Ellenirány)</td><td id="startTimeTD18362">8:30</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST406');loadMainPopup('busStopPopupBoxMP28_2');" style="cursor:pointer;">Ritsmann Iskola (Ellenirány)</td><td id="startTimeTD18363">8:31</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST406');loadMainPopup('busStopPopupBoxMP29_2');" style="cursor:pointer;">Vasútállomás</td><td id="startTimeTD18364">8:33</td></tr> </table>
+</div>
+<a class="popupBoxClose" id="busStopPopupBoxMPST406" onclick="unloadPopupBox('busStopPopupBoxMPST406')">X</a>
+</div><div class="popup_box popuptext" id="busStopPopupBoxMPST407" style="width:600px;height:300px;">
+<h2>Járat menetrendje</h2>
+<h3>2</h3> <br/>
+<p ;"="" style="text-align: left; font-weight: bold;color: #F00">Megállóhelyek szerinti indulási idők megtekintéséhez kattintson a megállóhely nevére.</p>
+<div id="line-2-timetable-popup" style="overflow-y: auto;max-height:400px;">
+<table>
+<tr><th colspan="10" style="position: sticky; top: 0;">Indulási idő: 8:55</th></tr>
+<tr><td onclick="unloadPopupBox('busStopPopupBoxMPST407');loadMainPopup('busStopPopupBoxMP1_2');" style="cursor:pointer;">Vasútállomás</td><td id="startTimeTD18365">8:55</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST407');loadMainPopup('busStopPopupBoxMP2_2');" style="cursor:pointer;">Vendel tér (Ellenirány)</td><td id="startTimeTD18366">8:56</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST407');loadMainPopup('busStopPopupBoxMP3_2');" style="cursor:pointer;">Kishíd (Ellenirány)</td><td id="startTimeTD18367">8:57</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST407');loadMainPopup('busStopPopupBoxMP4_2');" style="cursor:pointer;">Pipacs utca (Ellenirány)</td><td id="startTimeTD18368">8:59</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST407');loadMainPopup('busStopPopupBoxMP5_2');" style="cursor:pointer;">Szent László utca (Ellenirány)</td><td id="startTimeTD18369">9:00</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST407');loadMainPopup('busStopPopupBoxMP6_2');" style="cursor:pointer;">Tavasz utca (Ellenirány)</td><td id="startTimeTD18370">9:01</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST407');loadMainPopup('busStopPopupBoxMP7_2');" style="cursor:pointer;">Ybl Miklós sétány (Ellenirány)</td><td id="startTimeTD18371">9:02</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST407');loadMainPopup('busStopPopupBoxMP8_2');" style="cursor:pointer;">Juhász Gyula utca (Ellenirány)</td><td id="startTimeTD18372">9:03</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST407');loadMainPopup('busStopPopupBoxMP9_2');" style="cursor:pointer;">Hámory Imre utca (Ellenirány)</td><td id="startTimeTD18373">9:04</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST407');loadMainPopup('busStopPopupBoxMP10_2');" style="cursor:pointer;">Meserét Óvoda (Ellenirány)</td><td id="startTimeTD18374">9:05</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST407');loadMainPopup('busStopPopupBoxMP11_2');" style="cursor:pointer;">Akácfa utca (Ellenirány)</td><td id="startTimeTD18375">9:06</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST407');loadMainPopup('busStopPopupBoxMP12_2');" style="cursor:pointer;">Mester utca (Ellenirány)</td><td id="startTimeTD18376">9:07</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST407');loadMainPopup('busStopPopupBoxMP13_2');" style="cursor:pointer;">Jókai utca (Ellenirány)</td><td id="startTimeTD18377">9:08</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST407');loadMainPopup('busStopPopupBoxMP14_2');" style="cursor:pointer;">József Attila utca (Ellenirány)</td><td id="startTimeTD18378">9:09</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST407');loadMainPopup('busStopPopupBoxMP15_2');" style="cursor:pointer;">Gyógyszertár</td><td id="startTimeTD18379">9:10</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST407');loadMainPopup('busStopPopupBoxMP16_2');" style="cursor:pointer;">Orvosi rendelő (Ellenirány)</td><td id="startTimeTD18380">9:11</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST407');loadMainPopup('busStopPopupBoxMP17_2');" style="cursor:pointer;">Csicsergő Óvoda (Ellenirány)</td><td id="startTimeTD18381">9:12</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST407');loadMainPopup('busStopPopupBoxMP18_2');" style="cursor:pointer;">Biai katolikus temető (Ellenirány)</td><td id="startTimeTD18382">9:14</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST407');loadMainPopup('busStopPopupBoxMP19_2');" style="cursor:pointer;">Szentháromság tér (dél felé)</td><td id="startTimeTD18383">9:16</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST407');loadMainPopup('busStopPopupBoxMP20_2');" style="cursor:pointer;">Kálvin tér (Sándor utca)</td><td id="startTimeTD18384">9:18</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST407');loadMainPopup('busStopPopupBoxMP21_2');" style="cursor:pointer;">Barackvirág utca (Ellenirány)</td><td id="startTimeTD18385">9:20</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST407');loadMainPopup('busStopPopupBoxMP22_2');" style="cursor:pointer;">Füzes utca (Ellenirány)</td><td id="startTimeTD18386">9:22</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST407');loadMainPopup('busStopPopupBoxMP23_2');" style="cursor:pointer;">Kolozsvári utca (Ellenirány)</td><td id="startTimeTD18387">9:24</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST407');loadMainPopup('busStopPopupBoxMP24_2');" style="cursor:pointer;">Vasút utca (Ellenirány)</td><td id="startTimeTD18388">9:25</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST407');loadMainPopup('busStopPopupBoxMP25_2');" style="cursor:pointer;">Faluház (Ellenirány)</td><td id="startTimeTD18389">9:27</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST407');loadMainPopup('busStopPopupBoxMP26_2');" style="cursor:pointer;">Völgyhíd (Ellenirány)</td><td id="startTimeTD18390">9:28</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST407');loadMainPopup('busStopPopupBoxMP27_2');" style="cursor:pointer;">Meggyfa utca (Ellenirány)</td><td id="startTimeTD18391">9:30</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST407');loadMainPopup('busStopPopupBoxMP28_2');" style="cursor:pointer;">Ritsmann Iskola (Ellenirány)</td><td id="startTimeTD18392">9:31</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST407');loadMainPopup('busStopPopupBoxMP29_2');" style="cursor:pointer;">Vasútállomás</td><td id="startTimeTD18393">9:33</td></tr> </table>
+</div>
+<a class="popupBoxClose" id="busStopPopupBoxMPST407" onclick="unloadPopupBox('busStopPopupBoxMPST407')">X</a>
+</div><div class="popup_box popuptext" id="busStopPopupBoxMPST408" style="width:600px;height:300px;">
+<h2>Járat menetrendje</h2>
+<h3>2</h3> <br/>
+<p ;"="" style="text-align: left; font-weight: bold;color: #F00">Megállóhelyek szerinti indulási idők megtekintéséhez kattintson a megállóhely nevére.</p>
+<div id="line-2-timetable-popup" style="overflow-y: auto;max-height:400px;">
+<table>
+<tr><th colspan="10" style="position: sticky; top: 0;">Indulási idő: 10:55</th></tr>
+<tr><td onclick="unloadPopupBox('busStopPopupBoxMPST408');loadMainPopup('busStopPopupBoxMP1_2');" style="cursor:pointer;">Vasútállomás</td><td id="startTimeTD18394">10:55</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST408');loadMainPopup('busStopPopupBoxMP2_2');" style="cursor:pointer;">Vendel tér (Ellenirány)</td><td id="startTimeTD18395">10:56</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST408');loadMainPopup('busStopPopupBoxMP3_2');" style="cursor:pointer;">Kishíd (Ellenirány)</td><td id="startTimeTD18396">10:57</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST408');loadMainPopup('busStopPopupBoxMP4_2');" style="cursor:pointer;">Pipacs utca (Ellenirány)</td><td id="startTimeTD18397">10:59</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST408');loadMainPopup('busStopPopupBoxMP5_2');" style="cursor:pointer;">Szent László utca (Ellenirány)</td><td id="startTimeTD18398">11:00</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST408');loadMainPopup('busStopPopupBoxMP6_2');" style="cursor:pointer;">Tavasz utca (Ellenirány)</td><td id="startTimeTD18399">11:01</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST408');loadMainPopup('busStopPopupBoxMP7_2');" style="cursor:pointer;">Ybl Miklós sétány (Ellenirány)</td><td id="startTimeTD18400">11:02</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST408');loadMainPopup('busStopPopupBoxMP8_2');" style="cursor:pointer;">Juhász Gyula utca (Ellenirány)</td><td id="startTimeTD18401">11:03</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST408');loadMainPopup('busStopPopupBoxMP9_2');" style="cursor:pointer;">Hámory Imre utca (Ellenirány)</td><td id="startTimeTD18402">11:04</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST408');loadMainPopup('busStopPopupBoxMP10_2');" style="cursor:pointer;">Meserét Óvoda (Ellenirány)</td><td id="startTimeTD18403">11:05</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST408');loadMainPopup('busStopPopupBoxMP11_2');" style="cursor:pointer;">Akácfa utca (Ellenirány)</td><td id="startTimeTD18404">11:06</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST408');loadMainPopup('busStopPopupBoxMP12_2');" style="cursor:pointer;">Mester utca (Ellenirány)</td><td id="startTimeTD18405">11:07</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST408');loadMainPopup('busStopPopupBoxMP13_2');" style="cursor:pointer;">Jókai utca (Ellenirány)</td><td id="startTimeTD18406">11:08</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST408');loadMainPopup('busStopPopupBoxMP14_2');" style="cursor:pointer;">József Attila utca (Ellenirány)</td><td id="startTimeTD18407">11:09</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST408');loadMainPopup('busStopPopupBoxMP15_2');" style="cursor:pointer;">Gyógyszertár</td><td id="startTimeTD18408">11:10</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST408');loadMainPopup('busStopPopupBoxMP16_2');" style="cursor:pointer;">Orvosi rendelő (Ellenirány)</td><td id="startTimeTD18409">11:11</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST408');loadMainPopup('busStopPopupBoxMP17_2');" style="cursor:pointer;">Csicsergő Óvoda (Ellenirány)</td><td id="startTimeTD18410">11:12</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST408');loadMainPopup('busStopPopupBoxMP18_2');" style="cursor:pointer;">Biai katolikus temető (Ellenirány)</td><td id="startTimeTD18411">11:14</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST408');loadMainPopup('busStopPopupBoxMP19_2');" style="cursor:pointer;">Szentháromság tér (dél felé)</td><td id="startTimeTD18412">11:16</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST408');loadMainPopup('busStopPopupBoxMP20_2');" style="cursor:pointer;">Kálvin tér (Sándor utca)</td><td id="startTimeTD18413">11:18</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST408');loadMainPopup('busStopPopupBoxMP21_2');" style="cursor:pointer;">Barackvirág utca (Ellenirány)</td><td id="startTimeTD18414">11:20</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST408');loadMainPopup('busStopPopupBoxMP22_2');" style="cursor:pointer;">Füzes utca (Ellenirány)</td><td id="startTimeTD18415">11:22</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST408');loadMainPopup('busStopPopupBoxMP23_2');" style="cursor:pointer;">Kolozsvári utca (Ellenirány)</td><td id="startTimeTD18416">11:24</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST408');loadMainPopup('busStopPopupBoxMP24_2');" style="cursor:pointer;">Vasút utca (Ellenirány)</td><td id="startTimeTD18417">11:25</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST408');loadMainPopup('busStopPopupBoxMP25_2');" style="cursor:pointer;">Faluház (Ellenirány)</td><td id="startTimeTD18418">11:27</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST408');loadMainPopup('busStopPopupBoxMP26_2');" style="cursor:pointer;">Völgyhíd (Ellenirány)</td><td id="startTimeTD18419">11:28</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST408');loadMainPopup('busStopPopupBoxMP27_2');" style="cursor:pointer;">Meggyfa utca (Ellenirány)</td><td id="startTimeTD18420">11:30</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST408');loadMainPopup('busStopPopupBoxMP28_2');" style="cursor:pointer;">Ritsmann Iskola (Ellenirány)</td><td id="startTimeTD18421">11:31</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST408');loadMainPopup('busStopPopupBoxMP29_2');" style="cursor:pointer;">Vasútállomás</td><td id="startTimeTD18422">11:33</td></tr> </table>
+</div>
+<a class="popupBoxClose" id="busStopPopupBoxMPST408" onclick="unloadPopupBox('busStopPopupBoxMPST408')">X</a>
+</div><div class="popup_box popuptext" id="busStopPopupBoxMPST409" style="width:600px;height:300px;">
+<h2>Járat menetrendje</h2>
+<h3>2</h3> <br/>
+<p ;"="" style="text-align: left; font-weight: bold;color: #F00">Megállóhelyek szerinti indulási idők megtekintéséhez kattintson a megállóhely nevére.</p>
+<div id="line-2-timetable-popup" style="overflow-y: auto;max-height:400px;">
+<table>
+<tr><th colspan="10" style="position: sticky; top: 0;">Indulási idő: 12:55</th></tr>
+<tr><td onclick="unloadPopupBox('busStopPopupBoxMPST409');loadMainPopup('busStopPopupBoxMP1_2');" style="cursor:pointer;">Vasútállomás</td><td id="startTimeTD18423">12:55</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST409');loadMainPopup('busStopPopupBoxMP2_2');" style="cursor:pointer;">Vendel tér (Ellenirány)</td><td id="startTimeTD18424">12:56</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST409');loadMainPopup('busStopPopupBoxMP3_2');" style="cursor:pointer;">Kishíd (Ellenirány)</td><td id="startTimeTD18425">12:57</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST409');loadMainPopup('busStopPopupBoxMP4_2');" style="cursor:pointer;">Pipacs utca (Ellenirány)</td><td id="startTimeTD18426">12:59</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST409');loadMainPopup('busStopPopupBoxMP5_2');" style="cursor:pointer;">Szent László utca (Ellenirány)</td><td id="startTimeTD18427">13:00</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST409');loadMainPopup('busStopPopupBoxMP6_2');" style="cursor:pointer;">Tavasz utca (Ellenirány)</td><td id="startTimeTD18428">13:01</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST409');loadMainPopup('busStopPopupBoxMP7_2');" style="cursor:pointer;">Ybl Miklós sétány (Ellenirány)</td><td id="startTimeTD18429">13:02</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST409');loadMainPopup('busStopPopupBoxMP8_2');" style="cursor:pointer;">Juhász Gyula utca (Ellenirány)</td><td id="startTimeTD18430">13:03</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST409');loadMainPopup('busStopPopupBoxMP9_2');" style="cursor:pointer;">Hámory Imre utca (Ellenirány)</td><td id="startTimeTD18431">13:04</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST409');loadMainPopup('busStopPopupBoxMP10_2');" style="cursor:pointer;">Meserét Óvoda (Ellenirány)</td><td id="startTimeTD18432">13:05</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST409');loadMainPopup('busStopPopupBoxMP11_2');" style="cursor:pointer;">Akácfa utca (Ellenirány)</td><td id="startTimeTD18433">13:06</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST409');loadMainPopup('busStopPopupBoxMP12_2');" style="cursor:pointer;">Mester utca (Ellenirány)</td><td id="startTimeTD18434">13:07</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST409');loadMainPopup('busStopPopupBoxMP13_2');" style="cursor:pointer;">Jókai utca (Ellenirány)</td><td id="startTimeTD18435">13:08</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST409');loadMainPopup('busStopPopupBoxMP14_2');" style="cursor:pointer;">József Attila utca (Ellenirány)</td><td id="startTimeTD18436">13:09</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST409');loadMainPopup('busStopPopupBoxMP15_2');" style="cursor:pointer;">Gyógyszertár</td><td id="startTimeTD18437">13:10</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST409');loadMainPopup('busStopPopupBoxMP16_2');" style="cursor:pointer;">Orvosi rendelő (Ellenirány)</td><td id="startTimeTD18438">13:11</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST409');loadMainPopup('busStopPopupBoxMP17_2');" style="cursor:pointer;">Csicsergő Óvoda (Ellenirány)</td><td id="startTimeTD18439">13:12</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST409');loadMainPopup('busStopPopupBoxMP18_2');" style="cursor:pointer;">Biai katolikus temető (Ellenirány)</td><td id="startTimeTD18440">13:14</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST409');loadMainPopup('busStopPopupBoxMP19_2');" style="cursor:pointer;">Szentháromság tér (dél felé)</td><td id="startTimeTD18441">13:16</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST409');loadMainPopup('busStopPopupBoxMP20_2');" style="cursor:pointer;">Kálvin tér (Sándor utca)</td><td id="startTimeTD18442">13:18</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST409');loadMainPopup('busStopPopupBoxMP21_2');" style="cursor:pointer;">Barackvirág utca (Ellenirány)</td><td id="startTimeTD18443">13:20</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST409');loadMainPopup('busStopPopupBoxMP22_2');" style="cursor:pointer;">Füzes utca (Ellenirány)</td><td id="startTimeTD18444">13:22</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST409');loadMainPopup('busStopPopupBoxMP23_2');" style="cursor:pointer;">Kolozsvári utca (Ellenirány)</td><td id="startTimeTD18445">13:24</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST409');loadMainPopup('busStopPopupBoxMP24_2');" style="cursor:pointer;">Vasút utca (Ellenirány)</td><td id="startTimeTD18446">13:25</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST409');loadMainPopup('busStopPopupBoxMP25_2');" style="cursor:pointer;">Faluház (Ellenirány)</td><td id="startTimeTD18447">13:27</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST409');loadMainPopup('busStopPopupBoxMP26_2');" style="cursor:pointer;">Völgyhíd (Ellenirány)</td><td id="startTimeTD18448">13:28</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST409');loadMainPopup('busStopPopupBoxMP27_2');" style="cursor:pointer;">Meggyfa utca (Ellenirány)</td><td id="startTimeTD18449">13:30</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST409');loadMainPopup('busStopPopupBoxMP28_2');" style="cursor:pointer;">Ritsmann Iskola (Ellenirány)</td><td id="startTimeTD18450">13:31</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST409');loadMainPopup('busStopPopupBoxMP29_2');" style="cursor:pointer;">Vasútállomás</td><td id="startTimeTD18451">13:33</td></tr> </table>
+</div>
+<a class="popupBoxClose" id="busStopPopupBoxMPST409" onclick="unloadPopupBox('busStopPopupBoxMPST409')">X</a>
+</div><div class="popup_box popuptext" id="busStopPopupBoxMPST410" style="width:600px;height:300px;">
+<h2>Járat menetrendje</h2>
+<h3>2</h3> <br/>
+<p ;"="" style="text-align: left; font-weight: bold;color: #F00">Megállóhelyek szerinti indulási idők megtekintéséhez kattintson a megállóhely nevére.</p>
+<div id="line-2-timetable-popup" style="overflow-y: auto;max-height:400px;">
+<table>
+<tr><th colspan="10" style="position: sticky; top: 0;">Indulási idő: 13:55</th></tr>
+<tr><td onclick="unloadPopupBox('busStopPopupBoxMPST410');loadMainPopup('busStopPopupBoxMP1_2');" style="cursor:pointer;">Vasútállomás</td><td id="startTimeTD18452">13:55</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST410');loadMainPopup('busStopPopupBoxMP2_2');" style="cursor:pointer;">Vendel tér (Ellenirány)</td><td id="startTimeTD18453">13:56</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST410');loadMainPopup('busStopPopupBoxMP3_2');" style="cursor:pointer;">Kishíd (Ellenirány)</td><td id="startTimeTD18454">13:57</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST410');loadMainPopup('busStopPopupBoxMP4_2');" style="cursor:pointer;">Pipacs utca (Ellenirány)</td><td id="startTimeTD18455">13:59</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST410');loadMainPopup('busStopPopupBoxMP5_2');" style="cursor:pointer;">Szent László utca (Ellenirány)</td><td id="startTimeTD18456">14:00</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST410');loadMainPopup('busStopPopupBoxMP6_2');" style="cursor:pointer;">Tavasz utca (Ellenirány)</td><td id="startTimeTD18457">14:01</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST410');loadMainPopup('busStopPopupBoxMP7_2');" style="cursor:pointer;">Ybl Miklós sétány (Ellenirány)</td><td id="startTimeTD18458">14:02</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST410');loadMainPopup('busStopPopupBoxMP8_2');" style="cursor:pointer;">Juhász Gyula utca (Ellenirány)</td><td id="startTimeTD18459">14:03</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST410');loadMainPopup('busStopPopupBoxMP9_2');" style="cursor:pointer;">Hámory Imre utca (Ellenirány)</td><td id="startTimeTD18460">14:04</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST410');loadMainPopup('busStopPopupBoxMP10_2');" style="cursor:pointer;">Meserét Óvoda (Ellenirány)</td><td id="startTimeTD18461">14:05</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST410');loadMainPopup('busStopPopupBoxMP11_2');" style="cursor:pointer;">Akácfa utca (Ellenirány)</td><td id="startTimeTD18462">14:06</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST410');loadMainPopup('busStopPopupBoxMP12_2');" style="cursor:pointer;">Mester utca (Ellenirány)</td><td id="startTimeTD18463">14:07</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST410');loadMainPopup('busStopPopupBoxMP13_2');" style="cursor:pointer;">Jókai utca (Ellenirány)</td><td id="startTimeTD18464">14:08</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST410');loadMainPopup('busStopPopupBoxMP14_2');" style="cursor:pointer;">József Attila utca (Ellenirány)</td><td id="startTimeTD18465">14:09</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST410');loadMainPopup('busStopPopupBoxMP15_2');" style="cursor:pointer;">Gyógyszertár</td><td id="startTimeTD18466">14:10</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST410');loadMainPopup('busStopPopupBoxMP16_2');" style="cursor:pointer;">Orvosi rendelő (Ellenirány)</td><td id="startTimeTD18467">14:11</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST410');loadMainPopup('busStopPopupBoxMP17_2');" style="cursor:pointer;">Csicsergő Óvoda (Ellenirány)</td><td id="startTimeTD18468">14:12</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST410');loadMainPopup('busStopPopupBoxMP18_2');" style="cursor:pointer;">Biai katolikus temető (Ellenirány)</td><td id="startTimeTD18469">14:14</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST410');loadMainPopup('busStopPopupBoxMP19_2');" style="cursor:pointer;">Szentháromság tér (dél felé)</td><td id="startTimeTD18470">14:16</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST410');loadMainPopup('busStopPopupBoxMP20_2');" style="cursor:pointer;">Kálvin tér (Sándor utca)</td><td id="startTimeTD18471">14:18</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST410');loadMainPopup('busStopPopupBoxMP21_2');" style="cursor:pointer;">Barackvirág utca (Ellenirány)</td><td id="startTimeTD18472">14:20</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST410');loadMainPopup('busStopPopupBoxMP22_2');" style="cursor:pointer;">Füzes utca (Ellenirány)</td><td id="startTimeTD18473">14:22</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST410');loadMainPopup('busStopPopupBoxMP23_2');" style="cursor:pointer;">Kolozsvári utca (Ellenirány)</td><td id="startTimeTD18474">14:24</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST410');loadMainPopup('busStopPopupBoxMP24_2');" style="cursor:pointer;">Vasút utca (Ellenirány)</td><td id="startTimeTD18475">14:25</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST410');loadMainPopup('busStopPopupBoxMP25_2');" style="cursor:pointer;">Faluház (Ellenirány)</td><td id="startTimeTD18476">14:27</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST410');loadMainPopup('busStopPopupBoxMP26_2');" style="cursor:pointer;">Völgyhíd (Ellenirány)</td><td id="startTimeTD18477">14:28</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST410');loadMainPopup('busStopPopupBoxMP27_2');" style="cursor:pointer;">Meggyfa utca (Ellenirány)</td><td id="startTimeTD18478">14:30</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST410');loadMainPopup('busStopPopupBoxMP28_2');" style="cursor:pointer;">Ritsmann Iskola (Ellenirány)</td><td id="startTimeTD18479">14:31</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST410');loadMainPopup('busStopPopupBoxMP29_2');" style="cursor:pointer;">Vasútállomás</td><td id="startTimeTD18480">14:33</td></tr> </table>
+</div>
+<a class="popupBoxClose" id="busStopPopupBoxMPST410" onclick="unloadPopupBox('busStopPopupBoxMPST410')">X</a>
+</div><div class="popup_box popuptext" id="busStopPopupBoxMPST411" style="width:600px;height:300px;">
+<h2>Járat menetrendje</h2>
+<h3>2</h3> <br/>
+<p ;"="" style="text-align: left; font-weight: bold;color: #F00">Megállóhelyek szerinti indulási idők megtekintéséhez kattintson a megállóhely nevére.</p>
+<div id="line-2-timetable-popup" style="overflow-y: auto;max-height:400px;">
+<table>
+<tr><th colspan="10" style="position: sticky; top: 0;">Indulási idő: 14:55</th></tr>
+<tr><td onclick="unloadPopupBox('busStopPopupBoxMPST411');loadMainPopup('busStopPopupBoxMP1_2');" style="cursor:pointer;">Vasútállomás</td><td id="startTimeTD18481">14:55</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST411');loadMainPopup('busStopPopupBoxMP2_2');" style="cursor:pointer;">Vendel tér (Ellenirány)</td><td id="startTimeTD18482">14:56</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST411');loadMainPopup('busStopPopupBoxMP3_2');" style="cursor:pointer;">Kishíd (Ellenirány)</td><td id="startTimeTD18483">14:57</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST411');loadMainPopup('busStopPopupBoxMP4_2');" style="cursor:pointer;">Pipacs utca (Ellenirány)</td><td id="startTimeTD18484">14:59</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST411');loadMainPopup('busStopPopupBoxMP5_2');" style="cursor:pointer;">Szent László utca (Ellenirány)</td><td id="startTimeTD18485">15:00</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST411');loadMainPopup('busStopPopupBoxMP6_2');" style="cursor:pointer;">Tavasz utca (Ellenirány)</td><td id="startTimeTD18486">15:01</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST411');loadMainPopup('busStopPopupBoxMP7_2');" style="cursor:pointer;">Ybl Miklós sétány (Ellenirány)</td><td id="startTimeTD18487">15:02</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST411');loadMainPopup('busStopPopupBoxMP8_2');" style="cursor:pointer;">Juhász Gyula utca (Ellenirány)</td><td id="startTimeTD18488">15:03</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST411');loadMainPopup('busStopPopupBoxMP9_2');" style="cursor:pointer;">Hámory Imre utca (Ellenirány)</td><td id="startTimeTD18489">15:04</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST411');loadMainPopup('busStopPopupBoxMP10_2');" style="cursor:pointer;">Meserét Óvoda (Ellenirány)</td><td id="startTimeTD18490">15:05</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST411');loadMainPopup('busStopPopupBoxMP11_2');" style="cursor:pointer;">Akácfa utca (Ellenirány)</td><td id="startTimeTD18491">15:06</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST411');loadMainPopup('busStopPopupBoxMP12_2');" style="cursor:pointer;">Mester utca (Ellenirány)</td><td id="startTimeTD18492">15:07</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST411');loadMainPopup('busStopPopupBoxMP13_2');" style="cursor:pointer;">Jókai utca (Ellenirány)</td><td id="startTimeTD18493">15:08</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST411');loadMainPopup('busStopPopupBoxMP14_2');" style="cursor:pointer;">József Attila utca (Ellenirány)</td><td id="startTimeTD18494">15:09</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST411');loadMainPopup('busStopPopupBoxMP15_2');" style="cursor:pointer;">Gyógyszertár</td><td id="startTimeTD18495">15:10</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST411');loadMainPopup('busStopPopupBoxMP16_2');" style="cursor:pointer;">Orvosi rendelő (Ellenirány)</td><td id="startTimeTD18496">15:11</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST411');loadMainPopup('busStopPopupBoxMP17_2');" style="cursor:pointer;">Csicsergő Óvoda (Ellenirány)</td><td id="startTimeTD18497">15:12</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST411');loadMainPopup('busStopPopupBoxMP18_2');" style="cursor:pointer;">Biai katolikus temető (Ellenirány)</td><td id="startTimeTD18498">15:14</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST411');loadMainPopup('busStopPopupBoxMP19_2');" style="cursor:pointer;">Szentháromság tér (dél felé)</td><td id="startTimeTD18499">15:16</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST411');loadMainPopup('busStopPopupBoxMP20_2');" style="cursor:pointer;">Kálvin tér (Sándor utca)</td><td id="startTimeTD18500">15:18</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST411');loadMainPopup('busStopPopupBoxMP21_2');" style="cursor:pointer;">Barackvirág utca (Ellenirány)</td><td id="startTimeTD18501">15:20</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST411');loadMainPopup('busStopPopupBoxMP22_2');" style="cursor:pointer;">Füzes utca (Ellenirány)</td><td id="startTimeTD18502">15:22</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST411');loadMainPopup('busStopPopupBoxMP23_2');" style="cursor:pointer;">Kolozsvári utca (Ellenirány)</td><td id="startTimeTD18503">15:24</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST411');loadMainPopup('busStopPopupBoxMP24_2');" style="cursor:pointer;">Vasút utca (Ellenirány)</td><td id="startTimeTD18504">15:25</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST411');loadMainPopup('busStopPopupBoxMP25_2');" style="cursor:pointer;">Faluház (Ellenirány)</td><td id="startTimeTD18505">15:27</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST411');loadMainPopup('busStopPopupBoxMP26_2');" style="cursor:pointer;">Völgyhíd (Ellenirány)</td><td id="startTimeTD18506">15:28</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST411');loadMainPopup('busStopPopupBoxMP27_2');" style="cursor:pointer;">Meggyfa utca (Ellenirány)</td><td id="startTimeTD18507">15:30</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST411');loadMainPopup('busStopPopupBoxMP28_2');" style="cursor:pointer;">Ritsmann Iskola (Ellenirány)</td><td id="startTimeTD18508">15:31</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST411');loadMainPopup('busStopPopupBoxMP29_2');" style="cursor:pointer;">Vasútállomás</td><td id="startTimeTD18509">15:33</td></tr> </table>
+</div>
+<a class="popupBoxClose" id="busStopPopupBoxMPST411" onclick="unloadPopupBox('busStopPopupBoxMPST411')">X</a>
+</div><div class="popup_box popuptext" id="busStopPopupBoxMPST412" style="width:600px;height:300px;">
+<h2>Járat menetrendje</h2>
+<h3>2</h3> <br/>
+<p ;"="" style="text-align: left; font-weight: bold;color: #F00">Megállóhelyek szerinti indulási idők megtekintéséhez kattintson a megállóhely nevére.</p>
+<div id="line-2-timetable-popup" style="overflow-y: auto;max-height:400px;">
+<table>
+<tr><th colspan="10" style="position: sticky; top: 0;">Indulási idő: 15:15</th></tr>
+<tr><td onclick="unloadPopupBox('busStopPopupBoxMPST412');loadMainPopup('busStopPopupBoxMP1_2');" style="cursor:pointer;">Vasútállomás</td><td id="startTimeTD18510">15:15</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST412');loadMainPopup('busStopPopupBoxMP2_2');" style="cursor:pointer;">Vendel tér (Ellenirány)</td><td id="startTimeTD18511">15:16</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST412');loadMainPopup('busStopPopupBoxMP3_2');" style="cursor:pointer;">Kishíd (Ellenirány)</td><td id="startTimeTD18512">15:17</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST412');loadMainPopup('busStopPopupBoxMP4_2');" style="cursor:pointer;">Pipacs utca (Ellenirány)</td><td id="startTimeTD18513">15:19</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST412');loadMainPopup('busStopPopupBoxMP5_2');" style="cursor:pointer;">Szent László utca (Ellenirány)</td><td id="startTimeTD18514">15:20</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST412');loadMainPopup('busStopPopupBoxMP6_2');" style="cursor:pointer;">Tavasz utca (Ellenirány)</td><td id="startTimeTD18515">15:21</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST412');loadMainPopup('busStopPopupBoxMP7_2');" style="cursor:pointer;">Ybl Miklós sétány (Ellenirány)</td><td id="startTimeTD18516">15:22</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST412');loadMainPopup('busStopPopupBoxMP8_2');" style="cursor:pointer;">Juhász Gyula utca (Ellenirány)</td><td id="startTimeTD18517">15:23</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST412');loadMainPopup('busStopPopupBoxMP9_2');" style="cursor:pointer;">Hámory Imre utca (Ellenirány)</td><td id="startTimeTD18518">15:24</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST412');loadMainPopup('busStopPopupBoxMP10_2');" style="cursor:pointer;">Meserét Óvoda (Ellenirány)</td><td id="startTimeTD18519">15:25</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST412');loadMainPopup('busStopPopupBoxMP11_2');" style="cursor:pointer;">Akácfa utca (Ellenirány)</td><td id="startTimeTD18520">15:26</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST412');loadMainPopup('busStopPopupBoxMP12_2');" style="cursor:pointer;">Mester utca (Ellenirány)</td><td id="startTimeTD18521">15:27</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST412');loadMainPopup('busStopPopupBoxMP13_2');" style="cursor:pointer;">Jókai utca (Ellenirány)</td><td id="startTimeTD18522">15:28</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST412');loadMainPopup('busStopPopupBoxMP14_2');" style="cursor:pointer;">József Attila utca (Ellenirány)</td><td id="startTimeTD18523">15:29</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST412');loadMainPopup('busStopPopupBoxMP15_2');" style="cursor:pointer;">Gyógyszertár</td><td id="startTimeTD18524">15:30</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST412');loadMainPopup('busStopPopupBoxMP16_2');" style="cursor:pointer;">Orvosi rendelő (Ellenirány)</td><td id="startTimeTD18525">15:31</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST412');loadMainPopup('busStopPopupBoxMP17_2');" style="cursor:pointer;">Csicsergő Óvoda (Ellenirány)</td><td id="startTimeTD18526">15:32</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST412');loadMainPopup('busStopPopupBoxMP18_2');" style="cursor:pointer;">Biai katolikus temető (Ellenirány)</td><td id="startTimeTD18527">15:34</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST412');loadMainPopup('busStopPopupBoxMP19_2');" style="cursor:pointer;">Szentháromság tér (dél felé)</td><td id="startTimeTD18528">15:36</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST412');loadMainPopup('busStopPopupBoxMP20_2');" style="cursor:pointer;">Kálvin tér (Sándor utca)</td><td id="startTimeTD18529">15:38</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST412');loadMainPopup('busStopPopupBoxMP21_2');" style="cursor:pointer;">Barackvirág utca (Ellenirány)</td><td id="startTimeTD18530">15:40</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST412');loadMainPopup('busStopPopupBoxMP22_2');" style="cursor:pointer;">Füzes utca (Ellenirány)</td><td id="startTimeTD18531">15:42</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST412');loadMainPopup('busStopPopupBoxMP23_2');" style="cursor:pointer;">Kolozsvári utca (Ellenirány)</td><td id="startTimeTD18532">15:44</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST412');loadMainPopup('busStopPopupBoxMP24_2');" style="cursor:pointer;">Vasút utca (Ellenirány)</td><td id="startTimeTD18533">15:45</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST412');loadMainPopup('busStopPopupBoxMP25_2');" style="cursor:pointer;">Faluház (Ellenirány)</td><td id="startTimeTD18534">15:47</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST412');loadMainPopup('busStopPopupBoxMP26_2');" style="cursor:pointer;">Völgyhíd (Ellenirány)</td><td id="startTimeTD18535">15:48</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST412');loadMainPopup('busStopPopupBoxMP27_2');" style="cursor:pointer;">Meggyfa utca (Ellenirány)</td><td id="startTimeTD18536">15:50</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST412');loadMainPopup('busStopPopupBoxMP28_2');" style="cursor:pointer;">Ritsmann Iskola (Ellenirány)</td><td id="startTimeTD18537">15:51</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST412');loadMainPopup('busStopPopupBoxMP29_2');" style="cursor:pointer;">Vasútállomás</td><td id="startTimeTD18538">15:53</td></tr> </table>
+</div>
+<a class="popupBoxClose" id="busStopPopupBoxMPST412" onclick="unloadPopupBox('busStopPopupBoxMPST412')">X</a>
+</div><div class="popup_box popuptext" id="busStopPopupBoxMPST413" style="width:600px;height:300px;">
+<h2>Járat menetrendje</h2>
+<h3>2</h3> <br/>
+<p ;"="" style="text-align: left; font-weight: bold;color: #F00">Megállóhelyek szerinti indulási idők megtekintéséhez kattintson a megállóhely nevére.</p>
+<div id="line-2-timetable-popup" style="overflow-y: auto;max-height:400px;">
+<table>
+<tr><th colspan="10" style="position: sticky; top: 0;">Indulási idő: 15:55</th></tr>
+<tr><td onclick="unloadPopupBox('busStopPopupBoxMPST413');loadMainPopup('busStopPopupBoxMP1_2');" style="cursor:pointer;">Vasútállomás</td><td id="startTimeTD18539">15:55</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST413');loadMainPopup('busStopPopupBoxMP2_2');" style="cursor:pointer;">Vendel tér (Ellenirány)</td><td id="startTimeTD18540">15:56</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST413');loadMainPopup('busStopPopupBoxMP3_2');" style="cursor:pointer;">Kishíd (Ellenirány)</td><td id="startTimeTD18541">15:57</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST413');loadMainPopup('busStopPopupBoxMP4_2');" style="cursor:pointer;">Pipacs utca (Ellenirány)</td><td id="startTimeTD18542">15:59</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST413');loadMainPopup('busStopPopupBoxMP5_2');" style="cursor:pointer;">Szent László utca (Ellenirány)</td><td id="startTimeTD18543">16:00</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST413');loadMainPopup('busStopPopupBoxMP6_2');" style="cursor:pointer;">Tavasz utca (Ellenirány)</td><td id="startTimeTD18544">16:01</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST413');loadMainPopup('busStopPopupBoxMP7_2');" style="cursor:pointer;">Ybl Miklós sétány (Ellenirány)</td><td id="startTimeTD18545">16:02</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST413');loadMainPopup('busStopPopupBoxMP8_2');" style="cursor:pointer;">Juhász Gyula utca (Ellenirány)</td><td id="startTimeTD18546">16:03</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST413');loadMainPopup('busStopPopupBoxMP9_2');" style="cursor:pointer;">Hámory Imre utca (Ellenirány)</td><td id="startTimeTD18547">16:04</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST413');loadMainPopup('busStopPopupBoxMP10_2');" style="cursor:pointer;">Meserét Óvoda (Ellenirány)</td><td id="startTimeTD18548">16:05</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST413');loadMainPopup('busStopPopupBoxMP11_2');" style="cursor:pointer;">Akácfa utca (Ellenirány)</td><td id="startTimeTD18549">16:06</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST413');loadMainPopup('busStopPopupBoxMP12_2');" style="cursor:pointer;">Mester utca (Ellenirány)</td><td id="startTimeTD18550">16:07</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST413');loadMainPopup('busStopPopupBoxMP13_2');" style="cursor:pointer;">Jókai utca (Ellenirány)</td><td id="startTimeTD18551">16:08</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST413');loadMainPopup('busStopPopupBoxMP14_2');" style="cursor:pointer;">József Attila utca (Ellenirány)</td><td id="startTimeTD18552">16:09</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST413');loadMainPopup('busStopPopupBoxMP15_2');" style="cursor:pointer;">Gyógyszertár</td><td id="startTimeTD18553">16:10</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST413');loadMainPopup('busStopPopupBoxMP16_2');" style="cursor:pointer;">Orvosi rendelő (Ellenirány)</td><td id="startTimeTD18554">16:11</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST413');loadMainPopup('busStopPopupBoxMP17_2');" style="cursor:pointer;">Csicsergő Óvoda (Ellenirány)</td><td id="startTimeTD18555">16:12</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST413');loadMainPopup('busStopPopupBoxMP18_2');" style="cursor:pointer;">Biai katolikus temető (Ellenirány)</td><td id="startTimeTD18556">16:14</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST413');loadMainPopup('busStopPopupBoxMP19_2');" style="cursor:pointer;">Szentháromság tér (dél felé)</td><td id="startTimeTD18557">16:16</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST413');loadMainPopup('busStopPopupBoxMP20_2');" style="cursor:pointer;">Kálvin tér (Sándor utca)</td><td id="startTimeTD18558">16:18</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST413');loadMainPopup('busStopPopupBoxMP21_2');" style="cursor:pointer;">Barackvirág utca (Ellenirány)</td><td id="startTimeTD18559">16:20</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST413');loadMainPopup('busStopPopupBoxMP22_2');" style="cursor:pointer;">Füzes utca (Ellenirány)</td><td id="startTimeTD18560">16:22</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST413');loadMainPopup('busStopPopupBoxMP23_2');" style="cursor:pointer;">Kolozsvári utca (Ellenirány)</td><td id="startTimeTD18561">16:24</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST413');loadMainPopup('busStopPopupBoxMP24_2');" style="cursor:pointer;">Vasút utca (Ellenirány)</td><td id="startTimeTD18562">16:25</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST413');loadMainPopup('busStopPopupBoxMP25_2');" style="cursor:pointer;">Faluház (Ellenirány)</td><td id="startTimeTD18563">16:27</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST413');loadMainPopup('busStopPopupBoxMP26_2');" style="cursor:pointer;">Völgyhíd (Ellenirány)</td><td id="startTimeTD18564">16:28</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST413');loadMainPopup('busStopPopupBoxMP27_2');" style="cursor:pointer;">Meggyfa utca (Ellenirány)</td><td id="startTimeTD18565">16:30</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST413');loadMainPopup('busStopPopupBoxMP28_2');" style="cursor:pointer;">Ritsmann Iskola (Ellenirány)</td><td id="startTimeTD18566">16:31</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST413');loadMainPopup('busStopPopupBoxMP29_2');" style="cursor:pointer;">Vasútállomás</td><td id="startTimeTD18567">16:33</td></tr> </table>
+</div>
+<a class="popupBoxClose" id="busStopPopupBoxMPST413" onclick="unloadPopupBox('busStopPopupBoxMPST413')">X</a>
+</div><div class="popup_box popuptext" id="busStopPopupBoxMPST414" style="width:600px;height:300px;">
+<h2>Járat menetrendje</h2>
+<h3>2</h3> <br/>
+<p ;"="" style="text-align: left; font-weight: bold;color: #F00">Megállóhelyek szerinti indulási idők megtekintéséhez kattintson a megállóhely nevére.</p>
+<div id="line-2-timetable-popup" style="overflow-y: auto;max-height:400px;">
+<table>
+<tr><th colspan="10" style="position: sticky; top: 0;">Indulási idő: 16:25</th></tr>
+<tr><td onclick="unloadPopupBox('busStopPopupBoxMPST414');loadMainPopup('busStopPopupBoxMP1_2');" style="cursor:pointer;">Vasútállomás</td><td id="startTimeTD18568">16:25</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST414');loadMainPopup('busStopPopupBoxMP2_2');" style="cursor:pointer;">Vendel tér (Ellenirány)</td><td id="startTimeTD18569">16:26</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST414');loadMainPopup('busStopPopupBoxMP3_2');" style="cursor:pointer;">Kishíd (Ellenirány)</td><td id="startTimeTD18570">16:27</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST414');loadMainPopup('busStopPopupBoxMP4_2');" style="cursor:pointer;">Pipacs utca (Ellenirány)</td><td id="startTimeTD18571">16:29</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST414');loadMainPopup('busStopPopupBoxMP5_2');" style="cursor:pointer;">Szent László utca (Ellenirány)</td><td id="startTimeTD18572">16:30</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST414');loadMainPopup('busStopPopupBoxMP6_2');" style="cursor:pointer;">Tavasz utca (Ellenirány)</td><td id="startTimeTD18573">16:31</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST414');loadMainPopup('busStopPopupBoxMP7_2');" style="cursor:pointer;">Ybl Miklós sétány (Ellenirány)</td><td id="startTimeTD18574">16:32</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST414');loadMainPopup('busStopPopupBoxMP8_2');" style="cursor:pointer;">Juhász Gyula utca (Ellenirány)</td><td id="startTimeTD18575">16:33</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST414');loadMainPopup('busStopPopupBoxMP9_2');" style="cursor:pointer;">Hámory Imre utca (Ellenirány)</td><td id="startTimeTD18576">16:34</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST414');loadMainPopup('busStopPopupBoxMP10_2');" style="cursor:pointer;">Meserét Óvoda (Ellenirány)</td><td id="startTimeTD18577">16:35</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST414');loadMainPopup('busStopPopupBoxMP11_2');" style="cursor:pointer;">Akácfa utca (Ellenirány)</td><td id="startTimeTD18578">16:36</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST414');loadMainPopup('busStopPopupBoxMP12_2');" style="cursor:pointer;">Mester utca (Ellenirány)</td><td id="startTimeTD18579">16:37</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST414');loadMainPopup('busStopPopupBoxMP13_2');" style="cursor:pointer;">Jókai utca (Ellenirány)</td><td id="startTimeTD18580">16:38</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST414');loadMainPopup('busStopPopupBoxMP14_2');" style="cursor:pointer;">József Attila utca (Ellenirány)</td><td id="startTimeTD18581">16:39</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST414');loadMainPopup('busStopPopupBoxMP15_2');" style="cursor:pointer;">Gyógyszertár</td><td id="startTimeTD18582">16:40</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST414');loadMainPopup('busStopPopupBoxMP16_2');" style="cursor:pointer;">Orvosi rendelő (Ellenirány)</td><td id="startTimeTD18583">16:41</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST414');loadMainPopup('busStopPopupBoxMP17_2');" style="cursor:pointer;">Csicsergő Óvoda (Ellenirány)</td><td id="startTimeTD18584">16:42</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST414');loadMainPopup('busStopPopupBoxMP18_2');" style="cursor:pointer;">Biai katolikus temető (Ellenirány)</td><td id="startTimeTD18585">16:44</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST414');loadMainPopup('busStopPopupBoxMP19_2');" style="cursor:pointer;">Szentháromság tér (dél felé)</td><td id="startTimeTD18586">16:46</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST414');loadMainPopup('busStopPopupBoxMP20_2');" style="cursor:pointer;">Kálvin tér (Sándor utca)</td><td id="startTimeTD18587">16:48</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST414');loadMainPopup('busStopPopupBoxMP21_2');" style="cursor:pointer;">Barackvirág utca (Ellenirány)</td><td id="startTimeTD18588">16:50</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST414');loadMainPopup('busStopPopupBoxMP22_2');" style="cursor:pointer;">Füzes utca (Ellenirány)</td><td id="startTimeTD18589">16:52</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST414');loadMainPopup('busStopPopupBoxMP23_2');" style="cursor:pointer;">Kolozsvári utca (Ellenirány)</td><td id="startTimeTD18590">16:54</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST414');loadMainPopup('busStopPopupBoxMP24_2');" style="cursor:pointer;">Vasút utca (Ellenirány)</td><td id="startTimeTD18591">16:55</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST414');loadMainPopup('busStopPopupBoxMP25_2');" style="cursor:pointer;">Faluház (Ellenirány)</td><td id="startTimeTD18592">16:57</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST414');loadMainPopup('busStopPopupBoxMP26_2');" style="cursor:pointer;">Völgyhíd (Ellenirány)</td><td id="startTimeTD18593">16:58</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST414');loadMainPopup('busStopPopupBoxMP27_2');" style="cursor:pointer;">Meggyfa utca (Ellenirány)</td><td id="startTimeTD18594">17:00</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST414');loadMainPopup('busStopPopupBoxMP28_2');" style="cursor:pointer;">Ritsmann Iskola (Ellenirány)</td><td id="startTimeTD18595">17:01</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST414');loadMainPopup('busStopPopupBoxMP29_2');" style="cursor:pointer;">Vasútállomás</td><td id="startTimeTD18596">17:03</td></tr> </table>
+</div>
+<a class="popupBoxClose" id="busStopPopupBoxMPST414" onclick="unloadPopupBox('busStopPopupBoxMPST414')">X</a>
+</div><div class="popup_box popuptext" id="busStopPopupBoxMPST415" style="width:600px;height:300px;">
+<h2>Járat menetrendje</h2>
+<h3>2</h3> <br/>
+<p ;"="" style="text-align: left; font-weight: bold;color: #F00">Megállóhelyek szerinti indulási idők megtekintéséhez kattintson a megállóhely nevére.</p>
+<div id="line-2-timetable-popup" style="overflow-y: auto;max-height:400px;">
+<table>
+<tr><th colspan="10" style="position: sticky; top: 0;">Indulási idő: 17:25</th></tr>
+<tr><td onclick="unloadPopupBox('busStopPopupBoxMPST415');loadMainPopup('busStopPopupBoxMP1_2');" style="cursor:pointer;">Vasútállomás</td><td id="startTimeTD18597">17:25</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST415');loadMainPopup('busStopPopupBoxMP2_2');" style="cursor:pointer;">Vendel tér (Ellenirány)</td><td id="startTimeTD18598">17:26</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST415');loadMainPopup('busStopPopupBoxMP3_2');" style="cursor:pointer;">Kishíd (Ellenirány)</td><td id="startTimeTD18599">17:27</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST415');loadMainPopup('busStopPopupBoxMP4_2');" style="cursor:pointer;">Pipacs utca (Ellenirány)</td><td id="startTimeTD18600">17:29</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST415');loadMainPopup('busStopPopupBoxMP5_2');" style="cursor:pointer;">Szent László utca (Ellenirány)</td><td id="startTimeTD18601">17:30</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST415');loadMainPopup('busStopPopupBoxMP6_2');" style="cursor:pointer;">Tavasz utca (Ellenirány)</td><td id="startTimeTD18602">17:31</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST415');loadMainPopup('busStopPopupBoxMP7_2');" style="cursor:pointer;">Ybl Miklós sétány (Ellenirány)</td><td id="startTimeTD18603">17:32</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST415');loadMainPopup('busStopPopupBoxMP8_2');" style="cursor:pointer;">Juhász Gyula utca (Ellenirány)</td><td id="startTimeTD18604">17:33</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST415');loadMainPopup('busStopPopupBoxMP9_2');" style="cursor:pointer;">Hámory Imre utca (Ellenirány)</td><td id="startTimeTD18605">17:34</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST415');loadMainPopup('busStopPopupBoxMP10_2');" style="cursor:pointer;">Meserét Óvoda (Ellenirány)</td><td id="startTimeTD18606">17:35</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST415');loadMainPopup('busStopPopupBoxMP11_2');" style="cursor:pointer;">Akácfa utca (Ellenirány)</td><td id="startTimeTD18607">17:36</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST415');loadMainPopup('busStopPopupBoxMP12_2');" style="cursor:pointer;">Mester utca (Ellenirány)</td><td id="startTimeTD18608">17:37</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST415');loadMainPopup('busStopPopupBoxMP13_2');" style="cursor:pointer;">Jókai utca (Ellenirány)</td><td id="startTimeTD18609">17:38</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST415');loadMainPopup('busStopPopupBoxMP14_2');" style="cursor:pointer;">József Attila utca (Ellenirány)</td><td id="startTimeTD18610">17:39</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST415');loadMainPopup('busStopPopupBoxMP15_2');" style="cursor:pointer;">Gyógyszertár</td><td id="startTimeTD18611">17:40</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST415');loadMainPopup('busStopPopupBoxMP16_2');" style="cursor:pointer;">Orvosi rendelő (Ellenirány)</td><td id="startTimeTD18612">17:41</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST415');loadMainPopup('busStopPopupBoxMP17_2');" style="cursor:pointer;">Csicsergő Óvoda (Ellenirány)</td><td id="startTimeTD18613">17:42</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST415');loadMainPopup('busStopPopupBoxMP18_2');" style="cursor:pointer;">Biai katolikus temető (Ellenirány)</td><td id="startTimeTD18614">17:44</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST415');loadMainPopup('busStopPopupBoxMP19_2');" style="cursor:pointer;">Szentháromság tér (dél felé)</td><td id="startTimeTD18615">17:46</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST415');loadMainPopup('busStopPopupBoxMP20_2');" style="cursor:pointer;">Kálvin tér (Sándor utca)</td><td id="startTimeTD18616">17:48</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST415');loadMainPopup('busStopPopupBoxMP21_2');" style="cursor:pointer;">Barackvirág utca (Ellenirány)</td><td id="startTimeTD18617">17:50</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST415');loadMainPopup('busStopPopupBoxMP22_2');" style="cursor:pointer;">Füzes utca (Ellenirány)</td><td id="startTimeTD18618">17:52</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST415');loadMainPopup('busStopPopupBoxMP23_2');" style="cursor:pointer;">Kolozsvári utca (Ellenirány)</td><td id="startTimeTD18619">17:54</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST415');loadMainPopup('busStopPopupBoxMP24_2');" style="cursor:pointer;">Vasút utca (Ellenirány)</td><td id="startTimeTD18620">17:55</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST415');loadMainPopup('busStopPopupBoxMP25_2');" style="cursor:pointer;">Faluház (Ellenirány)</td><td id="startTimeTD18621">17:57</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST415');loadMainPopup('busStopPopupBoxMP26_2');" style="cursor:pointer;">Völgyhíd (Ellenirány)</td><td id="startTimeTD18622">17:58</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST415');loadMainPopup('busStopPopupBoxMP27_2');" style="cursor:pointer;">Meggyfa utca (Ellenirány)</td><td id="startTimeTD18623">18:00</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST415');loadMainPopup('busStopPopupBoxMP28_2');" style="cursor:pointer;">Ritsmann Iskola (Ellenirány)</td><td id="startTimeTD18624">18:01</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST415');loadMainPopup('busStopPopupBoxMP29_2');" style="cursor:pointer;">Vasútállomás</td><td id="startTimeTD18625">18:03</td></tr> </table>
+</div>
+<a class="popupBoxClose" id="busStopPopupBoxMPST415" onclick="unloadPopupBox('busStopPopupBoxMPST415')">X</a>
+</div><div class="popup_box popuptext" id="busStopPopupBoxMPST416" style="width:600px;height:300px;">
+<h2>Járat menetrendje</h2>
+<h3>2</h3> <br/>
+<p ;"="" style="text-align: left; font-weight: bold;color: #F00">Megállóhelyek szerinti indulási idők megtekintéséhez kattintson a megállóhely nevére.</p>
+<div id="line-2-timetable-popup" style="overflow-y: auto;max-height:400px;">
+<table>
+<tr><th colspan="10" style="position: sticky; top: 0;">Indulási idő: 18:25</th></tr>
+<tr><td onclick="unloadPopupBox('busStopPopupBoxMPST416');loadMainPopup('busStopPopupBoxMP1_2');" style="cursor:pointer;">Vasútállomás</td><td id="startTimeTD18626">18:25</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST416');loadMainPopup('busStopPopupBoxMP2_2');" style="cursor:pointer;">Vendel tér (Ellenirány)</td><td id="startTimeTD18627">18:26</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST416');loadMainPopup('busStopPopupBoxMP3_2');" style="cursor:pointer;">Kishíd (Ellenirány)</td><td id="startTimeTD18628">18:27</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST416');loadMainPopup('busStopPopupBoxMP4_2');" style="cursor:pointer;">Pipacs utca (Ellenirány)</td><td id="startTimeTD18629">18:29</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST416');loadMainPopup('busStopPopupBoxMP5_2');" style="cursor:pointer;">Szent László utca (Ellenirány)</td><td id="startTimeTD18630">18:30</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST416');loadMainPopup('busStopPopupBoxMP6_2');" style="cursor:pointer;">Tavasz utca (Ellenirány)</td><td id="startTimeTD18631">18:31</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST416');loadMainPopup('busStopPopupBoxMP7_2');" style="cursor:pointer;">Ybl Miklós sétány (Ellenirány)</td><td id="startTimeTD18632">18:32</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST416');loadMainPopup('busStopPopupBoxMP8_2');" style="cursor:pointer;">Juhász Gyula utca (Ellenirány)</td><td id="startTimeTD18633">18:33</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST416');loadMainPopup('busStopPopupBoxMP9_2');" style="cursor:pointer;">Hámory Imre utca (Ellenirány)</td><td id="startTimeTD18634">18:34</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST416');loadMainPopup('busStopPopupBoxMP10_2');" style="cursor:pointer;">Meserét Óvoda (Ellenirány)</td><td id="startTimeTD18635">18:35</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST416');loadMainPopup('busStopPopupBoxMP11_2');" style="cursor:pointer;">Akácfa utca (Ellenirány)</td><td id="startTimeTD18636">18:36</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST416');loadMainPopup('busStopPopupBoxMP12_2');" style="cursor:pointer;">Mester utca (Ellenirány)</td><td id="startTimeTD18637">18:37</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST416');loadMainPopup('busStopPopupBoxMP13_2');" style="cursor:pointer;">Jókai utca (Ellenirány)</td><td id="startTimeTD18638">18:38</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST416');loadMainPopup('busStopPopupBoxMP14_2');" style="cursor:pointer;">József Attila utca (Ellenirány)</td><td id="startTimeTD18639">18:39</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST416');loadMainPopup('busStopPopupBoxMP15_2');" style="cursor:pointer;">Gyógyszertár</td><td id="startTimeTD18640">18:40</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST416');loadMainPopup('busStopPopupBoxMP16_2');" style="cursor:pointer;">Orvosi rendelő (Ellenirány)</td><td id="startTimeTD18641">18:41</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST416');loadMainPopup('busStopPopupBoxMP17_2');" style="cursor:pointer;">Csicsergő Óvoda (Ellenirány)</td><td id="startTimeTD18642">18:42</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST416');loadMainPopup('busStopPopupBoxMP18_2');" style="cursor:pointer;">Biai katolikus temető (Ellenirány)</td><td id="startTimeTD18643">18:44</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST416');loadMainPopup('busStopPopupBoxMP19_2');" style="cursor:pointer;">Szentháromság tér (dél felé)</td><td id="startTimeTD18644">18:46</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST416');loadMainPopup('busStopPopupBoxMP20_2');" style="cursor:pointer;">Kálvin tér (Sándor utca)</td><td id="startTimeTD18645">18:48</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST416');loadMainPopup('busStopPopupBoxMP21_2');" style="cursor:pointer;">Barackvirág utca (Ellenirány)</td><td id="startTimeTD18646">18:50</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST416');loadMainPopup('busStopPopupBoxMP22_2');" style="cursor:pointer;">Füzes utca (Ellenirány)</td><td id="startTimeTD18647">18:52</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST416');loadMainPopup('busStopPopupBoxMP23_2');" style="cursor:pointer;">Kolozsvári utca (Ellenirány)</td><td id="startTimeTD18648">18:54</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST416');loadMainPopup('busStopPopupBoxMP24_2');" style="cursor:pointer;">Vasút utca (Ellenirány)</td><td id="startTimeTD18649">18:55</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST416');loadMainPopup('busStopPopupBoxMP25_2');" style="cursor:pointer;">Faluház (Ellenirány)</td><td id="startTimeTD18650">18:57</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST416');loadMainPopup('busStopPopupBoxMP26_2');" style="cursor:pointer;">Völgyhíd (Ellenirány)</td><td id="startTimeTD18651">18:58</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST416');loadMainPopup('busStopPopupBoxMP27_2');" style="cursor:pointer;">Meggyfa utca (Ellenirány)</td><td id="startTimeTD18652">19:00</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST416');loadMainPopup('busStopPopupBoxMP28_2');" style="cursor:pointer;">Ritsmann Iskola (Ellenirány)</td><td id="startTimeTD18653">19:01</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST416');loadMainPopup('busStopPopupBoxMP29_2');" style="cursor:pointer;">Vasútállomás</td><td id="startTimeTD18654">19:03</td></tr> </table>
+</div>
+<a class="popupBoxClose" id="busStopPopupBoxMPST416" onclick="unloadPopupBox('busStopPopupBoxMPST416')">X</a>
+</div><div class="popup_box popuptext" id="busStopPopupBoxMPST417" style="width:600px;height:300px;">
+<h2>Járat menetrendje</h2>
+<h3>2</h3> <br/>
+<p ;"="" style="text-align: left; font-weight: bold;color: #F00">Megállóhelyek szerinti indulási idők megtekintéséhez kattintson a megállóhely nevére.</p>
+<div id="line-2-timetable-popup" style="overflow-y: auto;max-height:400px;">
+<table>
+<tr><th colspan="10" style="position: sticky; top: 0;">Indulási idő: 19:55</th></tr>
+<tr><td onclick="unloadPopupBox('busStopPopupBoxMPST417');loadMainPopup('busStopPopupBoxMP1_2');" style="cursor:pointer;">Vasútállomás</td><td id="startTimeTD18655">19:55</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST417');loadMainPopup('busStopPopupBoxMP2_2');" style="cursor:pointer;">Vendel tér (Ellenirány)</td><td id="startTimeTD18656">19:56</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST417');loadMainPopup('busStopPopupBoxMP3_2');" style="cursor:pointer;">Kishíd (Ellenirány)</td><td id="startTimeTD18657">19:57</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST417');loadMainPopup('busStopPopupBoxMP4_2');" style="cursor:pointer;">Pipacs utca (Ellenirány)</td><td id="startTimeTD18658">19:59</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST417');loadMainPopup('busStopPopupBoxMP5_2');" style="cursor:pointer;">Szent László utca (Ellenirány)</td><td id="startTimeTD18659">20:00</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST417');loadMainPopup('busStopPopupBoxMP6_2');" style="cursor:pointer;">Tavasz utca (Ellenirány)</td><td id="startTimeTD18660">20:01</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST417');loadMainPopup('busStopPopupBoxMP7_2');" style="cursor:pointer;">Ybl Miklós sétány (Ellenirány)</td><td id="startTimeTD18661">20:02</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST417');loadMainPopup('busStopPopupBoxMP8_2');" style="cursor:pointer;">Juhász Gyula utca (Ellenirány)</td><td id="startTimeTD18662">20:03</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST417');loadMainPopup('busStopPopupBoxMP9_2');" style="cursor:pointer;">Hámory Imre utca (Ellenirány)</td><td id="startTimeTD18663">20:04</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST417');loadMainPopup('busStopPopupBoxMP10_2');" style="cursor:pointer;">Meserét Óvoda (Ellenirány)</td><td id="startTimeTD18664">20:05</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST417');loadMainPopup('busStopPopupBoxMP11_2');" style="cursor:pointer;">Akácfa utca (Ellenirány)</td><td id="startTimeTD18665">20:06</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST417');loadMainPopup('busStopPopupBoxMP12_2');" style="cursor:pointer;">Mester utca (Ellenirány)</td><td id="startTimeTD18666">20:07</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST417');loadMainPopup('busStopPopupBoxMP13_2');" style="cursor:pointer;">Jókai utca (Ellenirány)</td><td id="startTimeTD18667">20:08</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST417');loadMainPopup('busStopPopupBoxMP14_2');" style="cursor:pointer;">József Attila utca (Ellenirány)</td><td id="startTimeTD18668">20:09</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST417');loadMainPopup('busStopPopupBoxMP15_2');" style="cursor:pointer;">Gyógyszertár</td><td id="startTimeTD18669">20:10</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST417');loadMainPopup('busStopPopupBoxMP16_2');" style="cursor:pointer;">Orvosi rendelő (Ellenirány)</td><td id="startTimeTD18670">20:11</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST417');loadMainPopup('busStopPopupBoxMP17_2');" style="cursor:pointer;">Csicsergő Óvoda (Ellenirány)</td><td id="startTimeTD18671">20:12</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST417');loadMainPopup('busStopPopupBoxMP18_2');" style="cursor:pointer;">Biai katolikus temető (Ellenirány)</td><td id="startTimeTD18672">20:14</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST417');loadMainPopup('busStopPopupBoxMP19_2');" style="cursor:pointer;">Szentháromság tér (dél felé)</td><td id="startTimeTD18673">20:16</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST417');loadMainPopup('busStopPopupBoxMP20_2');" style="cursor:pointer;">Kálvin tér (Sándor utca)</td><td id="startTimeTD18674">20:18</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST417');loadMainPopup('busStopPopupBoxMP21_2');" style="cursor:pointer;">Barackvirág utca (Ellenirány)</td><td id="startTimeTD18675">20:20</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST417');loadMainPopup('busStopPopupBoxMP22_2');" style="cursor:pointer;">Füzes utca (Ellenirány)</td><td id="startTimeTD18676">20:22</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST417');loadMainPopup('busStopPopupBoxMP23_2');" style="cursor:pointer;">Kolozsvári utca (Ellenirány)</td><td id="startTimeTD18677">20:24</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST417');loadMainPopup('busStopPopupBoxMP24_2');" style="cursor:pointer;">Vasút utca (Ellenirány)</td><td id="startTimeTD18678">20:25</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST417');loadMainPopup('busStopPopupBoxMP25_2');" style="cursor:pointer;">Faluház (Ellenirány)</td><td id="startTimeTD18679">20:27</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST417');loadMainPopup('busStopPopupBoxMP26_2');" style="cursor:pointer;">Völgyhíd (Ellenirány)</td><td id="startTimeTD18680">20:28</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST417');loadMainPopup('busStopPopupBoxMP27_2');" style="cursor:pointer;">Meggyfa utca (Ellenirány)</td><td id="startTimeTD18681">20:30</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST417');loadMainPopup('busStopPopupBoxMP28_2');" style="cursor:pointer;">Ritsmann Iskola (Ellenirány)</td><td id="startTimeTD18682">20:31</td></tr><tr><td onclick="unloadPopupBox('busStopPopupBoxMPST417');loadMainPopup('busStopPopupBoxMP29_2');" style="cursor:pointer;">Vasútállomás</td><td id="startTimeTD18683">20:33</td></tr> </table>
+</div>
+<a class="popupBoxClose" id="busStopPopupBoxMPST417" onclick="unloadPopupBox('busStopPopupBoxMPST417')">X</a>
+</div></body></html>

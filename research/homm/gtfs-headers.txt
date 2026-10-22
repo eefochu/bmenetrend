@@ -1,0 +1,13 @@
+HTTP/2 200 
+server: nginx
+date: Thu, 22 Oct 2026 13:50:40 GMT
+content-type: application/octet-stream
+content-length: 51199
+pragma: public
+expires: 0
+cache-control: public
+content-description: File Transfer
+content-disposition: attachment; filename="gtfs.zip"
+content-transfer-encoding: binary
+server-timing: rt;dur=2.158;desc=Process-Time
+

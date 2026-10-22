@@ -1,0 +1,11 @@
+<resources>
+    <string name="data_network_unavailable">%1$s: connection unavailable. Saved stops and routes are shown; departures require a timetable verified today.</string>
+    <string name="data_source_changed">%1$s: the official timetable changed. Stops and routes remain available; timetable departures await a verified update.</string>
+    <string name="data_live_unavailable">%1$s: live vehicle data is unavailable. Departures are scheduled.</string>
+    <string name="data_no_fresh_vehicles">%1$s: no fresh vehicle positions. Departures are scheduled.</string>
+    <string name="data_live_positions_only">%1$s: live vehicle positions. Departures are scheduled because the GPS feed does not identify routes.</string>
+    <string name="data_all_live_unavailable">Live vehicle data is currently unavailable from both operators. Departures are scheduled.</string>
+    <string name="data_calendar_unreviewed">%1$s: the %2$d service calendar has not been verified. Stops and routes remain available.</string>
+    <string name="data_no_verified_timetable">%1$s: no timetable verified for today. Stops and routes remain available.</string>
+    <string name="data_no_service_today">%1$s: no scheduled service today under the verified calendar. Stops and routes remain available.</string>
+</resources>

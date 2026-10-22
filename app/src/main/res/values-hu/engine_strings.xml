@@ -1,0 +1,15 @@
+<resources>
+    <string name="engine_location_denied">Helyhozzáférés nélkül válassz megállót a térképen vagy a keresőben.</string>
+    <string name="engine_locating">Helyzet meghatározása…</string>
+    <string name="engine_location_disabled">A helymeghatározás ki van kapcsolva. Válassz megállót, vagy kapcsold be a helyzetet.</string>
+    <string name="engine_location_disabled_browsing">A helymeghatározás ki van kapcsolva. A térkép és a kereső így is használható.</string>
+    <string name="engine_location_required">A legközelebbi megállóhoz helyhozzáférés szükséges.</string>
+    <string name="engine_live_unavailable">Az élő adatok most nem érhetők el. Ellenőrizd az internetkapcsolatot; automatikusan újrapróbáljuk.</string>
+    <string name="engine_live_positions">Élő járműpozíciók · a járatonkénti indulások menetrendiek</string>
+    <string name="engine_no_live_positions">Jelenleg nincs friss járműpozíció · menetrendi indulások</string>
+    <string name="engine_map_unavailable">A térképalap nem tölthető be. A megállókat a keresőből is eléred.</string>
+    <string name="engine_vehicle_bus">BUSZ</string>
+    <string name="engine_no_vehicle_route">A forrás nem közöl járatszámot</string>
+    <string name="engine_gps_time">GPS: %1$s</string>
+    <string name="engine_you_are_here">Itt vagy</string>
+</resources>

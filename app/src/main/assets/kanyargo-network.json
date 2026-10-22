@@ -1,0 +1,4516 @@
+{
+  "schemaVersion": 2,
+  "fetchedAt": "2026-10-22T13:05:00Z",
+  "source": "https://kanyargo.paty.hu/",
+  "serviceDate": null,
+  "calendarLabel": "school_calendar",
+  "providerServiceDates": {
+    "kanyargo": null
+  },
+  "stops": [
+    {
+      "id": "kanyargo:19",
+      "name": "Bocskai iskola",
+      "lat": 47.514907,
+      "lon": 18.823609,
+      "routeIds": [
+        "kanyargo:1A",
+        "kanyargo:1D",
+        "kanyargo:1J",
+        "kanyargo:1M",
+        "kanyargo:1MT"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:2",
+      "name": "Iskola utca - Nyugati irány",
+      "lat": 47.51404162,
+      "lon": 18.82643119,
+      "routeIds": [
+        "kanyargo:1A",
+        "kanyargo:1J",
+        "kanyargo:1M",
+        "kanyargo:1MT",
+        "kanyargo:1MV",
+        "kanyargo:1V"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:3",
+      "name": "Telki elágazás",
+      "lat": 47.515512,
+      "lon": 18.830919,
+      "routeIds": [
+        "kanyargo:1A",
+        "kanyargo:1J",
+        "kanyargo:1M",
+        "kanyargo:1MT",
+        "kanyargo:1MV",
+        "kanyargo:1V"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:4",
+      "name": "Harangláb",
+      "lat": 47.515523,
+      "lon": 18.833352,
+      "routeIds": [
+        "kanyargo:1A",
+        "kanyargo:1M",
+        "kanyargo:1MT",
+        "kanyargo:1MV",
+        "kanyargo:1V"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:5",
+      "name": "Kossuth utca",
+      "lat": 47.512754,
+      "lon": 18.833066,
+      "routeIds": [
+        "kanyargo:1A",
+        "kanyargo:1M",
+        "kanyargo:1MT",
+        "kanyargo:1MV",
+        "kanyargo:1V"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:7",
+      "name": "Burgondia utca",
+      "lat": 47.511219,
+      "lon": 18.839014,
+      "routeIds": [
+        "kanyargo:1A",
+        "kanyargo:1D",
+        "kanyargo:1M",
+        "kanyargo:1MT",
+        "kanyargo:1MV",
+        "kanyargo:1V"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:45",
+      "name": "Galagonya utca",
+      "lat": 47.509245,
+      "lon": 18.848384,
+      "routeIds": [
+        "kanyargo:1M",
+        "kanyargo:1MT",
+        "kanyargo:1MV"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:44",
+      "name": "Rigó utca",
+      "lat": 47.51042,
+      "lon": 18.854524,
+      "routeIds": [
+        "kanyargo:1M",
+        "kanyargo:1MT",
+        "kanyargo:1MV"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:43",
+      "name": "Hársfa utca",
+      "lat": 47.507407,
+      "lon": 18.85696,
+      "routeIds": [
+        "kanyargo:1M",
+        "kanyargo:1MT",
+        "kanyargo:1MV"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:46",
+      "name": "Mézeshegy",
+      "lat": 47.50691456,
+      "lon": 18.85443371,
+      "routeIds": [
+        "kanyargo:1M",
+        "kanyargo:1MT",
+        "kanyargo:1MV"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:8",
+      "name": "Bánya utca",
+      "lat": 47.512956,
+      "lon": 18.841614,
+      "routeIds": [
+        "kanyargo:1A",
+        "kanyargo:1D",
+        "kanyargo:1M",
+        "kanyargo:1MT",
+        "kanyargo:1MV",
+        "kanyargo:1V"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:9",
+      "name": "Rét köz",
+      "lat": 47.515979,
+      "lon": 18.840016,
+      "routeIds": [
+        "kanyargo:1A",
+        "kanyargo:1D",
+        "kanyargo:1M",
+        "kanyargo:1MT",
+        "kanyargo:1MV",
+        "kanyargo:1V"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:10",
+      "name": "Páskom utca",
+      "lat": 47.518377,
+      "lon": 18.838276,
+      "routeIds": [
+        "kanyargo:1A",
+        "kanyargo:1D",
+        "kanyargo:1M",
+        "kanyargo:1MT",
+        "kanyargo:1MV",
+        "kanyargo:1V"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:11",
+      "name": "Füzespatak utca",
+      "lat": 47.520101,
+      "lon": 18.834448,
+      "routeIds": [
+        "kanyargo:1A",
+        "kanyargo:1D",
+        "kanyargo:1M",
+        "kanyargo:1MT",
+        "kanyargo:1MV",
+        "kanyargo:1V"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:12",
+      "name": "Völgy utca",
+      "lat": 47.523025,
+      "lon": 18.834237,
+      "routeIds": [
+        "kanyargo:1A",
+        "kanyargo:1J",
+        "kanyargo:1M",
+        "kanyargo:1MT",
+        "kanyargo:1MV",
+        "kanyargo:1V"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:13",
+      "name": "Nyírfa utca",
+      "lat": 47.524052,
+      "lon": 18.830224,
+      "routeIds": [
+        "kanyargo:1A",
+        "kanyargo:1J",
+        "kanyargo:1M",
+        "kanyargo:1MT",
+        "kanyargo:1MV",
+        "kanyargo:1V"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:14",
+      "name": "Játszótér",
+      "lat": 47.522266,
+      "lon": 18.828119,
+      "routeIds": [
+        "kanyargo:1A",
+        "kanyargo:1J",
+        "kanyargo:1M",
+        "kanyargo:1MT",
+        "kanyargo:1MV",
+        "kanyargo:1V"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:15",
+      "name": "Árpád utca",
+      "lat": 47.52012,
+      "lon": 18.822734,
+      "routeIds": [
+        "kanyargo:1A",
+        "kanyargo:1J",
+        "kanyargo:1M",
+        "kanyargo:1MT",
+        "kanyargo:1MV",
+        "kanyargo:1V"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:16",
+      "name": "Petőfi Sándor utca",
+      "lat": 47.517006,
+      "lon": 18.824952,
+      "routeIds": [
+        "kanyargo:1A",
+        "kanyargo:1J",
+        "kanyargo:1M",
+        "kanyargo:1MT",
+        "kanyargo:1MV",
+        "kanyargo:1V"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:47",
+      "name": "Bocskai köz",
+      "lat": 47.51376288,
+      "lon": 18.82437237,
+      "routeIds": [
+        "kanyargo:1J"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:36",
+      "name": "Töki út - Nyugat felé",
+      "lat": 47.512183,
+      "lon": 18.817411,
+      "routeIds": [
+        "kanyargo:1A",
+        "kanyargo:1MT",
+        "kanyargo:1T",
+        "kanyargo:1V"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:23",
+      "name": "Boglárka utca",
+      "lat": 47.51561,
+      "lon": 18.813651,
+      "routeIds": [
+        "kanyargo:1A",
+        "kanyargo:1MT",
+        "kanyargo:1T",
+        "kanyargo:1V"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:24",
+      "name": "Vízműtelep",
+      "lat": 47.512776,
+      "lon": 18.817833,
+      "routeIds": [
+        "kanyargo:1A",
+        "kanyargo:1MT",
+        "kanyargo:1T",
+        "kanyargo:1V"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:25",
+      "name": "Levendula otthon",
+      "lat": 47.514487,
+      "lon": 18.821822,
+      "routeIds": [
+        "kanyargo:1A",
+        "kanyargo:1MT",
+        "kanyargo:1MV",
+        "kanyargo:1T"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:26",
+      "name": "Rendőrség",
+      "lat": 47.510996,
+      "lon": 18.824227,
+      "routeIds": [
+        "kanyargo:1A",
+        "kanyargo:1J",
+        "kanyargo:1M",
+        "kanyargo:1MV",
+        "kanyargo:1T",
+        "kanyargo:1V"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:27",
+      "name": "Torbágyi út 10. - Vasútállomás felé",
+      "lat": 47.505003,
+      "lon": 18.824688,
+      "routeIds": [
+        "kanyargo:1M",
+        "kanyargo:1MV",
+        "kanyargo:1V"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:28",
+      "name": "Téglagyár - Vasútállomás felé",
+      "lat": 47.494174,
+      "lon": 18.824661,
+      "routeIds": [
+        "kanyargo:1M",
+        "kanyargo:1MV",
+        "kanyargo:1V"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:42",
+      "name": "Biatorbágy, Vendel tér - Vasútállomás felé",
+      "lat": 47.478029,
+      "lon": 18.829206,
+      "routeIds": [
+        "kanyargo:1A",
+        "kanyargo:1D",
+        "kanyargo:1M",
+        "kanyargo:1MV",
+        "kanyargo:1T",
+        "kanyargo:1V"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:29",
+      "name": "Biatorbágy VÁ (érk.)",
+      "lat": 47.479802,
+      "lon": 18.833996,
+      "routeIds": [
+        "kanyargo:1M",
+        "kanyargo:1MV",
+        "kanyargo:1V"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:30",
+      "name": "Biatorbágy VÁ (in.)",
+      "lat": 47.47988,
+      "lon": 18.834033,
+      "routeIds": [
+        "kanyargo:1A",
+        "kanyargo:1D",
+        "kanyargo:1M",
+        "kanyargo:1MV",
+        "kanyargo:1T",
+        "kanyargo:1V"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:38",
+      "name": "Téglagyár - Páty felé",
+      "lat": 47.494222,
+      "lon": 18.824813,
+      "routeIds": [
+        "kanyargo:1D",
+        "kanyargo:1M",
+        "kanyargo:1MV",
+        "kanyargo:1V"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:37",
+      "name": "Torbágyi út 10 - Páty felé",
+      "lat": 47.505429,
+      "lon": 18.824698,
+      "routeIds": [
+        "kanyargo:1D",
+        "kanyargo:1M",
+        "kanyargo:1MV",
+        "kanyargo:1V"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:1",
+      "name": "Községháza",
+      "lat": 47.511071,
+      "lon": 18.825765,
+      "routeIds": [
+        "kanyargo:1A",
+        "kanyargo:1D",
+        "kanyargo:1M",
+        "kanyargo:1MV",
+        "kanyargo:1T",
+        "kanyargo:1V"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:48",
+      "name": "Biatorbágy, BIT (Juhász Gy. u.)",
+      "lat": 47.47882416,
+      "lon": 18.81148676,
+      "routeIds": [
+        "kanyargo:1J"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:50",
+      "name": "Biatorbágy, Ritsmann iskola",
+      "lat": 47.477433,
+      "lon": 18.832112,
+      "routeIds": [
+        "kanyargo:1A",
+        "kanyargo:1MV",
+        "kanyargo:1T"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:51",
+      "name": "Biatorbágy, Szentháromság tér",
+      "lat": 47.465113,
+      "lon": 18.808408,
+      "routeIds": [
+        "kanyargo:1A",
+        "kanyargo:1M",
+        "kanyargo:1MV",
+        "kanyargo:1T"
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:49",
+      "name": "Biatorbágy, BIT (VOLÁN m.)",
+      "lat": 47.48015,
+      "lon": 18.80908,
+      "routeIds": [
+        "kanyargo:1MV",
+        "kanyargo:1T"
+      ],
+      "providerId": "kanyargo"
+    }
+  ],
+  "routes": [
+    {
+      "id": "kanyargo:1A",
+      "number": "1A",
+      "name": "KanyarGO 1A",
+      "directions": [
+        {
+          "id": "kanyargo:d6208c310bc6",
+          "name": "Iskola utca - Nyugati irány → Iskola utca - Nyugati irány",
+          "stopIds": [
+            "kanyargo:2",
+            "kanyargo:3",
+            "kanyargo:4",
+            "kanyargo:5",
+            "kanyargo:7",
+            "kanyargo:8",
+            "kanyargo:9",
+            "kanyargo:10",
+            "kanyargo:11",
+            "kanyargo:12",
+            "kanyargo:13",
+            "kanyargo:14",
+            "kanyargo:15",
+            "kanyargo:16",
+            "kanyargo:2"
+          ],
+          "restrictedService": false
+        },
+        {
+          "id": "kanyargo:8dbd282ea54a",
+          "name": "Töki út - Nyugat felé → Levendula otthon",
+          "stopIds": [
+            "kanyargo:36",
+            "kanyargo:23",
+            "kanyargo:24",
+            "kanyargo:25"
+          ],
+          "restrictedService": false
+        },
+        {
+          "id": "kanyargo:e923883c24b0",
+          "name": "Iskola utca - Nyugati irány → Töki út - Nyugat felé → Levendula otthon → Községháza",
+          "stopIds": [
+            "kanyargo:2",
+            "kanyargo:3",
+            "kanyargo:4",
+            "kanyargo:5",
+            "kanyargo:7",
+            "kanyargo:8",
+            "kanyargo:9",
+            "kanyargo:10",
+            "kanyargo:11",
+            "kanyargo:12",
+            "kanyargo:13",
+            "kanyargo:14",
+            "kanyargo:15",
+            "kanyargo:16",
+            "kanyargo:2",
+            "kanyargo:36",
+            "kanyargo:23",
+            "kanyargo:24",
+            "kanyargo:25",
+            "kanyargo:26",
+            "kanyargo:1"
+          ],
+          "restrictedService": false
+        },
+        {
+          "id": "kanyargo:30844d2c43c5",
+          "name": "Bocskai iskola → Töki út - Nyugat felé → Vízműtelep",
+          "stopIds": [
+            "kanyargo:19",
+            "kanyargo:2",
+            "kanyargo:3",
+            "kanyargo:4",
+            "kanyargo:5",
+            "kanyargo:7",
+            "kanyargo:8",
+            "kanyargo:9",
+            "kanyargo:10",
+            "kanyargo:11",
+            "kanyargo:12",
+            "kanyargo:13",
+            "kanyargo:14",
+            "kanyargo:15",
+            "kanyargo:16",
+            "kanyargo:2",
+            "kanyargo:36",
+            "kanyargo:23",
+            "kanyargo:24"
+          ],
+          "restrictedService": false
+        },
+        {
+          "id": "kanyargo:e50b25ee6ebd",
+          "name": "Iskola utca - Nyugati irány → Petőfi Sándor utca",
+          "stopIds": [
+            "kanyargo:2",
+            "kanyargo:3",
+            "kanyargo:4",
+            "kanyargo:5",
+            "kanyargo:7",
+            "kanyargo:8",
+            "kanyargo:9",
+            "kanyargo:10",
+            "kanyargo:11",
+            "kanyargo:12",
+            "kanyargo:13",
+            "kanyargo:14",
+            "kanyargo:15",
+            "kanyargo:16"
+          ],
+          "restrictedService": false
+        },
+        {
+          "id": "kanyargo:ac3fd7152abd",
+          "name": "Bocskai iskola → Iskola utca - Nyugati irány",
+          "stopIds": [
+            "kanyargo:19",
+            "kanyargo:2",
+            "kanyargo:3",
+            "kanyargo:4",
+            "kanyargo:5",
+            "kanyargo:7",
+            "kanyargo:8",
+            "kanyargo:9",
+            "kanyargo:10",
+            "kanyargo:11",
+            "kanyargo:12",
+            "kanyargo:13",
+            "kanyargo:14",
+            "kanyargo:15",
+            "kanyargo:16",
+            "kanyargo:2"
+          ],
+          "restrictedService": false
+        },
+        {
+          "id": "kanyargo:649e1321ac91",
+          "name": "Rendőrség → Községháza",
+          "stopIds": [
+            "kanyargo:26",
+            "kanyargo:42",
+            "kanyargo:51",
+            "kanyargo:50",
+            "kanyargo:30",
+            "kanyargo:42",
+            "kanyargo:1"
+          ],
+          "restrictedService": true
+        },
+        {
+          "id": "kanyargo:b8a832dc10a8",
+          "name": "Iskola utca - Nyugati irány → Bocskai iskola → Töki út - Nyugat felé → Községháza",
+          "stopIds": [
+            "kanyargo:2",
+            "kanyargo:3",
+            "kanyargo:4",
+            "kanyargo:5",
+            "kanyargo:7",
+            "kanyargo:8",
+            "kanyargo:9",
+            "kanyargo:10",
+            "kanyargo:11",
+            "kanyargo:12",
+            "kanyargo:13",
+            "kanyargo:14",
+            "kanyargo:15",
+            "kanyargo:16",
+            "kanyargo:19",
+            "kanyargo:36",
+            "kanyargo:23",
+            "kanyargo:24",
+            "kanyargo:26",
+            "kanyargo:1"
+          ],
+          "restrictedService": false
+        },
+        {
+          "id": "kanyargo:481f87df8154",
+          "name": "Bocskai iskola → Községháza",
+          "stopIds": [
+            "kanyargo:19",
+            "kanyargo:2",
+            "kanyargo:3",
+            "kanyargo:4",
+            "kanyargo:5",
+            "kanyargo:7",
+            "kanyargo:8",
+            "kanyargo:9",
+            "kanyargo:10",
+            "kanyargo:11",
+            "kanyargo:12",
+            "kanyargo:13",
+            "kanyargo:14",
+            "kanyargo:15",
+            "kanyargo:16",
+            "kanyargo:2",
+            "kanyargo:26",
+            "kanyargo:1"
+          ],
+          "restrictedService": false
+        }
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:1D",
+      "number": "1D",
+      "name": "KanyarGO 1D",
+      "directions": [
+        {
+          "id": "kanyargo:bac5bc2eba35",
+          "name": "Burgondia utca → Bocskai iskola",
+          "stopIds": [
+            "kanyargo:7",
+            "kanyargo:8",
+            "kanyargo:9",
+            "kanyargo:10",
+            "kanyargo:11",
+            "kanyargo:19"
+          ],
+          "restrictedService": false
+        },
+        {
+          "id": "kanyargo:3d99cf92b1bd",
+          "name": "Biatorbágy VÁ (in.) → Községháza",
+          "stopIds": [
+            "kanyargo:30",
+            "kanyargo:42",
+            "kanyargo:38",
+            "kanyargo:37",
+            "kanyargo:1"
+          ],
+          "restrictedService": false
+        }
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:1J",
+      "number": "1J",
+      "name": "KanyarGO 1J",
+      "directions": [
+        {
+          "id": "kanyargo:5a94f950fa7f",
+          "name": "Bocskai iskola → Bocskai köz",
+          "stopIds": [
+            "kanyargo:19",
+            "kanyargo:2",
+            "kanyargo:3",
+            "kanyargo:12",
+            "kanyargo:13",
+            "kanyargo:14",
+            "kanyargo:15",
+            "kanyargo:16",
+            "kanyargo:19",
+            "kanyargo:47"
+          ],
+          "restrictedService": false
+        },
+        {
+          "id": "kanyargo:19b347f9cf19",
+          "name": "Rendőrség → Biatorbágy, BIT (Juhász Gy. u.)",
+          "stopIds": [
+            "kanyargo:26",
+            "kanyargo:48"
+          ],
+          "restrictedService": true
+        }
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:1M",
+      "number": "1M",
+      "name": "KanyarGO 1M",
+      "directions": [
+        {
+          "id": "kanyargo:0f5bf057ba82",
+          "name": "Iskola utca - Nyugati irány → Mézeshegy → Rendőrség",
+          "stopIds": [
+            "kanyargo:2",
+            "kanyargo:3",
+            "kanyargo:4",
+            "kanyargo:5",
+            "kanyargo:7",
+            "kanyargo:45",
+            "kanyargo:44",
+            "kanyargo:43",
+            "kanyargo:46",
+            "kanyargo:8",
+            "kanyargo:9",
+            "kanyargo:10",
+            "kanyargo:11",
+            "kanyargo:12",
+            "kanyargo:13",
+            "kanyargo:14",
+            "kanyargo:15",
+            "kanyargo:16",
+            "kanyargo:2",
+            "kanyargo:26"
+          ],
+          "restrictedService": false
+        },
+        {
+          "id": "kanyargo:55ebe02b5058",
+          "name": "Rendőrség → Községháza",
+          "stopIds": [
+            "kanyargo:26",
+            "kanyargo:42",
+            "kanyargo:51",
+            "kanyargo:42",
+            "kanyargo:1"
+          ],
+          "restrictedService": true
+        },
+        {
+          "id": "kanyargo:1b203c471a33",
+          "name": "Iskola utca - Nyugati irány → Mézeshegy → Biatorbágy VÁ (érk.)",
+          "stopIds": [
+            "kanyargo:2",
+            "kanyargo:3",
+            "kanyargo:4",
+            "kanyargo:5",
+            "kanyargo:7",
+            "kanyargo:45",
+            "kanyargo:44",
+            "kanyargo:43",
+            "kanyargo:46",
+            "kanyargo:8",
+            "kanyargo:9",
+            "kanyargo:10",
+            "kanyargo:11",
+            "kanyargo:12",
+            "kanyargo:13",
+            "kanyargo:14",
+            "kanyargo:15",
+            "kanyargo:16",
+            "kanyargo:2",
+            "kanyargo:26",
+            "kanyargo:27",
+            "kanyargo:28",
+            "kanyargo:42",
+            "kanyargo:29"
+          ],
+          "restrictedService": false
+        },
+        {
+          "id": "kanyargo:3d99cf92b1bd",
+          "name": "Biatorbágy VÁ (in.) → Községháza",
+          "stopIds": [
+            "kanyargo:30",
+            "kanyargo:42",
+            "kanyargo:38",
+            "kanyargo:37",
+            "kanyargo:1"
+          ],
+          "restrictedService": false
+        },
+        {
+          "id": "kanyargo:e14bd56c4b7f",
+          "name": "Iskola utca - Nyugati irány → Mézeshegy → Községháza",
+          "stopIds": [
+            "kanyargo:2",
+            "kanyargo:3",
+            "kanyargo:4",
+            "kanyargo:5",
+            "kanyargo:7",
+            "kanyargo:45",
+            "kanyargo:44",
+            "kanyargo:43",
+            "kanyargo:46",
+            "kanyargo:8",
+            "kanyargo:9",
+            "kanyargo:10",
+            "kanyargo:11",
+            "kanyargo:12",
+            "kanyargo:13",
+            "kanyargo:14",
+            "kanyargo:15",
+            "kanyargo:16",
+            "kanyargo:2",
+            "kanyargo:26",
+            "kanyargo:1"
+          ],
+          "restrictedService": false
+        },
+        {
+          "id": "kanyargo:10e6cb8c81a1",
+          "name": "Bocskai iskola → Mézeshegy → Községháza",
+          "stopIds": [
+            "kanyargo:19",
+            "kanyargo:2",
+            "kanyargo:3",
+            "kanyargo:4",
+            "kanyargo:5",
+            "kanyargo:7",
+            "kanyargo:45",
+            "kanyargo:44",
+            "kanyargo:43",
+            "kanyargo:46",
+            "kanyargo:8",
+            "kanyargo:9",
+            "kanyargo:10",
+            "kanyargo:11",
+            "kanyargo:12",
+            "kanyargo:13",
+            "kanyargo:14",
+            "kanyargo:15",
+            "kanyargo:16",
+            "kanyargo:2",
+            "kanyargo:26",
+            "kanyargo:1"
+          ],
+          "restrictedService": false
+        },
+        {
+          "id": "kanyargo:7d2ad876bbb6",
+          "name": "Iskola utca - Nyugati irány → Mézeshegy → Iskola utca - Nyugati irány",
+          "stopIds": [
+            "kanyargo:2",
+            "kanyargo:3",
+            "kanyargo:4",
+            "kanyargo:5",
+            "kanyargo:7",
+            "kanyargo:45",
+            "kanyargo:44",
+            "kanyargo:43",
+            "kanyargo:46",
+            "kanyargo:8",
+            "kanyargo:9",
+            "kanyargo:10",
+            "kanyargo:11",
+            "kanyargo:12",
+            "kanyargo:13",
+            "kanyargo:14",
+            "kanyargo:15",
+            "kanyargo:16",
+            "kanyargo:2"
+          ],
+          "restrictedService": false
+        },
+        {
+          "id": "kanyargo:fad60d082f33",
+          "name": "Rendőrség → Biatorbágy VÁ (érk.)",
+          "stopIds": [
+            "kanyargo:26",
+            "kanyargo:27",
+            "kanyargo:28",
+            "kanyargo:42",
+            "kanyargo:29"
+          ],
+          "restrictedService": false
+        }
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:1MT",
+      "number": "1MT",
+      "name": "KanyarGO 1MT",
+      "directions": [
+        {
+          "id": "kanyargo:8eefe2cc0243",
+          "name": "Iskola utca - Nyugati irány → Mézeshegy → Bocskai iskola → Töki út - Nyugat felé → Levendula otthon",
+          "stopIds": [
+            "kanyargo:2",
+            "kanyargo:3",
+            "kanyargo:4",
+            "kanyargo:5",
+            "kanyargo:7",
+            "kanyargo:45",
+            "kanyargo:44",
+            "kanyargo:43",
+            "kanyargo:46",
+            "kanyargo:8",
+            "kanyargo:9",
+            "kanyargo:10",
+            "kanyargo:11",
+            "kanyargo:12",
+            "kanyargo:13",
+            "kanyargo:14",
+            "kanyargo:15",
+            "kanyargo:16",
+            "kanyargo:19",
+            "kanyargo:36",
+            "kanyargo:23",
+            "kanyargo:24",
+            "kanyargo:25"
+          ],
+          "restrictedService": false
+        }
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:1MV",
+      "number": "1MV",
+      "name": "KanyarGO 1MV",
+      "directions": [
+        {
+          "id": "kanyargo:1b203c471a33",
+          "name": "Iskola utca - Nyugati irány → Mézeshegy → Biatorbágy VÁ (érk.)",
+          "stopIds": [
+            "kanyargo:2",
+            "kanyargo:3",
+            "kanyargo:4",
+            "kanyargo:5",
+            "kanyargo:7",
+            "kanyargo:45",
+            "kanyargo:44",
+            "kanyargo:43",
+            "kanyargo:46",
+            "kanyargo:8",
+            "kanyargo:9",
+            "kanyargo:10",
+            "kanyargo:11",
+            "kanyargo:12",
+            "kanyargo:13",
+            "kanyargo:14",
+            "kanyargo:15",
+            "kanyargo:16",
+            "kanyargo:2",
+            "kanyargo:26",
+            "kanyargo:27",
+            "kanyargo:28",
+            "kanyargo:42",
+            "kanyargo:29"
+          ],
+          "restrictedService": false
+        },
+        {
+          "id": "kanyargo:d261f9c5bd64",
+          "name": "Biatorbágy, Ritsmann iskola → Községháza",
+          "stopIds": [
+            "kanyargo:50",
+            "kanyargo:51",
+            "kanyargo:49",
+            "kanyargo:1"
+          ],
+          "restrictedService": true
+        },
+        {
+          "id": "kanyargo:3d99cf92b1bd",
+          "name": "Biatorbágy VÁ (in.) → Községháza",
+          "stopIds": [
+            "kanyargo:30",
+            "kanyargo:42",
+            "kanyargo:38",
+            "kanyargo:37",
+            "kanyargo:1"
+          ],
+          "restrictedService": false
+        },
+        {
+          "id": "kanyargo:be173d91c661",
+          "name": "Levendula otthon → Mézeshegy → Biatorbágy VÁ (érk.)",
+          "stopIds": [
+            "kanyargo:25",
+            "kanyargo:2",
+            "kanyargo:3",
+            "kanyargo:4",
+            "kanyargo:5",
+            "kanyargo:7",
+            "kanyargo:45",
+            "kanyargo:44",
+            "kanyargo:43",
+            "kanyargo:46",
+            "kanyargo:8",
+            "kanyargo:9",
+            "kanyargo:10",
+            "kanyargo:11",
+            "kanyargo:12",
+            "kanyargo:13",
+            "kanyargo:14",
+            "kanyargo:15",
+            "kanyargo:16",
+            "kanyargo:2",
+            "kanyargo:26",
+            "kanyargo:27",
+            "kanyargo:28",
+            "kanyargo:42",
+            "kanyargo:29"
+          ],
+          "restrictedService": false
+        }
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:1T",
+      "number": "1T",
+      "name": "KanyarGO 1T",
+      "directions": [
+        {
+          "id": "kanyargo:51a67b824bcf",
+          "name": "Töki út - Nyugat felé → Községháza",
+          "stopIds": [
+            "kanyargo:36",
+            "kanyargo:23",
+            "kanyargo:24",
+            "kanyargo:26",
+            "kanyargo:1"
+          ],
+          "restrictedService": false
+        },
+        {
+          "id": "kanyargo:e021ed535dde",
+          "name": "Rendőrség → Községháza",
+          "stopIds": [
+            "kanyargo:26",
+            "kanyargo:42",
+            "kanyargo:50",
+            "kanyargo:49",
+            "kanyargo:1"
+          ],
+          "restrictedService": true
+        },
+        {
+          "id": "kanyargo:1a4c576deb11",
+          "name": "Töki út - Nyugat felé → Levendula otthon → Községháza",
+          "stopIds": [
+            "kanyargo:36",
+            "kanyargo:23",
+            "kanyargo:24",
+            "kanyargo:25",
+            "kanyargo:26",
+            "kanyargo:1"
+          ],
+          "restrictedService": false
+        },
+        {
+          "id": "kanyargo:8abdcf5a4402",
+          "name": "Töki út - Nyugat felé → Vízműtelep",
+          "stopIds": [
+            "kanyargo:36",
+            "kanyargo:23",
+            "kanyargo:24"
+          ],
+          "restrictedService": false
+        },
+        {
+          "id": "kanyargo:45dbf19c8de4",
+          "name": "Biatorbágy, Szentháromság tér → Községháza",
+          "stopIds": [
+            "kanyargo:51",
+            "kanyargo:50",
+            "kanyargo:30",
+            "kanyargo:42",
+            "kanyargo:1"
+          ],
+          "restrictedService": true
+        }
+      ],
+      "providerId": "kanyargo"
+    },
+    {
+      "id": "kanyargo:1V",
+      "number": "1V",
+      "name": "KanyarGO 1V",
+      "directions": [
+        {
+          "id": "kanyargo:aed25c9ad441",
+          "name": "Iskola utca - Nyugati irány → Biatorbágy VÁ (érk.)",
+          "stopIds": [
+            "kanyargo:2",
+            "kanyargo:3",
+            "kanyargo:4",
+            "kanyargo:5",
+            "kanyargo:7",
+            "kanyargo:8",
+            "kanyargo:9",
+            "kanyargo:10",
+            "kanyargo:11",
+            "kanyargo:12",
+            "kanyargo:13",
+            "kanyargo:14",
+            "kanyargo:15",
+            "kanyargo:16",
+            "kanyargo:2",
+            "kanyargo:26",
+            "kanyargo:27",
+            "kanyargo:28",
+            "kanyargo:42",
+            "kanyargo:29"
+          ],
+          "restrictedService": false
+        },
+        {
+          "id": "kanyargo:3d99cf92b1bd",
+          "name": "Biatorbágy VÁ (in.) → Községháza",
+          "stopIds": [
+            "kanyargo:30",
+            "kanyargo:42",
+            "kanyargo:38",
+            "kanyargo:37",
+            "kanyargo:1"
+          ],
+          "restrictedService": false
+        },
+        {
+          "id": "kanyargo:2a9ae50f6ce5",
+          "name": "Iskola utca - Nyugati irány → Töki út - Nyugat felé → Vízműtelep",
+          "stopIds": [
+            "kanyargo:2",
+            "kanyargo:3",
+            "kanyargo:4",
+            "kanyargo:5",
+            "kanyargo:7",
+            "kanyargo:8",
+            "kanyargo:9",
+            "kanyargo:10",
+            "kanyargo:11",
+            "kanyargo:12",
+            "kanyargo:13",
+            "kanyargo:14",
+            "kanyargo:15",
+            "kanyargo:16",
+            "kanyargo:2",
+            "kanyargo:36",
+            "kanyargo:23",
+            "kanyargo:24"
+          ],
+          "restrictedService": false
+        }
+      ],
+      "providerId": "kanyargo"
+    }
+  ],
+  "trips": [
+    {
+      "id": "kanyargo:school:1:1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 346
+        },
+        {
+          "stopId": "kanyargo:3",
+          "minuteOfDay": 347
+        },
+        {
+          "stopId": "kanyargo:4",
+          "minuteOfDay": 348
+        },
+        {
+          "stopId": "kanyargo:5",
+          "minuteOfDay": 349
+        },
+        {
+          "stopId": "kanyargo:7",
+          "minuteOfDay": 351
+        },
+        {
+          "stopId": "kanyargo:8",
+          "minuteOfDay": 352
+        },
+        {
+          "stopId": "kanyargo:9",
+          "minuteOfDay": 353
+        },
+        {
+          "stopId": "kanyargo:10",
+          "minuteOfDay": 354
+        },
+        {
+          "stopId": "kanyargo:11",
+          "minuteOfDay": 355
+        },
+        {
+          "stopId": "kanyargo:12",
+          "minuteOfDay": 356
+        },
+        {
+          "stopId": "kanyargo:13",
+          "minuteOfDay": 357
+        },
+        {
+          "stopId": "kanyargo:14",
+          "minuteOfDay": 358
+        },
+        {
+          "stopId": "kanyargo:15",
+          "minuteOfDay": 360
+        },
+        {
+          "stopId": "kanyargo:16",
+          "minuteOfDay": 361
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 362
+        },
+        {
+          "stopId": "kanyargo:26",
+          "minuteOfDay": 364
+        },
+        {
+          "stopId": "kanyargo:27",
+          "minuteOfDay": 365
+        },
+        {
+          "stopId": "kanyargo:28",
+          "minuteOfDay": 366
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 369
+        },
+        {
+          "stopId": "kanyargo:29",
+          "minuteOfDay": 370
+        }
+      ],
+      "routeId": "kanyargo:1V",
+      "directionId": "kanyargo:aed25c9ad441"
+    },
+    {
+      "id": "kanyargo:school:1:2",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:30",
+          "minuteOfDay": 390
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 391
+        },
+        {
+          "stopId": "kanyargo:38",
+          "minuteOfDay": 394
+        },
+        {
+          "stopId": "kanyargo:37",
+          "minuteOfDay": 395
+        },
+        {
+          "stopId": "kanyargo:1",
+          "minuteOfDay": 397
+        }
+      ],
+      "routeId": "kanyargo:1V",
+      "directionId": "kanyargo:3d99cf92b1bd"
+    },
+    {
+      "id": "kanyargo:school:2:1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 389
+        },
+        {
+          "stopId": "kanyargo:3",
+          "minuteOfDay": 390
+        },
+        {
+          "stopId": "kanyargo:4",
+          "minuteOfDay": 391
+        },
+        {
+          "stopId": "kanyargo:5",
+          "minuteOfDay": 392
+        },
+        {
+          "stopId": "kanyargo:7",
+          "minuteOfDay": 394
+        },
+        {
+          "stopId": "kanyargo:8",
+          "minuteOfDay": 395
+        },
+        {
+          "stopId": "kanyargo:9",
+          "minuteOfDay": 396
+        },
+        {
+          "stopId": "kanyargo:10",
+          "minuteOfDay": 397
+        },
+        {
+          "stopId": "kanyargo:11",
+          "minuteOfDay": 398
+        },
+        {
+          "stopId": "kanyargo:12",
+          "minuteOfDay": 399
+        },
+        {
+          "stopId": "kanyargo:13",
+          "minuteOfDay": 400
+        },
+        {
+          "stopId": "kanyargo:14",
+          "minuteOfDay": 401
+        },
+        {
+          "stopId": "kanyargo:15",
+          "minuteOfDay": 403
+        },
+        {
+          "stopId": "kanyargo:16",
+          "minuteOfDay": 404
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 405
+        },
+        {
+          "stopId": "kanyargo:26",
+          "minuteOfDay": 407
+        },
+        {
+          "stopId": "kanyargo:27",
+          "minuteOfDay": 408
+        },
+        {
+          "stopId": "kanyargo:28",
+          "minuteOfDay": 409
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 412
+        },
+        {
+          "stopId": "kanyargo:29",
+          "minuteOfDay": 413
+        }
+      ],
+      "routeId": "kanyargo:1V",
+      "directionId": "kanyargo:aed25c9ad441"
+    },
+    {
+      "id": "kanyargo:school:2:2",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:30",
+          "minuteOfDay": 415
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 416
+        },
+        {
+          "stopId": "kanyargo:38",
+          "minuteOfDay": 418
+        },
+        {
+          "stopId": "kanyargo:37",
+          "minuteOfDay": 419
+        },
+        {
+          "stopId": "kanyargo:1",
+          "minuteOfDay": 421
+        }
+      ],
+      "routeId": "kanyargo:1V",
+      "directionId": "kanyargo:3d99cf92b1bd"
+    },
+    {
+      "id": "kanyargo:school:3:1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:36",
+          "minuteOfDay": 423
+        },
+        {
+          "stopId": "kanyargo:23",
+          "minuteOfDay": 424
+        },
+        {
+          "stopId": "kanyargo:24",
+          "minuteOfDay": 426
+        },
+        {
+          "stopId": "kanyargo:26",
+          "minuteOfDay": 429
+        },
+        {
+          "stopId": "kanyargo:1",
+          "minuteOfDay": 430
+        }
+      ],
+      "routeId": "kanyargo:1T",
+      "directionId": "kanyargo:51a67b824bcf"
+    },
+    {
+      "id": "kanyargo:school:4:1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 431
+        },
+        {
+          "stopId": "kanyargo:3",
+          "minuteOfDay": 432
+        },
+        {
+          "stopId": "kanyargo:4",
+          "minuteOfDay": 433
+        },
+        {
+          "stopId": "kanyargo:5",
+          "minuteOfDay": 434
+        },
+        {
+          "stopId": "kanyargo:7",
+          "minuteOfDay": 436
+        },
+        {
+          "stopId": "kanyargo:45",
+          "minuteOfDay": 438
+        },
+        {
+          "stopId": "kanyargo:44",
+          "minuteOfDay": 439
+        },
+        {
+          "stopId": "kanyargo:43",
+          "minuteOfDay": 440
+        },
+        {
+          "stopId": "kanyargo:46",
+          "minuteOfDay": 441
+        },
+        {
+          "stopId": "kanyargo:8",
+          "minuteOfDay": 443
+        },
+        {
+          "stopId": "kanyargo:9",
+          "minuteOfDay": 444
+        },
+        {
+          "stopId": "kanyargo:10",
+          "minuteOfDay": 445
+        },
+        {
+          "stopId": "kanyargo:11",
+          "minuteOfDay": 446
+        },
+        {
+          "stopId": "kanyargo:12",
+          "minuteOfDay": 447
+        },
+        {
+          "stopId": "kanyargo:13",
+          "minuteOfDay": 448
+        },
+        {
+          "stopId": "kanyargo:14",
+          "minuteOfDay": 449
+        },
+        {
+          "stopId": "kanyargo:15",
+          "minuteOfDay": 451
+        },
+        {
+          "stopId": "kanyargo:16",
+          "minuteOfDay": 452
+        },
+        {
+          "stopId": "kanyargo:19",
+          "minuteOfDay": 455
+        },
+        {
+          "stopId": "kanyargo:36",
+          "minuteOfDay": 457
+        },
+        {
+          "stopId": "kanyargo:23",
+          "minuteOfDay": 458
+        },
+        {
+          "stopId": "kanyargo:24",
+          "minuteOfDay": 460
+        },
+        {
+          "stopId": "kanyargo:25",
+          "minuteOfDay": 461
+        }
+      ],
+      "routeId": "kanyargo:1MT",
+      "directionId": "kanyargo:8eefe2cc0243"
+    },
+    {
+      "id": "kanyargo:school:5:1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:19",
+          "minuteOfDay": 462
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 464
+        },
+        {
+          "stopId": "kanyargo:3",
+          "minuteOfDay": 465
+        },
+        {
+          "stopId": "kanyargo:12",
+          "minuteOfDay": 467
+        },
+        {
+          "stopId": "kanyargo:13",
+          "minuteOfDay": 468
+        },
+        {
+          "stopId": "kanyargo:14",
+          "minuteOfDay": 469
+        },
+        {
+          "stopId": "kanyargo:15",
+          "minuteOfDay": 471
+        },
+        {
+          "stopId": "kanyargo:16",
+          "minuteOfDay": 472
+        },
+        {
+          "stopId": "kanyargo:19",
+          "minuteOfDay": 474
+        },
+        {
+          "stopId": "kanyargo:47",
+          "minuteOfDay": 476
+        }
+      ],
+      "routeId": "kanyargo:1J",
+      "directionId": "kanyargo:5a94f950fa7f"
+    },
+    {
+      "id": "kanyargo:school:5:2",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:26",
+          "minuteOfDay": 477
+        },
+        {
+          "stopId": "kanyargo:48",
+          "minuteOfDay": 485
+        }
+      ],
+      "routeId": "kanyargo:1J",
+      "directionId": "kanyargo:19b347f9cf19"
+    },
+    {
+      "id": "kanyargo:school:6:1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:36",
+          "minuteOfDay": 400
+        },
+        {
+          "stopId": "kanyargo:23",
+          "minuteOfDay": 401
+        },
+        {
+          "stopId": "kanyargo:24",
+          "minuteOfDay": 403
+        },
+        {
+          "stopId": "kanyargo:26",
+          "minuteOfDay": 406
+        },
+        {
+          "stopId": "kanyargo:1",
+          "minuteOfDay": 411
+        }
+      ],
+      "routeId": "kanyargo:1T",
+      "directionId": "kanyargo:51a67b824bcf"
+    },
+    {
+      "id": "kanyargo:school:7:1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 412
+        },
+        {
+          "stopId": "kanyargo:3",
+          "minuteOfDay": 413
+        },
+        {
+          "stopId": "kanyargo:4",
+          "minuteOfDay": 414
+        },
+        {
+          "stopId": "kanyargo:5",
+          "minuteOfDay": 415
+        },
+        {
+          "stopId": "kanyargo:7",
+          "minuteOfDay": 417
+        },
+        {
+          "stopId": "kanyargo:45",
+          "minuteOfDay": 419
+        },
+        {
+          "stopId": "kanyargo:44",
+          "minuteOfDay": 420
+        },
+        {
+          "stopId": "kanyargo:43",
+          "minuteOfDay": 421
+        },
+        {
+          "stopId": "kanyargo:46",
+          "minuteOfDay": 422
+        },
+        {
+          "stopId": "kanyargo:8",
+          "minuteOfDay": 424
+        },
+        {
+          "stopId": "kanyargo:9",
+          "minuteOfDay": 425
+        },
+        {
+          "stopId": "kanyargo:10",
+          "minuteOfDay": 426
+        },
+        {
+          "stopId": "kanyargo:11",
+          "minuteOfDay": 427
+        },
+        {
+          "stopId": "kanyargo:12",
+          "minuteOfDay": 428
+        },
+        {
+          "stopId": "kanyargo:13",
+          "minuteOfDay": 429
+        },
+        {
+          "stopId": "kanyargo:14",
+          "minuteOfDay": 430
+        },
+        {
+          "stopId": "kanyargo:15",
+          "minuteOfDay": 432
+        },
+        {
+          "stopId": "kanyargo:16",
+          "minuteOfDay": 433
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 435
+        },
+        {
+          "stopId": "kanyargo:26",
+          "minuteOfDay": 437
+        }
+      ],
+      "routeId": "kanyargo:1M",
+      "directionId": "kanyargo:0f5bf057ba82"
+    },
+    {
+      "id": "kanyargo:school:7:2",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:26",
+          "minuteOfDay": 437
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 442
+        },
+        {
+          "stopId": "kanyargo:51",
+          "minuteOfDay": 448
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 456
+        },
+        {
+          "stopId": "kanyargo:1",
+          "minuteOfDay": 461
+        }
+      ],
+      "routeId": "kanyargo:1M",
+      "directionId": "kanyargo:55ebe02b5058"
+    },
+    {
+      "id": "kanyargo:school:8:1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:7",
+          "minuteOfDay": 465
+        },
+        {
+          "stopId": "kanyargo:8",
+          "minuteOfDay": 466
+        },
+        {
+          "stopId": "kanyargo:9",
+          "minuteOfDay": 467
+        },
+        {
+          "stopId": "kanyargo:10",
+          "minuteOfDay": 468
+        },
+        {
+          "stopId": "kanyargo:11",
+          "minuteOfDay": 469
+        },
+        {
+          "stopId": "kanyargo:19",
+          "minuteOfDay": 473
+        }
+      ],
+      "routeId": "kanyargo:1D",
+      "directionId": "kanyargo:bac5bc2eba35"
+    },
+    {
+      "id": "kanyargo:school:8:2",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:30",
+          "minuteOfDay": 510
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 511
+        },
+        {
+          "stopId": "kanyargo:38",
+          "minuteOfDay": 513
+        },
+        {
+          "stopId": "kanyargo:37",
+          "minuteOfDay": 515
+        },
+        {
+          "stopId": "kanyargo:1",
+          "minuteOfDay": 517
+        }
+      ],
+      "routeId": "kanyargo:1D",
+      "directionId": "kanyargo:3d99cf92b1bd"
+    },
+    {
+      "id": "kanyargo:school:9:1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 518
+        },
+        {
+          "stopId": "kanyargo:3",
+          "minuteOfDay": 519
+        },
+        {
+          "stopId": "kanyargo:4",
+          "minuteOfDay": 520
+        },
+        {
+          "stopId": "kanyargo:5",
+          "minuteOfDay": 521
+        },
+        {
+          "stopId": "kanyargo:7",
+          "minuteOfDay": 523
+        },
+        {
+          "stopId": "kanyargo:8",
+          "minuteOfDay": 524
+        },
+        {
+          "stopId": "kanyargo:9",
+          "minuteOfDay": 525
+        },
+        {
+          "stopId": "kanyargo:10",
+          "minuteOfDay": 526
+        },
+        {
+          "stopId": "kanyargo:11",
+          "minuteOfDay": 527
+        },
+        {
+          "stopId": "kanyargo:12",
+          "minuteOfDay": 528
+        },
+        {
+          "stopId": "kanyargo:13",
+          "minuteOfDay": 529
+        },
+        {
+          "stopId": "kanyargo:14",
+          "minuteOfDay": 530
+        },
+        {
+          "stopId": "kanyargo:15",
+          "minuteOfDay": 531
+        },
+        {
+          "stopId": "kanyargo:16",
+          "minuteOfDay": 532
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 533
+        }
+      ],
+      "routeId": "kanyargo:1A",
+      "directionId": "kanyargo:d6208c310bc6"
+    },
+    {
+      "id": "kanyargo:school:9:2",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:36",
+          "minuteOfDay": 580
+        },
+        {
+          "stopId": "kanyargo:23",
+          "minuteOfDay": 581
+        },
+        {
+          "stopId": "kanyargo:24",
+          "minuteOfDay": 583
+        },
+        {
+          "stopId": "kanyargo:25",
+          "minuteOfDay": 585
+        }
+      ],
+      "routeId": "kanyargo:1A",
+      "directionId": "kanyargo:8dbd282ea54a"
+    },
+    {
+      "id": "kanyargo:school:10:1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 586
+        },
+        {
+          "stopId": "kanyargo:3",
+          "minuteOfDay": 587
+        },
+        {
+          "stopId": "kanyargo:4",
+          "minuteOfDay": 588
+        },
+        {
+          "stopId": "kanyargo:5",
+          "minuteOfDay": 589
+        },
+        {
+          "stopId": "kanyargo:7",
+          "minuteOfDay": 591
+        },
+        {
+          "stopId": "kanyargo:45",
+          "minuteOfDay": 593
+        },
+        {
+          "stopId": "kanyargo:44",
+          "minuteOfDay": 594
+        },
+        {
+          "stopId": "kanyargo:43",
+          "minuteOfDay": 595
+        },
+        {
+          "stopId": "kanyargo:46",
+          "minuteOfDay": 596
+        },
+        {
+          "stopId": "kanyargo:8",
+          "minuteOfDay": 598
+        },
+        {
+          "stopId": "kanyargo:9",
+          "minuteOfDay": 599
+        },
+        {
+          "stopId": "kanyargo:10",
+          "minuteOfDay": 600
+        },
+        {
+          "stopId": "kanyargo:11",
+          "minuteOfDay": 601
+        },
+        {
+          "stopId": "kanyargo:12",
+          "minuteOfDay": 602
+        },
+        {
+          "stopId": "kanyargo:13",
+          "minuteOfDay": 603
+        },
+        {
+          "stopId": "kanyargo:14",
+          "minuteOfDay": 604
+        },
+        {
+          "stopId": "kanyargo:15",
+          "minuteOfDay": 606
+        },
+        {
+          "stopId": "kanyargo:16",
+          "minuteOfDay": 607
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 609
+        },
+        {
+          "stopId": "kanyargo:26",
+          "minuteOfDay": 611
+        },
+        {
+          "stopId": "kanyargo:27",
+          "minuteOfDay": 612
+        },
+        {
+          "stopId": "kanyargo:28",
+          "minuteOfDay": 613
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 616
+        },
+        {
+          "stopId": "kanyargo:29",
+          "minuteOfDay": 617
+        }
+      ],
+      "routeId": "kanyargo:1M",
+      "directionId": "kanyargo:1b203c471a33"
+    },
+    {
+      "id": "kanyargo:school:10:2",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:30",
+          "minuteOfDay": 661
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 662
+        },
+        {
+          "stopId": "kanyargo:38",
+          "minuteOfDay": 665
+        },
+        {
+          "stopId": "kanyargo:37",
+          "minuteOfDay": 666
+        },
+        {
+          "stopId": "kanyargo:1",
+          "minuteOfDay": 668
+        }
+      ],
+      "routeId": "kanyargo:1M",
+      "directionId": "kanyargo:3d99cf92b1bd"
+    },
+    {
+      "id": "kanyargo:school:11:1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 669
+        },
+        {
+          "stopId": "kanyargo:3",
+          "minuteOfDay": 670
+        },
+        {
+          "stopId": "kanyargo:4",
+          "minuteOfDay": 671
+        },
+        {
+          "stopId": "kanyargo:5",
+          "minuteOfDay": 672
+        },
+        {
+          "stopId": "kanyargo:7",
+          "minuteOfDay": 674
+        },
+        {
+          "stopId": "kanyargo:8",
+          "minuteOfDay": 675
+        },
+        {
+          "stopId": "kanyargo:9",
+          "minuteOfDay": 676
+        },
+        {
+          "stopId": "kanyargo:10",
+          "minuteOfDay": 677
+        },
+        {
+          "stopId": "kanyargo:11",
+          "minuteOfDay": 678
+        },
+        {
+          "stopId": "kanyargo:12",
+          "minuteOfDay": 679
+        },
+        {
+          "stopId": "kanyargo:13",
+          "minuteOfDay": 680
+        },
+        {
+          "stopId": "kanyargo:14",
+          "minuteOfDay": 681
+        },
+        {
+          "stopId": "kanyargo:15",
+          "minuteOfDay": 682
+        },
+        {
+          "stopId": "kanyargo:16",
+          "minuteOfDay": 683
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 685
+        },
+        {
+          "stopId": "kanyargo:36",
+          "minuteOfDay": 687
+        },
+        {
+          "stopId": "kanyargo:23",
+          "minuteOfDay": 688
+        },
+        {
+          "stopId": "kanyargo:24",
+          "minuteOfDay": 689
+        },
+        {
+          "stopId": "kanyargo:25",
+          "minuteOfDay": 690
+        },
+        {
+          "stopId": "kanyargo:26",
+          "minuteOfDay": 691
+        },
+        {
+          "stopId": "kanyargo:1",
+          "minuteOfDay": 692
+        }
+      ],
+      "routeId": "kanyargo:1A",
+      "directionId": "kanyargo:e923883c24b0"
+    },
+    {
+      "id": "kanyargo:school:12:1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:19",
+          "minuteOfDay": 774
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 775
+        },
+        {
+          "stopId": "kanyargo:3",
+          "minuteOfDay": 776
+        },
+        {
+          "stopId": "kanyargo:4",
+          "minuteOfDay": 777
+        },
+        {
+          "stopId": "kanyargo:5",
+          "minuteOfDay": 778
+        },
+        {
+          "stopId": "kanyargo:7",
+          "minuteOfDay": 780
+        },
+        {
+          "stopId": "kanyargo:8",
+          "minuteOfDay": 781
+        },
+        {
+          "stopId": "kanyargo:9",
+          "minuteOfDay": 782
+        },
+        {
+          "stopId": "kanyargo:10",
+          "minuteOfDay": 783
+        },
+        {
+          "stopId": "kanyargo:11",
+          "minuteOfDay": 784
+        },
+        {
+          "stopId": "kanyargo:12",
+          "minuteOfDay": 785
+        },
+        {
+          "stopId": "kanyargo:13",
+          "minuteOfDay": 786
+        },
+        {
+          "stopId": "kanyargo:14",
+          "minuteOfDay": 787
+        },
+        {
+          "stopId": "kanyargo:15",
+          "minuteOfDay": 789
+        },
+        {
+          "stopId": "kanyargo:16",
+          "minuteOfDay": 790
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 792
+        },
+        {
+          "stopId": "kanyargo:36",
+          "minuteOfDay": 794
+        },
+        {
+          "stopId": "kanyargo:23",
+          "minuteOfDay": 795
+        },
+        {
+          "stopId": "kanyargo:24",
+          "minuteOfDay": 797
+        }
+      ],
+      "routeId": "kanyargo:1A",
+      "directionId": "kanyargo:30844d2c43c5"
+    },
+    {
+      "id": "kanyargo:school:13:1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 799
+        },
+        {
+          "stopId": "kanyargo:3",
+          "minuteOfDay": 800
+        },
+        {
+          "stopId": "kanyargo:4",
+          "minuteOfDay": 801
+        },
+        {
+          "stopId": "kanyargo:5",
+          "minuteOfDay": 802
+        },
+        {
+          "stopId": "kanyargo:7",
+          "minuteOfDay": 804
+        },
+        {
+          "stopId": "kanyargo:45",
+          "minuteOfDay": 806
+        },
+        {
+          "stopId": "kanyargo:44",
+          "minuteOfDay": 807
+        },
+        {
+          "stopId": "kanyargo:43",
+          "minuteOfDay": 808
+        },
+        {
+          "stopId": "kanyargo:46",
+          "minuteOfDay": 809
+        },
+        {
+          "stopId": "kanyargo:8",
+          "minuteOfDay": 811
+        },
+        {
+          "stopId": "kanyargo:9",
+          "minuteOfDay": 812
+        },
+        {
+          "stopId": "kanyargo:10",
+          "minuteOfDay": 813
+        },
+        {
+          "stopId": "kanyargo:11",
+          "minuteOfDay": 814
+        },
+        {
+          "stopId": "kanyargo:12",
+          "minuteOfDay": 815
+        },
+        {
+          "stopId": "kanyargo:13",
+          "minuteOfDay": 816
+        },
+        {
+          "stopId": "kanyargo:14",
+          "minuteOfDay": 817
+        },
+        {
+          "stopId": "kanyargo:15",
+          "minuteOfDay": 818
+        },
+        {
+          "stopId": "kanyargo:16",
+          "minuteOfDay": 819
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 821
+        },
+        {
+          "stopId": "kanyargo:26",
+          "minuteOfDay": 823
+        },
+        {
+          "stopId": "kanyargo:27",
+          "minuteOfDay": 824
+        },
+        {
+          "stopId": "kanyargo:28",
+          "minuteOfDay": 825
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 828
+        },
+        {
+          "stopId": "kanyargo:29",
+          "minuteOfDay": 829
+        }
+      ],
+      "routeId": "kanyargo:1MV",
+      "directionId": "kanyargo:1b203c471a33"
+    },
+    {
+      "id": "kanyargo:school:13:2",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:50",
+          "minuteOfDay": 831
+        },
+        {
+          "stopId": "kanyargo:51",
+          "minuteOfDay": 840
+        },
+        {
+          "stopId": "kanyargo:49",
+          "minuteOfDay": 849
+        },
+        {
+          "stopId": "kanyargo:1",
+          "minuteOfDay": 857
+        }
+      ],
+      "routeId": "kanyargo:1MV",
+      "directionId": "kanyargo:d261f9c5bd64"
+    },
+    {
+      "id": "kanyargo:school:14:1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 858
+        },
+        {
+          "stopId": "kanyargo:3",
+          "minuteOfDay": 859
+        },
+        {
+          "stopId": "kanyargo:4",
+          "minuteOfDay": 860
+        },
+        {
+          "stopId": "kanyargo:5",
+          "minuteOfDay": 861
+        },
+        {
+          "stopId": "kanyargo:7",
+          "minuteOfDay": 863
+        },
+        {
+          "stopId": "kanyargo:8",
+          "minuteOfDay": 864
+        },
+        {
+          "stopId": "kanyargo:9",
+          "minuteOfDay": 865
+        },
+        {
+          "stopId": "kanyargo:10",
+          "minuteOfDay": 866
+        },
+        {
+          "stopId": "kanyargo:11",
+          "minuteOfDay": 867
+        },
+        {
+          "stopId": "kanyargo:12",
+          "minuteOfDay": 868
+        },
+        {
+          "stopId": "kanyargo:13",
+          "minuteOfDay": 869
+        },
+        {
+          "stopId": "kanyargo:14",
+          "minuteOfDay": 870
+        },
+        {
+          "stopId": "kanyargo:15",
+          "minuteOfDay": 871
+        },
+        {
+          "stopId": "kanyargo:16",
+          "minuteOfDay": 872
+        }
+      ],
+      "routeId": "kanyargo:1A",
+      "directionId": "kanyargo:e50b25ee6ebd"
+    },
+    {
+      "id": "kanyargo:school:15:1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:19",
+          "minuteOfDay": 875
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 876
+        },
+        {
+          "stopId": "kanyargo:3",
+          "minuteOfDay": 877
+        },
+        {
+          "stopId": "kanyargo:4",
+          "minuteOfDay": 878
+        },
+        {
+          "stopId": "kanyargo:5",
+          "minuteOfDay": 879
+        },
+        {
+          "stopId": "kanyargo:7",
+          "minuteOfDay": 881
+        },
+        {
+          "stopId": "kanyargo:8",
+          "minuteOfDay": 882
+        },
+        {
+          "stopId": "kanyargo:9",
+          "minuteOfDay": 883
+        },
+        {
+          "stopId": "kanyargo:10",
+          "minuteOfDay": 884
+        },
+        {
+          "stopId": "kanyargo:11",
+          "minuteOfDay": 885
+        },
+        {
+          "stopId": "kanyargo:12",
+          "minuteOfDay": 886
+        },
+        {
+          "stopId": "kanyargo:13",
+          "minuteOfDay": 887
+        },
+        {
+          "stopId": "kanyargo:14",
+          "minuteOfDay": 888
+        },
+        {
+          "stopId": "kanyargo:15",
+          "minuteOfDay": 890
+        },
+        {
+          "stopId": "kanyargo:16",
+          "minuteOfDay": 891
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 893
+        }
+      ],
+      "routeId": "kanyargo:1A",
+      "directionId": "kanyargo:ac3fd7152abd"
+    },
+    {
+      "id": "kanyargo:school:15:2",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:26",
+          "minuteOfDay": 895
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 900
+        },
+        {
+          "stopId": "kanyargo:51",
+          "minuteOfDay": 908
+        },
+        {
+          "stopId": "kanyargo:50",
+          "minuteOfDay": 916
+        },
+        {
+          "stopId": "kanyargo:30",
+          "minuteOfDay": 918
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 919
+        },
+        {
+          "stopId": "kanyargo:1",
+          "minuteOfDay": 930
+        }
+      ],
+      "routeId": "kanyargo:1A",
+      "directionId": "kanyargo:649e1321ac91"
+    },
+    {
+      "id": "kanyargo:school:16:1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 931
+        },
+        {
+          "stopId": "kanyargo:3",
+          "minuteOfDay": 932
+        },
+        {
+          "stopId": "kanyargo:4",
+          "minuteOfDay": 933
+        },
+        {
+          "stopId": "kanyargo:5",
+          "minuteOfDay": 934
+        },
+        {
+          "stopId": "kanyargo:7",
+          "minuteOfDay": 936
+        },
+        {
+          "stopId": "kanyargo:45",
+          "minuteOfDay": 938
+        },
+        {
+          "stopId": "kanyargo:44",
+          "minuteOfDay": 939
+        },
+        {
+          "stopId": "kanyargo:43",
+          "minuteOfDay": 940
+        },
+        {
+          "stopId": "kanyargo:46",
+          "minuteOfDay": 941
+        },
+        {
+          "stopId": "kanyargo:8",
+          "minuteOfDay": 943
+        },
+        {
+          "stopId": "kanyargo:9",
+          "minuteOfDay": 944
+        },
+        {
+          "stopId": "kanyargo:10",
+          "minuteOfDay": 945
+        },
+        {
+          "stopId": "kanyargo:11",
+          "minuteOfDay": 946
+        },
+        {
+          "stopId": "kanyargo:12",
+          "minuteOfDay": 947
+        },
+        {
+          "stopId": "kanyargo:13",
+          "minuteOfDay": 948
+        },
+        {
+          "stopId": "kanyargo:14",
+          "minuteOfDay": 949
+        },
+        {
+          "stopId": "kanyargo:15",
+          "minuteOfDay": 951
+        },
+        {
+          "stopId": "kanyargo:16",
+          "minuteOfDay": 952
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 954
+        },
+        {
+          "stopId": "kanyargo:26",
+          "minuteOfDay": 956
+        },
+        {
+          "stopId": "kanyargo:1",
+          "minuteOfDay": 957
+        }
+      ],
+      "routeId": "kanyargo:1M",
+      "directionId": "kanyargo:e14bd56c4b7f"
+    },
+    {
+      "id": "kanyargo:school:17:1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:19",
+          "minuteOfDay": 833
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 834
+        },
+        {
+          "stopId": "kanyargo:3",
+          "minuteOfDay": 835
+        },
+        {
+          "stopId": "kanyargo:4",
+          "minuteOfDay": 836
+        },
+        {
+          "stopId": "kanyargo:5",
+          "minuteOfDay": 837
+        },
+        {
+          "stopId": "kanyargo:7",
+          "minuteOfDay": 839
+        },
+        {
+          "stopId": "kanyargo:45",
+          "minuteOfDay": 840
+        },
+        {
+          "stopId": "kanyargo:44",
+          "minuteOfDay": 841
+        },
+        {
+          "stopId": "kanyargo:43",
+          "minuteOfDay": 842
+        },
+        {
+          "stopId": "kanyargo:46",
+          "minuteOfDay": 843
+        },
+        {
+          "stopId": "kanyargo:8",
+          "minuteOfDay": 846
+        },
+        {
+          "stopId": "kanyargo:9",
+          "minuteOfDay": 847
+        },
+        {
+          "stopId": "kanyargo:10",
+          "minuteOfDay": 848
+        },
+        {
+          "stopId": "kanyargo:11",
+          "minuteOfDay": 849
+        },
+        {
+          "stopId": "kanyargo:12",
+          "minuteOfDay": 850
+        },
+        {
+          "stopId": "kanyargo:13",
+          "minuteOfDay": 851
+        },
+        {
+          "stopId": "kanyargo:14",
+          "minuteOfDay": 852
+        },
+        {
+          "stopId": "kanyargo:15",
+          "minuteOfDay": 854
+        },
+        {
+          "stopId": "kanyargo:16",
+          "minuteOfDay": 855
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 857
+        },
+        {
+          "stopId": "kanyargo:26",
+          "minuteOfDay": 859
+        },
+        {
+          "stopId": "kanyargo:1",
+          "minuteOfDay": 860
+        }
+      ],
+      "routeId": "kanyargo:1M",
+      "directionId": "kanyargo:10e6cb8c81a1"
+    },
+    {
+      "id": "kanyargo:school:18:1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:36",
+          "minuteOfDay": 862
+        },
+        {
+          "stopId": "kanyargo:23",
+          "minuteOfDay": 863
+        },
+        {
+          "stopId": "kanyargo:24",
+          "minuteOfDay": 865
+        },
+        {
+          "stopId": "kanyargo:26",
+          "minuteOfDay": 868
+        },
+        {
+          "stopId": "kanyargo:1",
+          "minuteOfDay": 869
+        }
+      ],
+      "routeId": "kanyargo:1T",
+      "directionId": "kanyargo:51a67b824bcf"
+    },
+    {
+      "id": "kanyargo:school:18:2",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:26",
+          "minuteOfDay": 871
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 876
+        },
+        {
+          "stopId": "kanyargo:50",
+          "minuteOfDay": 881
+        },
+        {
+          "stopId": "kanyargo:49",
+          "minuteOfDay": 891
+        },
+        {
+          "stopId": "kanyargo:1",
+          "minuteOfDay": 900
+        }
+      ],
+      "routeId": "kanyargo:1T",
+      "directionId": "kanyargo:e021ed535dde"
+    },
+    {
+      "id": "kanyargo:school:19:1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 901
+        },
+        {
+          "stopId": "kanyargo:3",
+          "minuteOfDay": 902
+        },
+        {
+          "stopId": "kanyargo:4",
+          "minuteOfDay": 903
+        },
+        {
+          "stopId": "kanyargo:5",
+          "minuteOfDay": 904
+        },
+        {
+          "stopId": "kanyargo:7",
+          "minuteOfDay": 906
+        },
+        {
+          "stopId": "kanyargo:8",
+          "minuteOfDay": 907
+        },
+        {
+          "stopId": "kanyargo:9",
+          "minuteOfDay": 908
+        },
+        {
+          "stopId": "kanyargo:10",
+          "minuteOfDay": 909
+        },
+        {
+          "stopId": "kanyargo:11",
+          "minuteOfDay": 910
+        },
+        {
+          "stopId": "kanyargo:12",
+          "minuteOfDay": 911
+        },
+        {
+          "stopId": "kanyargo:13",
+          "minuteOfDay": 912
+        },
+        {
+          "stopId": "kanyargo:14",
+          "minuteOfDay": 913
+        },
+        {
+          "stopId": "kanyargo:15",
+          "minuteOfDay": 915
+        },
+        {
+          "stopId": "kanyargo:16",
+          "minuteOfDay": 916
+        },
+        {
+          "stopId": "kanyargo:19",
+          "minuteOfDay": 919
+        },
+        {
+          "stopId": "kanyargo:36",
+          "minuteOfDay": 921
+        },
+        {
+          "stopId": "kanyargo:23",
+          "minuteOfDay": 923
+        },
+        {
+          "stopId": "kanyargo:24",
+          "minuteOfDay": 925
+        },
+        {
+          "stopId": "kanyargo:26",
+          "minuteOfDay": 928
+        },
+        {
+          "stopId": "kanyargo:1",
+          "minuteOfDay": 930
+        }
+      ],
+      "routeId": "kanyargo:1A",
+      "directionId": "kanyargo:b8a832dc10a8"
+    },
+    {
+      "id": "kanyargo:school:20:1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:36",
+          "minuteOfDay": 932
+        },
+        {
+          "stopId": "kanyargo:23",
+          "minuteOfDay": 933
+        },
+        {
+          "stopId": "kanyargo:24",
+          "minuteOfDay": 935
+        },
+        {
+          "stopId": "kanyargo:25",
+          "minuteOfDay": 937
+        },
+        {
+          "stopId": "kanyargo:26",
+          "minuteOfDay": 939
+        },
+        {
+          "stopId": "kanyargo:1",
+          "minuteOfDay": 940
+        }
+      ],
+      "routeId": "kanyargo:1T",
+      "directionId": "kanyargo:1a4c576deb11"
+    },
+    {
+      "id": "kanyargo:school:21:1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:19",
+          "minuteOfDay": 968
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 969
+        },
+        {
+          "stopId": "kanyargo:3",
+          "minuteOfDay": 970
+        },
+        {
+          "stopId": "kanyargo:4",
+          "minuteOfDay": 971
+        },
+        {
+          "stopId": "kanyargo:5",
+          "minuteOfDay": 972
+        },
+        {
+          "stopId": "kanyargo:7",
+          "minuteOfDay": 974
+        },
+        {
+          "stopId": "kanyargo:8",
+          "minuteOfDay": 975
+        },
+        {
+          "stopId": "kanyargo:9",
+          "minuteOfDay": 976
+        },
+        {
+          "stopId": "kanyargo:10",
+          "minuteOfDay": 977
+        },
+        {
+          "stopId": "kanyargo:11",
+          "minuteOfDay": 978
+        },
+        {
+          "stopId": "kanyargo:12",
+          "minuteOfDay": 979
+        },
+        {
+          "stopId": "kanyargo:13",
+          "minuteOfDay": 980
+        },
+        {
+          "stopId": "kanyargo:14",
+          "minuteOfDay": 981
+        },
+        {
+          "stopId": "kanyargo:15",
+          "minuteOfDay": 982
+        },
+        {
+          "stopId": "kanyargo:16",
+          "minuteOfDay": 983
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 984
+        },
+        {
+          "stopId": "kanyargo:26",
+          "minuteOfDay": 986
+        },
+        {
+          "stopId": "kanyargo:1",
+          "minuteOfDay": 987
+        }
+      ],
+      "routeId": "kanyargo:1A",
+      "directionId": "kanyargo:481f87df8154"
+    },
+    {
+      "id": "kanyargo:school:22:1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:36",
+          "minuteOfDay": 989
+        },
+        {
+          "stopId": "kanyargo:23",
+          "minuteOfDay": 990
+        },
+        {
+          "stopId": "kanyargo:24",
+          "minuteOfDay": 991
+        }
+      ],
+      "routeId": "kanyargo:1T",
+      "directionId": "kanyargo:8abdcf5a4402"
+    },
+    {
+      "id": "kanyargo:school:22:2",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:51",
+          "minuteOfDay": 969
+        },
+        {
+          "stopId": "kanyargo:50",
+          "minuteOfDay": 977
+        },
+        {
+          "stopId": "kanyargo:30",
+          "minuteOfDay": 979
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 980
+        },
+        {
+          "stopId": "kanyargo:1",
+          "minuteOfDay": 985
+        }
+      ],
+      "routeId": "kanyargo:1T",
+      "directionId": "kanyargo:45dbf19c8de4"
+    },
+    {
+      "id": "kanyargo:school:23:1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 986
+        },
+        {
+          "stopId": "kanyargo:3",
+          "minuteOfDay": 987
+        },
+        {
+          "stopId": "kanyargo:4",
+          "minuteOfDay": 988
+        },
+        {
+          "stopId": "kanyargo:5",
+          "minuteOfDay": 989
+        },
+        {
+          "stopId": "kanyargo:7",
+          "minuteOfDay": 991
+        },
+        {
+          "stopId": "kanyargo:45",
+          "minuteOfDay": 993
+        },
+        {
+          "stopId": "kanyargo:44",
+          "minuteOfDay": 994
+        },
+        {
+          "stopId": "kanyargo:43",
+          "minuteOfDay": 995
+        },
+        {
+          "stopId": "kanyargo:46",
+          "minuteOfDay": 996
+        },
+        {
+          "stopId": "kanyargo:8",
+          "minuteOfDay": 998
+        },
+        {
+          "stopId": "kanyargo:9",
+          "minuteOfDay": 999
+        },
+        {
+          "stopId": "kanyargo:10",
+          "minuteOfDay": 1000
+        },
+        {
+          "stopId": "kanyargo:11",
+          "minuteOfDay": 1001
+        },
+        {
+          "stopId": "kanyargo:12",
+          "minuteOfDay": 1002
+        },
+        {
+          "stopId": "kanyargo:13",
+          "minuteOfDay": 1003
+        },
+        {
+          "stopId": "kanyargo:14",
+          "minuteOfDay": 1004
+        },
+        {
+          "stopId": "kanyargo:15",
+          "minuteOfDay": 1006
+        },
+        {
+          "stopId": "kanyargo:16",
+          "minuteOfDay": 1007
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 1009
+        }
+      ],
+      "routeId": "kanyargo:1M",
+      "directionId": "kanyargo:7d2ad876bbb6"
+    },
+    {
+      "id": "kanyargo:school:23:2",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:26",
+          "minuteOfDay": 1031
+        },
+        {
+          "stopId": "kanyargo:27",
+          "minuteOfDay": 1032
+        },
+        {
+          "stopId": "kanyargo:28",
+          "minuteOfDay": 1033
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 1036
+        },
+        {
+          "stopId": "kanyargo:29",
+          "minuteOfDay": 1037
+        }
+      ],
+      "routeId": "kanyargo:1M",
+      "directionId": "kanyargo:fad60d082f33"
+    },
+    {
+      "id": "kanyargo:school:23:3",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:30",
+          "minuteOfDay": 1052
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 1053
+        },
+        {
+          "stopId": "kanyargo:38",
+          "minuteOfDay": 1056
+        },
+        {
+          "stopId": "kanyargo:37",
+          "minuteOfDay": 1057
+        },
+        {
+          "stopId": "kanyargo:1",
+          "minuteOfDay": 1059
+        }
+      ],
+      "routeId": "kanyargo:1M",
+      "directionId": "kanyargo:3d99cf92b1bd"
+    },
+    {
+      "id": "kanyargo:school:24:1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 1060
+        },
+        {
+          "stopId": "kanyargo:3",
+          "minuteOfDay": 1061
+        },
+        {
+          "stopId": "kanyargo:4",
+          "minuteOfDay": 1062
+        },
+        {
+          "stopId": "kanyargo:5",
+          "minuteOfDay": 1063
+        },
+        {
+          "stopId": "kanyargo:7",
+          "minuteOfDay": 1065
+        },
+        {
+          "stopId": "kanyargo:8",
+          "minuteOfDay": 1066
+        },
+        {
+          "stopId": "kanyargo:9",
+          "minuteOfDay": 1067
+        },
+        {
+          "stopId": "kanyargo:10",
+          "minuteOfDay": 1068
+        },
+        {
+          "stopId": "kanyargo:11",
+          "minuteOfDay": 1069
+        },
+        {
+          "stopId": "kanyargo:12",
+          "minuteOfDay": 1070
+        },
+        {
+          "stopId": "kanyargo:13",
+          "minuteOfDay": 1071
+        },
+        {
+          "stopId": "kanyargo:14",
+          "minuteOfDay": 1072
+        },
+        {
+          "stopId": "kanyargo:15",
+          "minuteOfDay": 1073
+        },
+        {
+          "stopId": "kanyargo:16",
+          "minuteOfDay": 1074
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 1075
+        },
+        {
+          "stopId": "kanyargo:36",
+          "minuteOfDay": 1077
+        },
+        {
+          "stopId": "kanyargo:23",
+          "minuteOfDay": 1078
+        },
+        {
+          "stopId": "kanyargo:24",
+          "minuteOfDay": 1079
+        }
+      ],
+      "routeId": "kanyargo:1V",
+      "directionId": "kanyargo:2a9ae50f6ce5"
+    },
+    {
+      "id": "kanyargo:break-c01-outbound",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 346
+        },
+        {
+          "stopId": "kanyargo:3",
+          "minuteOfDay": 347
+        },
+        {
+          "stopId": "kanyargo:4",
+          "minuteOfDay": 348
+        },
+        {
+          "stopId": "kanyargo:5",
+          "minuteOfDay": 349
+        },
+        {
+          "stopId": "kanyargo:7",
+          "minuteOfDay": 351
+        },
+        {
+          "stopId": "kanyargo:8",
+          "minuteOfDay": 352
+        },
+        {
+          "stopId": "kanyargo:9",
+          "minuteOfDay": 353
+        },
+        {
+          "stopId": "kanyargo:10",
+          "minuteOfDay": 354
+        },
+        {
+          "stopId": "kanyargo:11",
+          "minuteOfDay": 355
+        },
+        {
+          "stopId": "kanyargo:12",
+          "minuteOfDay": 356
+        },
+        {
+          "stopId": "kanyargo:13",
+          "minuteOfDay": 357
+        },
+        {
+          "stopId": "kanyargo:14",
+          "minuteOfDay": 359
+        },
+        {
+          "stopId": "kanyargo:15",
+          "minuteOfDay": 360
+        },
+        {
+          "stopId": "kanyargo:16",
+          "minuteOfDay": 361
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 362
+        },
+        {
+          "stopId": "kanyargo:26",
+          "minuteOfDay": 364
+        },
+        {
+          "stopId": "kanyargo:27",
+          "minuteOfDay": 365
+        },
+        {
+          "stopId": "kanyargo:28",
+          "minuteOfDay": 366
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 369
+        },
+        {
+          "stopId": "kanyargo:29",
+          "minuteOfDay": 370
+        }
+      ],
+      "routeId": "kanyargo:1V",
+      "directionId": "kanyargo:aed25c9ad441"
+    },
+    {
+      "id": "kanyargo:break-c01-inbound",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:30",
+          "minuteOfDay": 382
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 383
+        },
+        {
+          "stopId": "kanyargo:38",
+          "minuteOfDay": 385
+        },
+        {
+          "stopId": "kanyargo:37",
+          "minuteOfDay": 386
+        },
+        {
+          "stopId": "kanyargo:1",
+          "minuteOfDay": 388
+        }
+      ],
+      "routeId": "kanyargo:1V",
+      "directionId": "kanyargo:3d99cf92b1bd"
+    },
+    {
+      "id": "kanyargo:break-c02-outbound",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 389
+        },
+        {
+          "stopId": "kanyargo:3",
+          "minuteOfDay": 390
+        },
+        {
+          "stopId": "kanyargo:4",
+          "minuteOfDay": 391
+        },
+        {
+          "stopId": "kanyargo:5",
+          "minuteOfDay": 392
+        },
+        {
+          "stopId": "kanyargo:7",
+          "minuteOfDay": 394
+        },
+        {
+          "stopId": "kanyargo:8",
+          "minuteOfDay": 395
+        },
+        {
+          "stopId": "kanyargo:9",
+          "minuteOfDay": 396
+        },
+        {
+          "stopId": "kanyargo:10",
+          "minuteOfDay": 397
+        },
+        {
+          "stopId": "kanyargo:11",
+          "minuteOfDay": 398
+        },
+        {
+          "stopId": "kanyargo:12",
+          "minuteOfDay": 399
+        },
+        {
+          "stopId": "kanyargo:13",
+          "minuteOfDay": 400
+        },
+        {
+          "stopId": "kanyargo:14",
+          "minuteOfDay": 402
+        },
+        {
+          "stopId": "kanyargo:15",
+          "minuteOfDay": 403
+        },
+        {
+          "stopId": "kanyargo:16",
+          "minuteOfDay": 404
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 405
+        },
+        {
+          "stopId": "kanyargo:26",
+          "minuteOfDay": 407
+        },
+        {
+          "stopId": "kanyargo:27",
+          "minuteOfDay": 408
+        },
+        {
+          "stopId": "kanyargo:28",
+          "minuteOfDay": 409
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 412
+        },
+        {
+          "stopId": "kanyargo:29",
+          "minuteOfDay": 413
+        }
+      ],
+      "routeId": "kanyargo:1V",
+      "directionId": "kanyargo:aed25c9ad441"
+    },
+    {
+      "id": "kanyargo:break-c02-inbound",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:30",
+          "minuteOfDay": 415
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 416
+        },
+        {
+          "stopId": "kanyargo:38",
+          "minuteOfDay": 418
+        },
+        {
+          "stopId": "kanyargo:37",
+          "minuteOfDay": 419
+        },
+        {
+          "stopId": "kanyargo:1",
+          "minuteOfDay": 421
+        }
+      ],
+      "routeId": "kanyargo:1V",
+      "directionId": "kanyargo:3d99cf92b1bd"
+    },
+    {
+      "id": "kanyargo:break-c03-local",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:36",
+          "minuteOfDay": 423
+        },
+        {
+          "stopId": "kanyargo:23",
+          "minuteOfDay": 424
+        },
+        {
+          "stopId": "kanyargo:24",
+          "minuteOfDay": 426
+        },
+        {
+          "stopId": "kanyargo:26",
+          "minuteOfDay": 429
+        },
+        {
+          "stopId": "kanyargo:1",
+          "minuteOfDay": 430
+        }
+      ],
+      "routeId": "kanyargo:1T",
+      "directionId": "kanyargo:51a67b824bcf"
+    },
+    {
+      "id": "kanyargo:break-c04-outbound",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 431
+        },
+        {
+          "stopId": "kanyargo:3",
+          "minuteOfDay": 432
+        },
+        {
+          "stopId": "kanyargo:4",
+          "minuteOfDay": 433
+        },
+        {
+          "stopId": "kanyargo:5",
+          "minuteOfDay": 434
+        },
+        {
+          "stopId": "kanyargo:7",
+          "minuteOfDay": 436
+        },
+        {
+          "stopId": "kanyargo:45",
+          "minuteOfDay": 438
+        },
+        {
+          "stopId": "kanyargo:44",
+          "minuteOfDay": 439
+        },
+        {
+          "stopId": "kanyargo:43",
+          "minuteOfDay": 440
+        },
+        {
+          "stopId": "kanyargo:46",
+          "minuteOfDay": 441
+        },
+        {
+          "stopId": "kanyargo:8",
+          "minuteOfDay": 443
+        },
+        {
+          "stopId": "kanyargo:9",
+          "minuteOfDay": 444
+        },
+        {
+          "stopId": "kanyargo:10",
+          "minuteOfDay": 445
+        },
+        {
+          "stopId": "kanyargo:11",
+          "minuteOfDay": 446
+        },
+        {
+          "stopId": "kanyargo:12",
+          "minuteOfDay": 447
+        },
+        {
+          "stopId": "kanyargo:13",
+          "minuteOfDay": 448
+        },
+        {
+          "stopId": "kanyargo:14",
+          "minuteOfDay": 450
+        },
+        {
+          "stopId": "kanyargo:15",
+          "minuteOfDay": 451
+        },
+        {
+          "stopId": "kanyargo:16",
+          "minuteOfDay": 452
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 453
+        },
+        {
+          "stopId": "kanyargo:26",
+          "minuteOfDay": 455
+        },
+        {
+          "stopId": "kanyargo:27",
+          "minuteOfDay": 456
+        },
+        {
+          "stopId": "kanyargo:28",
+          "minuteOfDay": 457
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 460
+        },
+        {
+          "stopId": "kanyargo:29",
+          "minuteOfDay": 465
+        }
+      ],
+      "routeId": "kanyargo:1MV",
+      "directionId": "kanyargo:1b203c471a33"
+    },
+    {
+      "id": "kanyargo:break-c04-inbound",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:30",
+          "minuteOfDay": 475
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 476
+        },
+        {
+          "stopId": "kanyargo:38",
+          "minuteOfDay": 478
+        },
+        {
+          "stopId": "kanyargo:37",
+          "minuteOfDay": 479
+        },
+        {
+          "stopId": "kanyargo:1",
+          "minuteOfDay": 481
+        }
+      ],
+      "routeId": "kanyargo:1MV",
+      "directionId": "kanyargo:3d99cf92b1bd"
+    },
+    {
+      "id": "kanyargo:break-c05-outbound",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:25",
+          "minuteOfDay": 585
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 586
+        },
+        {
+          "stopId": "kanyargo:3",
+          "minuteOfDay": 587
+        },
+        {
+          "stopId": "kanyargo:4",
+          "minuteOfDay": 588
+        },
+        {
+          "stopId": "kanyargo:5",
+          "minuteOfDay": 589
+        },
+        {
+          "stopId": "kanyargo:7",
+          "minuteOfDay": 591
+        },
+        {
+          "stopId": "kanyargo:45",
+          "minuteOfDay": 593
+        },
+        {
+          "stopId": "kanyargo:44",
+          "minuteOfDay": 594
+        },
+        {
+          "stopId": "kanyargo:43",
+          "minuteOfDay": 595
+        },
+        {
+          "stopId": "kanyargo:46",
+          "minuteOfDay": 596
+        },
+        {
+          "stopId": "kanyargo:8",
+          "minuteOfDay": 598
+        },
+        {
+          "stopId": "kanyargo:9",
+          "minuteOfDay": 599
+        },
+        {
+          "stopId": "kanyargo:10",
+          "minuteOfDay": 600
+        },
+        {
+          "stopId": "kanyargo:11",
+          "minuteOfDay": 601
+        },
+        {
+          "stopId": "kanyargo:12",
+          "minuteOfDay": 602
+        },
+        {
+          "stopId": "kanyargo:13",
+          "minuteOfDay": 603
+        },
+        {
+          "stopId": "kanyargo:14",
+          "minuteOfDay": 605
+        },
+        {
+          "stopId": "kanyargo:15",
+          "minuteOfDay": 606
+        },
+        {
+          "stopId": "kanyargo:16",
+          "minuteOfDay": 607
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 609
+        },
+        {
+          "stopId": "kanyargo:26",
+          "minuteOfDay": 611
+        },
+        {
+          "stopId": "kanyargo:27",
+          "minuteOfDay": 612
+        },
+        {
+          "stopId": "kanyargo:28",
+          "minuteOfDay": 613
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 616
+        },
+        {
+          "stopId": "kanyargo:29",
+          "minuteOfDay": 617
+        }
+      ],
+      "routeId": "kanyargo:1MV",
+      "directionId": "kanyargo:be173d91c661"
+    },
+    {
+      "id": "kanyargo:break-c05-inbound",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:30",
+          "minuteOfDay": 661
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 662
+        },
+        {
+          "stopId": "kanyargo:38",
+          "minuteOfDay": 665
+        },
+        {
+          "stopId": "kanyargo:37",
+          "minuteOfDay": 666
+        },
+        {
+          "stopId": "kanyargo:1",
+          "minuteOfDay": 668
+        }
+      ],
+      "routeId": "kanyargo:1MV",
+      "directionId": "kanyargo:3d99cf92b1bd"
+    },
+    {
+      "id": "kanyargo:break-c06-local",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 669
+        },
+        {
+          "stopId": "kanyargo:3",
+          "minuteOfDay": 670
+        },
+        {
+          "stopId": "kanyargo:4",
+          "minuteOfDay": 671
+        },
+        {
+          "stopId": "kanyargo:5",
+          "minuteOfDay": 672
+        },
+        {
+          "stopId": "kanyargo:7",
+          "minuteOfDay": 674
+        },
+        {
+          "stopId": "kanyargo:8",
+          "minuteOfDay": 675
+        },
+        {
+          "stopId": "kanyargo:9",
+          "minuteOfDay": 676
+        },
+        {
+          "stopId": "kanyargo:10",
+          "minuteOfDay": 677
+        },
+        {
+          "stopId": "kanyargo:11",
+          "minuteOfDay": 678
+        },
+        {
+          "stopId": "kanyargo:12",
+          "minuteOfDay": 679
+        },
+        {
+          "stopId": "kanyargo:13",
+          "minuteOfDay": 680
+        },
+        {
+          "stopId": "kanyargo:14",
+          "minuteOfDay": 681
+        },
+        {
+          "stopId": "kanyargo:15",
+          "minuteOfDay": 682
+        },
+        {
+          "stopId": "kanyargo:16",
+          "minuteOfDay": 683
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 686
+        },
+        {
+          "stopId": "kanyargo:36",
+          "minuteOfDay": 688
+        },
+        {
+          "stopId": "kanyargo:23",
+          "minuteOfDay": 689
+        },
+        {
+          "stopId": "kanyargo:24",
+          "minuteOfDay": 691
+        },
+        {
+          "stopId": "kanyargo:25",
+          "minuteOfDay": 693
+        },
+        {
+          "stopId": "kanyargo:26",
+          "minuteOfDay": 695
+        },
+        {
+          "stopId": "kanyargo:1",
+          "minuteOfDay": 696
+        }
+      ],
+      "routeId": "kanyargo:1A",
+      "directionId": "kanyargo:e923883c24b0"
+    },
+    {
+      "id": "kanyargo:break-c07-outbound",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 799
+        },
+        {
+          "stopId": "kanyargo:3",
+          "minuteOfDay": 800
+        },
+        {
+          "stopId": "kanyargo:4",
+          "minuteOfDay": 801
+        },
+        {
+          "stopId": "kanyargo:5",
+          "minuteOfDay": 802
+        },
+        {
+          "stopId": "kanyargo:7",
+          "minuteOfDay": 804
+        },
+        {
+          "stopId": "kanyargo:45",
+          "minuteOfDay": 806
+        },
+        {
+          "stopId": "kanyargo:44",
+          "minuteOfDay": 807
+        },
+        {
+          "stopId": "kanyargo:43",
+          "minuteOfDay": 808
+        },
+        {
+          "stopId": "kanyargo:46",
+          "minuteOfDay": 809
+        },
+        {
+          "stopId": "kanyargo:8",
+          "minuteOfDay": 811
+        },
+        {
+          "stopId": "kanyargo:9",
+          "minuteOfDay": 812
+        },
+        {
+          "stopId": "kanyargo:10",
+          "minuteOfDay": 813
+        },
+        {
+          "stopId": "kanyargo:11",
+          "minuteOfDay": 814
+        },
+        {
+          "stopId": "kanyargo:12",
+          "minuteOfDay": 815
+        },
+        {
+          "stopId": "kanyargo:13",
+          "minuteOfDay": 816
+        },
+        {
+          "stopId": "kanyargo:14",
+          "minuteOfDay": 817
+        },
+        {
+          "stopId": "kanyargo:15",
+          "minuteOfDay": 818
+        },
+        {
+          "stopId": "kanyargo:16",
+          "minuteOfDay": 819
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 821
+        },
+        {
+          "stopId": "kanyargo:26",
+          "minuteOfDay": 823
+        },
+        {
+          "stopId": "kanyargo:27",
+          "minuteOfDay": 824
+        },
+        {
+          "stopId": "kanyargo:28",
+          "minuteOfDay": 825
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 828
+        },
+        {
+          "stopId": "kanyargo:29",
+          "minuteOfDay": 829
+        }
+      ],
+      "routeId": "kanyargo:1MV",
+      "directionId": "kanyargo:1b203c471a33"
+    },
+    {
+      "id": "kanyargo:break-c07-inbound",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:30",
+          "minuteOfDay": 839
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 840
+        },
+        {
+          "stopId": "kanyargo:38",
+          "minuteOfDay": 843
+        },
+        {
+          "stopId": "kanyargo:37",
+          "minuteOfDay": 844
+        },
+        {
+          "stopId": "kanyargo:1",
+          "minuteOfDay": 846
+        }
+      ],
+      "routeId": "kanyargo:1MV",
+      "directionId": "kanyargo:3d99cf92b1bd"
+    },
+    {
+      "id": "kanyargo:break-c08-local",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 847
+        },
+        {
+          "stopId": "kanyargo:3",
+          "minuteOfDay": 848
+        },
+        {
+          "stopId": "kanyargo:4",
+          "minuteOfDay": 849
+        },
+        {
+          "stopId": "kanyargo:5",
+          "minuteOfDay": 850
+        },
+        {
+          "stopId": "kanyargo:7",
+          "minuteOfDay": 852
+        },
+        {
+          "stopId": "kanyargo:8",
+          "minuteOfDay": 853
+        },
+        {
+          "stopId": "kanyargo:9",
+          "minuteOfDay": 854
+        },
+        {
+          "stopId": "kanyargo:10",
+          "minuteOfDay": 855
+        },
+        {
+          "stopId": "kanyargo:11",
+          "minuteOfDay": 856
+        },
+        {
+          "stopId": "kanyargo:12",
+          "minuteOfDay": 857
+        },
+        {
+          "stopId": "kanyargo:13",
+          "minuteOfDay": 858
+        },
+        {
+          "stopId": "kanyargo:14",
+          "minuteOfDay": 860
+        },
+        {
+          "stopId": "kanyargo:15",
+          "minuteOfDay": 861
+        },
+        {
+          "stopId": "kanyargo:16",
+          "minuteOfDay": 862
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 864
+        }
+      ],
+      "routeId": "kanyargo:1A",
+      "directionId": "kanyargo:d6208c310bc6"
+    },
+    {
+      "id": "kanyargo:break-c09-outbound",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 931
+        },
+        {
+          "stopId": "kanyargo:3",
+          "minuteOfDay": 932
+        },
+        {
+          "stopId": "kanyargo:4",
+          "minuteOfDay": 933
+        },
+        {
+          "stopId": "kanyargo:5",
+          "minuteOfDay": 934
+        },
+        {
+          "stopId": "kanyargo:7",
+          "minuteOfDay": 936
+        },
+        {
+          "stopId": "kanyargo:45",
+          "minuteOfDay": 938
+        },
+        {
+          "stopId": "kanyargo:44",
+          "minuteOfDay": 939
+        },
+        {
+          "stopId": "kanyargo:43",
+          "minuteOfDay": 940
+        },
+        {
+          "stopId": "kanyargo:46",
+          "minuteOfDay": 941
+        },
+        {
+          "stopId": "kanyargo:8",
+          "minuteOfDay": 943
+        },
+        {
+          "stopId": "kanyargo:9",
+          "minuteOfDay": 944
+        },
+        {
+          "stopId": "kanyargo:10",
+          "minuteOfDay": 945
+        },
+        {
+          "stopId": "kanyargo:11",
+          "minuteOfDay": 946
+        },
+        {
+          "stopId": "kanyargo:12",
+          "minuteOfDay": 947
+        },
+        {
+          "stopId": "kanyargo:13",
+          "minuteOfDay": 948
+        },
+        {
+          "stopId": "kanyargo:14",
+          "minuteOfDay": 950
+        },
+        {
+          "stopId": "kanyargo:15",
+          "minuteOfDay": 951
+        },
+        {
+          "stopId": "kanyargo:16",
+          "minuteOfDay": 952
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 954
+        },
+        {
+          "stopId": "kanyargo:26",
+          "minuteOfDay": 956
+        },
+        {
+          "stopId": "kanyargo:27",
+          "minuteOfDay": 958
+        },
+        {
+          "stopId": "kanyargo:28",
+          "minuteOfDay": 959
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 962
+        },
+        {
+          "stopId": "kanyargo:29",
+          "minuteOfDay": 963
+        }
+      ],
+      "routeId": "kanyargo:1MV",
+      "directionId": "kanyargo:1b203c471a33"
+    },
+    {
+      "id": "kanyargo:break-c09-inbound",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:30",
+          "minuteOfDay": 964
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 965
+        },
+        {
+          "stopId": "kanyargo:38",
+          "minuteOfDay": 968
+        },
+        {
+          "stopId": "kanyargo:37",
+          "minuteOfDay": 969
+        },
+        {
+          "stopId": "kanyargo:1",
+          "minuteOfDay": 971
+        }
+      ],
+      "routeId": "kanyargo:1MV",
+      "directionId": "kanyargo:3d99cf92b1bd"
+    },
+    {
+      "id": "kanyargo:break-c10-local",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 972
+        },
+        {
+          "stopId": "kanyargo:3",
+          "minuteOfDay": 973
+        },
+        {
+          "stopId": "kanyargo:4",
+          "minuteOfDay": 974
+        },
+        {
+          "stopId": "kanyargo:5",
+          "minuteOfDay": 975
+        },
+        {
+          "stopId": "kanyargo:7",
+          "minuteOfDay": 977
+        },
+        {
+          "stopId": "kanyargo:8",
+          "minuteOfDay": 978
+        },
+        {
+          "stopId": "kanyargo:9",
+          "minuteOfDay": 979
+        },
+        {
+          "stopId": "kanyargo:10",
+          "minuteOfDay": 980
+        },
+        {
+          "stopId": "kanyargo:11",
+          "minuteOfDay": 981
+        },
+        {
+          "stopId": "kanyargo:12",
+          "minuteOfDay": 982
+        },
+        {
+          "stopId": "kanyargo:13",
+          "minuteOfDay": 983
+        },
+        {
+          "stopId": "kanyargo:14",
+          "minuteOfDay": 985
+        },
+        {
+          "stopId": "kanyargo:15",
+          "minuteOfDay": 986
+        },
+        {
+          "stopId": "kanyargo:16",
+          "minuteOfDay": 987
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 989
+        }
+      ],
+      "routeId": "kanyargo:1A",
+      "directionId": "kanyargo:d6208c310bc6"
+    },
+    {
+      "id": "kanyargo:break-c11-outbound",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 1006
+        },
+        {
+          "stopId": "kanyargo:3",
+          "minuteOfDay": 1007
+        },
+        {
+          "stopId": "kanyargo:4",
+          "minuteOfDay": 1008
+        },
+        {
+          "stopId": "kanyargo:5",
+          "minuteOfDay": 1009
+        },
+        {
+          "stopId": "kanyargo:7",
+          "minuteOfDay": 1011
+        },
+        {
+          "stopId": "kanyargo:45",
+          "minuteOfDay": 1013
+        },
+        {
+          "stopId": "kanyargo:44",
+          "minuteOfDay": 1014
+        },
+        {
+          "stopId": "kanyargo:43",
+          "minuteOfDay": 1015
+        },
+        {
+          "stopId": "kanyargo:46",
+          "minuteOfDay": 1016
+        },
+        {
+          "stopId": "kanyargo:8",
+          "minuteOfDay": 1018
+        },
+        {
+          "stopId": "kanyargo:9",
+          "minuteOfDay": 1019
+        },
+        {
+          "stopId": "kanyargo:10",
+          "minuteOfDay": 1020
+        },
+        {
+          "stopId": "kanyargo:11",
+          "minuteOfDay": 1021
+        },
+        {
+          "stopId": "kanyargo:12",
+          "minuteOfDay": 1022
+        },
+        {
+          "stopId": "kanyargo:13",
+          "minuteOfDay": 1023
+        },
+        {
+          "stopId": "kanyargo:14",
+          "minuteOfDay": 1025
+        },
+        {
+          "stopId": "kanyargo:15",
+          "minuteOfDay": 1026
+        },
+        {
+          "stopId": "kanyargo:16",
+          "minuteOfDay": 1027
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 1029
+        },
+        {
+          "stopId": "kanyargo:26",
+          "minuteOfDay": 1031
+        },
+        {
+          "stopId": "kanyargo:27",
+          "minuteOfDay": 1032
+        },
+        {
+          "stopId": "kanyargo:28",
+          "minuteOfDay": 1033
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 1036
+        },
+        {
+          "stopId": "kanyargo:29",
+          "minuteOfDay": 1037
+        }
+      ],
+      "routeId": "kanyargo:1MV",
+      "directionId": "kanyargo:1b203c471a33"
+    },
+    {
+      "id": "kanyargo:break-c11-inbound",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:30",
+          "minuteOfDay": 1052
+        },
+        {
+          "stopId": "kanyargo:42",
+          "minuteOfDay": 1053
+        },
+        {
+          "stopId": "kanyargo:38",
+          "minuteOfDay": 1056
+        },
+        {
+          "stopId": "kanyargo:37",
+          "minuteOfDay": 1057
+        },
+        {
+          "stopId": "kanyargo:1",
+          "minuteOfDay": 1059
+        }
+      ],
+      "routeId": "kanyargo:1MV",
+      "directionId": "kanyargo:3d99cf92b1bd"
+    },
+    {
+      "id": "kanyargo:break-c12-local",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 1060
+        },
+        {
+          "stopId": "kanyargo:3",
+          "minuteOfDay": 1061
+        },
+        {
+          "stopId": "kanyargo:4",
+          "minuteOfDay": 1062
+        },
+        {
+          "stopId": "kanyargo:5",
+          "minuteOfDay": 1063
+        },
+        {
+          "stopId": "kanyargo:7",
+          "minuteOfDay": 1065
+        },
+        {
+          "stopId": "kanyargo:8",
+          "minuteOfDay": 1066
+        },
+        {
+          "stopId": "kanyargo:9",
+          "minuteOfDay": 1067
+        },
+        {
+          "stopId": "kanyargo:10",
+          "minuteOfDay": 1068
+        },
+        {
+          "stopId": "kanyargo:11",
+          "minuteOfDay": 1069
+        },
+        {
+          "stopId": "kanyargo:12",
+          "minuteOfDay": 1070
+        },
+        {
+          "stopId": "kanyargo:13",
+          "minuteOfDay": 1071
+        },
+        {
+          "stopId": "kanyargo:14",
+          "minuteOfDay": 1073
+        },
+        {
+          "stopId": "kanyargo:15",
+          "minuteOfDay": 1074
+        },
+        {
+          "stopId": "kanyargo:16",
+          "minuteOfDay": 1075
+        },
+        {
+          "stopId": "kanyargo:2",
+          "minuteOfDay": 1077
+        },
+        {
+          "stopId": "kanyargo:36",
+          "minuteOfDay": 1079
+        },
+        {
+          "stopId": "kanyargo:23",
+          "minuteOfDay": 1080
+        },
+        {
+          "stopId": "kanyargo:24",
+          "minuteOfDay": 1082
+        }
+      ],
+      "routeId": "kanyargo:1V",
+      "directionId": "kanyargo:2a9ae50f6ce5"
+    }
+  ]
+}

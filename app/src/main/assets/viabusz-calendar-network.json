@@ -1,0 +1,9256 @@
+{
+  "schemaVersion": 2,
+  "fetchedAt": "2026-10-22T00:00:00Z",
+  "source": "https://viabusz.biatorbagy.hu/",
+  "serviceDate": null,
+  "calendarLabel": "school_term / school_break (working days)",
+  "stops": [
+    {
+      "id": "1",
+      "name": "Vasútállomás",
+      "lat": 47.479821,
+      "lon": 18.833979,
+      "routeIds": [
+        "10",
+        "11",
+        "12",
+        "13",
+        "14"
+      ]
+    },
+    {
+      "id": "2",
+      "name": "Ritsmann Iskola",
+      "lat": 47.47741259,
+      "lon": 18.83207691,
+      "routeIds": [
+        "10",
+        "11",
+        "13"
+      ]
+    },
+    {
+      "id": "3",
+      "name": "Meggyfa utca",
+      "lat": 47.473687,
+      "lon": 18.83527,
+      "routeIds": [
+        "10",
+        "11",
+        "13"
+      ]
+    },
+    {
+      "id": "37",
+      "name": "Völgyhíd",
+      "lat": 47.47252111,
+      "lon": 18.83224094,
+      "routeIds": [
+        "10",
+        "11"
+      ]
+    },
+    {
+      "id": "27",
+      "name": "Faluház",
+      "lat": 47.473352,
+      "lon": 18.824596,
+      "routeIds": [
+        "10",
+        "11"
+      ]
+    },
+    {
+      "id": "5",
+      "name": "Vasút utca",
+      "lat": 47.471394,
+      "lon": 18.824603,
+      "routeIds": [
+        "10",
+        "11"
+      ]
+    },
+    {
+      "id": "6",
+      "name": "Kolozsvári utca",
+      "lat": 47.468103,
+      "lon": 18.81829,
+      "routeIds": [
+        "10",
+        "11"
+      ]
+    },
+    {
+      "id": "7",
+      "name": "Patak utca",
+      "lat": 47.464007,
+      "lon": 18.821986,
+      "routeIds": [
+        "10",
+        "11"
+      ]
+    },
+    {
+      "id": "8",
+      "name": "Barackvirág utca",
+      "lat": 47.4611271,
+      "lon": 18.81718508,
+      "routeIds": [
+        "10",
+        "11"
+      ]
+    },
+    {
+      "id": "9",
+      "name": "Kálvin tér",
+      "lat": 47.461748,
+      "lon": 18.811792,
+      "routeIds": [
+        "10",
+        "11"
+      ]
+    },
+    {
+      "id": "10",
+      "name": "Szentháromság tér (észak felé)",
+      "lat": 47.465113,
+      "lon": 18.808408,
+      "routeIds": [
+        "10",
+        "11"
+      ]
+    },
+    {
+      "id": "11",
+      "name": "Biai katolikus temető",
+      "lat": 47.469326,
+      "lon": 18.804021,
+      "routeIds": [
+        "10",
+        "11"
+      ]
+    },
+    {
+      "id": "12",
+      "name": "Csicsergő Óvoda",
+      "lat": 47.467114,
+      "lon": 18.808045,
+      "routeIds": [
+        "10",
+        "11"
+      ]
+    },
+    {
+      "id": "13",
+      "name": "Orvosi rendelő",
+      "lat": 47.466533,
+      "lon": 18.811937,
+      "routeIds": [
+        "10",
+        "11"
+      ]
+    },
+    {
+      "id": "65",
+      "name": "Gyógyszertár",
+      "lat": 47.46720461,
+      "lon": 18.81529315,
+      "routeIds": [
+        "10",
+        "11",
+        "12"
+      ]
+    },
+    {
+      "id": "14",
+      "name": "József Attila utca",
+      "lat": 47.469841,
+      "lon": 18.813199,
+      "routeIds": [
+        "10",
+        "11"
+      ]
+    },
+    {
+      "id": "15",
+      "name": "Jókai utca",
+      "lat": 47.472053,
+      "lon": 18.818046,
+      "routeIds": [
+        "10",
+        "11"
+      ]
+    },
+    {
+      "id": "16",
+      "name": "Mester utca",
+      "lat": 47.47394095,
+      "lon": 18.82229602,
+      "routeIds": [
+        "10",
+        "11"
+      ]
+    },
+    {
+      "id": "17",
+      "name": "Akácfa utca",
+      "lat": 47.476002,
+      "lon": 18.819351,
+      "routeIds": [
+        "10",
+        "11"
+      ]
+    },
+    {
+      "id": "18",
+      "name": "Meserét Óvoda",
+      "lat": 47.477164,
+      "lon": 18.816308,
+      "routeIds": [
+        "10",
+        "11"
+      ]
+    },
+    {
+      "id": "44",
+      "name": "Hámory Imre utca",
+      "lat": 47.477115,
+      "lon": 18.813856,
+      "routeIds": [
+        "10",
+        "11"
+      ]
+    },
+    {
+      "id": "20",
+      "name": "Juhász Gyula utca",
+      "lat": 47.478805,
+      "lon": 18.811614,
+      "routeIds": [
+        "10",
+        "11"
+      ]
+    },
+    {
+      "id": "21",
+      "name": "Ybl Miklós sétány",
+      "lat": 47.48054363,
+      "lon": 18.81535371,
+      "routeIds": [
+        "10",
+        "11"
+      ]
+    },
+    {
+      "id": "22",
+      "name": "Tavasz utca",
+      "lat": 47.48180322,
+      "lon": 18.81924635,
+      "routeIds": [
+        "10",
+        "11"
+      ]
+    },
+    {
+      "id": "23",
+      "name": "Szent László utca",
+      "lat": 47.48355249,
+      "lon": 18.82460597,
+      "routeIds": [
+        "10",
+        "11"
+      ]
+    },
+    {
+      "id": "24",
+      "name": "Diófa utca",
+      "lat": 47.479777,
+      "lon": 18.825879,
+      "routeIds": [
+        "10",
+        "11"
+      ]
+    },
+    {
+      "id": "25",
+      "name": "Táncsics Mihály utca",
+      "lat": 47.477317,
+      "lon": 18.825965,
+      "routeIds": [
+        "10",
+        "11"
+      ]
+    },
+    {
+      "id": "26",
+      "name": "Vendel tér",
+      "lat": 47.478029,
+      "lon": 18.829206,
+      "routeIds": [
+        "10",
+        "11"
+      ]
+    },
+    {
+      "id": "66",
+      "name": "Szentháromság tér (dél felé)",
+      "lat": 47.46494253,
+      "lon": 18.808388,
+      "routeIds": [
+        "11",
+        "12"
+      ]
+    },
+    {
+      "id": "43",
+      "name": "Kálvin tér (Nagy u.)",
+      "lat": 47.4604286,
+      "lon": 18.8114751,
+      "routeIds": [
+        "11"
+      ]
+    },
+    {
+      "id": "38",
+      "name": "Autóbusz-forduló",
+      "lat": 47.4577089,
+      "lon": 18.8112273,
+      "routeIds": [
+        "11"
+      ]
+    },
+    {
+      "id": "59",
+      "name": "Alsómajor",
+      "lat": 47.4511058,
+      "lon": 18.8219825,
+      "routeIds": [
+        "11"
+      ]
+    },
+    {
+      "id": "60",
+      "name": "Erdészház",
+      "lat": 47.4457893,
+      "lon": 18.8199852,
+      "routeIds": [
+        "11"
+      ]
+    },
+    {
+      "id": "39",
+      "name": "Pecató Kertbarátok t.",
+      "lat": 47.437926,
+      "lon": 18.814274,
+      "routeIds": [
+        "11"
+      ]
+    },
+    {
+      "id": "63",
+      "name": "Pecató (Volán)",
+      "lat": 47.43713527,
+      "lon": 18.82036291,
+      "routeIds": [
+        "11"
+      ]
+    },
+    {
+      "id": "40",
+      "name": "Ürgehegy, Oportó",
+      "lat": 47.438108,
+      "lon": 18.831998,
+      "routeIds": [
+        "11"
+      ]
+    },
+    {
+      "id": "41",
+      "name": "Csabagyöngye",
+      "lat": 47.437275,
+      "lon": 18.828952,
+      "routeIds": [
+        "11"
+      ]
+    },
+    {
+      "id": "42",
+      "name": "Kadarka utca",
+      "lat": 47.435998,
+      "lon": 18.823841,
+      "routeIds": [
+        "11"
+      ]
+    },
+    {
+      "id": "64",
+      "name": "Pecató (Volán) Visszaút",
+      "lat": 47.43748542,
+      "lon": 18.8200625,
+      "routeIds": [
+        "11"
+      ]
+    },
+    {
+      "id": "62",
+      "name": "Erdészház Visszaút",
+      "lat": 47.4462233,
+      "lon": 18.820584,
+      "routeIds": [
+        "11"
+      ]
+    },
+    {
+      "id": "61",
+      "name": "Alsómajor Visszaút",
+      "lat": 47.4514945,
+      "lon": 18.8213498,
+      "routeIds": [
+        "11"
+      ]
+    },
+    {
+      "id": "69",
+      "name": "Vendel tér (Ellenirány)",
+      "lat": 47.47816558,
+      "lon": 18.82939381,
+      "routeIds": [
+        "12"
+      ]
+    },
+    {
+      "id": "45",
+      "name": "Kishíd (Ellenirány)",
+      "lat": 47.480344,
+      "lon": 18.827953,
+      "routeIds": [
+        "12"
+      ]
+    },
+    {
+      "id": "46",
+      "name": "Pipacs utca (Ellenirány)",
+      "lat": 47.481661,
+      "lon": 18.826413,
+      "routeIds": [
+        "12"
+      ]
+    },
+    {
+      "id": "70",
+      "name": "Szent László utca (Ellenirány)",
+      "lat": 47.48359587,
+      "lon": 18.8245104,
+      "routeIds": [
+        "12"
+      ]
+    },
+    {
+      "id": "71",
+      "name": "Tavasz utca (Ellenirány)",
+      "lat": 47.48174159,
+      "lon": 18.8186442,
+      "routeIds": [
+        "12"
+      ]
+    },
+    {
+      "id": "72",
+      "name": "Ybl Miklós sétány (Ellenirány)",
+      "lat": 47.48062726,
+      "lon": 18.8153148,
+      "routeIds": [
+        "12"
+      ]
+    },
+    {
+      "id": "67",
+      "name": "Juhász Gyula utca (Ellenirány)",
+      "lat": 47.47886048,
+      "lon": 18.81146558,
+      "routeIds": [
+        "12"
+      ]
+    },
+    {
+      "id": "19",
+      "name": "Hámory Imre utca (Ellenirány)",
+      "lat": 47.477767,
+      "lon": 18.813027,
+      "routeIds": [
+        "12"
+      ]
+    },
+    {
+      "id": "68",
+      "name": "Meserét Óvoda (Ellenirány)",
+      "lat": 47.47712128,
+      "lon": 18.81643471,
+      "routeIds": [
+        "12"
+      ]
+    },
+    {
+      "id": "73",
+      "name": "Akácfa utca (Ellenirány)",
+      "lat": 47.47589884,
+      "lon": 18.81933373,
+      "routeIds": [
+        "12"
+      ]
+    },
+    {
+      "id": "74",
+      "name": "Mester utca (Ellenirány)",
+      "lat": 47.47398899,
+      "lon": 18.82223836,
+      "routeIds": [
+        "12"
+      ]
+    },
+    {
+      "id": "75",
+      "name": "Jókai utca (Ellenirány)",
+      "lat": 47.47205451,
+      "lon": 18.81794548,
+      "routeIds": [
+        "12"
+      ]
+    },
+    {
+      "id": "76",
+      "name": "József Attila utca (Ellenirány)",
+      "lat": 47.46989423,
+      "lon": 18.81312153,
+      "routeIds": [
+        "12"
+      ]
+    },
+    {
+      "id": "77",
+      "name": "Orvosi rendelő (Ellenirány)",
+      "lat": 47.46668583,
+      "lon": 18.81242281,
+      "routeIds": [
+        "12"
+      ]
+    },
+    {
+      "id": "78",
+      "name": "Csicsergő Óvoda (Ellenirány)",
+      "lat": 47.46719418,
+      "lon": 18.80814398,
+      "routeIds": [
+        "12"
+      ]
+    },
+    {
+      "id": "50",
+      "name": "Biai katolikus temető (Ellenirány)",
+      "lat": 47.468893,
+      "lon": 18.805178,
+      "routeIds": [
+        "12"
+      ]
+    },
+    {
+      "id": "48",
+      "name": "Kálvin tér (Sándor utca)",
+      "lat": 47.46167496,
+      "lon": 18.81258842,
+      "routeIds": [
+        "12"
+      ]
+    },
+    {
+      "id": "79",
+      "name": "Barackvirág utca (Ellenirány)",
+      "lat": 47.46112075,
+      "lon": 18.817287,
+      "routeIds": [
+        "12"
+      ]
+    },
+    {
+      "id": "49",
+      "name": "Füzes utca (Ellenirány)",
+      "lat": 47.466219,
+      "lon": 18.819891,
+      "routeIds": [
+        "12"
+      ]
+    },
+    {
+      "id": "80",
+      "name": "Kolozsvári utca (Ellenirány)",
+      "lat": 47.46822456,
+      "lon": 18.81882413,
+      "routeIds": [
+        "12"
+      ]
+    },
+    {
+      "id": "81",
+      "name": "Vasút utca (Ellenirány)",
+      "lat": 47.47140816,
+      "lon": 18.82467514,
+      "routeIds": [
+        "12"
+      ]
+    },
+    {
+      "id": "82",
+      "name": "Faluház (Ellenirány)",
+      "lat": 47.47328102,
+      "lon": 18.82459065,
+      "routeIds": [
+        "12"
+      ]
+    },
+    {
+      "id": "83",
+      "name": "Völgyhíd (Ellenirány)",
+      "lat": 47.4723108,
+      "lon": 18.83231604,
+      "routeIds": [
+        "12"
+      ]
+    },
+    {
+      "id": "84",
+      "name": "Meggyfa utca (Ellenirány)",
+      "lat": 47.47383208,
+      "lon": 18.83581859,
+      "routeIds": [
+        "12"
+      ]
+    },
+    {
+      "id": "85",
+      "name": "Ritsmann Iskola (Ellenirány)",
+      "lat": 47.47750323,
+      "lon": 18.83211714,
+      "routeIds": [
+        "12",
+        "13"
+      ]
+    },
+    {
+      "id": "36",
+      "name": "Iharos utca",
+      "lat": 47.469424,
+      "lon": 18.838232,
+      "routeIds": [
+        "13"
+      ]
+    },
+    {
+      "id": "58",
+      "name": "Nimród köz",
+      "lat": 47.469866,
+      "lon": 18.84454,
+      "routeIds": [
+        "13"
+      ]
+    },
+    {
+      "id": "57",
+      "name": "Nimród utca",
+      "lat": 47.471838,
+      "lon": 18.843484,
+      "routeIds": [
+        "13"
+      ]
+    },
+    {
+      "id": "55",
+      "name": "Csodaszarvas utca",
+      "lat": 47.473693,
+      "lon": 18.837325,
+      "routeIds": [
+        "13"
+      ]
+    },
+    {
+      "id": "28",
+      "name": "Torbágyi temető",
+      "lat": 47.48264241,
+      "lon": 18.83838278,
+      "routeIds": [
+        "14"
+      ]
+    },
+    {
+      "id": "32",
+      "name": "Anikó utca",
+      "lat": 47.486178,
+      "lon": 18.839594,
+      "routeIds": [
+        "14"
+      ]
+    },
+    {
+      "id": "33",
+      "name": "Gréta utca",
+      "lat": 47.484403,
+      "lon": 18.841652,
+      "routeIds": [
+        "14"
+      ]
+    },
+    {
+      "id": "86",
+      "name": "Torbágyi temető (Visszaút)",
+      "lat": 47.48264241,
+      "lon": 18.83826208,
+      "routeIds": [
+        "14"
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "id": "10",
+      "number": "1",
+      "name": "Vasútállomás > Ország út > Bia > Szily Kálmán út > Vasútállomás",
+      "directions": [
+        {
+          "id": "1",
+          "name": "Vasútállomás > Ország út > Bia > Szily Kálmán út > Vasútállomás",
+          "stopIds": [
+            "1",
+            "2",
+            "3",
+            "37",
+            "27",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "65",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "44",
+            "20",
+            "21",
+            "22",
+            "23",
+            "24",
+            "25",
+            "26",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "11",
+      "number": "1P",
+      "name": "Vasútállomás > Ország út > Pecató > Ürgehegy > Szily Kálmán út > Vasútállomás",
+      "directions": [
+        {
+          "id": "1",
+          "name": "Vasútállomás > Ország út > Pecató > Ürgehegy > Szily Kálmán út > Vasútállomás",
+          "stopIds": [
+            "1",
+            "2",
+            "3",
+            "37",
+            "27",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "66",
+            "43",
+            "38",
+            "59",
+            "60",
+            "39",
+            "63",
+            "40",
+            "41",
+            "42",
+            "64",
+            "62",
+            "61",
+            "38",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "65",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "44",
+            "20",
+            "21",
+            "22",
+            "23",
+            "24",
+            "25",
+            "26",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "12",
+      "number": "2",
+      "name": "Vasútállomás > Szily Kálmán út > Bia > Ország út > Vasútállomás",
+      "directions": [
+        {
+          "id": "2",
+          "name": "Vasútállomás > Szily Kálmán út > Bia > Ország út > Vasútállomás",
+          "stopIds": [
+            "1",
+            "69",
+            "45",
+            "46",
+            "70",
+            "71",
+            "72",
+            "67",
+            "19",
+            "68",
+            "73",
+            "74",
+            "75",
+            "76",
+            "65",
+            "77",
+            "78",
+            "50",
+            "66",
+            "48",
+            "79",
+            "49",
+            "80",
+            "81",
+            "82",
+            "83",
+            "84",
+            "85",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "13",
+      "number": "3",
+      "name": "Vasútállomás > Iharos > Szarvasugrás > Vasútállomás",
+      "directions": [
+        {
+          "id": "1",
+          "name": "Vasútállomás > Iharos > Szarvasugrás > Vasútállomás",
+          "stopIds": [
+            "1",
+            "2",
+            "3",
+            "36",
+            "58",
+            "57",
+            "55",
+            "85",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "14",
+      "number": "4",
+      "name": "Vasútállomás > Katalin-hegy > Vasútállomás",
+      "directions": [
+        {
+          "id": "1",
+          "name": "Vasútállomás > Katalin-hegy > Vasútállomás",
+          "stopIds": [
+            "1",
+            "28",
+            "32",
+            "33",
+            "86",
+            "1"
+          ]
+        }
+      ]
+    }
+  ],
+  "trips": [
+    {
+      "id": "viabusz:school_term:10:295",
+      "routeId": "10",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 295
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 296
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 298
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 299
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 301
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 302
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 304
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 306
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 308
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 310
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 312
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 313
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 314
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 315
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 316
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 317
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 319
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 320
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 321
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 322
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 323
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 324
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 325
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 326
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 327
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 329
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 330
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 331
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 333
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:10:355",
+      "routeId": "10",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 355
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 356
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 358
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 359
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 361
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 362
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 364
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 366
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 368
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 370
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 372
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 373
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 374
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 375
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 376
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 377
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 379
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 380
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 381
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 382
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 383
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 384
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 385
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 386
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 387
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 389
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 390
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 391
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 393
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:10:380",
+      "routeId": "10",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 380
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 381
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 383
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 384
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 386
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 387
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 389
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 391
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 393
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 395
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 397
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 398
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 399
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 400
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 401
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 402
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 404
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 405
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 406
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 407
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 408
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 409
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 410
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 411
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 412
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 414
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 415
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 416
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 418
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:11:400",
+      "routeId": "11",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 400
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 401
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 403
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 404
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 406
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 407
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 409
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 411
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 413
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 415
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 417
+        },
+        {
+          "stopId": "43",
+          "minuteOfDay": 418
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 419
+        },
+        {
+          "stopId": "59",
+          "minuteOfDay": 421
+        },
+        {
+          "stopId": "60",
+          "minuteOfDay": 422
+        },
+        {
+          "stopId": "39",
+          "minuteOfDay": 424
+        },
+        {
+          "stopId": "63",
+          "minuteOfDay": 425
+        },
+        {
+          "stopId": "40",
+          "minuteOfDay": 429
+        },
+        {
+          "stopId": "41",
+          "minuteOfDay": 430
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 431
+        },
+        {
+          "stopId": "64",
+          "minuteOfDay": 432
+        },
+        {
+          "stopId": "62",
+          "minuteOfDay": 434
+        },
+        {
+          "stopId": "61",
+          "minuteOfDay": 435
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 437
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 438
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 440
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 441
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 442
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 443
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 444
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 445
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 447
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 448
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 449
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 450
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 451
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 452
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 453
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 454
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 455
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 457
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 458
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 459
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 461
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:10:440",
+      "routeId": "10",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 440
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 441
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 443
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 444
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 446
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 447
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 449
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 451
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 453
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 455
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 457
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 458
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 459
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 460
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 461
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 462
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 464
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 465
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 466
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 467
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 468
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 469
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 470
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 471
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 472
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 474
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 475
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 476
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 478
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:11:505",
+      "routeId": "11",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 505
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 506
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 508
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 509
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 511
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 512
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 514
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 516
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 518
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 520
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 522
+        },
+        {
+          "stopId": "43",
+          "minuteOfDay": 523
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 524
+        },
+        {
+          "stopId": "59",
+          "minuteOfDay": 526
+        },
+        {
+          "stopId": "60",
+          "minuteOfDay": 527
+        },
+        {
+          "stopId": "39",
+          "minuteOfDay": 529
+        },
+        {
+          "stopId": "63",
+          "minuteOfDay": 530
+        },
+        {
+          "stopId": "40",
+          "minuteOfDay": 534
+        },
+        {
+          "stopId": "41",
+          "minuteOfDay": 535
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 536
+        },
+        {
+          "stopId": "64",
+          "minuteOfDay": 537
+        },
+        {
+          "stopId": "62",
+          "minuteOfDay": 539
+        },
+        {
+          "stopId": "61",
+          "minuteOfDay": 540
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 542
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 543
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 545
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 546
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 547
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 548
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 549
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 550
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 552
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 553
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 554
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 555
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 556
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 557
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 558
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 559
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 560
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 562
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 563
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 564
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 566
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:10:565",
+      "routeId": "10",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 565
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 566
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 568
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 569
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 571
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 572
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 574
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 576
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 578
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 580
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 582
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 583
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 584
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 585
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 586
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 587
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 589
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 590
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 591
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 592
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 593
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 594
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 595
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 596
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 597
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 599
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 600
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 601
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 603
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:11:625",
+      "routeId": "11",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 625
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 626
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 628
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 629
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 631
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 632
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 634
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 636
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 638
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 640
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 642
+        },
+        {
+          "stopId": "43",
+          "minuteOfDay": 643
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 644
+        },
+        {
+          "stopId": "59",
+          "minuteOfDay": 646
+        },
+        {
+          "stopId": "60",
+          "minuteOfDay": 647
+        },
+        {
+          "stopId": "39",
+          "minuteOfDay": 649
+        },
+        {
+          "stopId": "63",
+          "minuteOfDay": 650
+        },
+        {
+          "stopId": "40",
+          "minuteOfDay": 654
+        },
+        {
+          "stopId": "41",
+          "minuteOfDay": 655
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 656
+        },
+        {
+          "stopId": "64",
+          "minuteOfDay": 657
+        },
+        {
+          "stopId": "62",
+          "minuteOfDay": 659
+        },
+        {
+          "stopId": "61",
+          "minuteOfDay": 660
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 662
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 663
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 665
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 666
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 667
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 668
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 669
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 670
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 672
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 673
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 674
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 675
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 676
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 677
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 678
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 679
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 680
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 682
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 683
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 684
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 686
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:10:705",
+      "routeId": "10",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 705
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 706
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 708
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 709
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 711
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 712
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 714
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 716
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 718
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 720
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 722
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 723
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 724
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 725
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 726
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 727
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 729
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 730
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 731
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 732
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 733
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 734
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 735
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 736
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 737
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 739
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 740
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 741
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 743
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:10:755",
+      "routeId": "10",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 755
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 756
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 758
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 759
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 761
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 762
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 764
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 766
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 768
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 770
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 772
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 773
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 774
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 775
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 776
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 777
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 779
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 780
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 781
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 782
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 783
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 784
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 785
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 786
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 787
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 789
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 790
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 791
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 793
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:10:815",
+      "routeId": "10",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 815
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 816
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 818
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 819
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 821
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 822
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 824
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 826
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 828
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 830
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 832
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 833
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 834
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 835
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 836
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 837
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 839
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 840
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 841
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 842
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 843
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 844
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 845
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 846
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 847
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 849
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 850
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 851
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 853
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:11:820",
+      "routeId": "11",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 820
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 821
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 823
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 824
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 826
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 827
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 829
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 831
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 833
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 835
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 837
+        },
+        {
+          "stopId": "43",
+          "minuteOfDay": 838
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 839
+        },
+        {
+          "stopId": "59",
+          "minuteOfDay": 841
+        },
+        {
+          "stopId": "60",
+          "minuteOfDay": 842
+        },
+        {
+          "stopId": "39",
+          "minuteOfDay": 844
+        },
+        {
+          "stopId": "63",
+          "minuteOfDay": 845
+        },
+        {
+          "stopId": "40",
+          "minuteOfDay": 849
+        },
+        {
+          "stopId": "41",
+          "minuteOfDay": 850
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 851
+        },
+        {
+          "stopId": "64",
+          "minuteOfDay": 852
+        },
+        {
+          "stopId": "62",
+          "minuteOfDay": 854
+        },
+        {
+          "stopId": "61",
+          "minuteOfDay": 855
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 857
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 858
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 860
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 861
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 862
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 863
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 864
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 865
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 867
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 868
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 869
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 870
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 871
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 872
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 873
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 874
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 875
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 877
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 878
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 879
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 881
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:10:875",
+      "routeId": "10",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 875
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 876
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 878
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 879
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 881
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 882
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 884
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 886
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 888
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 890
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 892
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 893
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 894
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 895
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 896
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 897
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 899
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 900
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 901
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 902
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 903
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 904
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 905
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 906
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 907
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 909
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 910
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 911
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 913
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:10:930",
+      "routeId": "10",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 930
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 931
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 933
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 934
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 936
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 937
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 939
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 941
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 943
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 945
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 947
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 948
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 949
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 950
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 951
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 952
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 954
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 955
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 956
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 957
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 958
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 959
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 960
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 961
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 962
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 964
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 965
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 966
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 968
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:11:965",
+      "routeId": "11",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 965
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 966
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 968
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 969
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 971
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 972
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 974
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 976
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 978
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 980
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 982
+        },
+        {
+          "stopId": "43",
+          "minuteOfDay": 983
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 984
+        },
+        {
+          "stopId": "59",
+          "minuteOfDay": 986
+        },
+        {
+          "stopId": "60",
+          "minuteOfDay": 987
+        },
+        {
+          "stopId": "39",
+          "minuteOfDay": 989
+        },
+        {
+          "stopId": "63",
+          "minuteOfDay": 990
+        },
+        {
+          "stopId": "40",
+          "minuteOfDay": 994
+        },
+        {
+          "stopId": "41",
+          "minuteOfDay": 995
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 996
+        },
+        {
+          "stopId": "64",
+          "minuteOfDay": 997
+        },
+        {
+          "stopId": "62",
+          "minuteOfDay": 999
+        },
+        {
+          "stopId": "61",
+          "minuteOfDay": 1000
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 1002
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 1003
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 1005
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 1006
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 1007
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 1008
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 1009
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 1010
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 1012
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 1013
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 1014
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 1015
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 1016
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 1017
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 1018
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 1019
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 1020
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 1022
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 1023
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 1024
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 1026
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:10:1015",
+      "routeId": "10",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 1015
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 1016
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 1018
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 1019
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 1021
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 1022
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 1024
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 1026
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 1028
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 1030
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 1032
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 1033
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 1034
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 1035
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 1036
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 1037
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 1039
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 1040
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 1041
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 1042
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 1043
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 1044
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 1045
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 1046
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 1047
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 1049
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 1050
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 1051
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 1053
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:10:1075",
+      "routeId": "10",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 1075
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 1076
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 1078
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 1079
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 1081
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 1082
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 1084
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 1086
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 1088
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 1090
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 1092
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 1093
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 1094
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 1095
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 1096
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 1097
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 1099
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 1100
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 1101
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 1102
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 1103
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 1104
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 1105
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 1106
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 1107
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 1109
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 1110
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 1111
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 1113
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:11:1135",
+      "routeId": "11",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 1135
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 1136
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 1138
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 1139
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 1141
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 1142
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 1144
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 1146
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 1148
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 1150
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 1152
+        },
+        {
+          "stopId": "43",
+          "minuteOfDay": 1153
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 1154
+        },
+        {
+          "stopId": "59",
+          "minuteOfDay": 1156
+        },
+        {
+          "stopId": "60",
+          "minuteOfDay": 1157
+        },
+        {
+          "stopId": "39",
+          "minuteOfDay": 1159
+        },
+        {
+          "stopId": "63",
+          "minuteOfDay": 1160
+        },
+        {
+          "stopId": "40",
+          "minuteOfDay": 1164
+        },
+        {
+          "stopId": "41",
+          "minuteOfDay": 1165
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 1166
+        },
+        {
+          "stopId": "64",
+          "minuteOfDay": 1167
+        },
+        {
+          "stopId": "62",
+          "minuteOfDay": 1169
+        },
+        {
+          "stopId": "61",
+          "minuteOfDay": 1170
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 1172
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 1173
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 1175
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 1176
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 1177
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 1178
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 1179
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 1180
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 1182
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 1183
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 1184
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 1185
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 1186
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 1187
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 1188
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 1189
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 1190
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 1192
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 1193
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 1194
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 1196
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:12:420",
+      "routeId": "12",
+      "directionId": "2",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 420
+        },
+        {
+          "stopId": "69",
+          "minuteOfDay": 421
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 422
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 424
+        },
+        {
+          "stopId": "70",
+          "minuteOfDay": 425
+        },
+        {
+          "stopId": "71",
+          "minuteOfDay": 426
+        },
+        {
+          "stopId": "72",
+          "minuteOfDay": 427
+        },
+        {
+          "stopId": "67",
+          "minuteOfDay": 428
+        },
+        {
+          "stopId": "19",
+          "minuteOfDay": 429
+        },
+        {
+          "stopId": "68",
+          "minuteOfDay": 430
+        },
+        {
+          "stopId": "73",
+          "minuteOfDay": 431
+        },
+        {
+          "stopId": "74",
+          "minuteOfDay": 432
+        },
+        {
+          "stopId": "75",
+          "minuteOfDay": 433
+        },
+        {
+          "stopId": "76",
+          "minuteOfDay": 434
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 435
+        },
+        {
+          "stopId": "77",
+          "minuteOfDay": 436
+        },
+        {
+          "stopId": "78",
+          "minuteOfDay": 437
+        },
+        {
+          "stopId": "50",
+          "minuteOfDay": 439
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 441
+        },
+        {
+          "stopId": "48",
+          "minuteOfDay": 443
+        },
+        {
+          "stopId": "79",
+          "minuteOfDay": 445
+        },
+        {
+          "stopId": "49",
+          "minuteOfDay": 447
+        },
+        {
+          "stopId": "80",
+          "minuteOfDay": 449
+        },
+        {
+          "stopId": "81",
+          "minuteOfDay": 450
+        },
+        {
+          "stopId": "82",
+          "minuteOfDay": 452
+        },
+        {
+          "stopId": "83",
+          "minuteOfDay": 453
+        },
+        {
+          "stopId": "84",
+          "minuteOfDay": 459
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 460
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 462
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:12:425",
+      "routeId": "12",
+      "directionId": "2",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 425
+        },
+        {
+          "stopId": "69",
+          "minuteOfDay": 426
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 427
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 429
+        },
+        {
+          "stopId": "70",
+          "minuteOfDay": 430
+        },
+        {
+          "stopId": "71",
+          "minuteOfDay": 431
+        },
+        {
+          "stopId": "72",
+          "minuteOfDay": 432
+        },
+        {
+          "stopId": "67",
+          "minuteOfDay": 433
+        },
+        {
+          "stopId": "19",
+          "minuteOfDay": 434
+        },
+        {
+          "stopId": "68",
+          "minuteOfDay": 435
+        },
+        {
+          "stopId": "73",
+          "minuteOfDay": 436
+        },
+        {
+          "stopId": "74",
+          "minuteOfDay": 437
+        },
+        {
+          "stopId": "75",
+          "minuteOfDay": 438
+        },
+        {
+          "stopId": "76",
+          "minuteOfDay": 439
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 440
+        },
+        {
+          "stopId": "77",
+          "minuteOfDay": 441
+        },
+        {
+          "stopId": "78",
+          "minuteOfDay": 442
+        },
+        {
+          "stopId": "50",
+          "minuteOfDay": 444
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 446
+        },
+        {
+          "stopId": "48",
+          "minuteOfDay": 448
+        },
+        {
+          "stopId": "79",
+          "minuteOfDay": 450
+        },
+        {
+          "stopId": "49",
+          "minuteOfDay": 452
+        },
+        {
+          "stopId": "80",
+          "minuteOfDay": 454
+        },
+        {
+          "stopId": "81",
+          "minuteOfDay": 455
+        },
+        {
+          "stopId": "82",
+          "minuteOfDay": 457
+        },
+        {
+          "stopId": "83",
+          "minuteOfDay": 458
+        },
+        {
+          "stopId": "84",
+          "minuteOfDay": 464
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 465
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 467
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:12:475",
+      "routeId": "12",
+      "directionId": "2",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 475
+        },
+        {
+          "stopId": "69",
+          "minuteOfDay": 476
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 477
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 479
+        },
+        {
+          "stopId": "70",
+          "minuteOfDay": 480
+        },
+        {
+          "stopId": "71",
+          "minuteOfDay": 481
+        },
+        {
+          "stopId": "72",
+          "minuteOfDay": 482
+        },
+        {
+          "stopId": "67",
+          "minuteOfDay": 483
+        },
+        {
+          "stopId": "19",
+          "minuteOfDay": 484
+        },
+        {
+          "stopId": "68",
+          "minuteOfDay": 485
+        },
+        {
+          "stopId": "73",
+          "minuteOfDay": 486
+        },
+        {
+          "stopId": "74",
+          "minuteOfDay": 487
+        },
+        {
+          "stopId": "75",
+          "minuteOfDay": 488
+        },
+        {
+          "stopId": "76",
+          "minuteOfDay": 489
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 490
+        },
+        {
+          "stopId": "77",
+          "minuteOfDay": 491
+        },
+        {
+          "stopId": "78",
+          "minuteOfDay": 492
+        },
+        {
+          "stopId": "50",
+          "minuteOfDay": 494
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 496
+        },
+        {
+          "stopId": "48",
+          "minuteOfDay": 498
+        },
+        {
+          "stopId": "79",
+          "minuteOfDay": 500
+        },
+        {
+          "stopId": "49",
+          "minuteOfDay": 502
+        },
+        {
+          "stopId": "80",
+          "minuteOfDay": 504
+        },
+        {
+          "stopId": "81",
+          "minuteOfDay": 505
+        },
+        {
+          "stopId": "82",
+          "minuteOfDay": 507
+        },
+        {
+          "stopId": "83",
+          "minuteOfDay": 508
+        },
+        {
+          "stopId": "84",
+          "minuteOfDay": 510
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 511
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 513
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:12:535",
+      "routeId": "12",
+      "directionId": "2",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 535
+        },
+        {
+          "stopId": "69",
+          "minuteOfDay": 536
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 537
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 539
+        },
+        {
+          "stopId": "70",
+          "minuteOfDay": 540
+        },
+        {
+          "stopId": "71",
+          "minuteOfDay": 541
+        },
+        {
+          "stopId": "72",
+          "minuteOfDay": 542
+        },
+        {
+          "stopId": "67",
+          "minuteOfDay": 543
+        },
+        {
+          "stopId": "19",
+          "minuteOfDay": 544
+        },
+        {
+          "stopId": "68",
+          "minuteOfDay": 545
+        },
+        {
+          "stopId": "73",
+          "minuteOfDay": 546
+        },
+        {
+          "stopId": "74",
+          "minuteOfDay": 547
+        },
+        {
+          "stopId": "75",
+          "minuteOfDay": 548
+        },
+        {
+          "stopId": "76",
+          "minuteOfDay": 549
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 550
+        },
+        {
+          "stopId": "77",
+          "minuteOfDay": 551
+        },
+        {
+          "stopId": "78",
+          "minuteOfDay": 552
+        },
+        {
+          "stopId": "50",
+          "minuteOfDay": 554
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 556
+        },
+        {
+          "stopId": "48",
+          "minuteOfDay": 558
+        },
+        {
+          "stopId": "79",
+          "minuteOfDay": 560
+        },
+        {
+          "stopId": "49",
+          "minuteOfDay": 562
+        },
+        {
+          "stopId": "80",
+          "minuteOfDay": 564
+        },
+        {
+          "stopId": "81",
+          "minuteOfDay": 565
+        },
+        {
+          "stopId": "82",
+          "minuteOfDay": 567
+        },
+        {
+          "stopId": "83",
+          "minuteOfDay": 568
+        },
+        {
+          "stopId": "84",
+          "minuteOfDay": 570
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 571
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 573
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:12:655",
+      "routeId": "12",
+      "directionId": "2",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 655
+        },
+        {
+          "stopId": "69",
+          "minuteOfDay": 656
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 657
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 659
+        },
+        {
+          "stopId": "70",
+          "minuteOfDay": 660
+        },
+        {
+          "stopId": "71",
+          "minuteOfDay": 661
+        },
+        {
+          "stopId": "72",
+          "minuteOfDay": 662
+        },
+        {
+          "stopId": "67",
+          "minuteOfDay": 663
+        },
+        {
+          "stopId": "19",
+          "minuteOfDay": 664
+        },
+        {
+          "stopId": "68",
+          "minuteOfDay": 665
+        },
+        {
+          "stopId": "73",
+          "minuteOfDay": 666
+        },
+        {
+          "stopId": "74",
+          "minuteOfDay": 667
+        },
+        {
+          "stopId": "75",
+          "minuteOfDay": 668
+        },
+        {
+          "stopId": "76",
+          "minuteOfDay": 669
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 670
+        },
+        {
+          "stopId": "77",
+          "minuteOfDay": 671
+        },
+        {
+          "stopId": "78",
+          "minuteOfDay": 672
+        },
+        {
+          "stopId": "50",
+          "minuteOfDay": 674
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 676
+        },
+        {
+          "stopId": "48",
+          "minuteOfDay": 678
+        },
+        {
+          "stopId": "79",
+          "minuteOfDay": 680
+        },
+        {
+          "stopId": "49",
+          "minuteOfDay": 682
+        },
+        {
+          "stopId": "80",
+          "minuteOfDay": 684
+        },
+        {
+          "stopId": "81",
+          "minuteOfDay": 685
+        },
+        {
+          "stopId": "82",
+          "minuteOfDay": 687
+        },
+        {
+          "stopId": "83",
+          "minuteOfDay": 688
+        },
+        {
+          "stopId": "84",
+          "minuteOfDay": 690
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 691
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 693
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:12:775",
+      "routeId": "12",
+      "directionId": "2",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 775
+        },
+        {
+          "stopId": "69",
+          "minuteOfDay": 776
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 777
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 779
+        },
+        {
+          "stopId": "70",
+          "minuteOfDay": 780
+        },
+        {
+          "stopId": "71",
+          "minuteOfDay": 781
+        },
+        {
+          "stopId": "72",
+          "minuteOfDay": 782
+        },
+        {
+          "stopId": "67",
+          "minuteOfDay": 783
+        },
+        {
+          "stopId": "19",
+          "minuteOfDay": 784
+        },
+        {
+          "stopId": "68",
+          "minuteOfDay": 785
+        },
+        {
+          "stopId": "73",
+          "minuteOfDay": 786
+        },
+        {
+          "stopId": "74",
+          "minuteOfDay": 787
+        },
+        {
+          "stopId": "75",
+          "minuteOfDay": 788
+        },
+        {
+          "stopId": "76",
+          "minuteOfDay": 789
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 790
+        },
+        {
+          "stopId": "77",
+          "minuteOfDay": 791
+        },
+        {
+          "stopId": "78",
+          "minuteOfDay": 792
+        },
+        {
+          "stopId": "50",
+          "minuteOfDay": 794
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 796
+        },
+        {
+          "stopId": "48",
+          "minuteOfDay": 798
+        },
+        {
+          "stopId": "79",
+          "minuteOfDay": 800
+        },
+        {
+          "stopId": "49",
+          "minuteOfDay": 802
+        },
+        {
+          "stopId": "80",
+          "minuteOfDay": 804
+        },
+        {
+          "stopId": "81",
+          "minuteOfDay": 805
+        },
+        {
+          "stopId": "82",
+          "minuteOfDay": 807
+        },
+        {
+          "stopId": "83",
+          "minuteOfDay": 808
+        },
+        {
+          "stopId": "84",
+          "minuteOfDay": 810
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 811
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 813
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:12:835",
+      "routeId": "12",
+      "directionId": "2",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 835
+        },
+        {
+          "stopId": "69",
+          "minuteOfDay": 836
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 837
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 839
+        },
+        {
+          "stopId": "70",
+          "minuteOfDay": 840
+        },
+        {
+          "stopId": "71",
+          "minuteOfDay": 841
+        },
+        {
+          "stopId": "72",
+          "minuteOfDay": 842
+        },
+        {
+          "stopId": "67",
+          "minuteOfDay": 843
+        },
+        {
+          "stopId": "19",
+          "minuteOfDay": 844
+        },
+        {
+          "stopId": "68",
+          "minuteOfDay": 845
+        },
+        {
+          "stopId": "73",
+          "minuteOfDay": 846
+        },
+        {
+          "stopId": "74",
+          "minuteOfDay": 847
+        },
+        {
+          "stopId": "75",
+          "minuteOfDay": 848
+        },
+        {
+          "stopId": "76",
+          "minuteOfDay": 849
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 850
+        },
+        {
+          "stopId": "77",
+          "minuteOfDay": 851
+        },
+        {
+          "stopId": "78",
+          "minuteOfDay": 852
+        },
+        {
+          "stopId": "50",
+          "minuteOfDay": 854
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 856
+        },
+        {
+          "stopId": "48",
+          "minuteOfDay": 858
+        },
+        {
+          "stopId": "79",
+          "minuteOfDay": 860
+        },
+        {
+          "stopId": "49",
+          "minuteOfDay": 862
+        },
+        {
+          "stopId": "80",
+          "minuteOfDay": 864
+        },
+        {
+          "stopId": "81",
+          "minuteOfDay": 865
+        },
+        {
+          "stopId": "82",
+          "minuteOfDay": 867
+        },
+        {
+          "stopId": "83",
+          "minuteOfDay": 868
+        },
+        {
+          "stopId": "84",
+          "minuteOfDay": 870
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 871
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 873
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:12:895",
+      "routeId": "12",
+      "directionId": "2",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 895
+        },
+        {
+          "stopId": "69",
+          "minuteOfDay": 896
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 897
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 899
+        },
+        {
+          "stopId": "70",
+          "minuteOfDay": 900
+        },
+        {
+          "stopId": "71",
+          "minuteOfDay": 901
+        },
+        {
+          "stopId": "72",
+          "minuteOfDay": 902
+        },
+        {
+          "stopId": "67",
+          "minuteOfDay": 903
+        },
+        {
+          "stopId": "19",
+          "minuteOfDay": 904
+        },
+        {
+          "stopId": "68",
+          "minuteOfDay": 905
+        },
+        {
+          "stopId": "73",
+          "minuteOfDay": 906
+        },
+        {
+          "stopId": "74",
+          "minuteOfDay": 907
+        },
+        {
+          "stopId": "75",
+          "minuteOfDay": 908
+        },
+        {
+          "stopId": "76",
+          "minuteOfDay": 909
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 910
+        },
+        {
+          "stopId": "77",
+          "minuteOfDay": 911
+        },
+        {
+          "stopId": "78",
+          "minuteOfDay": 912
+        },
+        {
+          "stopId": "50",
+          "minuteOfDay": 914
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 916
+        },
+        {
+          "stopId": "48",
+          "minuteOfDay": 918
+        },
+        {
+          "stopId": "79",
+          "minuteOfDay": 920
+        },
+        {
+          "stopId": "49",
+          "minuteOfDay": 922
+        },
+        {
+          "stopId": "80",
+          "minuteOfDay": 924
+        },
+        {
+          "stopId": "81",
+          "minuteOfDay": 925
+        },
+        {
+          "stopId": "82",
+          "minuteOfDay": 927
+        },
+        {
+          "stopId": "83",
+          "minuteOfDay": 928
+        },
+        {
+          "stopId": "84",
+          "minuteOfDay": 930
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 931
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 933
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:12:915",
+      "routeId": "12",
+      "directionId": "2",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 915
+        },
+        {
+          "stopId": "69",
+          "minuteOfDay": 916
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 917
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 919
+        },
+        {
+          "stopId": "70",
+          "minuteOfDay": 920
+        },
+        {
+          "stopId": "71",
+          "minuteOfDay": 921
+        },
+        {
+          "stopId": "72",
+          "minuteOfDay": 922
+        },
+        {
+          "stopId": "67",
+          "minuteOfDay": 923
+        },
+        {
+          "stopId": "19",
+          "minuteOfDay": 924
+        },
+        {
+          "stopId": "68",
+          "minuteOfDay": 925
+        },
+        {
+          "stopId": "73",
+          "minuteOfDay": 926
+        },
+        {
+          "stopId": "74",
+          "minuteOfDay": 927
+        },
+        {
+          "stopId": "75",
+          "minuteOfDay": 928
+        },
+        {
+          "stopId": "76",
+          "minuteOfDay": 929
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 930
+        },
+        {
+          "stopId": "77",
+          "minuteOfDay": 931
+        },
+        {
+          "stopId": "78",
+          "minuteOfDay": 932
+        },
+        {
+          "stopId": "50",
+          "minuteOfDay": 934
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 936
+        },
+        {
+          "stopId": "48",
+          "minuteOfDay": 938
+        },
+        {
+          "stopId": "79",
+          "minuteOfDay": 940
+        },
+        {
+          "stopId": "49",
+          "minuteOfDay": 942
+        },
+        {
+          "stopId": "80",
+          "minuteOfDay": 944
+        },
+        {
+          "stopId": "81",
+          "minuteOfDay": 945
+        },
+        {
+          "stopId": "82",
+          "minuteOfDay": 947
+        },
+        {
+          "stopId": "83",
+          "minuteOfDay": 948
+        },
+        {
+          "stopId": "84",
+          "minuteOfDay": 950
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 951
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 953
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:12:955",
+      "routeId": "12",
+      "directionId": "2",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 955
+        },
+        {
+          "stopId": "69",
+          "minuteOfDay": 956
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 957
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 959
+        },
+        {
+          "stopId": "70",
+          "minuteOfDay": 960
+        },
+        {
+          "stopId": "71",
+          "minuteOfDay": 961
+        },
+        {
+          "stopId": "72",
+          "minuteOfDay": 962
+        },
+        {
+          "stopId": "67",
+          "minuteOfDay": 963
+        },
+        {
+          "stopId": "19",
+          "minuteOfDay": 964
+        },
+        {
+          "stopId": "68",
+          "minuteOfDay": 965
+        },
+        {
+          "stopId": "73",
+          "minuteOfDay": 966
+        },
+        {
+          "stopId": "74",
+          "minuteOfDay": 967
+        },
+        {
+          "stopId": "75",
+          "minuteOfDay": 968
+        },
+        {
+          "stopId": "76",
+          "minuteOfDay": 969
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 970
+        },
+        {
+          "stopId": "77",
+          "minuteOfDay": 971
+        },
+        {
+          "stopId": "78",
+          "minuteOfDay": 972
+        },
+        {
+          "stopId": "50",
+          "minuteOfDay": 974
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 976
+        },
+        {
+          "stopId": "48",
+          "minuteOfDay": 978
+        },
+        {
+          "stopId": "79",
+          "minuteOfDay": 980
+        },
+        {
+          "stopId": "49",
+          "minuteOfDay": 982
+        },
+        {
+          "stopId": "80",
+          "minuteOfDay": 984
+        },
+        {
+          "stopId": "81",
+          "minuteOfDay": 985
+        },
+        {
+          "stopId": "82",
+          "minuteOfDay": 987
+        },
+        {
+          "stopId": "83",
+          "minuteOfDay": 988
+        },
+        {
+          "stopId": "84",
+          "minuteOfDay": 990
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 991
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 993
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:12:985",
+      "routeId": "12",
+      "directionId": "2",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 985
+        },
+        {
+          "stopId": "69",
+          "minuteOfDay": 986
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 987
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 989
+        },
+        {
+          "stopId": "70",
+          "minuteOfDay": 990
+        },
+        {
+          "stopId": "71",
+          "minuteOfDay": 991
+        },
+        {
+          "stopId": "72",
+          "minuteOfDay": 992
+        },
+        {
+          "stopId": "67",
+          "minuteOfDay": 993
+        },
+        {
+          "stopId": "19",
+          "minuteOfDay": 994
+        },
+        {
+          "stopId": "68",
+          "minuteOfDay": 995
+        },
+        {
+          "stopId": "73",
+          "minuteOfDay": 996
+        },
+        {
+          "stopId": "74",
+          "minuteOfDay": 997
+        },
+        {
+          "stopId": "75",
+          "minuteOfDay": 998
+        },
+        {
+          "stopId": "76",
+          "minuteOfDay": 999
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 1000
+        },
+        {
+          "stopId": "77",
+          "minuteOfDay": 1001
+        },
+        {
+          "stopId": "78",
+          "minuteOfDay": 1002
+        },
+        {
+          "stopId": "50",
+          "minuteOfDay": 1004
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 1006
+        },
+        {
+          "stopId": "48",
+          "minuteOfDay": 1008
+        },
+        {
+          "stopId": "79",
+          "minuteOfDay": 1010
+        },
+        {
+          "stopId": "49",
+          "minuteOfDay": 1012
+        },
+        {
+          "stopId": "80",
+          "minuteOfDay": 1014
+        },
+        {
+          "stopId": "81",
+          "minuteOfDay": 1015
+        },
+        {
+          "stopId": "82",
+          "minuteOfDay": 1017
+        },
+        {
+          "stopId": "83",
+          "minuteOfDay": 1018
+        },
+        {
+          "stopId": "84",
+          "minuteOfDay": 1020
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 1021
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 1023
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:12:1045",
+      "routeId": "12",
+      "directionId": "2",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 1045
+        },
+        {
+          "stopId": "69",
+          "minuteOfDay": 1046
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 1047
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 1049
+        },
+        {
+          "stopId": "70",
+          "minuteOfDay": 1050
+        },
+        {
+          "stopId": "71",
+          "minuteOfDay": 1051
+        },
+        {
+          "stopId": "72",
+          "minuteOfDay": 1052
+        },
+        {
+          "stopId": "67",
+          "minuteOfDay": 1053
+        },
+        {
+          "stopId": "19",
+          "minuteOfDay": 1054
+        },
+        {
+          "stopId": "68",
+          "minuteOfDay": 1055
+        },
+        {
+          "stopId": "73",
+          "minuteOfDay": 1056
+        },
+        {
+          "stopId": "74",
+          "minuteOfDay": 1057
+        },
+        {
+          "stopId": "75",
+          "minuteOfDay": 1058
+        },
+        {
+          "stopId": "76",
+          "minuteOfDay": 1059
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 1060
+        },
+        {
+          "stopId": "77",
+          "minuteOfDay": 1061
+        },
+        {
+          "stopId": "78",
+          "minuteOfDay": 1062
+        },
+        {
+          "stopId": "50",
+          "minuteOfDay": 1064
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 1066
+        },
+        {
+          "stopId": "48",
+          "minuteOfDay": 1068
+        },
+        {
+          "stopId": "79",
+          "minuteOfDay": 1070
+        },
+        {
+          "stopId": "49",
+          "minuteOfDay": 1072
+        },
+        {
+          "stopId": "80",
+          "minuteOfDay": 1074
+        },
+        {
+          "stopId": "81",
+          "minuteOfDay": 1075
+        },
+        {
+          "stopId": "82",
+          "minuteOfDay": 1077
+        },
+        {
+          "stopId": "83",
+          "minuteOfDay": 1078
+        },
+        {
+          "stopId": "84",
+          "minuteOfDay": 1080
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 1081
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 1083
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:12:1105",
+      "routeId": "12",
+      "directionId": "2",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 1105
+        },
+        {
+          "stopId": "69",
+          "minuteOfDay": 1106
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 1107
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 1109
+        },
+        {
+          "stopId": "70",
+          "minuteOfDay": 1110
+        },
+        {
+          "stopId": "71",
+          "minuteOfDay": 1111
+        },
+        {
+          "stopId": "72",
+          "minuteOfDay": 1112
+        },
+        {
+          "stopId": "67",
+          "minuteOfDay": 1113
+        },
+        {
+          "stopId": "19",
+          "minuteOfDay": 1114
+        },
+        {
+          "stopId": "68",
+          "minuteOfDay": 1115
+        },
+        {
+          "stopId": "73",
+          "minuteOfDay": 1116
+        },
+        {
+          "stopId": "74",
+          "minuteOfDay": 1117
+        },
+        {
+          "stopId": "75",
+          "minuteOfDay": 1118
+        },
+        {
+          "stopId": "76",
+          "minuteOfDay": 1119
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 1120
+        },
+        {
+          "stopId": "77",
+          "minuteOfDay": 1121
+        },
+        {
+          "stopId": "78",
+          "minuteOfDay": 1122
+        },
+        {
+          "stopId": "50",
+          "minuteOfDay": 1124
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 1126
+        },
+        {
+          "stopId": "48",
+          "minuteOfDay": 1128
+        },
+        {
+          "stopId": "79",
+          "minuteOfDay": 1130
+        },
+        {
+          "stopId": "49",
+          "minuteOfDay": 1132
+        },
+        {
+          "stopId": "80",
+          "minuteOfDay": 1134
+        },
+        {
+          "stopId": "81",
+          "minuteOfDay": 1135
+        },
+        {
+          "stopId": "82",
+          "minuteOfDay": 1137
+        },
+        {
+          "stopId": "83",
+          "minuteOfDay": 1138
+        },
+        {
+          "stopId": "84",
+          "minuteOfDay": 1140
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 1141
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 1143
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:12:1195",
+      "routeId": "12",
+      "directionId": "2",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 1195
+        },
+        {
+          "stopId": "69",
+          "minuteOfDay": 1196
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 1197
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 1199
+        },
+        {
+          "stopId": "70",
+          "minuteOfDay": 1200
+        },
+        {
+          "stopId": "71",
+          "minuteOfDay": 1201
+        },
+        {
+          "stopId": "72",
+          "minuteOfDay": 1202
+        },
+        {
+          "stopId": "67",
+          "minuteOfDay": 1203
+        },
+        {
+          "stopId": "19",
+          "minuteOfDay": 1204
+        },
+        {
+          "stopId": "68",
+          "minuteOfDay": 1205
+        },
+        {
+          "stopId": "73",
+          "minuteOfDay": 1206
+        },
+        {
+          "stopId": "74",
+          "minuteOfDay": 1207
+        },
+        {
+          "stopId": "75",
+          "minuteOfDay": 1208
+        },
+        {
+          "stopId": "76",
+          "minuteOfDay": 1209
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 1210
+        },
+        {
+          "stopId": "77",
+          "minuteOfDay": 1211
+        },
+        {
+          "stopId": "78",
+          "minuteOfDay": 1212
+        },
+        {
+          "stopId": "50",
+          "minuteOfDay": 1214
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 1216
+        },
+        {
+          "stopId": "48",
+          "minuteOfDay": 1218
+        },
+        {
+          "stopId": "79",
+          "minuteOfDay": 1220
+        },
+        {
+          "stopId": "49",
+          "minuteOfDay": 1222
+        },
+        {
+          "stopId": "80",
+          "minuteOfDay": 1224
+        },
+        {
+          "stopId": "81",
+          "minuteOfDay": 1225
+        },
+        {
+          "stopId": "82",
+          "minuteOfDay": 1227
+        },
+        {
+          "stopId": "83",
+          "minuteOfDay": 1228
+        },
+        {
+          "stopId": "84",
+          "minuteOfDay": 1230
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 1231
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 1233
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:13:410",
+      "routeId": "13",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 410
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 411
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 413
+        },
+        {
+          "stopId": "36",
+          "minuteOfDay": 415
+        },
+        {
+          "stopId": "58",
+          "minuteOfDay": 417
+        },
+        {
+          "stopId": "57",
+          "minuteOfDay": 419
+        },
+        {
+          "stopId": "55",
+          "minuteOfDay": 421
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 423
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 425
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:13:461",
+      "routeId": "13",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 461
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 462
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 464
+        },
+        {
+          "stopId": "36",
+          "minuteOfDay": 466
+        },
+        {
+          "stopId": "58",
+          "minuteOfDay": 468
+        },
+        {
+          "stopId": "57",
+          "minuteOfDay": 470
+        },
+        {
+          "stopId": "55",
+          "minuteOfDay": 472
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 474
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 476
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:13:566",
+      "routeId": "13",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 566
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 567
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 569
+        },
+        {
+          "stopId": "36",
+          "minuteOfDay": 571
+        },
+        {
+          "stopId": "58",
+          "minuteOfDay": 572
+        },
+        {
+          "stopId": "57",
+          "minuteOfDay": 573
+        },
+        {
+          "stopId": "55",
+          "minuteOfDay": 574
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 576
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 578
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:13:686",
+      "routeId": "13",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 686
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 687
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 689
+        },
+        {
+          "stopId": "36",
+          "minuteOfDay": 691
+        },
+        {
+          "stopId": "58",
+          "minuteOfDay": 692
+        },
+        {
+          "stopId": "57",
+          "minuteOfDay": 693
+        },
+        {
+          "stopId": "55",
+          "minuteOfDay": 694
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 696
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 698
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:13:793",
+      "routeId": "13",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 793
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 794
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 796
+        },
+        {
+          "stopId": "36",
+          "minuteOfDay": 798
+        },
+        {
+          "stopId": "58",
+          "minuteOfDay": 799
+        },
+        {
+          "stopId": "57",
+          "minuteOfDay": 800
+        },
+        {
+          "stopId": "55",
+          "minuteOfDay": 801
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 803
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 805
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:13:853",
+      "routeId": "13",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 853
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 854
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 856
+        },
+        {
+          "stopId": "36",
+          "minuteOfDay": 858
+        },
+        {
+          "stopId": "58",
+          "minuteOfDay": 859
+        },
+        {
+          "stopId": "57",
+          "minuteOfDay": 860
+        },
+        {
+          "stopId": "55",
+          "minuteOfDay": 861
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 863
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 865
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:13:913",
+      "routeId": "13",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 913
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 914
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 916
+        },
+        {
+          "stopId": "36",
+          "minuteOfDay": 918
+        },
+        {
+          "stopId": "58",
+          "minuteOfDay": 919
+        },
+        {
+          "stopId": "57",
+          "minuteOfDay": 920
+        },
+        {
+          "stopId": "55",
+          "minuteOfDay": 921
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 923
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 925
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:13:968",
+      "routeId": "13",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 968
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 969
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 971
+        },
+        {
+          "stopId": "36",
+          "minuteOfDay": 973
+        },
+        {
+          "stopId": "58",
+          "minuteOfDay": 974
+        },
+        {
+          "stopId": "57",
+          "minuteOfDay": 975
+        },
+        {
+          "stopId": "55",
+          "minuteOfDay": 976
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 978
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 980
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:13:1053",
+      "routeId": "13",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 1053
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 1054
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 1056
+        },
+        {
+          "stopId": "36",
+          "minuteOfDay": 1058
+        },
+        {
+          "stopId": "58",
+          "minuteOfDay": 1059
+        },
+        {
+          "stopId": "57",
+          "minuteOfDay": 1060
+        },
+        {
+          "stopId": "55",
+          "minuteOfDay": 1061
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 1063
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 1065
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:14:430",
+      "routeId": "14",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 430
+        },
+        {
+          "stopId": "28",
+          "minuteOfDay": 432
+        },
+        {
+          "stopId": "32",
+          "minuteOfDay": 434
+        },
+        {
+          "stopId": "33",
+          "minuteOfDay": 436
+        },
+        {
+          "stopId": "86",
+          "minuteOfDay": 438
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 440
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:14:555",
+      "routeId": "14",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 555
+        },
+        {
+          "stopId": "28",
+          "minuteOfDay": 557
+        },
+        {
+          "stopId": "32",
+          "minuteOfDay": 559
+        },
+        {
+          "stopId": "33",
+          "minuteOfDay": 561
+        },
+        {
+          "stopId": "86",
+          "minuteOfDay": 563
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 565
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:14:695",
+      "routeId": "14",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 695
+        },
+        {
+          "stopId": "28",
+          "minuteOfDay": 697
+        },
+        {
+          "stopId": "32",
+          "minuteOfDay": 699
+        },
+        {
+          "stopId": "33",
+          "minuteOfDay": 701
+        },
+        {
+          "stopId": "86",
+          "minuteOfDay": 703
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 705
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:14:813",
+      "routeId": "14",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 813
+        },
+        {
+          "stopId": "28",
+          "minuteOfDay": 815
+        },
+        {
+          "stopId": "32",
+          "minuteOfDay": 817
+        },
+        {
+          "stopId": "33",
+          "minuteOfDay": 819
+        },
+        {
+          "stopId": "86",
+          "minuteOfDay": 821
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 823
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:14:873",
+      "routeId": "14",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 873
+        },
+        {
+          "stopId": "28",
+          "minuteOfDay": 875
+        },
+        {
+          "stopId": "32",
+          "minuteOfDay": 877
+        },
+        {
+          "stopId": "33",
+          "minuteOfDay": 879
+        },
+        {
+          "stopId": "86",
+          "minuteOfDay": 881
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 883
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:14:953",
+      "routeId": "14",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 953
+        },
+        {
+          "stopId": "28",
+          "minuteOfDay": 955
+        },
+        {
+          "stopId": "32",
+          "minuteOfDay": 957
+        },
+        {
+          "stopId": "33",
+          "minuteOfDay": 959
+        },
+        {
+          "stopId": "86",
+          "minuteOfDay": 961
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 963
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:14:1023",
+      "routeId": "14",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 1023
+        },
+        {
+          "stopId": "28",
+          "minuteOfDay": 1025
+        },
+        {
+          "stopId": "32",
+          "minuteOfDay": 1027
+        },
+        {
+          "stopId": "33",
+          "minuteOfDay": 1029
+        },
+        {
+          "stopId": "86",
+          "minuteOfDay": 1031
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 1033
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_term:14:1143",
+      "routeId": "14",
+      "directionId": "1",
+      "calendar": "school_term",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 1143
+        },
+        {
+          "stopId": "28",
+          "minuteOfDay": 1145
+        },
+        {
+          "stopId": "32",
+          "minuteOfDay": 1147
+        },
+        {
+          "stopId": "33",
+          "minuteOfDay": 1149
+        },
+        {
+          "stopId": "86",
+          "minuteOfDay": 1151
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 1153
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:10:295",
+      "routeId": "10",
+      "directionId": "1",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 295
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 296
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 298
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 299
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 301
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 302
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 304
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 306
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 308
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 310
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 312
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 313
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 314
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 315
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 316
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 317
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 319
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 320
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 321
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 322
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 323
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 324
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 325
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 326
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 327
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 329
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 330
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 331
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 333
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:10:355",
+      "routeId": "10",
+      "directionId": "1",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 355
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 356
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 358
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 359
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 361
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 362
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 364
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 366
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 368
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 370
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 372
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 373
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 374
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 375
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 376
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 377
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 379
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 380
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 381
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 382
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 383
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 384
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 385
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 386
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 387
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 389
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 390
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 391
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 393
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:11:400",
+      "routeId": "11",
+      "directionId": "1",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 400
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 401
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 403
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 404
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 406
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 407
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 409
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 411
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 413
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 415
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 417
+        },
+        {
+          "stopId": "43",
+          "minuteOfDay": 418
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 419
+        },
+        {
+          "stopId": "59",
+          "minuteOfDay": 421
+        },
+        {
+          "stopId": "60",
+          "minuteOfDay": 422
+        },
+        {
+          "stopId": "39",
+          "minuteOfDay": 424
+        },
+        {
+          "stopId": "63",
+          "minuteOfDay": 425
+        },
+        {
+          "stopId": "40",
+          "minuteOfDay": 429
+        },
+        {
+          "stopId": "41",
+          "minuteOfDay": 430
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 431
+        },
+        {
+          "stopId": "64",
+          "minuteOfDay": 432
+        },
+        {
+          "stopId": "62",
+          "minuteOfDay": 434
+        },
+        {
+          "stopId": "61",
+          "minuteOfDay": 435
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 437
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 438
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 440
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 441
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 442
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 443
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 444
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 445
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 447
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 448
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 449
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 450
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 451
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 452
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 453
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 454
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 455
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 457
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 458
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 459
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 461
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:10:440",
+      "routeId": "10",
+      "directionId": "1",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 440
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 441
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 443
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 444
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 446
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 447
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 449
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 451
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 453
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 455
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 457
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 458
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 459
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 460
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 461
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 462
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 464
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 465
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 466
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 467
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 468
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 469
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 470
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 471
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 472
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 474
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 475
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 476
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 478
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:11:505",
+      "routeId": "11",
+      "directionId": "1",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 505
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 506
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 508
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 509
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 511
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 512
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 514
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 516
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 518
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 520
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 522
+        },
+        {
+          "stopId": "43",
+          "minuteOfDay": 523
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 524
+        },
+        {
+          "stopId": "59",
+          "minuteOfDay": 526
+        },
+        {
+          "stopId": "60",
+          "minuteOfDay": 527
+        },
+        {
+          "stopId": "39",
+          "minuteOfDay": 529
+        },
+        {
+          "stopId": "63",
+          "minuteOfDay": 530
+        },
+        {
+          "stopId": "40",
+          "minuteOfDay": 534
+        },
+        {
+          "stopId": "41",
+          "minuteOfDay": 535
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 536
+        },
+        {
+          "stopId": "64",
+          "minuteOfDay": 537
+        },
+        {
+          "stopId": "62",
+          "minuteOfDay": 539
+        },
+        {
+          "stopId": "61",
+          "minuteOfDay": 540
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 542
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 543
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 545
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 546
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 547
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 548
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 549
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 550
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 552
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 553
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 554
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 555
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 556
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 557
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 558
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 559
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 560
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 562
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 563
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 564
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 566
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:11:625",
+      "routeId": "11",
+      "directionId": "1",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 625
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 626
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 628
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 629
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 631
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 632
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 634
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 636
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 638
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 640
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 642
+        },
+        {
+          "stopId": "43",
+          "minuteOfDay": 643
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 644
+        },
+        {
+          "stopId": "59",
+          "minuteOfDay": 646
+        },
+        {
+          "stopId": "60",
+          "minuteOfDay": 647
+        },
+        {
+          "stopId": "39",
+          "minuteOfDay": 649
+        },
+        {
+          "stopId": "63",
+          "minuteOfDay": 650
+        },
+        {
+          "stopId": "40",
+          "minuteOfDay": 654
+        },
+        {
+          "stopId": "41",
+          "minuteOfDay": 655
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 656
+        },
+        {
+          "stopId": "64",
+          "minuteOfDay": 657
+        },
+        {
+          "stopId": "62",
+          "minuteOfDay": 659
+        },
+        {
+          "stopId": "61",
+          "minuteOfDay": 660
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 662
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 663
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 665
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 666
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 667
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 668
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 669
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 670
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 672
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 673
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 674
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 675
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 676
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 677
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 678
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 679
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 680
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 682
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 683
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 684
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 686
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:10:715",
+      "routeId": "10",
+      "directionId": "1",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 715
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 716
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 718
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 719
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 721
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 722
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 724
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 726
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 728
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 730
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 732
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 733
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 734
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 735
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 736
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 737
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 739
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 740
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 741
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 742
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 743
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 744
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 745
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 746
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 747
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 749
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 750
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 751
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 753
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:10:805",
+      "routeId": "10",
+      "directionId": "1",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 805
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 806
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 808
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 809
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 811
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 812
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 814
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 816
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 818
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 820
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 822
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 823
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 824
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 825
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 826
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 827
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 829
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 830
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 831
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 832
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 833
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 834
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 835
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 836
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 837
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 839
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 840
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 841
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 843
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:10:925",
+      "routeId": "10",
+      "directionId": "1",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 925
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 926
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 928
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 929
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 931
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 932
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 934
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 936
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 938
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 940
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 942
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 943
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 944
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 945
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 946
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 947
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 949
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 950
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 951
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 952
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 953
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 954
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 955
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 956
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 957
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 959
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 960
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 961
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 963
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:11:950",
+      "routeId": "11",
+      "directionId": "1",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 950
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 951
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 953
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 954
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 956
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 957
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 959
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 961
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 963
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 965
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 967
+        },
+        {
+          "stopId": "43",
+          "minuteOfDay": 968
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 969
+        },
+        {
+          "stopId": "59",
+          "minuteOfDay": 971
+        },
+        {
+          "stopId": "60",
+          "minuteOfDay": 972
+        },
+        {
+          "stopId": "39",
+          "minuteOfDay": 974
+        },
+        {
+          "stopId": "63",
+          "minuteOfDay": 975
+        },
+        {
+          "stopId": "40",
+          "minuteOfDay": 979
+        },
+        {
+          "stopId": "41",
+          "minuteOfDay": 980
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 981
+        },
+        {
+          "stopId": "64",
+          "minuteOfDay": 982
+        },
+        {
+          "stopId": "62",
+          "minuteOfDay": 984
+        },
+        {
+          "stopId": "61",
+          "minuteOfDay": 985
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 987
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 988
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 990
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 991
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 992
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 993
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 994
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 995
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 997
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 998
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 999
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 1000
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 1001
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 1002
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 1003
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 1004
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 1005
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 1007
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 1008
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 1009
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 1011
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:10:1015",
+      "routeId": "10",
+      "directionId": "1",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 1015
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 1016
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 1018
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 1019
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 1021
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 1022
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 1024
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 1026
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 1028
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 1030
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 1032
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 1033
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 1034
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 1035
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 1036
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 1037
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 1039
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 1040
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 1041
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 1042
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 1043
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 1044
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 1045
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 1046
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 1047
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 1049
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 1050
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 1051
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 1053
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:10:1075",
+      "routeId": "10",
+      "directionId": "1",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 1075
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 1076
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 1078
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 1079
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 1081
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 1082
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 1084
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 1086
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 1088
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 1090
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 1092
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 1093
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 1094
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 1095
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 1096
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 1097
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 1099
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 1100
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 1101
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 1102
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 1103
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 1104
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 1105
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 1106
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 1107
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 1109
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 1110
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 1111
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 1113
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:11:1135",
+      "routeId": "11",
+      "directionId": "1",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 1135
+        },
+        {
+          "stopId": "2",
+          "minuteOfDay": 1136
+        },
+        {
+          "stopId": "3",
+          "minuteOfDay": 1138
+        },
+        {
+          "stopId": "37",
+          "minuteOfDay": 1139
+        },
+        {
+          "stopId": "27",
+          "minuteOfDay": 1141
+        },
+        {
+          "stopId": "5",
+          "minuteOfDay": 1142
+        },
+        {
+          "stopId": "6",
+          "minuteOfDay": 1144
+        },
+        {
+          "stopId": "7",
+          "minuteOfDay": 1146
+        },
+        {
+          "stopId": "8",
+          "minuteOfDay": 1148
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 1150
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 1152
+        },
+        {
+          "stopId": "43",
+          "minuteOfDay": 1153
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 1154
+        },
+        {
+          "stopId": "59",
+          "minuteOfDay": 1156
+        },
+        {
+          "stopId": "60",
+          "minuteOfDay": 1157
+        },
+        {
+          "stopId": "39",
+          "minuteOfDay": 1159
+        },
+        {
+          "stopId": "63",
+          "minuteOfDay": 1160
+        },
+        {
+          "stopId": "40",
+          "minuteOfDay": 1164
+        },
+        {
+          "stopId": "41",
+          "minuteOfDay": 1165
+        },
+        {
+          "stopId": "42",
+          "minuteOfDay": 1166
+        },
+        {
+          "stopId": "64",
+          "minuteOfDay": 1167
+        },
+        {
+          "stopId": "62",
+          "minuteOfDay": 1169
+        },
+        {
+          "stopId": "61",
+          "minuteOfDay": 1170
+        },
+        {
+          "stopId": "38",
+          "minuteOfDay": 1172
+        },
+        {
+          "stopId": "9",
+          "minuteOfDay": 1173
+        },
+        {
+          "stopId": "10",
+          "minuteOfDay": 1175
+        },
+        {
+          "stopId": "11",
+          "minuteOfDay": 1176
+        },
+        {
+          "stopId": "12",
+          "minuteOfDay": 1177
+        },
+        {
+          "stopId": "13",
+          "minuteOfDay": 1178
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 1179
+        },
+        {
+          "stopId": "14",
+          "minuteOfDay": 1180
+        },
+        {
+          "stopId": "15",
+          "minuteOfDay": 1182
+        },
+        {
+          "stopId": "16",
+          "minuteOfDay": 1183
+        },
+        {
+          "stopId": "17",
+          "minuteOfDay": 1184
+        },
+        {
+          "stopId": "18",
+          "minuteOfDay": 1185
+        },
+        {
+          "stopId": "44",
+          "minuteOfDay": 1186
+        },
+        {
+          "stopId": "20",
+          "minuteOfDay": 1187
+        },
+        {
+          "stopId": "21",
+          "minuteOfDay": 1188
+        },
+        {
+          "stopId": "22",
+          "minuteOfDay": 1189
+        },
+        {
+          "stopId": "23",
+          "minuteOfDay": 1190
+        },
+        {
+          "stopId": "24",
+          "minuteOfDay": 1192
+        },
+        {
+          "stopId": "25",
+          "minuteOfDay": 1193
+        },
+        {
+          "stopId": "26",
+          "minuteOfDay": 1194
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 1196
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:12:380",
+      "routeId": "12",
+      "directionId": "2",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 380
+        },
+        {
+          "stopId": "69",
+          "minuteOfDay": 381
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 382
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 384
+        },
+        {
+          "stopId": "70",
+          "minuteOfDay": 385
+        },
+        {
+          "stopId": "71",
+          "minuteOfDay": 386
+        },
+        {
+          "stopId": "72",
+          "minuteOfDay": 387
+        },
+        {
+          "stopId": "67",
+          "minuteOfDay": 388
+        },
+        {
+          "stopId": "19",
+          "minuteOfDay": 389
+        },
+        {
+          "stopId": "68",
+          "minuteOfDay": 390
+        },
+        {
+          "stopId": "73",
+          "minuteOfDay": 391
+        },
+        {
+          "stopId": "74",
+          "minuteOfDay": 392
+        },
+        {
+          "stopId": "75",
+          "minuteOfDay": 393
+        },
+        {
+          "stopId": "76",
+          "minuteOfDay": 394
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 395
+        },
+        {
+          "stopId": "77",
+          "minuteOfDay": 396
+        },
+        {
+          "stopId": "78",
+          "minuteOfDay": 397
+        },
+        {
+          "stopId": "50",
+          "minuteOfDay": 399
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 401
+        },
+        {
+          "stopId": "48",
+          "minuteOfDay": 403
+        },
+        {
+          "stopId": "79",
+          "minuteOfDay": 405
+        },
+        {
+          "stopId": "49",
+          "minuteOfDay": 407
+        },
+        {
+          "stopId": "80",
+          "minuteOfDay": 409
+        },
+        {
+          "stopId": "81",
+          "minuteOfDay": 410
+        },
+        {
+          "stopId": "82",
+          "minuteOfDay": 412
+        },
+        {
+          "stopId": "83",
+          "minuteOfDay": 413
+        },
+        {
+          "stopId": "84",
+          "minuteOfDay": 415
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 416
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 418
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:12:475",
+      "routeId": "12",
+      "directionId": "2",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 475
+        },
+        {
+          "stopId": "69",
+          "minuteOfDay": 476
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 477
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 479
+        },
+        {
+          "stopId": "70",
+          "minuteOfDay": 480
+        },
+        {
+          "stopId": "71",
+          "minuteOfDay": 481
+        },
+        {
+          "stopId": "72",
+          "minuteOfDay": 482
+        },
+        {
+          "stopId": "67",
+          "minuteOfDay": 483
+        },
+        {
+          "stopId": "19",
+          "minuteOfDay": 484
+        },
+        {
+          "stopId": "68",
+          "minuteOfDay": 485
+        },
+        {
+          "stopId": "73",
+          "minuteOfDay": 486
+        },
+        {
+          "stopId": "74",
+          "minuteOfDay": 487
+        },
+        {
+          "stopId": "75",
+          "minuteOfDay": 488
+        },
+        {
+          "stopId": "76",
+          "minuteOfDay": 489
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 490
+        },
+        {
+          "stopId": "77",
+          "minuteOfDay": 491
+        },
+        {
+          "stopId": "78",
+          "minuteOfDay": 492
+        },
+        {
+          "stopId": "50",
+          "minuteOfDay": 494
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 496
+        },
+        {
+          "stopId": "48",
+          "minuteOfDay": 498
+        },
+        {
+          "stopId": "79",
+          "minuteOfDay": 500
+        },
+        {
+          "stopId": "49",
+          "minuteOfDay": 502
+        },
+        {
+          "stopId": "80",
+          "minuteOfDay": 504
+        },
+        {
+          "stopId": "81",
+          "minuteOfDay": 505
+        },
+        {
+          "stopId": "82",
+          "minuteOfDay": 507
+        },
+        {
+          "stopId": "83",
+          "minuteOfDay": 508
+        },
+        {
+          "stopId": "84",
+          "minuteOfDay": 510
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 511
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 513
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:12:535",
+      "routeId": "12",
+      "directionId": "2",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 535
+        },
+        {
+          "stopId": "69",
+          "minuteOfDay": 536
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 537
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 539
+        },
+        {
+          "stopId": "70",
+          "minuteOfDay": 540
+        },
+        {
+          "stopId": "71",
+          "minuteOfDay": 541
+        },
+        {
+          "stopId": "72",
+          "minuteOfDay": 542
+        },
+        {
+          "stopId": "67",
+          "minuteOfDay": 543
+        },
+        {
+          "stopId": "19",
+          "minuteOfDay": 544
+        },
+        {
+          "stopId": "68",
+          "minuteOfDay": 545
+        },
+        {
+          "stopId": "73",
+          "minuteOfDay": 546
+        },
+        {
+          "stopId": "74",
+          "minuteOfDay": 547
+        },
+        {
+          "stopId": "75",
+          "minuteOfDay": 548
+        },
+        {
+          "stopId": "76",
+          "minuteOfDay": 549
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 550
+        },
+        {
+          "stopId": "77",
+          "minuteOfDay": 551
+        },
+        {
+          "stopId": "78",
+          "minuteOfDay": 552
+        },
+        {
+          "stopId": "50",
+          "minuteOfDay": 554
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 556
+        },
+        {
+          "stopId": "48",
+          "minuteOfDay": 558
+        },
+        {
+          "stopId": "79",
+          "minuteOfDay": 560
+        },
+        {
+          "stopId": "49",
+          "minuteOfDay": 562
+        },
+        {
+          "stopId": "80",
+          "minuteOfDay": 564
+        },
+        {
+          "stopId": "81",
+          "minuteOfDay": 565
+        },
+        {
+          "stopId": "82",
+          "minuteOfDay": 567
+        },
+        {
+          "stopId": "83",
+          "minuteOfDay": 568
+        },
+        {
+          "stopId": "84",
+          "minuteOfDay": 570
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 571
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 573
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:12:655",
+      "routeId": "12",
+      "directionId": "2",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 655
+        },
+        {
+          "stopId": "69",
+          "minuteOfDay": 656
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 657
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 659
+        },
+        {
+          "stopId": "70",
+          "minuteOfDay": 660
+        },
+        {
+          "stopId": "71",
+          "minuteOfDay": 661
+        },
+        {
+          "stopId": "72",
+          "minuteOfDay": 662
+        },
+        {
+          "stopId": "67",
+          "minuteOfDay": 663
+        },
+        {
+          "stopId": "19",
+          "minuteOfDay": 664
+        },
+        {
+          "stopId": "68",
+          "minuteOfDay": 665
+        },
+        {
+          "stopId": "73",
+          "minuteOfDay": 666
+        },
+        {
+          "stopId": "74",
+          "minuteOfDay": 667
+        },
+        {
+          "stopId": "75",
+          "minuteOfDay": 668
+        },
+        {
+          "stopId": "76",
+          "minuteOfDay": 669
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 670
+        },
+        {
+          "stopId": "77",
+          "minuteOfDay": 671
+        },
+        {
+          "stopId": "78",
+          "minuteOfDay": 672
+        },
+        {
+          "stopId": "50",
+          "minuteOfDay": 674
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 676
+        },
+        {
+          "stopId": "48",
+          "minuteOfDay": 678
+        },
+        {
+          "stopId": "79",
+          "minuteOfDay": 680
+        },
+        {
+          "stopId": "49",
+          "minuteOfDay": 682
+        },
+        {
+          "stopId": "80",
+          "minuteOfDay": 684
+        },
+        {
+          "stopId": "81",
+          "minuteOfDay": 685
+        },
+        {
+          "stopId": "82",
+          "minuteOfDay": 687
+        },
+        {
+          "stopId": "83",
+          "minuteOfDay": 688
+        },
+        {
+          "stopId": "84",
+          "minuteOfDay": 690
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 691
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 693
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:12:775",
+      "routeId": "12",
+      "directionId": "2",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 775
+        },
+        {
+          "stopId": "69",
+          "minuteOfDay": 776
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 777
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 779
+        },
+        {
+          "stopId": "70",
+          "minuteOfDay": 780
+        },
+        {
+          "stopId": "71",
+          "minuteOfDay": 781
+        },
+        {
+          "stopId": "72",
+          "minuteOfDay": 782
+        },
+        {
+          "stopId": "67",
+          "minuteOfDay": 783
+        },
+        {
+          "stopId": "19",
+          "minuteOfDay": 784
+        },
+        {
+          "stopId": "68",
+          "minuteOfDay": 785
+        },
+        {
+          "stopId": "73",
+          "minuteOfDay": 786
+        },
+        {
+          "stopId": "74",
+          "minuteOfDay": 787
+        },
+        {
+          "stopId": "75",
+          "minuteOfDay": 788
+        },
+        {
+          "stopId": "76",
+          "minuteOfDay": 789
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 790
+        },
+        {
+          "stopId": "77",
+          "minuteOfDay": 791
+        },
+        {
+          "stopId": "78",
+          "minuteOfDay": 792
+        },
+        {
+          "stopId": "50",
+          "minuteOfDay": 794
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 796
+        },
+        {
+          "stopId": "48",
+          "minuteOfDay": 798
+        },
+        {
+          "stopId": "79",
+          "minuteOfDay": 800
+        },
+        {
+          "stopId": "49",
+          "minuteOfDay": 802
+        },
+        {
+          "stopId": "80",
+          "minuteOfDay": 804
+        },
+        {
+          "stopId": "81",
+          "minuteOfDay": 805
+        },
+        {
+          "stopId": "82",
+          "minuteOfDay": 807
+        },
+        {
+          "stopId": "83",
+          "minuteOfDay": 808
+        },
+        {
+          "stopId": "84",
+          "minuteOfDay": 810
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 811
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 813
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:12:895",
+      "routeId": "12",
+      "directionId": "2",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 895
+        },
+        {
+          "stopId": "69",
+          "minuteOfDay": 896
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 897
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 899
+        },
+        {
+          "stopId": "70",
+          "minuteOfDay": 900
+        },
+        {
+          "stopId": "71",
+          "minuteOfDay": 901
+        },
+        {
+          "stopId": "72",
+          "minuteOfDay": 902
+        },
+        {
+          "stopId": "67",
+          "minuteOfDay": 903
+        },
+        {
+          "stopId": "19",
+          "minuteOfDay": 904
+        },
+        {
+          "stopId": "68",
+          "minuteOfDay": 905
+        },
+        {
+          "stopId": "73",
+          "minuteOfDay": 906
+        },
+        {
+          "stopId": "74",
+          "minuteOfDay": 907
+        },
+        {
+          "stopId": "75",
+          "minuteOfDay": 908
+        },
+        {
+          "stopId": "76",
+          "minuteOfDay": 909
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 910
+        },
+        {
+          "stopId": "77",
+          "minuteOfDay": 911
+        },
+        {
+          "stopId": "78",
+          "minuteOfDay": 912
+        },
+        {
+          "stopId": "50",
+          "minuteOfDay": 914
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 916
+        },
+        {
+          "stopId": "48",
+          "minuteOfDay": 918
+        },
+        {
+          "stopId": "79",
+          "minuteOfDay": 920
+        },
+        {
+          "stopId": "49",
+          "minuteOfDay": 922
+        },
+        {
+          "stopId": "80",
+          "minuteOfDay": 924
+        },
+        {
+          "stopId": "81",
+          "minuteOfDay": 925
+        },
+        {
+          "stopId": "82",
+          "minuteOfDay": 927
+        },
+        {
+          "stopId": "83",
+          "minuteOfDay": 928
+        },
+        {
+          "stopId": "84",
+          "minuteOfDay": 930
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 931
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 933
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:12:985",
+      "routeId": "12",
+      "directionId": "2",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 985
+        },
+        {
+          "stopId": "69",
+          "minuteOfDay": 986
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 987
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 989
+        },
+        {
+          "stopId": "70",
+          "minuteOfDay": 990
+        },
+        {
+          "stopId": "71",
+          "minuteOfDay": 991
+        },
+        {
+          "stopId": "72",
+          "minuteOfDay": 992
+        },
+        {
+          "stopId": "67",
+          "minuteOfDay": 993
+        },
+        {
+          "stopId": "19",
+          "minuteOfDay": 994
+        },
+        {
+          "stopId": "68",
+          "minuteOfDay": 995
+        },
+        {
+          "stopId": "73",
+          "minuteOfDay": 996
+        },
+        {
+          "stopId": "74",
+          "minuteOfDay": 997
+        },
+        {
+          "stopId": "75",
+          "minuteOfDay": 998
+        },
+        {
+          "stopId": "76",
+          "minuteOfDay": 999
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 1000
+        },
+        {
+          "stopId": "77",
+          "minuteOfDay": 1001
+        },
+        {
+          "stopId": "78",
+          "minuteOfDay": 1002
+        },
+        {
+          "stopId": "50",
+          "minuteOfDay": 1004
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 1006
+        },
+        {
+          "stopId": "48",
+          "minuteOfDay": 1008
+        },
+        {
+          "stopId": "79",
+          "minuteOfDay": 1010
+        },
+        {
+          "stopId": "49",
+          "minuteOfDay": 1012
+        },
+        {
+          "stopId": "80",
+          "minuteOfDay": 1014
+        },
+        {
+          "stopId": "81",
+          "minuteOfDay": 1015
+        },
+        {
+          "stopId": "82",
+          "minuteOfDay": 1017
+        },
+        {
+          "stopId": "83",
+          "minuteOfDay": 1018
+        },
+        {
+          "stopId": "84",
+          "minuteOfDay": 1020
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 1021
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 1023
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:12:1045",
+      "routeId": "12",
+      "directionId": "2",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 1045
+        },
+        {
+          "stopId": "69",
+          "minuteOfDay": 1046
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 1047
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 1049
+        },
+        {
+          "stopId": "70",
+          "minuteOfDay": 1050
+        },
+        {
+          "stopId": "71",
+          "minuteOfDay": 1051
+        },
+        {
+          "stopId": "72",
+          "minuteOfDay": 1052
+        },
+        {
+          "stopId": "67",
+          "minuteOfDay": 1053
+        },
+        {
+          "stopId": "19",
+          "minuteOfDay": 1054
+        },
+        {
+          "stopId": "68",
+          "minuteOfDay": 1055
+        },
+        {
+          "stopId": "73",
+          "minuteOfDay": 1056
+        },
+        {
+          "stopId": "74",
+          "minuteOfDay": 1057
+        },
+        {
+          "stopId": "75",
+          "minuteOfDay": 1058
+        },
+        {
+          "stopId": "76",
+          "minuteOfDay": 1059
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 1060
+        },
+        {
+          "stopId": "77",
+          "minuteOfDay": 1061
+        },
+        {
+          "stopId": "78",
+          "minuteOfDay": 1062
+        },
+        {
+          "stopId": "50",
+          "minuteOfDay": 1064
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 1066
+        },
+        {
+          "stopId": "48",
+          "minuteOfDay": 1068
+        },
+        {
+          "stopId": "79",
+          "minuteOfDay": 1070
+        },
+        {
+          "stopId": "49",
+          "minuteOfDay": 1072
+        },
+        {
+          "stopId": "80",
+          "minuteOfDay": 1074
+        },
+        {
+          "stopId": "81",
+          "minuteOfDay": 1075
+        },
+        {
+          "stopId": "82",
+          "minuteOfDay": 1077
+        },
+        {
+          "stopId": "83",
+          "minuteOfDay": 1078
+        },
+        {
+          "stopId": "84",
+          "minuteOfDay": 1080
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 1081
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 1083
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:12:1105",
+      "routeId": "12",
+      "directionId": "2",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 1105
+        },
+        {
+          "stopId": "69",
+          "minuteOfDay": 1106
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 1107
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 1109
+        },
+        {
+          "stopId": "70",
+          "minuteOfDay": 1110
+        },
+        {
+          "stopId": "71",
+          "minuteOfDay": 1111
+        },
+        {
+          "stopId": "72",
+          "minuteOfDay": 1112
+        },
+        {
+          "stopId": "67",
+          "minuteOfDay": 1113
+        },
+        {
+          "stopId": "19",
+          "minuteOfDay": 1114
+        },
+        {
+          "stopId": "68",
+          "minuteOfDay": 1115
+        },
+        {
+          "stopId": "73",
+          "minuteOfDay": 1116
+        },
+        {
+          "stopId": "74",
+          "minuteOfDay": 1117
+        },
+        {
+          "stopId": "75",
+          "minuteOfDay": 1118
+        },
+        {
+          "stopId": "76",
+          "minuteOfDay": 1119
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 1120
+        },
+        {
+          "stopId": "77",
+          "minuteOfDay": 1121
+        },
+        {
+          "stopId": "78",
+          "minuteOfDay": 1122
+        },
+        {
+          "stopId": "50",
+          "minuteOfDay": 1124
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 1126
+        },
+        {
+          "stopId": "48",
+          "minuteOfDay": 1128
+        },
+        {
+          "stopId": "79",
+          "minuteOfDay": 1130
+        },
+        {
+          "stopId": "49",
+          "minuteOfDay": 1132
+        },
+        {
+          "stopId": "80",
+          "minuteOfDay": 1134
+        },
+        {
+          "stopId": "81",
+          "minuteOfDay": 1135
+        },
+        {
+          "stopId": "82",
+          "minuteOfDay": 1137
+        },
+        {
+          "stopId": "83",
+          "minuteOfDay": 1138
+        },
+        {
+          "stopId": "84",
+          "minuteOfDay": 1140
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 1141
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 1143
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:12:1195",
+      "routeId": "12",
+      "directionId": "2",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 1195
+        },
+        {
+          "stopId": "69",
+          "minuteOfDay": 1196
+        },
+        {
+          "stopId": "45",
+          "minuteOfDay": 1197
+        },
+        {
+          "stopId": "46",
+          "minuteOfDay": 1199
+        },
+        {
+          "stopId": "70",
+          "minuteOfDay": 1200
+        },
+        {
+          "stopId": "71",
+          "minuteOfDay": 1201
+        },
+        {
+          "stopId": "72",
+          "minuteOfDay": 1202
+        },
+        {
+          "stopId": "67",
+          "minuteOfDay": 1203
+        },
+        {
+          "stopId": "19",
+          "minuteOfDay": 1204
+        },
+        {
+          "stopId": "68",
+          "minuteOfDay": 1205
+        },
+        {
+          "stopId": "73",
+          "minuteOfDay": 1206
+        },
+        {
+          "stopId": "74",
+          "minuteOfDay": 1207
+        },
+        {
+          "stopId": "75",
+          "minuteOfDay": 1208
+        },
+        {
+          "stopId": "76",
+          "minuteOfDay": 1209
+        },
+        {
+          "stopId": "65",
+          "minuteOfDay": 1210
+        },
+        {
+          "stopId": "77",
+          "minuteOfDay": 1211
+        },
+        {
+          "stopId": "78",
+          "minuteOfDay": 1212
+        },
+        {
+          "stopId": "50",
+          "minuteOfDay": 1214
+        },
+        {
+          "stopId": "66",
+          "minuteOfDay": 1216
+        },
+        {
+          "stopId": "48",
+          "minuteOfDay": 1218
+        },
+        {
+          "stopId": "79",
+          "minuteOfDay": 1220
+        },
+        {
+          "stopId": "49",
+          "minuteOfDay": 1222
+        },
+        {
+          "stopId": "80",
+          "minuteOfDay": 1224
+        },
+        {
+          "stopId": "81",
+          "minuteOfDay": 1225
+        },
+        {
+          "stopId": "82",
+          "minuteOfDay": 1227
+        },
+        {
+          "stopId": "83",
+          "minuteOfDay": 1228
+        },
+        {
+          "stopId": "84",
+          "minuteOfDay": 1230
+        },
+        {
+          "stopId": "85",
+          "minuteOfDay": 1231
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 1233
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:14:430",
+      "routeId": "14",
+      "directionId": "1",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 430
+        },
+        {
+          "stopId": "28",
+          "minuteOfDay": 432
+        },
+        {
+          "stopId": "32",
+          "minuteOfDay": 434
+        },
+        {
+          "stopId": "33",
+          "minuteOfDay": 436
+        },
+        {
+          "stopId": "86",
+          "minuteOfDay": 438
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 440
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:14:573",
+      "routeId": "14",
+      "directionId": "1",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 573
+        },
+        {
+          "stopId": "28",
+          "minuteOfDay": 575
+        },
+        {
+          "stopId": "32",
+          "minuteOfDay": 577
+        },
+        {
+          "stopId": "33",
+          "minuteOfDay": 579
+        },
+        {
+          "stopId": "86",
+          "minuteOfDay": 581
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 583
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:14:693",
+      "routeId": "14",
+      "directionId": "1",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 693
+        },
+        {
+          "stopId": "28",
+          "minuteOfDay": 695
+        },
+        {
+          "stopId": "32",
+          "minuteOfDay": 697
+        },
+        {
+          "stopId": "33",
+          "minuteOfDay": 699
+        },
+        {
+          "stopId": "86",
+          "minuteOfDay": 701
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 703
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:14:813",
+      "routeId": "14",
+      "directionId": "1",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 813
+        },
+        {
+          "stopId": "28",
+          "minuteOfDay": 815
+        },
+        {
+          "stopId": "32",
+          "minuteOfDay": 817
+        },
+        {
+          "stopId": "33",
+          "minuteOfDay": 819
+        },
+        {
+          "stopId": "86",
+          "minuteOfDay": 821
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 823
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:14:933",
+      "routeId": "14",
+      "directionId": "1",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 933
+        },
+        {
+          "stopId": "28",
+          "minuteOfDay": 935
+        },
+        {
+          "stopId": "32",
+          "minuteOfDay": 937
+        },
+        {
+          "stopId": "33",
+          "minuteOfDay": 939
+        },
+        {
+          "stopId": "86",
+          "minuteOfDay": 941
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 943
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:14:1023",
+      "routeId": "14",
+      "directionId": "1",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 1023
+        },
+        {
+          "stopId": "28",
+          "minuteOfDay": 1025
+        },
+        {
+          "stopId": "32",
+          "minuteOfDay": 1027
+        },
+        {
+          "stopId": "33",
+          "minuteOfDay": 1029
+        },
+        {
+          "stopId": "86",
+          "minuteOfDay": 1031
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 1033
+        }
+      ]
+    },
+    {
+      "id": "viabusz:school_break:14:1143",
+      "routeId": "14",
+      "directionId": "1",
+      "calendar": "school_break",
+      "stopTimes": [
+        {
+          "stopId": "1",
+          "minuteOfDay": 1143
+        },
+        {
+          "stopId": "28",
+          "minuteOfDay": 1145
+        },
+        {
+          "stopId": "32",
+          "minuteOfDay": 1147
+        },
+        {
+          "stopId": "33",
+          "minuteOfDay": 1149
+        },
+        {
+          "stopId": "86",
+          "minuteOfDay": 1151
+        },
+        {
+          "stopId": "1",
+          "minuteOfDay": 1153
+        }
+      ]
+    }
+  ],
+  "providerServiceDates": {
+    "viabusz": null
+  }
+}

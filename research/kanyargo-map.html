@@ -1,0 +1,1147 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<HTML lang="hu">
+    <HEAD>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta charset="utf-8" />
+        <link rel="canonical" href="https://kanyargo.paty.hu/Terkep">
+        <meta name="keywords" content="Járatkövetés, valós idejű adatok, térkép, KanyarGo" />
+        <meta name="description" content="Élő járatkövetés KanyarGo, valós idejű jármű adatok megjelenítése térképen" />
+        <meta name="robots" content="all">
+        <meta name="revisit-after" content="5 days">
+        <meta name="googlebot" content="index, follow">
+        <meta name="slurp" content="index, follow">
+        <meta name="teoma" content="index, follow">
+        <TITLE>KanyarGo járatkövetés</TITLE>
+        <meta name="google-site-verification" content="9nWGWvN-5nfoIyQdFj3-dZewVk-quRcQJhfIiuPJqg8" />
+        <link rel="shortcut icon" href="https://kanyargo.paty.hu/images/paty_cimer.png?v=93d9ae98dd060835cd62c8805101f35c">
+        <link rel="icon" href="https://kanyargo.paty.hu/images/paty_cimer.png?v=93d9ae98dd060835cd62c8805101f35c">
+        
+        <meta property="og:title" content="KanyarGo járatkövetés" />
+        <meta property="og:site_name" content="KanyarGo Páty"/>
+        <meta property="og:type" content="website">
+        <meta property="og:description" content="Élő járatkövetés KanyarGo, valós idejű jármű adatok megjelenítése térképen" />
+        <meta property="og:image" content="https://kanyargo.paty.hu/images/logotext.png" />
+        <meta property="og:url" content="https://kanyargo.paty.hu/Terkep" />
+        <script type="application/ld+json">[{"@context":"http:\/\/schema.org","@type":"WebSite","author":"KanyarGo","contentLocation":"https:\/\/kanyargo.paty.hu\/","url":"https:\/\/kanyargo.paty.hu\/Terkep","description":"\u00c9l\u0151 j\u00e1ratk\u00f6vet\u00e9s KanyarGo, val\u00f3s idej\u0171 j\u00e1rm\u0171 adatok megjelen\u00edt\u00e9se t\u00e9rk\u00e9pen","name":"KanyarGo j\u00e1ratk\u00f6vet\u00e9s"}]</script><link rel="stylesheet" type="text/css" href="https://kanyargo.paty.hu/js/slick-1.8.0/slick/slick.css" media="screen"/>
+<link rel="stylesheet" type="text/css" href="https://kanyargo.paty.hu/js/slick-1.8.0/slick/slick-theme.css" media="screen"/>
+<script src="https://kanyargo.paty.hu/js/jquery-3.3.1.min.js"></script>
+<script src="https://kanyargo.paty.hu/js/multislider.js"></script>
+<script src="https://kanyargo.paty.hu/js/multislider.min.js"></script>
+<script src="https://kanyargo.paty.hu/js/midibus.js?v=2d1caceab8d6211684883adc9b756677"></script>
+<script type="text/javascript" src="https://kanyargo.paty.hu/js/slick-1.8.0/slick/slick.min.js"></script>
+
+<!--  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>-->
+<script src="https://kanyargo.paty.hu/js/bootstrap-3.3.7.min.js"></script>
+
+<script type="text/javascript">
+Date.prototype.toDateInputValue = (function() {
+	var local = new Date(this);
+	local.setMinutes(this.getMinutes() - this.getTimezoneOffset());
+	return local.toJSON().slice(0,10);
+});
+</script><link rel="stylesheet" href="https://kanyargo.paty.hu/css/paty.css?93d9ae98dd060835cd62c8805101f35c" media="all"><link rel="stylesheet" href="https://kanyargo.paty.hu/css/nav.css?93d9ae98dd060835cd62c8805101f35c" media="all"><link rel="stylesheet" href="https://kanyargo.paty.hu/css/checkboxes.css?93d9ae98dd060835cd62c8805101f35c" media="all"><link rel="stylesheet" href="https://kanyargo.paty.hu/css/tckts.css?93d9ae98dd060835cd62c8805101f35c" media="all"><link rel="stylesheet" href="https://kanyargo.paty.hu/css/form.css?93d9ae98dd060835cd62c8805101f35c" media="all"><link rel="stylesheet" href="https://kanyargo.paty.hu/css/buttons.css?93d9ae98dd060835cd62c8805101f35c" media="all"><link rel="stylesheet" href="https://kanyargo.paty.hu/css/tckts.css?93d9ae98dd060835cd62c8805101f35c" media="all"><link rel="stylesheet" href="https://kanyargo.paty.hu/css/payment-start.css?93d9ae98dd060835cd62c8805101f35c" media="all"><link rel="stylesheet" href="https://kanyargo.paty.hu/css/map.css?93d9ae98dd060835cd62c8805101f35c" media="all"><link rel="stylesheet" href="https://kanyargo.paty.hu/css/tmtbl.css?93d9ae98dd060835cd62c8805101f35c" media="all">        <script type="text/javascript">
+        $(document).ready(function(){
+        	window['ga-disable-G-2SF9H078G5'] = true;
+    	});
+        </script>
+        <script src="https://kanyargo.paty.hu//js/cookieconsent.min.js?93d9ae98dd060835cd62c8805101f35c"></script>
+<link rel="stylesheet" type="text/css" href="https://kanyargo.paty.hu//css/cookieconsent.min.css?93d9ae98dd060835cd62c8805101f35c" />
+<script type="text/javascript">
+	function cookieEnabled(){
+			}
+
+    function cookieDisabled(){
+        //disable google analyticcs
+		window['ga-disable-G-2SF9H078G5'] = true;
+                        
+		//alert(document.cookie);
+		if(!document.__defineGetter__) {
+			Object.defineProperty(document, 'cookie', {
+				get: function(){return ''},
+				set: function(){return true},
+			});
+		} else {
+			document.__defineGetter__("cookie", function() { return '';} );
+			document.__defineSetter__("cookie", function() {} );
+		}
+	}
+                    
+	window.addEventListener("load", function(){
+	window.cookieconsent.initialise({
+		"palette": {
+			"popup": {
+				"background": "#000"
+			},
+			"button": {
+				"background": "#f1d600"
+			}
+		},
+		"type": "opt-in",
+		"content": {
+			"message": "A weboldal sütiket használ a jobb felhasználói élmény, és a vásárlások zavartalan lebonyolítása érdekében!",
+			"dismiss": "Megvan!",
+			"allow": "Összes süti engedélyezése",
+			"needle": "Szükséges sütik engedélyezése",
+			"deny": "Sütik tiltása",
+			"policy": "Süti beállítások",
+			"link": "Adatvédelmi szabályzatunk megtekintése.",
+			"close": "Bezár",
+			"href": "https://kanyargo.paty.hu/Dokumentumok/adatvedelmi-szabalyzat"
+		},
+		onPopupOpen: function() {},
+		onInitialise: function (status) {
+			var type = this.options.type;
+			var didConsent = this.hasConsented();
+			if (type == 'opt-in' && didConsent) {
+				// enable cookies
+				cookieEnabled();
+			}
+			if (type == 'opt-out' && !didConsent) {
+				// disable cookies
+				cookieDisabled();
+			}
+		},
+
+		onStatusChange: function(status, chosenBefore) {
+			var type = this.options.type;
+			var didConsent = this.hasConsented();
+			if (type == 'opt-in' && didConsent) {
+				// enable cookies
+				cookieEnabled();
+			}
+			if (type == 'opt-out' && !didConsent) {
+				// disable cookies
+				cookieDisabled();
+			}
+			location.reload();
+		},
+
+		onRevokeChoice: function() {
+			var type = this.options.type;
+			if (type == 'opt-in') {
+				// disable cookies
+				cookieDisabled();
+			}
+			if (type == 'opt-out') {
+				// enable cookies
+				cookieEnabled();
+			}
+		}
+	})});
+
+	$(document).ready(function() {
+		$('.text  a').addClass('empLink');
+		$('.data  a').addClass('empLink');
+	});
+</script>
+        <style>
+        /*font source: https://fonts.googleapis.com/css2?family=Montserrat&display=swap*/
+        /* cyrillic-ext */
+        @font-face {
+          font-family: 'Montserrat';
+          font-style: normal;
+          font-weight: 400;
+          font-display: swap;
+          src: url(https://fonts.gstatic.com/s/montserrat/v25/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw0aXpsog.woff2) format('woff2');
+          unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+        }
+        /* cyrillic */
+        @font-face {
+          font-family: 'Montserrat';
+          font-style: normal;
+          font-weight: 400;
+          font-display: swap;
+          src: url(https://fonts.gstatic.com/s/montserrat/v25/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw9aXpsog.woff2) format('woff2');
+          unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+        }
+        /* vietnamese */
+        @font-face {
+          font-family: 'Montserrat';
+          font-style: normal;
+          font-weight: 400;
+          font-display: swap;
+          src: url(https://fonts.gstatic.com/s/montserrat/v25/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw2aXpsog.woff2) format('woff2');
+          unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+1EA0-1EF9, U+20AB;
+        }
+        /* latin-ext */
+        @font-face {
+          font-family: 'Montserrat';
+          font-style: normal;
+          font-weight: 400;
+          font-display: swap;
+          src: url(https://fonts.gstatic.com/s/montserrat/v25/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw3aXpsog.woff2) format('woff2');
+          unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+        }
+        /* latin */
+        @font-face {
+          font-family: 'Montserrat';
+          font-style: normal;
+          font-weight: 400;
+          font-display: swap;
+          src: url(https://fonts.gstatic.com/s/montserrat/v25/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw5aXo.woff2) format('woff2');
+          unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+        }
+        </style>
+    </HEAD>
+    <BODY>
+    
+        <div class="info-div">
+    			
+			<div style="clear: both;"></div>
+			<div id="blue-bus">
+				<a href="https://kanyargo.paty.hu/Terkep"><img src="https://kanyargo.paty.hu/images/bus-blue.png"></a>
+			</div>
+					</div>
+		<div class="info-div2">
+			<div class="dispatcher-div">
+							
+				<div id="target">
+					<p class="dispatcher-p"><a href="tel:+36707788265" class="dispatcher-a">+36 70 7788 265</a></p>
+					<p class="dispatcher-p-1">/</p>
+					<p class="dispatcher-p-1"><a href="mailto:kanyargo@paty.hu" class="dispatcher-a-1">kanyargo@paty.hu</a>
+				</div>
+				<script>
+					$(document).ready(function(){
+						$('#target').toggle('slow');
+					  $('.toggle').mouseover(function() {
+						$('#target').toggle('slow');
+					  });
+					});
+				</script>
+			</div>
+		
+		</div>
+            <div class="header">
+        	<div id="targets">
+					<p class="dispatcher-p"><a href="tel:+36707788265" class="dispatcher-a">+36 70 7788 265</a></p>
+					<p class="dispatcher-p-1">/</p>
+					<p class="dispatcher-p-1"><a href="mailto:kanyargo@paty.hu" class="dispatcher-a-1">kanyargo@paty.hu</a>
+				</div>
+			<div>
+				<div class="top-left">
+					<div class="top-1">
+						<a href="https://kanyargo.paty.hu/"><img src="https://kanyargo.paty.hu/images/logotext.png" class="topimg"></a>
+					</div>
+				</div>
+				<div class="top-right">
+					<a href="https://kanyargo.paty.hu/Kosar"><img src="https://kanyargo.paty.hu/images/cart-b.png" class="topimg-r"></a>
+										<div class="lines-dropdown">
+												<a href="https://kanyargo.paty.hu/Belepes"><img src="https://kanyargo.paty.hu/images/person.png" class="topimg-r-1"></a>
+						<!-- <form method="post" name="loginForm">
+							<input type="hidden" id="formAction" name="formAction" value="login">
+    						<div class="login">
+    							<div class="login-flex">
+    								<div class="login-cnt">
+    									<div class="bluebox"></div>
+    									<label for="usrName">Felhasználónév:</label>
+    								</div>
+    								<div class="login-cnt-1">
+    									<input  type="text"   name="usrName" id="usrName" required placeholder="Felhasználónév">
+    								</div>
+    							</div>
+    							<div class="login-flex">
+    								<div class="login-cnt">
+    									<div class="bluebox"></div>
+    									<label for="password">jelszó:</label>
+    								</div>
+    								<div class="login-cnt-1">
+    									<input  type="password"  class="1"   name="pwd" id="pwd"  placeholder="********">
+    								</div>
+    							</div>
+    							<div class="login-flex">
+    								<input type="submit" value="Bejelentkezés" class="button">
+    							</div>
+    						</div>
+					
+						</form> -->
+												
+					</div>
+					<div class="lines-dropdown"><img src="https://kanyargo.paty.hu/images/lines.png" class="topimg-r">
+						<div class="lines-dropdown-content">
+							           					<a href="https://kanyargo.paty.hu/Jegyvasarlas" class="nlnk"><p class="lines-dropdown-a">JEGYVÁSÁRLÁS</p></a>
+               				           					<a href="https://kanyargo.paty.hu/Menetrend" class="nlnk"><p class="lines-dropdown-a">MENETREND</p></a>
+               				           					<a href="https://kanyargo.paty.hu/Terkep" class="activelnk nlnk"><p class="lines-dropdown-a">TÉRKÉP</p></a>
+               				          					<a href="https://kanyargo.paty.hu/GYIK" class="nlnk"><p class="lines-dropdown-a">GY. I. K.</p></a>
+          					<a href="https://iskolabusz.paty.hu" target="_blank" class="nlnk"><p class="lines-dropdown-a">ISKOLABUSZ</p></a>
+          											</div>
+					</div>
+				</div>
+			</div>
+			<div style="clear: both;"></div>
+			
+		</div>
+		<div style="clear: both;"></div>
+        <link rel="stylesheet" href="https://kanyargo.paty.hu/js/openlayers/ol.css" type="text/css">		
+<script src="https://kanyargo.paty.hu/js/openlayers/ol.js" type="text/javascript"></script>
+<script src="https://kanyargo.paty.hu/js/MapFunctions.js" type="text/javascript"></script>
+<script type="text/javascript">
+</script>
+<div class="white">
+			<div class="tmtbl_fullwidth">
+				<div class="tab">
+					<button class="tablinks" onclick="openCity(event, 'Kovetes')" id="defaultOpen">
+						<img src="./images/busz.png" class="mp-img-1">
+					</button>
+					<button class="tablinks" onclick="openCity(event, 'Terkep')">
+						<img src="./images/nezetvaltas.png" class="mp-img-2">
+						<div style="clear: both;"></div>
+					</button>
+				</div>
+				<div id="Kovetes" class="tabcontent" style="display:none">
+					<div style="clear: both;"></div>
+					<div class="realTimeMain">
+    					<div class="tbl-div">
+    						<img src="./images/erkezo.png" class="map-trc">
+    						<div style="height: 20px; clear: both;"></div>
+    						<table id="tmtbl-blue">
+    						        						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Bocskai iskola</th><th><span id="timeThSpan-19">'21</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Iskola utca - Nyugati irány</th><th><span id="timeThSpan-2">'3</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Telki elágazás</th><th><span id="timeThSpan-3">'4</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Harangláb</th><th><span id="timeThSpan-4">'5</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Kossuth utca</th><th><span id="timeThSpan-5">'6</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Burgondia utca</th><th><span id="timeThSpan-7">'8</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Galagonya utca</th><th><span id="timeThSpan-45">'40</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Rigó utca</th><th><span id="timeThSpan-44">'41</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Hársfa utca</th><th><span id="timeThSpan-43">'42</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Mézeshegy</th><th><span id="timeThSpan-46">'43</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Bánya utca</th><th><span id="timeThSpan-8">'9</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Rét köz</th><th><span id="timeThSpan-9">'10</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Páskom utca</th><th><span id="timeThSpan-10">'11</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Füzespatak utca</th><th><span id="timeThSpan-11">'12</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Völgy utca</th><th><span id="timeThSpan-12">'13</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Nyírfa utca</th><th><span id="timeThSpan-13">'14</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Játszótér</th><th><span id="timeThSpan-14">'15</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Árpád utca</th><th><span id="timeThSpan-15">'17</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Petőfi Sándor utca</th><th><span id="timeThSpan-16">'18</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Bocskai iskola</th><th><span id="timeThSpan-19">'21</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Bocskai köz</th><th><span id="timeThSpan-47"></span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Iskola utca - Nyugati irány</th><th><span id="timeThSpan-2">'3</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Töki út - Nyugat felé</th><th><span id="timeThSpan-36">'23</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Boglárka utca</th><th><span id="timeThSpan-23">'25</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Vízműtelep</th><th><span id="timeThSpan-24">'27</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Levendula otthon</th><th><span id="timeThSpan-25">'39</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Rendőrség</th><th><span id="timeThSpan-26">'30</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Torbágyi út 10. - Vasútállomás felé</th><th><span id="timeThSpan-27">'134</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Téglagyár - Vasútállomás felé</th><th><span id="timeThSpan-28">'135</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Biatorbágy, Vendel tér - Vasútállomás felé</th><th><span id="timeThSpan-42">'2</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Biatorbágy VÁ (érk.)</th><th><span id="timeThSpan-29">'139</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Biatorbágy VÁ (in.)</th><th><span id="timeThSpan-30">'20</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Biatorbágy, Vendel tér - Vasútállomás felé</th><th><span id="timeThSpan-42">'2</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Téglagyár - Páty felé</th><th><span id="timeThSpan-38">'158</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Torbágyi út 10 - Páty felé</th><th><span id="timeThSpan-37">'159</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Községháza</th><th><span id="timeThSpan-1">'2</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Rendőrség</th><th><span id="timeThSpan-26">'30</span></th></tr>
+        						            						        <tr><td colspan="3"><h3>Szerződéses járatok</h3></td></tr>
+        						                						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Biatorbágy, BIT (Juhász Gy. u.)</th><th><span id="timeThSpan-48"></span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Biatorbágy, Vendel tér - Vasútállomás felé</th><th><span id="timeThSpan-42">'2</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Biatorbágy, Ritsmann iskola</th><th><span id="timeThSpan-50">'18</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Biatorbágy, Szentháromság tér</th><th><span id="timeThSpan-51">'10</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Biatorbágy, BIT (VOLÁN m.)</th><th><span id="timeThSpan-49"></span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Biatorbágy, Ritsmann iskola</th><th><span id="timeThSpan-50">'18</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Biatorbágy VÁ (in.)</th><th><span id="timeThSpan-30">'20</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Biatorbágy, Vendel tér - Vasútállomás felé</th><th><span id="timeThSpan-42">'2</span></th></tr>
+        						            						    <tr><th class="mp-th-1"></th><th class="mp-th-2">Községháza</th><th><span id="timeThSpan-1">'2</span></th></tr>
+        						        						</table>
+    						<hr/><table><tr><td style="width:10%"><strong>**</strong></td><td style="width:90%;text-align:left;"> A KanyarGO a körforgalom felől a Vitamin-domb megállóhoz a betérést
+csak utasok helyszíni jelenléte ill. leszállási igény jelzése esetén végzi el. A
+feltüntettet időpontokon túl a Vitamin-domb megállóban további megállások
+vannak Páty felé 7:39, 14:16, 14:59, 15:29, 16:21 időpontokban, melyek
+táblázatos formában csak szerkesztéstechnikai okokból nem szerepelnek.</td></tr></table>    					</div>
+    					<div class="map-div">
+    						<div id="map" class="map"></div>
+    						<script type="text/javascript">
+    						var map;
+    						var mapLat = 47.5003601;
+    						var mapLng = 18.8296714;
+    						var mView;
+    						var busFeatures=[];
+    						var vectorLayerBus = null;
+    						var vectorSourceBus = null
+    						var mapDefaultZoom = 14;
+    						var vectorLayerBS1;
+    						var lgpx1;
+    						var lgpx2;
+    
+    						function zoomMapToPoint(lon, lat, zoomTo = 17){
+    							mView.animate({
+    						          center: new ol.proj.fromLonLat([lon, lat]),
+    						          zoom: zoomTo,
+    						          duration: 350
+    						        });
+    						}
+    
+    						var iconStyleBus = new ol.style.Style({
+    					        image:  new ol.style.Circle({
+    					            radius: 12,
+    					            stroke: new ol.style.Stroke({
+    					                color: '#000'
+    					            }),
+    					            fill: new ol.style.Fill({
+    					                color: '#33C0FF'
+    					            })
+    					        })
+    					    });
+    					    var labelStyleBus = new ol.style.Style({
+    					        text: new ol.style.Text({
+    					            font: '12px Calibri,sans-serif',
+    					            overflow: true,
+    					            fill: new ol.style.Fill({
+    					                color: '#333EFF'
+    					            }),
+    					            stroke: new ol.style.Stroke({
+    					                color: '#fff8e7',
+    					                width: 3
+    					            })
+    					        })
+    					    });
+    
+    					    var styleBus = [iconStyleBus, labelStyleBus];
+    
+    						$(document).ready( function() {
+    							mView = new ol.View({
+    								center: ol.proj.fromLonLat([mapLng, mapLat]),
+    								zoom: mapDefaultZoom
+    							});
+    							map = new ol.Map({
+    								target: "map",
+    								layers: [
+    								new ol.layer.Tile({
+    									source: new ol.source.OSM({
+    									url: "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"
+    									})
+    								})
+    								],
+    								view: mView
+    							});
+    
+    							var busStopFeatures1=[];
+    							
+    							                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.82273400), parseFloat(47.52012000)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Árpád utca',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.84161400), parseFloat(47.51295600)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Bánya utca',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.83399600), parseFloat(47.47980200)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Biatorbágy VÁ (érk.)',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.83403300), parseFloat(47.47988000)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Biatorbágy VÁ (in.)',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.81148676), parseFloat(47.47882416)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Biatorbágy, BIT (Juhász Gy. u.)',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.80908000), parseFloat(47.48015000)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Biatorbágy, BIT (VOLÁN m.)',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.83211200), parseFloat(47.47743300)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Biatorbágy, Ritsmann iskola',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.80840800), parseFloat(47.46511300)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Biatorbágy, Szentháromság tér',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.82920600), parseFloat(47.47802900)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Biatorbágy, Vendel tér',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.82939310), parseFloat(47.47816557)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Biatorbágy, Vendel tér',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.82360900), parseFloat(47.51490700)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Bocskai iskola',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.82437237), parseFloat(47.51376288)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Bocskai köz',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.81365100), parseFloat(47.51561000)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Boglárka utca',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.83901400), parseFloat(47.51121900)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Burgondia utca',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.83444800), parseFloat(47.52010100)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Füzespatak utca',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.84838400), parseFloat(47.50924500)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Galagonya utca',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.83335200), parseFloat(47.51552300)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Harangláb',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.85696000), parseFloat(47.50740700)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Hársfa utca',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.82643119), parseFloat(47.51404162)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Iskola utca',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.82612200), parseFloat(47.51386600)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Iskola utca',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.82811900), parseFloat(47.52226600)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Játszótér',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.83306600), parseFloat(47.51275400)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Kossuth utca',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.82576500), parseFloat(47.51107100)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Községháza',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.82182200), parseFloat(47.51448700)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Levendula otthon',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.85443371), parseFloat(47.50691456)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Mézeshegy',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.83022400), parseFloat(47.52405200)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Nyírfa utca',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.83827600), parseFloat(47.51837700)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Páskom utca',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.82495200), parseFloat(47.51700600)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Petőfi Sándor utca',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.82422700), parseFloat(47.51099600)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Rendőrség',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.84001600), parseFloat(47.51597900)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Rét köz',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.85452400), parseFloat(47.51042000)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Rigó utca',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.82466100), parseFloat(47.49417400)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Téglagyár',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.82481300), parseFloat(47.49422200)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Téglagyár',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.83091900), parseFloat(47.51551200)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Telki elágazás',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.81794500), parseFloat(47.50893000)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Temetőkápolna',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.81794500), parseFloat(47.50893000)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Temetőkápolna',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.81741100), parseFloat(47.51218300)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Töki út',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.82469800), parseFloat(47.50542900)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Torbágyi út 10',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.82468800), parseFloat(47.50500300)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Torbágyi út 10.',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.81783300), parseFloat(47.51277600)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Vízműtelep',
+                                        }));
+                            	  		                            	  		busStopFeatures1.push(new ol.Feature({
+                                            geometry: new ol.geom.Point(ol.proj.transform([parseFloat(18.83423700), parseFloat(47.52302500)], 'EPSG:4326',     
+                                            'EPSG:3857')),
+                                            name: 'Völgy utca',
+                                        }));
+                            	  		    
+                        		  var vectorSourceBS1 = new ol.source.Vector({
+                        	            features: busStopFeatures1 
+                        	        });
+                        
+                        		  var iconStyle1 = new ol.style.Style({
+                        		        image:  new ol.style.Circle({
+                        		            radius: 8,
+                        		            stroke: new ol.style.Stroke({
+                        		                color: '#fff'
+                        		            }),
+                        		            fill: new ol.style.Fill({
+                        		                color: '#FF0000'
+                        		            })
+                        		        })
+                        		    });
+                        		    var labelStyle1 = new ol.style.Style({
+                        		        text: new ol.style.Text({
+                        		            font: '12px Calibri,sans-serif',
+                        		            overflow: true,
+                        		            fill: new ol.style.Fill({
+                        		                color: '#000'
+                        		            }),
+                        		            stroke: new ol.style.Stroke({
+                        		                color: '#fff8e7',
+                        		                width: 3
+                        		            })
+                        		        })
+                        		    });
+                        		    var style1 = [iconStyle1, labelStyle1];
+                        
+                        		    vectorLayerBS1 = new ol.layer.Vector({
+                        		        source: vectorSourceBS1,
+                        		        opacity: 0.7,
+                        		        style: function(feature) {
+                        		          labelStyle1.getText().setText(feature.get('name'));
+                        		          return style1;
+                        		        }
+                        		    });
+                        		                            
+                        			var lineStyle1 = new ol.style.Style({
+                        			    stroke: new ol.style.Stroke(({
+                        			        width: 4,
+                        			        color: '#00FF00'
+                        			                                			    }))
+                        			});
+
+                        			var lineStyleDoted = new ol.style.Style({
+                        			    stroke: new ol.style.Stroke(({
+                        			        width: 5,
+                        			        color: '#00FF00'
+											,lineDash: [20,20]
+                        			    }))
+                        			});
+
+                        			var lineStyleOsk = new ol.style.Style({
+                        			    stroke: new ol.style.Stroke(({
+                        			        width: 4,
+                        			        color: '#CFA115'
+                        			                                			    }))
+                        			});
+    
+                        	                                			lgpx1 = new ol.layer.Vector({
+                        				  source: new ol.source.Vector({
+                        				    url: "https://kanyargo.paty.hu/gpx/2024/2024-1.gpx?v=3e7130a08fe7dba59add6d4404110327",
+                        				    format: new ol.format.GPX()
+                        				  }),
+                        				  opacity: 1,
+                        				  style: lineStyle1
+                        				});
+                        			
+                        	        map.addLayer(lgpx1);
+                        	       
+                        	                                			lgpx1 = new ol.layer.Vector({
+                        				  source: new ol.source.Vector({
+                        				    url: "https://kanyargo.paty.hu/gpx/2024/2024-2.gpx?v=3e7130a08fe7dba59add6d4404110327",
+                        				    format: new ol.format.GPX()
+                        				  }),
+                        				  opacity: 1,
+                        				  style: lineStyle1
+                        				});
+                        			
+                        	        map.addLayer(lgpx1);
+                        	       
+                        	                                			lgpx1 = new ol.layer.Vector({
+                        				  source: new ol.source.Vector({
+                        				    url: "https://kanyargo.paty.hu/gpx/2024/2024-3.gpx?v=3e7130a08fe7dba59add6d4404110327",
+                        				    format: new ol.format.GPX()
+                        				  }),
+                        				  opacity: 1,
+                        				  style: lineStyle1
+                        				});
+                        			
+                        	        map.addLayer(lgpx1);
+                        	       
+                        	                                			lgpx1 = new ol.layer.Vector({
+                        				  source: new ol.source.Vector({
+                        				    url: "https://kanyargo.paty.hu/gpx/2024/2024-4.gpx?v=3e7130a08fe7dba59add6d4404110327",
+                        				    format: new ol.format.GPX()
+                        				  }),
+                        				  opacity: 1,
+                        				  style: lineStyle1
+                        				});
+                        			
+                        	        map.addLayer(lgpx1);
+                        	       
+                        	                                			lgpx1 = new ol.layer.Vector({
+                        				  source: new ol.source.Vector({
+                        				    url: "https://kanyargo.paty.hu/gpx/2024/2024-5.gpx?v=3e7130a08fe7dba59add6d4404110327",
+                        				    format: new ol.format.GPX()
+                        				  }),
+                        				  opacity: 1,
+                        				  style: lineStyle1
+                        				});
+                        			
+                        	        map.addLayer(lgpx1);
+                        	       
+                        	                                			lgpx1 = new ol.layer.Vector({
+                        				  source: new ol.source.Vector({
+                        				    url: "https://kanyargo.paty.hu/gpx/2024/2024-6.gpx?v=3e7130a08fe7dba59add6d4404110327",
+                        				    format: new ol.format.GPX()
+                        				  }),
+                        				  opacity: 1,
+                        				  style: lineStyle1
+                        				});
+                        			
+                        	        map.addLayer(lgpx1);
+                        	       
+                        	                                			lgpx1 = new ol.layer.Vector({
+                        				  source: new ol.source.Vector({
+                        				    url: "https://kanyargo.paty.hu/gpx/2024/2024-7.gpx?v=3e7130a08fe7dba59add6d4404110327",
+                        				    format: new ol.format.GPX()
+                        				  }),
+                        				  opacity: 1,
+                        				  style: lineStyle1
+                        				});
+                        			
+                        	        map.addLayer(lgpx1);
+                        	       
+                        	                                			lgpx1 = new ol.layer.Vector({
+                        				  source: new ol.source.Vector({
+                        				    url: "https://kanyargo.paty.hu/gpx/2024/2024-8.gpx?v=3e7130a08fe7dba59add6d4404110327",
+                        				    format: new ol.format.GPX()
+                        				  }),
+                        				  opacity: 1,
+                        				  style: lineStyle1
+                        				});
+                        			
+                        	        map.addLayer(lgpx1);
+                        	       
+                        	                                			lgpx1 = new ol.layer.Vector({
+                        				  source: new ol.source.Vector({
+                        				    url: "https://kanyargo.paty.hu/gpx/2024/2024-9.gpx?v=3e7130a08fe7dba59add6d4404110327",
+                        				    format: new ol.format.GPX()
+                        				  }),
+                        				  opacity: 1,
+                        				  style: lineStyle1
+                        				});
+                        			
+                        	        map.addLayer(lgpx1);
+                        	       
+                        	                                        			lgpxAtv = new ol.layer.Vector({
+                                				  source: new ol.source.Vector({
+                                				    url: "https://kanyargo.paty.hu/gpx/szaggatott_jenei-dulo_atvagas.gpx?v=3e7130a08fe7dba59add6d4404110327",
+                                				    format: new ol.format.GPX()
+                                				  }),
+                                				  opacity: 1,
+                                				  style: lineStyleDoted
+                                				});
+                                			
+                                	        map.addLayer(lgpxAtv);
+
+                        	                                        			lgpxPetAtv = new ol.layer.Vector({
+                                				  source: new ol.source.Vector({
+                                				    url: "https://kanyargo.paty.hu/gpx/2024/2024-petofi-dotted.gpx?v=3e7130a08fe7dba59add6d4404110327",
+                                				    format: new ol.format.GPX()
+                                				  }),
+                                				  opacity: 1,
+                                				  style: lineStyleDoted
+                                				});
+                                			
+                                	        map.addLayer(lgpxPetAtv);
+
+                        	                                       			lgpxosk = new ol.layer.Vector({
+                                 				  source: new ol.source.Vector({
+                                   				    url: "https://kanyargo.paty.hu/gpx/2024/2024-Iskola-1.gpx?v=3e7130a08fe7dba59add6d4404110327",
+                                   				    format: new ol.format.GPX()
+                                   				  }),
+                                   				  opacity: 0.8,
+                                   				  style: lineStyleOsk
+                           				});
+                                    			
+                               	        map.addLayer(lgpxosk);
+                                    	        
+                            	                                       			lgpxosk = new ol.layer.Vector({
+                                 				  source: new ol.source.Vector({
+                                   				    url: "https://kanyargo.paty.hu/gpx/2024/2024-Iskola-2.gpx?v=3e7130a08fe7dba59add6d4404110327",
+                                   				    format: new ol.format.GPX()
+                                   				  }),
+                                   				  opacity: 0.8,
+                                   				  style: lineStyleOsk
+                           				});
+                                    			
+                               	        map.addLayer(lgpxosk);
+                                    	        
+                            	                                       			lgpxosk = new ol.layer.Vector({
+                                 				  source: new ol.source.Vector({
+                                   				    url: "https://kanyargo.paty.hu/gpx/2024/2024-Iskola-3.gpx?v=3e7130a08fe7dba59add6d4404110327",
+                                   				    format: new ol.format.GPX()
+                                   				  }),
+                                   				  opacity: 0.8,
+                                   				  style: lineStyleOsk
+                           				});
+                                    			
+                               	        map.addLayer(lgpxosk);
+                                    	        
+                            	                                       			lgpxosk = new ol.layer.Vector({
+                                 				  source: new ol.source.Vector({
+                                   				    url: "https://kanyargo.paty.hu/gpx/2024/2024-Iskola-4.gpx?v=3e7130a08fe7dba59add6d4404110327",
+                                   				    format: new ol.format.GPX()
+                                   				  }),
+                                   				  opacity: 0.8,
+                                   				  style: lineStyleOsk
+                           				});
+                                    			
+                               	        map.addLayer(lgpxosk);
+                                    	        
+                            	                                       			lgpxosk = new ol.layer.Vector({
+                                 				  source: new ol.source.Vector({
+                                   				    url: "https://kanyargo.paty.hu/gpx/2024/2024-Iskola-5.gpx?v=3e7130a08fe7dba59add6d4404110327",
+                                   				    format: new ol.format.GPX()
+                                   				  }),
+                                   				  opacity: 0.8,
+                                   				  style: lineStyleOsk
+                           				});
+                                    			
+                               	        map.addLayer(lgpxosk);
+                                    	        
+                            	                                	        map.addLayer(vectorLayerBS1);
+                        	                            	        	busFeatures=[];
+                    	        	                    					 	addMarker(18.824711111111114,47.504867555555556,'SSG-982');
+                    					 	                    					 	addMarker(18.824746666666666,47.50501688888889,'SUP-955');
+                    					 	                    				 vectorSourceBus = new ol.source.Vector({
+                    			            features: busFeatures 
+                    			        });
+                    
+                    				    vectorLayerBus = new ol.layer.Vector({
+                    				        source: vectorSourceBus,
+                    				        opacity: 0.7,
+                    				        style: function(feature) {
+                    				          labelStyleBus.getText().setText(feature.get('name'));
+                    				          return styleBus;
+                    				        }
+                    				    });
+                    
+                    			        map.addLayer(vectorLayerBus);
+                    				 
+    							//útvonal terelés
+    					        /*var lineStyleTereles = new ol.style.Style({
+    							    stroke: new ol.style.Stroke(({
+    							        width: 6,
+    							        color: '#AF3097'
+    							    }))
+    							});
+    							
+    				            var lgpxTereles = new ol.layer.Vector({
+    							  source: new ol.source.Vector({
+    							    url: "./gpx/kanyargo-kitero-20230815.gpx",
+    							    format: new ol.format.GPX()
+    							  }),
+    							  opacity: 0.72,
+    							  style: lineStyleTereles
+    							});
+    						
+    				        	map.addLayer(lgpxTereles);*/
+
+    							//mindenszentek
+    					        /*var lineStyleTereles = new ol.style.Style({
+    							    stroke: new ol.style.Stroke(({
+    							        width: 6,
+    							        color: '#5F91F7'
+    							    }))
+    							});
+    							
+    				            var lgpxTereles = new ol.layer.Vector({
+    							  source: new ol.source.Vector({
+    							    url: "./gpx/paty-mindenszented-utvonal.gpx",
+    							    format: new ol.format.GPX()
+    							  }),
+    							  opacity: 0.82,
+    							  style: lineStyleTereles
+    							});
+    						
+    				        	map.addLayer(lgpxTereles);*/
+    				        	
+    				        	//ideiglenes utvonal 2025.11.10
+    				        	/*var lineStyleTereles = new ol.style.Style({
+    							    stroke: new ol.style.Stroke(({
+    							        width: 6,
+    							        color: '#5F91F7'
+    							    }))
+    							});
+    							
+    				            var lgpxTereles = new ol.layer.Vector({
+    							  source: new ol.source.Vector({
+    							    url: "./gpx/kanyargo-ideilenes-2025-11-10.gpx",
+    							    format: new ol.format.GPX()
+    							  }),
+    							  opacity: 0.82,
+    							  style: lineStyleTereles
+    							});
+    						
+    				        	map.addLayer(lgpxTereles);*/
+    						});
+    
+    						var lastResultId = 0;
+    
+    						function fetchdata(){
+    					   	 $.ajax({
+    					   		type: 'POST',
+    					   	  	url: 'WebServiceConfigurator.php',
+    					   	 	/*contentType: 'application/json',*/
+    					   		data: { 'caller':'KanyarGo1012','serviceName': 'getWehicleDatas', 'ct':'data'} ,
+    					   		/*dataType: 'json',*/
+    					   		success: function (data) { 
+    					   			console.log('success WS');
+    					   	    	var dataArray = data.split("#");
+    					   	    	var savedBusFeatures = busFeatures.slice();
+    					   	    	busFeatures=[];
+    					   	    	var savedResultId = 0;
+    					   	    	var needRedrawTimeTable = false;
+    					   	    	var states = [,];
+    					   	    	var busIndex=0;
+    					   	    	var busStopIndex=0;
+    					   	    	console.log('dataArray.length:' + dataArray.length);
+    					   	    	for(var i = 0; i< dataArray.length; i++){
+    					   	   	    	var currData = dataArray[i];
+    					   	   	    	var dataRow = currData.split(";")
+    					   	   	    	console.log(currData);
+    					   	   	    	//igeiglenesen mindenképp legyen marker
+    					   	   	    	if(dataRow.length>=4){
+    					   	   	    		console.log('Addmarker');
+    					   	   	    		addMarker(dataRow[3],dataRow[2],dataRow[0]);
+    					   	   	    	}
+    					   	   	    	if(dataRow.length>=5){
+    					   	   	    		savedResultId = dataRow[4];
+    						   	   	    	if(savedResultId != lastResultId){
+    						   	   	    		//console.log('Addmarker');
+    					   	   	    			//addMarker(dataRow[3],dataRow[2],dataRow[0]);
+    					   	   	    			//$( "#TimeSpan"+dataRow[0]).text(dataRow[1]);
+    						   	   	    	}
+    						   	   	  		if(dataRow.length>6){
+    											if(dataRow[5]!=''){
+    												needRedrawTimeTable = true;
+    								   	   	  		var bsIds = dataRow[5].split("|");
+    								   	   	  		var timeDatas = dataRow[6].split("|");
+    								   	   	  		for(var k = 0; k< bsIds.length; k++){
+    									   	   	  		if(timeDatas.length>k){
+    										   	   	  		if(busIndex == 0){
+    											   	   	  		/*if(timeDatas[k] != '00\'' && timeDatas[k] != '0\''){
+    											   	   	  			$('#bsClock'+bsIds[k]).html(timeDatas[k]);
+    											   	   	  		}else{
+    											   	   	  			$('#bsClock'+bsIds[k]).html('');
+    											   	   	  		}*/
+    										   	   	  		}/*else{
+    												   	   	  	if(timeDatas[k] != '00\'' && timeDatas[k] != '0\''){
+    													   	   	  	if($('#bsClock'+bsIds[k]).html() == ''){
+    													   	   	  		$('#bsClock'+bsIds[k]).html(timeDatas[k]);
+    													   	   	  	}else{
+    												   	   	  			//$('#bsClock'+bsIds[k]).html(timeDatas[k]);
+    												   	   	  			var oldData = Number($('#bsClock'+bsIds[k]).html().replace('\'',''));
+    												   	   	  			var newData = Number(timeDatas[k].replace('\'',''));
+    												   	   	  			if(newData<oldData){
+    												   	   	  				$('#bsClock'+bsIds[k]).html(timeDatas[k]);
+    												   	   	  			}
+    													   	   	  	}
+    											   	   	  		}
+    										   	   	  		}*/
+    									   	   	  		}
+    								   	   	  		}
+    											 	//$('#bsClock'+dataRow[5]).html(dataRow[6]);
+    											}
+    							   	   	  		
+    							   	   	  		
+    						   	   	  		}
+    						   	   	  		$("#searchBtn"+dataRow[0]).attr("onclick","zoomMapToPoint("+dataRow[3]+","+dataRow[2]+")");
+    					   	   	    	}else if(dataRow.length>=2){
+    						   	   	    	if(dataRow[0] == 'Error'){
+    						   	   	    		$( "#errorDiv" ).html(dataRow[1]);
+    						   	   	    	}
+    					   	   	    	}
+    					   	   	  		busIndex++;
+    					   	    	}
+    
+    					   	    	if(busFeatures.length == 0 && savedResultId == lastResultId){
+        					   	    	//console.log('sbusfeatures');
+    					   	    		busFeatures = savedBusFeatures.slice();
+    					   	    		//console.log('busFeatures.length: ' + busFeatures.length);
+    					   	    	}
+    					   	    	
+    					   	    	if(savedResultId!=0 && savedResultId != lastResultId){
+    					   	    		lastResultId = savedResultId;
+    					   	    	}
+    
+    					   	    	var vectorSourceBus = new ol.source.Vector({
+    						            features: busFeatures 
+    						        });
+    
+    							    map.removeLayer(vectorLayerBus);
+    
+    							    vectorLayerBus = new ol.layer.Vector({
+    							        source: vectorSourceBus,
+    							        opacity: 0.7,
+    							        style: function(feature) {
+    							          labelStyleBus.getText().setText(feature.get('name'));
+    							          return styleBus;
+    							        }
+    							    });
+    
+    						        map.addLayer(vectorLayerBus);
+    					   	    }
+    					   	 });
+    
+    
+    					   	 //timetable
+    					   	$.ajax({
+    					   		type: 'POST',
+    					   	  	url: 'WebServiceConfigurator.php',
+    					   		data: { 'caller':'KanyarGo1012','serviceName': 'getStartTimes', 'ct':'data'} ,
+    					   		success: function (data) { 
+    					   	    	var dataArray = data.split("#");
+    					   	    	
+    					   	    	for(var i = 0; i< dataArray.length; i++){
+    					   	   	    	var currData = dataArray[i];
+    					   	   	    	var dataRow = currData.split(";");
+    					   	   	    	if(dataRow.length>=3){
+    										var currentBSId = dataRow[0];
+    										var timeDiff = dataRow[1];
+    										var direcTionId = dataRow[2];
+    										if(timeDiff != null && timeDiff.length>0){
+    											timeDiff = "\'"+timeDiff;
+    										}
+    										//timeDiff = '';
+    										$('#timeThSpan-'+currentBSId).html(timeDiff);
+    										var dirImg = "";
+    										if(direcTionId != null && direcTionId.length>0 && direcTionId !='x' && direcTionId !='3'){
+    											dirImg = direcTionId == '1' ? 'https://kanyargo.paty.hu/images/dir-ny-k.png' : 'https://kanyargo.paty.hu/images/dir-k-ny.png';
+    										}
+    
+    										if(dirImg != null && dirImg.length>0){
+    											$("#timethImage-"+currentBSId).attr("src",dirImg);
+    										}
+    
+    					   	   	    	}
+    					   	    	}
+    					   	    }
+    					   	 });
+    					   	}
+    
+    						$(document).ready(function(){
+    							fetchdata();
+    						   	 setInterval(fetchdata,2000);
+    							//fetchdata();
+    						   	});
+    						</script>
+    						<noscript>
+    						A térképi megjelenítéshez engedélyezni kell a Javascript használatot az oldalon!
+    						</noscript>
+    						<div style="clear: both;"></div>
+    					</div>
+						
+					</div>
+					
+					<div style="clear: both;"></div>
+					
+				</div>
+				<div id="Terkep" class="tabcontent" style="display:block">
+					<div style="oweflow-x: auto;">
+											<img src="https://kanyargo.paty.hu/images/upload/vonalhalozati-abra.webp?v=d3348982085ab8dd8ad0356e24c6f199" style="width:99%;">
+										</div>
+				</div>
+
+					<script>
+						function openCity(evt, cityName) {
+						  var i, tabcontent, tablinks;
+						  tabcontent = document.getElementsByClassName("tabcontent");
+						  for (i = 0; i < tabcontent.length; i++) {
+							tabcontent[i].style.display = "none";
+						  }
+						  tablinks = document.getElementsByClassName("tablinks");
+						  for (i = 0; i < tablinks.length; i++) {
+							tablinks[i].className = tablinks[i].className.replace(" active", "");
+						  }
+						  document.getElementById(cityName).style.display = "block";
+						  evt.currentTarget.className += " active";
+						}
+
+						// Get the element with id="defaultOpen" and click on it
+						document.getElementById("defaultOpen").click();
+					</script>
+				<div style="clear: both;"></div>
+			</div>
+		</div>
+	    			<div id="footer">
+			<div class="ftr-txt">
+				<div class="ftr-left">
+				    <p><a href="https://kanyargo.paty.hu/Menetrend">Menetrend</a></p>
+    <p><a href="https://kanyargo.paty.hu/Terkep">Térkép</a></p>
+    <p><a href="https://kanyargo.paty.hu/GYIK">GY. I. K.</a></p>
+    </div>
+    <div class="ftr-right">
+    <p><a href="https://kanyargo.paty.hu/impresszum">Impresszum</a></p>
+    <p><a href="https://kanyargo.paty.hu/Dokumentumok/adatvedelmi-szabalyzat">Adatvédelmi szabályzat</a></p>
+    <p><a href="https://kanyargo.paty.hu/Dokumentumok/altalanos-szerzodesi-feltetelek">Általános Szerződési Feltételek</a></p>
+    <p><a href="https://kanyargo.paty.hu/kozlekedesi-informaciok">Közlekedési információk</a></p>
+    </div>
+    <div style="clear: both;"></div>
+        <div class="dev-design">
+    	Designterv:&nbsp;<a style="text-decoration:underline" href="mailto:mate.reisinger@gmail.com">Reisinger Máté</a><br/>
+    	Portál fejlesztés:&nbsp;<a style="text-decoration:underline" href="https://lunaluxdesign.hu">Luna Lux Design Kft.</a><br/><br/>
+    </div>
+    </div>
+</div>    </BODY>
+</HTML>

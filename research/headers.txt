@@ -1,0 +1,13 @@
+HTTP/2 200 
+date: Thu, 22 Oct 2026 12:06:59 GMT
+content-type: text/html; charset=UTF-8
+server: Apache
+expires: Thu, 19 Nov 1981 08:52:00 GMT
+cache-control: no-store, no-cache, must-revalidate
+pragma: no-cache
+set-cookie: 
+content-length-backup: 
+vary: Accept-Encoding
+x-varnish: 238125842
+via: 1.1 whp1.webspacecontrol.com (Varnish/7.3)
+

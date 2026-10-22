@@ -1,0 +1,487 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<HTML lang="hu">
+    <HEAD>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta charset="utf-8" />
+        <link rel="canonical" href="https://kanyargo.paty.hu//">
+        <meta name="keywords" content="Páty, KanyarGo, buszközlekedés, jegyvásárlás" />
+        <meta name="description" content="Páty KanyarGo közösségi közlekedési rendszer" />
+        <meta name="robots" content="all">
+        <meta name="revisit-after" content="5 days">
+        <meta name="googlebot" content="index, follow">
+        <meta name="slurp" content="index, follow">
+        <meta name="teoma" content="index, follow">
+        <TITLE>KanyarGo Páty helyi autóbuszjárat</TITLE>
+        <meta name="google-site-verification" content="9nWGWvN-5nfoIyQdFj3-dZewVk-quRcQJhfIiuPJqg8" />
+        <link rel="shortcut icon" href="https://kanyargo.paty.hu/images/paty_cimer.png?v=3557cf513dcf122b9d4963de1150b4c3">
+        <link rel="icon" href="https://kanyargo.paty.hu/images/paty_cimer.png?v=3557cf513dcf122b9d4963de1150b4c3">
+        
+        <meta property="og:title" content="KanyarGo Páty helyi autóbuszjárat" />
+        <meta property="og:site_name" content="KanyarGo Páty"/>
+        <meta property="og:type" content="website">
+        <meta property="og:description" content="Páty KanyarGo közösségi közlekedési rendszer" />
+        <meta property="og:image" content="https://kanyargo.paty.hu/images/logotext.png" />
+        <meta property="og:url" content="https://kanyargo.paty.hu//" />
+        <script type="application/ld+json">[{"@context":"http:\/\/schema.org","@type":"WebSite","author":"KanyarGo","contentLocation":"https:\/\/kanyargo.paty.hu\/","url":"https:\/\/kanyargo.paty.hu\/\/","description":"P\u00e1ty KanyarGo k\u00f6z\u00f6ss\u00e9gi k\u00f6zleked\u00e9si rendszer","name":"KanyarGo P\u00e1ty helyi aut\u00f3buszj\u00e1rat"}]</script><link rel="stylesheet" type="text/css" href="https://kanyargo.paty.hu/js/slick-1.8.0/slick/slick.css" media="screen"/>
+<link rel="stylesheet" type="text/css" href="https://kanyargo.paty.hu/js/slick-1.8.0/slick/slick-theme.css" media="screen"/>
+<script src="https://kanyargo.paty.hu/js/jquery-3.3.1.min.js"></script>
+<script src="https://kanyargo.paty.hu/js/multislider.js"></script>
+<script src="https://kanyargo.paty.hu/js/multislider.min.js"></script>
+<script src="https://kanyargo.paty.hu/js/midibus.js?v=089aa4b6da37e3e456ae6d4a00c3aa1f"></script>
+<script type="text/javascript" src="https://kanyargo.paty.hu/js/slick-1.8.0/slick/slick.min.js"></script>
+
+<!--  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>-->
+<script src="https://kanyargo.paty.hu/js/bootstrap-3.3.7.min.js"></script>
+
+<script type="text/javascript">
+Date.prototype.toDateInputValue = (function() {
+	var local = new Date(this);
+	local.setMinutes(this.getMinutes() - this.getTimezoneOffset());
+	return local.toJSON().slice(0,10);
+});
+</script><link rel="stylesheet" href="https://kanyargo.paty.hu/css/paty.css?3557cf513dcf122b9d4963de1150b4c3" media="all"><link rel="stylesheet" href="https://kanyargo.paty.hu/css/nav.css?3557cf513dcf122b9d4963de1150b4c3" media="all"><link rel="stylesheet" href="https://kanyargo.paty.hu/css/checkboxes.css?3557cf513dcf122b9d4963de1150b4c3" media="all"><link rel="stylesheet" href="https://kanyargo.paty.hu/css/tckts.css?3557cf513dcf122b9d4963de1150b4c3" media="all"><link rel="stylesheet" href="https://kanyargo.paty.hu/css/form.css?3557cf513dcf122b9d4963de1150b4c3" media="all"><link rel="stylesheet" href="https://kanyargo.paty.hu/css/buttons.css?3557cf513dcf122b9d4963de1150b4c3" media="all"><link rel="stylesheet" href="https://kanyargo.paty.hu/css/tckts.css?3557cf513dcf122b9d4963de1150b4c3" media="all"><link rel="stylesheet" href="https://kanyargo.paty.hu/css/payment-start.css?3557cf513dcf122b9d4963de1150b4c3" media="all">        <script type="text/javascript">
+        $(document).ready(function(){
+        	window['ga-disable-G-2SF9H078G5'] = true;
+    	});
+        </script>
+        <script src="https://kanyargo.paty.hu//js/cookieconsent.min.js?3557cf513dcf122b9d4963de1150b4c3"></script>
+<link rel="stylesheet" type="text/css" href="https://kanyargo.paty.hu//css/cookieconsent.min.css?3557cf513dcf122b9d4963de1150b4c3" />
+<script type="text/javascript">
+	function cookieEnabled(){
+			}
+
+    function cookieDisabled(){
+        //disable google analyticcs
+		window['ga-disable-G-2SF9H078G5'] = true;
+                        
+		//alert(document.cookie);
+		if(!document.__defineGetter__) {
+			Object.defineProperty(document, 'cookie', {
+				get: function(){return ''},
+				set: function(){return true},
+			});
+		} else {
+			document.__defineGetter__("cookie", function() { return '';} );
+			document.__defineSetter__("cookie", function() {} );
+		}
+	}
+                    
+	window.addEventListener("load", function(){
+	window.cookieconsent.initialise({
+		"palette": {
+			"popup": {
+				"background": "#000"
+			},
+			"button": {
+				"background": "#f1d600"
+			}
+		},
+		"type": "opt-in",
+		"content": {
+			"message": "A weboldal sütiket használ a jobb felhasználói élmény, és a vásárlások zavartalan lebonyolítása érdekében!",
+			"dismiss": "Megvan!",
+			"allow": "Összes süti engedélyezése",
+			"needle": "Szükséges sütik engedélyezése",
+			"deny": "Sütik tiltása",
+			"policy": "Süti beállítások",
+			"link": "Adatvédelmi szabályzatunk megtekintése.",
+			"close": "Bezár",
+			"href": "https://kanyargo.paty.hu/Dokumentumok/adatvedelmi-szabalyzat"
+		},
+		onPopupOpen: function() {},
+		onInitialise: function (status) {
+			var type = this.options.type;
+			var didConsent = this.hasConsented();
+			if (type == 'opt-in' && didConsent) {
+				// enable cookies
+				cookieEnabled();
+			}
+			if (type == 'opt-out' && !didConsent) {
+				// disable cookies
+				cookieDisabled();
+			}
+		},
+
+		onStatusChange: function(status, chosenBefore) {
+			var type = this.options.type;
+			var didConsent = this.hasConsented();
+			if (type == 'opt-in' && didConsent) {
+				// enable cookies
+				cookieEnabled();
+			}
+			if (type == 'opt-out' && !didConsent) {
+				// disable cookies
+				cookieDisabled();
+			}
+			location.reload();
+		},
+
+		onRevokeChoice: function() {
+			var type = this.options.type;
+			if (type == 'opt-in') {
+				// disable cookies
+				cookieDisabled();
+			}
+			if (type == 'opt-out') {
+				// enable cookies
+				cookieEnabled();
+			}
+		}
+	})});
+
+	$(document).ready(function() {
+		$('.text  a').addClass('empLink');
+		$('.data  a').addClass('empLink');
+	});
+</script>
+        <style>
+        /*font source: https://fonts.googleapis.com/css2?family=Montserrat&display=swap*/
+        /* cyrillic-ext */
+        @font-face {
+          font-family: 'Montserrat';
+          font-style: normal;
+          font-weight: 400;
+          font-display: swap;
+          src: url(https://fonts.gstatic.com/s/montserrat/v25/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw0aXpsog.woff2) format('woff2');
+          unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+        }
+        /* cyrillic */
+        @font-face {
+          font-family: 'Montserrat';
+          font-style: normal;
+          font-weight: 400;
+          font-display: swap;
+          src: url(https://fonts.gstatic.com/s/montserrat/v25/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw9aXpsog.woff2) format('woff2');
+          unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+        }
+        /* vietnamese */
+        @font-face {
+          font-family: 'Montserrat';
+          font-style: normal;
+          font-weight: 400;
+          font-display: swap;
+          src: url(https://fonts.gstatic.com/s/montserrat/v25/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw2aXpsog.woff2) format('woff2');
+          unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+1EA0-1EF9, U+20AB;
+        }
+        /* latin-ext */
+        @font-face {
+          font-family: 'Montserrat';
+          font-style: normal;
+          font-weight: 400;
+          font-display: swap;
+          src: url(https://fonts.gstatic.com/s/montserrat/v25/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw3aXpsog.woff2) format('woff2');
+          unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+        }
+        /* latin */
+        @font-face {
+          font-family: 'Montserrat';
+          font-style: normal;
+          font-weight: 400;
+          font-display: swap;
+          src: url(https://fonts.gstatic.com/s/montserrat/v25/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw5aXo.woff2) format('woff2');
+          unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+        }
+        </style>
+    </HEAD>
+    <BODY>
+    
+        <div class="info-div">
+    			
+			<div style="clear: both;"></div>
+			<div id="blue-bus">
+				<a href="https://kanyargo.paty.hu/Terkep"><img src="https://kanyargo.paty.hu/images/bus-blue.png"></a>
+			</div>
+					</div>
+		<div class="info-div2">
+			<div class="dispatcher-div">
+							
+				<div id="target">
+					<p class="dispatcher-p"><a href="tel:+36707788265" class="dispatcher-a">+36 70 7788 265</a></p>
+					<p class="dispatcher-p-1">/</p>
+					<p class="dispatcher-p-1"><a href="mailto:kanyargo@paty.hu" class="dispatcher-a-1">kanyargo@paty.hu</a>
+				</div>
+				<script>
+					$(document).ready(function(){
+						$('#target').toggle('slow');
+					  $('.toggle').mouseover(function() {
+						$('#target').toggle('slow');
+					  });
+					});
+				</script>
+			</div>
+		
+		</div>
+        		
+				    <div class="header">
+    	<div id="targets">
+					<p class="dispatcher-p"><a href="tel:+36707788265" class="dispatcher-a">+36 70 7788 265</a></p>
+					<p class="dispatcher-p-1">/</p>
+					<p class="dispatcher-p-1"><a href="mailto:kanyargo@paty.hu" class="dispatcher-a-1">kanyargo@paty.hu</a>
+				</div>
+			<div>
+				<div class="top-left">
+					<div class="top-1">
+						<a href="https://kanyargo.paty.hu/"><img src="https://kanyargo.paty.hu/images/logotext.png" class="topimg"></a>
+					</div>
+				</div>
+				<div class="top-right">
+					<a href="https://kanyargo.paty.hu/Kosar"><img src="https://kanyargo.paty.hu/images/cart-b.png" class="topimg-r"></a>
+										<div class="lines-dropdown">
+						<a href="https://kanyargo.paty.hu/Belepes"><img src="https://kanyargo.paty.hu/images/person.png" class="topimg-r-1"></a>
+						<!-- <form method="post" name="loginForm">
+							<input type="hidden" id="formAction" name="formAction" value="login">
+    						<div class="login">
+    							<div class="login-flex">
+    								<div class="login-cnt">
+    									<div class="bluebox"></div>
+    									<label for="usrName">Felhasználónév:</label>
+    								</div>
+    								<div class="login-cnt-1">
+    									<input  type="text"   name="usrName" id="usrName" required placeholder="Felhasználónév">
+    								</div>
+    							</div>
+    							<div class="login-flex">
+    								<div class="login-cnt">
+    									<div class="bluebox"></div>
+    									<label for="password">jelszó:</label>
+    								</div>
+    								<div class="login-cnt-1">
+    									<input  type="password"  class="1"   name="pwd" id="pwd"  placeholder="********">
+    								</div>
+    							</div>
+    							<div class="login-flex">
+    								<input type="submit" value="Bejelentkezés" class="button">
+    							</div>
+    						</div>
+					
+						</form>-->
+					</div>
+					<div class="lines-dropdown">
+						<img src="https://kanyargo.paty.hu/images/lines.png" class="topimg-r">
+						<div class="lines-dropdown-content">
+							<a href="https://kanyargo.paty.hu/Jegyvasarlas" class="nlnk"><p class="lines-dropdown-a">JEGYVÁSÁRLÁS</p></a>
+							<a href="https://kanyargo.paty.hu/Menetrend" class="nlnk"><p class="lines-dropdown-a">MENETREND</p></a>
+							<a href="https://kanyargo.paty.hu/Terkep" class="nlnk"><p class="lines-dropdown-a">TÉRKÉP</p></a>
+							<a href="https://kanyargo.paty.hu/GYIK" class="nlnk"><p class="lines-dropdown-a">GY. I. K.</p></a>
+							<a href="https://iskolabusz.paty.hu" target="_blank" class="nlnk"><p class="lines-dropdown-a">ISKOLABUSZ</p></a>
+													</div>
+					</div>
+				</div>
+			</div>
+			<div style="clear: both;"></div>
+			
+			
+		
+			<div class="billboard">
+				<div class="information">
+				                        <div class="information-1">
+    						<div class="information-ttl">Menetrend változás szeptember 1-től</div>
+    						<div class="information-cnt" style="text-align:left;">
+    							<strong>2026.08.25 14:55</strong><div class="desktopView"><div>Kedves Utasaink!<br /><br /></div>
+<div>Értesítjük Önöket, hogy szeptember 1-jétől kismértékben változik a megszokott <a href="https://kanyargo.paty.hu/documents/menetrend-KanyarGO-2026-szept-1-tol.pdf?v=101" target="_blank">iskolai időszaki menetrend</a>, így például<br /></div>
+...<br/><br/></div><div class="mobileView"><div>Kedves Utasaink!<br /><br /></div>
+<div>Értesítjük Önöket, hogy szeptember 1-jétől kismértékben</div>&nbsp;...</div>	
+            						<a href="https://kanyargo.paty.hu/Tajekoztatas/menetrend-valtozas-2026-szeptember-1-tol" class="information-bttn desktopView">
+        						Tovább olvasom
+        						<img src="./images/arrow.png" class="information-img">
+        						</a>
+        						            						<a href="https://kanyargo.paty.hu/Tajekoztatas/menetrend-valtozas-2026-szeptember-1-tol" class="information-bttn mobileView">
+        						Tovább olvasom
+        						<img src="./images/arrow.png" class="information-img">
+        						</a>
+        						        						<div style="clear:both"></div>
+        					</div>
+    					</div>
+                                                <div class="information-2">
+    						<div class="information-ttl">A KanyarGO 2026-ban már mindenki számára ingyenes!</div>
+    						<div class="information-cnt" style="text-align:left;">
+    							<strong>2025.12.31 15:47</strong><div class="desktopView">Jó tudni azonban, hogy a KanyarGO buszok kétféle szolgáltatást nyújtanak: a helyi járat jellegű szolgáltatásokat (Pátyon belül és a biatorbágyi vasútállomásra – menetrend felső blokk) bárki igénybe veheti, a biatorbágyi iskolákba irányuló iskolabusz szerepű szolgáltatásokkal (menetrend alsó blokk) pedig a pátyi és Páty  térségi lakhelyű diákok, az iskolai alkalmazottak és a kísérő szülők élhetnek, előzetes online feliratkozással (<a href="iskolabusz.paty.hu" target="_blank">iskolabusz.paty.hu</a>).</div><div class="mobileView">Jó tudni azonban, hogy a KanyarGO buszok kétféle szolgáltatást nyújtanak: a helyi járat jellegű&nbsp;...</div>            						<a href="https://kanyargo.paty.hu/Tajekoztatas/a-kanyargo-2026-ban-mar-mindenki-szamara-ingyenes" class="information-bttn mobileView">
+        						Tovább olvasom
+        						<img src="./images/arrow.png" class="information-img">
+        						</a>
+        						        						<div style="clear:both"></div>
+        					</div>
+    					</div>
+                        					<!--  <div class="information-2">
+						<div class="information-ttl">Tájékoztatás 2</div>
+						<div class="information-cnt">
+							Lorem ipsum dolor sit amet, aequie nostro ad qui, ut docendi legendos duo. Unum munere te sit. Suscipit scribentur ea eu, 
+							nusquan expetenda in ius, prima aliquid mea ad. Na per altera similique, eam in cotidieque consectetuer.
+						</div>
+					</div>-->
+					<div style="clear: both;"></div>
+					<a href="https://kanyargo.paty.hu/Tajekoztatas" class="information-bttn">
+						Összes hír megtekintése
+						<img src="./images/arrow.png" class="information-img">
+					</a>
+					<div style="clear: both;"></div>
+				</div>
+				<div style="clear: both;"></div>
+				<div id="navigation">
+      				   					<a href="https://kanyargo.paty.hu/Jegyvasarlas" class="activelnk">Jegyvásárlás</a>
+       				   					<a href="https://kanyargo.paty.hu/Menetrend" >Menetrend</a>
+       				   					<a href="https://kanyargo.paty.hu/Terkep" >Térkép</a>
+       				  					<a href="https://kanyargo.paty.hu/GYIK" >GY. I. K.</a>
+  										<div style="clear: both;"></div>
+				</div>
+				<div style="clear: both;"></div>
+			</div>
+			
+		</div>
+		<div class="plc"></div>
+		<div style="clear: both;"></div>
+    <script type="text/javascript">
+	/*function refreshArticle(artId) {
+        $.ajax({
+            url: "./ajax/getArticleContent.php",
+            cache: false,
+            type: "POST",
+            dataType: "xml",
+            data: "articleId=" + artId,
+            success: function(xml) {
+                $(xml).find("article").each(function(){
+                	var title = $(this).find('Title').text();
+                	var content = $(this).find('Text').text();
+                	$("#articleTitle").html(title);
+                	$("#articleContent").html(content);
+                });
+            }
+        });
+    }*/
+</script>
+		<div class="white">
+			<noscript>
+        		<font color="#FF0000"><strong>Kérjük, a weboldal funkcióinak működéséhez engedélyezze a javascript használatot!</strong></font><br/><br/>
+        		<style>
+        		  .cc-window{
+        		      
+        		  }
+        		</style>
+        	</noscript>
+			<div class="text_fullwidth" id="utazasi-jogosultsag-vasarlas">
+			<div style="padding: 12px; color:#FF0000; font-size: 1.2em"><strong>Figyelem! 2026 január 1-től ingyenes!</strong></div>
+			<div style="clear:both"></div>
+						</div>
+		</div>
+		<div style="clear: both;"></div>
+		
+		
+		<div class="text_fullwidth-1">
+			<div class="resellers">
+							</div>
+			<div style="clear: both;"></div>
+			<h2 class="tariff">DÍJSZABÁS</h2>
+			<a href="https://kanyargo.paty.hu/dijszabas.php" class="buttonCompact" style="width:200px;margin:auto;" target="_blank">Nyomtatás</a>
+			<br/>
+						<p class="tariff-i">A KanyarGo weboldalán vásárolható jegyek, bérletek.</p>
+			<p class="tariff-i"><strong>A szolgáltatás 2026 január 1-től ingyenes!</strong></p>
+			<div>
+				<!-- <div class="tariff-1">
+					<div class="tariff-2">
+						<img src="./images/ticket.png" class="tariff-img">
+					</div>
+					<div class="tariff-3">
+						<p><b>Napijegy</b> ára (ÁFA-val): 250 Ft</p>
+						<p><b>Havi bérlet</b> ára (ÁFA-val): 2 500 Ft<br>
+						<i>Igénybe vehető kedvezmények: Volánbérlet kedvezmény**, ViaBusz bérlet kedvezmény***, Vármegye bérlet kedvezmény****, MÁV bérlet kedvezmény*****</i></p>
+						<p><b>Diák / nyugdíjas havi bérlet*</b> ára (ÁFA-val): 800 Ft<br>
+						<i>Igénybe vehető kedvezmények: Volánbérlet kedvezmény**, ViaBusz bérlet kedvezmény***, Vármegye bérlet kedvezmény****, MÁV bérlet kedvezmény*****</i></p>
+						<p><b>Éves bérlet</b> ára (ÁFA-val): 15 000 Ft<br>
+						<i>Igénybe vehető kedvezmények: Volánbérlet kedvezmény**, ViaBusz bérlet kedvezmény***, Vármegye bérlet kedvezmény****, MÁV bérlet kedvezmény*****</i></p>
+						<p><b>Diák / nyugdíjas éves bérlet*</b> ára (ÁFA-val): 4 800 Ft<br>
+						<i>Igénybe vehető kedvezmények: Volánbérlet kedvezmény**, ViaBUSZ bérlet kedvezmény***, Vármegye bérlet kedvezmény****, MÁV bérlet kedvezmény*****</i></p>
+						 
+					</div>
+				</div>
+				<div style="clear: both;"></div>-->
+				<!-- <div class="tariff-1">
+					<div class="tariff-2">
+						<img src="./images/viszontelado-1.png" class="tariff-img">
+					</div>
+					<div class="tariff-3">
+						<p style="color: #0069b4; font-weight: bold;">VISZONTELADÓNÁL VÁSÁROLHATÓ JEGYEK, BÉRLETEK</p>
+						<p><b>5/30 napijegy</b> ára (ÁFA-val): 1 250 Ft</p>
+						<p><b>Havi bérlet</b> ára (ÁFA-val): 2 500 Ft</p>
+						<p><b>Kedvezményes* havi bérlet</b> ára (ÁFA-val): 800 Ft<p>
+						<p class="p-ita">*Nyugdíjas, rokkantsági járadékos, tanuló vagy 15 év alatti gyermek esetén</p>
+						<p class="p-ita">**Páty területén érvényes VOLÁNBUSZ bérlet esetén bérleteink árából 50% kedvezményt biztosítunk. Amennyiben a kedvezményt érvényesíti, 
+						ellenőreink kérni fogják az utazási jogusultság ellenőrzésekot az érvényes VOLÁNBUSZ bérlet felmutatását!</p>
+						
+						<p class="p-ita">***Érvényes ViaBusz bérlet esetén bérleteink árából 50% kedvezményt biztosítunk. Amennyiben a kedvezményt érvényesíti, 
+						ellenőreink kérni fogják az utazási jogusultság ellenőrzésekot az érvényes ViaBusz bérlet felmutatását!</p>
+						
+						<p class="p-ita">****Érvényes Vármegye bérlet esetén bérleteink árából 50% kedvezményt biztosítunk. Amennyiben a kedvezményt érvényesíti, 
+						ellenőreink kérni fogják az utazási jogusultság ellenőrzésekot az érvényes Vármegye bérlet felmutatását!</p>
+						
+						<p class="p-ita">****Kizárólag Páty - Budapest közötti szakaszra (is) érvényes MÁV bérlettel vehető igénybe a kedvezmény! Ezen feltételnek megfelelő, érvényes MÁV bérlet esetén bérleteink árából 90% kedvezményt biztosítunk. Amennyiben a kedvezményt érvényesíti, 
+						ellenőreink kérni fogják az utazási jogusultság ellenőrzésekot az érvényes MÁV bérlet felmutatását!</p>
+						
+						<p class="p-ita">Az egyes bérlet típusoknál igénybe vehető kedvezmények közül egyszerre csak egy érvényesíthető!</p>
+						
+						<p class="p-ita">Figyelem: ha időközben lejár a kedvezményre jogosító bérlet, és nincs megújítva, a kedvezményes KanyarGo bérlet is érvényét veszti.</p>
+						<p class="p-ita">A szolgáltatás a 65 év felettieknek, 18 éven aluliaknak és - a 85/2007. (IV. 25.) Korm. rendelet 1. melléklete szerinti - fogyatékossággal 
+						rendelkező utasoknak és rendeletben meghatározott kísérőiknek ingyenes! A kedvezmények részletes szabályait a 85/2007. (IV. 25.) Korm rendelet 1. melléklete 
+						tartalmazza. Ingyenes továbbá az óvodai ellátásban, nappali oktatás munkarendje szerint folyó oktatásban, iskolán kívüli fejlesztő foglalkozásban részt vevő 
+						gyermekek, diákok és intézményi kísérőjük csoportos utazása. Utóbbi kedvezmény az oktatási, nevelési tevékenység keretében szervezett csoportos foglalkozások 
+						helyszíneire történő utazások támogatását célozza, nem terjed ki az intézmény és a lakóhely közötti rendszeres közlekedés esetére.</p>
+						<p class="p-ita">Felhívjuk figyelmét, hogy a kanyargo.paty.hu oldalon vásárolt jogosultság (virtuális bérlet) kinyomtatott adatszelvénye nem minősül 
+						bérletszelvénynek, ez esetben a jogosultság hordozóeszköze az informatikai rendszerben névre szólóan generált kód.</p>
+					</div>
+				</div>
+				<div style="clear: both;"></div> -->
+				<div class="tariff-1">
+					<div class="tariff-2">
+						<img src="./images/warning.png" class="tariff-img">
+					</div>
+					<div class="tariff-3">
+						<p style="color: #0069b4; font-weight: bold;">PÓTDÍJAK</p>
+						<!-- <p><b>Jogosultság nélkül utazás</b><br>
+						10 000 Ft pótdíj fizetésére kötelezett az az utas, aki jogosultség nélkül vagy érvénytelen napijeggyel, bérlettel kísérli meg a szolgáltatás 
+						igénybevételét.</p>
+
+						<p><b>Jogosultság utólagos bemutatása</b><br>
+						2 000 Ft eljárási díj fizetésére közeletett az az utas, aki a jogosultságát igazoló szelvényt, vagy igazolványt az ellenőrzés során nem tudta bemutatni, de 
+						ha 1 munkanapon belül igazolja, hogy az ellenőrzés időpontjában már jogosultsággal rendelkezett. Hagyományos jegy, bérlet esetén az árusítás helyszínén 
+						lehetséges az érvényes jogosultság igazolása. Online vásárolt jegy, bérlet esetén a kanyargo.paty.hu weboldalon történő befizetéskor lehet igazolni a 
+						jogosultságot.</p> -->
+
+						<p><b>Utazási szabályok megsértése</b><br>
+						6 000 Ft pótdíj fizetésére kötelezett, aki csomagként, kézipoggyászként nem szállítható tárgyat visz fel a járműra, bepiszkolja a járművet, vagy egyéb módon 
+						megsérti az utazási feltételeket.</p>
+						<li class="tariff-li"><img src="./images/star.png" class="tariff-icon">A fenti pótdíj összegek 45 napon belüli befizetés esetén érvényesek.</li>
+						<li class="tariff-li"><img src="./images/star.png" class="tariff-icon">45 napon túli fizetés esetén a késedelmi díj a pótdíj 100%-a!</li>
+						<li class="tariff-li"><img src="./images/star.png" class="tariff-icon">Pótdíjjal kapcsolatos panasztételi lehetőség: ugyfelszolgalat@paty.hu</li>
+						</ul>
+						<div style="clear: both;"></div>
+						<p><b>Pótdíj fizetés módja</b><br>
+						<!-- <li class="tariff-li"><img src="./images/star.png" class="tariff-icon">Online bankkártyás fizetés a kanyargo.paty.hu weboldalon.</li> -->
+						<li class="tariff-li"><img src="./images/star.png" class="tariff-icon">Postai csekkbefizetés.</li>
+						<li class="tariff-li"><img src="./images/star.png" class="tariff-icon">Díjszelvény vásárlás jegyértékesítő helyen.</li>
+						</ul>
+					</div>
+				</div>
+				<div style="clear: both;"></div>
+			</div>
+			<div style="clear: both;"></div>		</div>
+		
+    			<div id="footer">
+			<div class="ftr-txt">
+				<div class="ftr-left">
+				    <p><a href="https://kanyargo.paty.hu/Menetrend">Menetrend</a></p>
+    <p><a href="https://kanyargo.paty.hu/Terkep">Térkép</a></p>
+    <p><a href="https://kanyargo.paty.hu/GYIK">GY. I. K.</a></p>
+    </div>
+    <div class="ftr-right">
+    <p><a href="https://kanyargo.paty.hu/impresszum">Impresszum</a></p>
+    <p><a href="https://kanyargo.paty.hu/Dokumentumok/adatvedelmi-szabalyzat">Adatvédelmi szabályzat</a></p>
+    <p><a href="https://kanyargo.paty.hu/Dokumentumok/altalanos-szerzodesi-feltetelek">Általános Szerződési Feltételek</a></p>
+    <p><a href="https://kanyargo.paty.hu/kozlekedesi-informaciok">Közlekedési információk</a></p>
+    </div>
+    <div style="clear: both;"></div>
+        <div class="dev-design">
+    	Designterv:&nbsp;<a style="text-decoration:underline" href="mailto:mate.reisinger@gmail.com">Reisinger Máté</a><br/>
+    	Portál fejlesztés:&nbsp;<a style="text-decoration:underline" href="https://lunaluxdesign.hu">Luna Lux Design Kft.</a><br/><br/>
+    </div>
+    </div>
+</div>    </BODY>
+</HTML>

@@ -1,0 +1,520 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<HTML lang="hu">
+    <HEAD>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta charset="utf-8" />
+        <link rel="canonical" href="https://kanyargo.paty.hu/Menetrend">
+        <meta name="keywords" content="Menetrend, KanyarGo" />
+        <meta name="description" content="KanyarGo menetrend lekérdezése" />
+        <meta name="robots" content="all">
+        <meta name="revisit-after" content="5 days">
+        <meta name="googlebot" content="index, follow">
+        <meta name="slurp" content="index, follow">
+        <meta name="teoma" content="index, follow">
+        <TITLE>KanyarGo menetrend</TITLE>
+        <meta name="google-site-verification" content="9nWGWvN-5nfoIyQdFj3-dZewVk-quRcQJhfIiuPJqg8" />
+        <link rel="shortcut icon" href="https://kanyargo.paty.hu/images/paty_cimer.png?v=08863fb9199fd44f7ddfbbce80976abe">
+        <link rel="icon" href="https://kanyargo.paty.hu/images/paty_cimer.png?v=08863fb9199fd44f7ddfbbce80976abe">
+        
+        <meta property="og:title" content="KanyarGo menetrend" />
+        <meta property="og:site_name" content="KanyarGo Páty"/>
+        <meta property="og:type" content="website">
+        <meta property="og:description" content="KanyarGo menetrend lekérdezése" />
+        <meta property="og:image" content="https://kanyargo.paty.hu/images/logotext.png" />
+        <meta property="og:url" content="https://kanyargo.paty.hu/Menetrend" />
+        <script type="application/ld+json">[{"@context":"http:\/\/schema.org","@type":"WebSite","author":"KanyarGo","contentLocation":"https:\/\/kanyargo.paty.hu\/","url":"https:\/\/kanyargo.paty.hu\/Menetrend","description":"KanyarGo menetrend lek\u00e9rdez\u00e9se","name":"KanyarGo menetrend"}]</script><link rel="stylesheet" type="text/css" href="https://kanyargo.paty.hu/js/slick-1.8.0/slick/slick.css" media="screen"/>
+<link rel="stylesheet" type="text/css" href="https://kanyargo.paty.hu/js/slick-1.8.0/slick/slick-theme.css" media="screen"/>
+<script src="https://kanyargo.paty.hu/js/jquery-3.3.1.min.js"></script>
+<script src="https://kanyargo.paty.hu/js/multislider.js"></script>
+<script src="https://kanyargo.paty.hu/js/multislider.min.js"></script>
+<script src="https://kanyargo.paty.hu/js/midibus.js?v=b3265bf2b4056d05f29e020f19359580"></script>
+<script type="text/javascript" src="https://kanyargo.paty.hu/js/slick-1.8.0/slick/slick.min.js"></script>
+
+<!--  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>-->
+<script src="https://kanyargo.paty.hu/js/bootstrap-3.3.7.min.js"></script>
+
+<script type="text/javascript">
+Date.prototype.toDateInputValue = (function() {
+	var local = new Date(this);
+	local.setMinutes(this.getMinutes() - this.getTimezoneOffset());
+	return local.toJSON().slice(0,10);
+});
+</script><link rel="stylesheet" href="https://kanyargo.paty.hu/css/paty.css?08863fb9199fd44f7ddfbbce80976abe" media="all"><link rel="stylesheet" href="https://kanyargo.paty.hu/css/nav.css?08863fb9199fd44f7ddfbbce80976abe" media="all"><link rel="stylesheet" href="https://kanyargo.paty.hu/css/checkboxes.css?08863fb9199fd44f7ddfbbce80976abe" media="all"><link rel="stylesheet" href="https://kanyargo.paty.hu/css/tckts.css?08863fb9199fd44f7ddfbbce80976abe" media="all"><link rel="stylesheet" href="https://kanyargo.paty.hu/css/form.css?08863fb9199fd44f7ddfbbce80976abe" media="all"><link rel="stylesheet" href="https://kanyargo.paty.hu/css/buttons.css?08863fb9199fd44f7ddfbbce80976abe" media="all"><link rel="stylesheet" href="https://kanyargo.paty.hu/css/tckts.css?08863fb9199fd44f7ddfbbce80976abe" media="all"><link rel="stylesheet" href="https://kanyargo.paty.hu/css/payment-start.css?08863fb9199fd44f7ddfbbce80976abe" media="all"><link rel="stylesheet" href="https://kanyargo.paty.hu/css/map.css?08863fb9199fd44f7ddfbbce80976abe" media="all"><link rel="stylesheet" href="https://kanyargo.paty.hu/css/tmtbl.css?08863fb9199fd44f7ddfbbce80976abe" media="all">        <script type="text/javascript">
+        $(document).ready(function(){
+        	window['ga-disable-G-2SF9H078G5'] = true;
+    	});
+        </script>
+        <script src="https://kanyargo.paty.hu//js/cookieconsent.min.js?08863fb9199fd44f7ddfbbce80976abe"></script>
+<link rel="stylesheet" type="text/css" href="https://kanyargo.paty.hu//css/cookieconsent.min.css?08863fb9199fd44f7ddfbbce80976abe" />
+<script type="text/javascript">
+	function cookieEnabled(){
+			}
+
+    function cookieDisabled(){
+        //disable google analyticcs
+		window['ga-disable-G-2SF9H078G5'] = true;
+                        
+		//alert(document.cookie);
+		if(!document.__defineGetter__) {
+			Object.defineProperty(document, 'cookie', {
+				get: function(){return ''},
+				set: function(){return true},
+			});
+		} else {
+			document.__defineGetter__("cookie", function() { return '';} );
+			document.__defineSetter__("cookie", function() {} );
+		}
+	}
+                    
+	window.addEventListener("load", function(){
+	window.cookieconsent.initialise({
+		"palette": {
+			"popup": {
+				"background": "#000"
+			},
+			"button": {
+				"background": "#f1d600"
+			}
+		},
+		"type": "opt-in",
+		"content": {
+			"message": "A weboldal sütiket használ a jobb felhasználói élmény, és a vásárlások zavartalan lebonyolítása érdekében!",
+			"dismiss": "Megvan!",
+			"allow": "Összes süti engedélyezése",
+			"needle": "Szükséges sütik engedélyezése",
+			"deny": "Sütik tiltása",
+			"policy": "Süti beállítások",
+			"link": "Adatvédelmi szabályzatunk megtekintése.",
+			"close": "Bezár",
+			"href": "https://kanyargo.paty.hu/Dokumentumok/adatvedelmi-szabalyzat"
+		},
+		onPopupOpen: function() {},
+		onInitialise: function (status) {
+			var type = this.options.type;
+			var didConsent = this.hasConsented();
+			if (type == 'opt-in' && didConsent) {
+				// enable cookies
+				cookieEnabled();
+			}
+			if (type == 'opt-out' && !didConsent) {
+				// disable cookies
+				cookieDisabled();
+			}
+		},
+
+		onStatusChange: function(status, chosenBefore) {
+			var type = this.options.type;
+			var didConsent = this.hasConsented();
+			if (type == 'opt-in' && didConsent) {
+				// enable cookies
+				cookieEnabled();
+			}
+			if (type == 'opt-out' && !didConsent) {
+				// disable cookies
+				cookieDisabled();
+			}
+			location.reload();
+		},
+
+		onRevokeChoice: function() {
+			var type = this.options.type;
+			if (type == 'opt-in') {
+				// disable cookies
+				cookieDisabled();
+			}
+			if (type == 'opt-out') {
+				// enable cookies
+				cookieEnabled();
+			}
+		}
+	})});
+
+	$(document).ready(function() {
+		$('.text  a').addClass('empLink');
+		$('.data  a').addClass('empLink');
+	});
+</script>
+        <style>
+        /*font source: https://fonts.googleapis.com/css2?family=Montserrat&display=swap*/
+        /* cyrillic-ext */
+        @font-face {
+          font-family: 'Montserrat';
+          font-style: normal;
+          font-weight: 400;
+          font-display: swap;
+          src: url(https://fonts.gstatic.com/s/montserrat/v25/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw0aXpsog.woff2) format('woff2');
+          unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+        }
+        /* cyrillic */
+        @font-face {
+          font-family: 'Montserrat';
+          font-style: normal;
+          font-weight: 400;
+          font-display: swap;
+          src: url(https://fonts.gstatic.com/s/montserrat/v25/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw9aXpsog.woff2) format('woff2');
+          unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+        }
+        /* vietnamese */
+        @font-face {
+          font-family: 'Montserrat';
+          font-style: normal;
+          font-weight: 400;
+          font-display: swap;
+          src: url(https://fonts.gstatic.com/s/montserrat/v25/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw2aXpsog.woff2) format('woff2');
+          unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+1EA0-1EF9, U+20AB;
+        }
+        /* latin-ext */
+        @font-face {
+          font-family: 'Montserrat';
+          font-style: normal;
+          font-weight: 400;
+          font-display: swap;
+          src: url(https://fonts.gstatic.com/s/montserrat/v25/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw3aXpsog.woff2) format('woff2');
+          unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+        }
+        /* latin */
+        @font-face {
+          font-family: 'Montserrat';
+          font-style: normal;
+          font-weight: 400;
+          font-display: swap;
+          src: url(https://fonts.gstatic.com/s/montserrat/v25/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw5aXo.woff2) format('woff2');
+          unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+        }
+        </style>
+    </HEAD>
+    <BODY>
+    
+        <div class="info-div">
+    			
+			<div style="clear: both;"></div>
+			<div id="blue-bus">
+				<a href="https://kanyargo.paty.hu/Terkep"><img src="https://kanyargo.paty.hu/images/bus-blue.png"></a>
+			</div>
+					</div>
+		<div class="info-div2">
+			<div class="dispatcher-div">
+							
+				<div id="target">
+					<p class="dispatcher-p"><a href="tel:+36707788265" class="dispatcher-a">+36 70 7788 265</a></p>
+					<p class="dispatcher-p-1">/</p>
+					<p class="dispatcher-p-1"><a href="mailto:kanyargo@paty.hu" class="dispatcher-a-1">kanyargo@paty.hu</a>
+				</div>
+				<script>
+					$(document).ready(function(){
+						$('#target').toggle('slow');
+					  $('.toggle').mouseover(function() {
+						$('#target').toggle('slow');
+					  });
+					});
+				</script>
+			</div>
+		
+		</div>
+            <div class="header">
+        	<div id="targets">
+					<p class="dispatcher-p"><a href="tel:+36707788265" class="dispatcher-a">+36 70 7788 265</a></p>
+					<p class="dispatcher-p-1">/</p>
+					<p class="dispatcher-p-1"><a href="mailto:kanyargo@paty.hu" class="dispatcher-a-1">kanyargo@paty.hu</a>
+				</div>
+			<div>
+				<div class="top-left">
+					<div class="top-1">
+						<a href="https://kanyargo.paty.hu/"><img src="https://kanyargo.paty.hu/images/logotext.png" class="topimg"></a>
+					</div>
+				</div>
+				<div class="top-right">
+					<a href="https://kanyargo.paty.hu/Kosar"><img src="https://kanyargo.paty.hu/images/cart-b.png" class="topimg-r"></a>
+										<div class="lines-dropdown">
+												<a href="https://kanyargo.paty.hu/Belepes"><img src="https://kanyargo.paty.hu/images/person.png" class="topimg-r-1"></a>
+						<!-- <form method="post" name="loginForm">
+							<input type="hidden" id="formAction" name="formAction" value="login">
+    						<div class="login">
+    							<div class="login-flex">
+    								<div class="login-cnt">
+    									<div class="bluebox"></div>
+    									<label for="usrName">Felhasználónév:</label>
+    								</div>
+    								<div class="login-cnt-1">
+    									<input  type="text"   name="usrName" id="usrName" required placeholder="Felhasználónév">
+    								</div>
+    							</div>
+    							<div class="login-flex">
+    								<div class="login-cnt">
+    									<div class="bluebox"></div>
+    									<label for="password">jelszó:</label>
+    								</div>
+    								<div class="login-cnt-1">
+    									<input  type="password"  class="1"   name="pwd" id="pwd"  placeholder="********">
+    								</div>
+    							</div>
+    							<div class="login-flex">
+    								<input type="submit" value="Bejelentkezés" class="button">
+    							</div>
+    						</div>
+					
+						</form> -->
+												
+					</div>
+					<div class="lines-dropdown"><img src="https://kanyargo.paty.hu/images/lines.png" class="topimg-r">
+						<div class="lines-dropdown-content">
+							           					<a href="https://kanyargo.paty.hu/Jegyvasarlas" class="nlnk"><p class="lines-dropdown-a">JEGYVÁSÁRLÁS</p></a>
+               				           					<a href="https://kanyargo.paty.hu/Menetrend" class="activelnk nlnk"><p class="lines-dropdown-a">MENETREND</p></a>
+               				           					<a href="https://kanyargo.paty.hu/Terkep" class="nlnk"><p class="lines-dropdown-a">TÉRKÉP</p></a>
+               				          					<a href="https://kanyargo.paty.hu/GYIK" class="nlnk"><p class="lines-dropdown-a">GY. I. K.</p></a>
+          					<a href="https://iskolabusz.paty.hu" target="_blank" class="nlnk"><p class="lines-dropdown-a">ISKOLABUSZ</p></a>
+          											</div>
+					</div>
+				</div>
+			</div>
+			<div style="clear: both;"></div>
+			
+		</div>
+		<div style="clear: both;"></div>
+        <script type="text/javascript">
+	function ChangeTimeTableDiv(){
+		//alert('1');
+		//var selectedId = document.querySelector('#busStopSelector option:checked');
+		var selectComp = document.getElementById('busStopSelector');
+		//var selectedId = selectComp == null ? 0 : selectComp.selectedIndex;
+		var selectedId = selectComp == null ? 0 : selectComp.value;
+		//alert(selectedId);
+		document.querySelectorAll('.tmtbl-cnt').forEach(element=> {
+			//alert(element.id);
+			var currentId = element.id;
+			if(currentId.startsWith('timeTableMain')){
+				if(currentId === 'timeTableMain'+selectedId){
+					element.style.display='block';
+				}else{
+					element.style.display='none';
+				}
+			}
+		});
+		
+	}
+
+	function getBusStopTable(){
+		var selectComp = document.getElementById('busStopSelector');
+		var selectedId = selectComp == null ? 0 : selectComp.value;
+		$body = $("body");
+	   	$body.addClass("loading");
+		$.ajax({
+	        url: "https://kanyargo.paty.hu/ajax/getBusStopImg.php",
+	        cache: false,
+	        dataType: "json",
+	        type: "POST",
+	        timeout: 5000,
+	        data: {bsId: selectedId, siteUrl: 'https://kanyargo.paty.hu/'},
+	        success: function(result, success) {
+	        	$body.removeClass("loading");
+	 			$('#busStopImgDiv').html(result.message);
+	 			//refreshGallery();
+	        },
+	        fail: function(xhr, textStatus, errorThrown){
+	        	$body.removeClass("loading");
+	        	
+	 			//openInfoPopUp(result.xhr.responseText);
+	         }
+	    });
+	}
+
+	
+</script>
+		<div class="white">
+			<div class="tmtbl_fullwidth">
+				<div class="tmtbl-cnt">
+					<h2 class="tmtbl-ttl-1">Menetrend</h2>
+										
+					<strong><a style="color:#000000" href="https://kanyargo.paty.hu/documents/menetrend-KanyarGO-2026-szept-1-tol.pdf" target="_blank">2026 szeptember 1-től érvényes menetrend</a>&nbsp;</strong><br/><br/>
+										<!-- <strong><a style="color:#000000" href="< ?php echo $siteUrl?>Tajekoztatas/modosult-a-vonatbevarasi-szabaly" target="_blank">Vonatbevárási szabály</a></strong><br/><br/> -->
+					<!--  <h2 class="tmtbl-ttl">Megállók szerint</h2>-->
+				</div>
+								<h2 class="tmtbl-ttl">Megállóhely választása:</h2>
+				
+				<select id="busStopSelector" name="busStopSelector" style="width:270px;max-width:95%;" onchange="ChangeTimeTableDiv()">
+								    <option value="15" selected>Árpád utca</option>
+				    				    <option value="8" >Bánya utca</option>
+				    				    <option value="30" >Biatorbágy VÁ (in.)</option>
+				    				    <option value="48" >Biatorbágy, BIT (Juhász Gy. u.)</option>
+				    				    <option value="50" >Biatorbágy, Ritsmann iskola</option>
+				    				    <option value="51" >Biatorbágy, Szentháromság tér</option>
+				    				    <option value="42" >Biatorbágy, Vendel tér Vasútállomás felé</option>
+				    				    <option value="53" >Biatorbágy, Vendel tér Páty felé</option>
+				    				    <option value="19" >Bocskai iskola</option>
+				    				    <option value="47" >Bocskai köz</option>
+				    				    <option value="23" >Boglárka utca</option>
+				    				    <option value="7" >Burgondia utca</option>
+				    				    <option value="11" >Füzespatak utca</option>
+				    				    <option value="45" >Galagonya utca</option>
+				    				    <option value="4" >Harangláb</option>
+				    				    <option value="43" >Hársfa utca</option>
+				    				    <option value="2" >Iskola utca Nyugati irány</option>
+				    				    <option value="52" >Iskola utca Keleti irány</option>
+				    				    <option value="14" >Játszótér</option>
+				    				    <option value="5" >Kossuth utca</option>
+				    				    <option value="1" >Községháza</option>
+				    				    <option value="25" >Levendula otthon</option>
+				    				    <option value="46" >Mézeshegy</option>
+				    				    <option value="13" >Nyírfa utca</option>
+				    				    <option value="10" >Páskom utca</option>
+				    				    <option value="16" >Petőfi Sándor utca</option>
+				    				    <option value="26" >Rendőrség</option>
+				    				    <option value="9" >Rét köz</option>
+				    				    <option value="44" >Rigó utca</option>
+				    				    <option value="28" >Téglagyár Vasútállomás felé</option>
+				    				    <option value="38" >Téglagyár Páty felé</option>
+				    				    <option value="3" >Telki elágazás</option>
+				    				    <option value="36" >Töki út Nyugat felé</option>
+				    				    <option value="37" >Torbágyi út 10 Páty felé</option>
+				    				    <option value="27" >Torbágyi út 10. Vasútállomás felé</option>
+				    				    <option value="24" >Vízműtelep</option>
+				    				    <option value="12" >Völgy utca</option>
+				    				    				</select>
+				
+				<div style="clear: both"></div>
+								    <div class="tmtbl-cnt" id="timeTableMain15" >
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1V<br/> 06:00</th><th class="timeth">1V<br/> 06:43</th><th class="timeth">1M<br/> 07:12</th><th class="timeth">1M<br/> 07:31</th><th class="timeth">1J<br/> 07:51</th><th class="timeth">1A<br/> 08:51</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1M<br/> 10:06</th><th class="timeth">1A<br/> 11:22</th><th class="timeth">1A<br/> 13:09</th><th class="timeth">1MV<br/> 13:38</th><th class="timeth">1M<br/> 14:14</th><th class="timeth">1A<br/> 14:31</th></tr></table></div><div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1A<br/> 14:50</th><th class="timeth">1A<br/> 15:15</th><th class="timeth">1M<br/> 15:51</th><th class="timeth">1A<br/> 16:22</th><th class="timeth">1M<br/> 16:46</th><th class="timeth">1V<br/> 17:53</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain8"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1V<br/> 05:52</th><th class="timeth">1V<br/> 06:35</th><th class="timeth">1M<br/> 07:04</th><th class="timeth">1M<br/> 07:23</th><th class="timeth">1D<br/> 07:46</th><th class="timeth">1A<br/> 08:44</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1M<br/> 09:58</th><th class="timeth">1A<br/> 11:15</th><th class="timeth">1A<br/> 13:01</th><th class="timeth">1MV<br/> 13:31</th><th class="timeth">1M<br/> 14:06</th><th class="timeth">1A<br/> 14:24</th></tr></table></div><div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1A<br/> 14:42</th><th class="timeth">1A<br/> 15:07</th><th class="timeth">1M<br/> 15:43</th><th class="timeth">1A<br/> 16:15</th><th class="timeth">1M<br/> 16:38</th><th class="timeth">1V<br/> 17:46</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain29"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1V<br/> 06:10</th><th class="timeth">1V<br/> 06:53</th><th class="timeth">1M<br/> 10:17</th><th class="timeth">1MV<br/> 13:49</th><th class="timeth">1M<br/> 17:17</th><th class="timeth">&nbsp;</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain30"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1V<br/> 06:30</th><th class="timeth">1V<br/> 06:55</th><th class="timeth">1D<br/> 08:30</th><th class="timeth">1M<br/> 11:01</th><th class="timeth">1A<br/> 15:18</th><th class="timeth">1T<br/> 16:19</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1M<br/> 17:32</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain48"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1J<br/> 08:05<br/>(végállomás)</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain49"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1MV<br/> 14:09</th><th class="timeth">1T<br/> 14:51</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain50"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1MV<br/> 13:51</th><th class="timeth">1T<br/> 14:41</th><th class="timeth">1A<br/> 15:16</th><th class="timeth">1T<br/> 16:17</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain51"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1M<br/> 07:28</th><th class="timeth">1MV<br/> 14:00</th><th class="timeth">1A<br/> 15:08</th><th class="timeth">1T<br/> 16:09</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain42"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1V<br/> 06:09</th><th class="timeth">1V<br/> 06:31</th><th class="timeth">1V<br/> 06:52</th><th class="timeth">1V<br/> 06:56</th><th class="timeth">1M<br/> 07:22</th><th class="timeth">1M<br/> 07:36</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1D<br/> 08:31</th><th class="timeth">1M<br/> 10:16</th><th class="timeth">1M<br/> 11:02</th><th class="timeth">1MV<br/> 13:48</th><th class="timeth">1T<br/> 14:36</th><th class="timeth">1A<br/> 15:00</th></tr></table></div><div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1A<br/> 15:19</th><th class="timeth">1T<br/> 16:20</th><th class="timeth">1M<br/> 17:16</th><th class="timeth">1M<br/> 17:33</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain53"  style="display:none">
+				    	<div style="oweflow-x: auto;"><table id="timetable"><tr></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain19"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1M<br/> 07:35</th><th class="timeth">1J<br/> 07:42<br/>(indulás)</th><th class="timeth">1D<br/> 07:53</th><th class="timeth">1J<br/> 07:54</th><th class="timeth">1A<br/> 12:54<br/>(indulás)</th><th class="timeth">1M<br/> 13:53<br/>(indulás)</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1A<br/> 14:35<br/>(indulás)</th><th class="timeth">1A<br/> 15:19</th><th class="timeth">1A<br/> 16:08<br/>(indulás)</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain47"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1J<br/> 07:56</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain23"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1T<br/> 06:41</th><th class="timeth">1T<br/> 07:04</th><th class="timeth">1M<br/> 07:38</th><th class="timeth">1A<br/> 09:41</th><th class="timeth">1A<br/> 11:28</th><th class="timeth">1A<br/> 13:15</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1T<br/> 14:23</th><th class="timeth">1A<br/> 15:23</th><th class="timeth">1T<br/> 15:33</th><th class="timeth">1T<br/> 16:30</th><th class="timeth">1V<br/> 17:58</th><th class="timeth">&nbsp;</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain7"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1V<br/> 05:51</th><th class="timeth">1V<br/> 06:34</th><th class="timeth">1M<br/> 06:57</th><th class="timeth">1M<br/> 07:16</th><th class="timeth">1D<br/> 07:45<br/>(indulás)</th><th class="timeth">1A<br/> 08:43</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1M<br/> 09:51</th><th class="timeth">1A<br/> 11:14</th><th class="timeth">1A<br/> 13:00</th><th class="timeth">1MV<br/> 13:24</th><th class="timeth">1M<br/> 13:59</th><th class="timeth">1A<br/> 14:23</th></tr></table></div><div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1A<br/> 14:41</th><th class="timeth">1A<br/> 15:06</th><th class="timeth">1M<br/> 15:36</th><th class="timeth">1A<br/> 16:14</th><th class="timeth">1M<br/> 16:31</th><th class="timeth">1V<br/> 17:45</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain11"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1V<br/> 05:55</th><th class="timeth">1V<br/> 06:38</th><th class="timeth">1M<br/> 07:07</th><th class="timeth">1M<br/> 07:26</th><th class="timeth">1D<br/> 07:49</th><th class="timeth">1A<br/> 08:47</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1M<br/> 10:01</th><th class="timeth">1A<br/> 11:18</th><th class="timeth">1A<br/> 13:04</th><th class="timeth">1MV<br/> 13:34</th><th class="timeth">1M<br/> 14:09</th><th class="timeth">1A<br/> 14:27</th></tr></table></div><div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1A<br/> 14:45</th><th class="timeth">1A<br/> 15:10</th><th class="timeth">1M<br/> 15:46</th><th class="timeth">1A<br/> 16:18</th><th class="timeth">1M<br/> 16:41</th><th class="timeth">1V<br/> 17:49</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain45"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1M<br/> 06:59</th><th class="timeth">1M<br/> 07:18</th><th class="timeth">1M<br/> 09:53</th><th class="timeth">1MV<br/> 13:26</th><th class="timeth">1M<br/> 14:00</th><th class="timeth">1M<br/> 15:38</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1M<br/> 16:33</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain4"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1V<br/> 05:48</th><th class="timeth">1V<br/> 06:31</th><th class="timeth">1M<br/> 06:54</th><th class="timeth">1M<br/> 07:13</th><th class="timeth">1A<br/> 08:40</th><th class="timeth">1M<br/> 09:48</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1A<br/> 11:11</th><th class="timeth">1A<br/> 12:57</th><th class="timeth">1MV<br/> 13:21</th><th class="timeth">1M<br/> 13:56</th><th class="timeth">1A<br/> 14:20</th><th class="timeth">1A<br/> 14:38</th></tr></table></div><div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1A<br/> 15:03</th><th class="timeth">1M<br/> 15:33</th><th class="timeth">1A<br/> 16:11</th><th class="timeth">1M<br/> 16:28</th><th class="timeth">1V<br/> 17:42</th><th class="timeth">&nbsp;</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain43"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1M<br/> 07:01</th><th class="timeth">1M<br/> 07:20</th><th class="timeth">1M<br/> 09:55</th><th class="timeth">1MV<br/> 13:28</th><th class="timeth">1M<br/> 14:02</th><th class="timeth">1M<br/> 15:40</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1M<br/> 16:35</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain2"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1V<br/> 05:46<br/>(indulás)</th><th class="timeth">1V<br/> 06:02</th><th class="timeth">1V<br/> 06:29<br/>(indulás)</th><th class="timeth">1V<br/> 06:45</th><th class="timeth">1M<br/> 06:52<br/>(indulás)</th><th class="timeth">1M<br/> 07:11<br/>(indulás)</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1M<br/> 07:15</th><th class="timeth">1J<br/> 07:44</th><th class="timeth">1A<br/> 08:38<br/>(indulás)</th><th class="timeth">1A<br/> 08:53</th><th class="timeth">1M<br/> 09:46<br/>(indulás)</th><th class="timeth">1M<br/> 10:09</th></tr></table></div><div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1A<br/> 11:09<br/>(indulás)</th><th class="timeth">1A<br/> 11:25</th><th class="timeth">1A<br/> 12:55</th><th class="timeth">1A<br/> 13:12</th><th class="timeth">1MV<br/> 13:19<br/>(indulás)</th><th class="timeth">1MV<br/> 13:41</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1M<br/> 13:54</th><th class="timeth">1M<br/> 14:17</th><th class="timeth">1A<br/> 14:18<br/>(indulás)</th><th class="timeth">1A<br/> 14:36</th><th class="timeth">1A<br/> 14:53</th><th class="timeth">1A<br/> 15:01<br/>(indulás)</th></tr></table></div><div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1M<br/> 15:31<br/>(indulás)</th><th class="timeth">1M<br/> 15:54</th><th class="timeth">1A<br/> 16:09</th><th class="timeth">1A<br/> 16:24</th><th class="timeth">1M<br/> 16:26<br/>(indulás)</th><th class="timeth">1M<br/> 16:49</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1V<br/> 17:40<br/>(indulás)</th><th class="timeth">1V<br/> 17:55</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain52"  style="display:none">
+				    	<div style="oweflow-x: auto;"><table id="timetable"><tr></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain14"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1V<br/> 05:58</th><th class="timeth">1V<br/> 06:41</th><th class="timeth">1M<br/> 07:10</th><th class="timeth">1M<br/> 07:29</th><th class="timeth">1J<br/> 07:49</th><th class="timeth">1A<br/> 08:50</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1M<br/> 10:04</th><th class="timeth">1A<br/> 11:21</th><th class="timeth">1A<br/> 13:07</th><th class="timeth">1MV<br/> 13:37</th><th class="timeth">1M<br/> 14:12</th><th class="timeth">1A<br/> 14:30</th></tr></table></div><div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1A<br/> 14:48</th><th class="timeth">1A<br/> 15:13</th><th class="timeth">1M<br/> 15:49</th><th class="timeth">1A<br/> 16:21</th><th class="timeth">1M<br/> 16:44</th><th class="timeth">1V<br/> 17:52</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain5"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1V<br/> 05:49</th><th class="timeth">1V<br/> 06:32</th><th class="timeth">1M<br/> 06:55</th><th class="timeth">1M<br/> 07:14</th><th class="timeth">1A<br/> 08:41</th><th class="timeth">1M<br/> 09:49</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1A<br/> 11:12</th><th class="timeth">1A<br/> 12:58</th><th class="timeth">1MV<br/> 13:22</th><th class="timeth">1M<br/> 13:57</th><th class="timeth">1A<br/> 14:21</th><th class="timeth">1A<br/> 14:39</th></tr></table></div><div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1A<br/> 15:04</th><th class="timeth">1M<br/> 15:34</th><th class="timeth">1A<br/> 16:12</th><th class="timeth">1M<br/> 16:29</th><th class="timeth">1V<br/> 17:43</th><th class="timeth">&nbsp;</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain1"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1V<br/> 06:37<br/>(végállomás)</th><th class="timeth">1T<br/> 06:51<br/>(végállomás)</th><th class="timeth">1V<br/> 07:01<br/>(végállomás)</th><th class="timeth">1T<br/> 07:10<br/>(végállomás)</th><th class="timeth">1M<br/> 07:41<br/>(végállomás)</th><th class="timeth">1D<br/> 08:37<br/>(végállomás)</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1M<br/> 11:08<br/>(végállomás)</th><th class="timeth">1A<br/> 11:32<br/>(végállomás)</th><th class="timeth">1MV<br/> 14:17<br/>(végállomás)</th><th class="timeth">1M<br/> 14:20<br/>(végállomás)</th><th class="timeth">1T<br/> 14:29</th><th class="timeth">1T<br/> 15:00<br/>(végállomás)</th></tr></table></div><div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1A<br/> 15:30<br/>(végállomás)</th><th class="timeth">1A<br/> 15:30<br/>(végállomás)</th><th class="timeth">1T<br/> 15:40<br/>(végállomás)</th><th class="timeth">1M<br/> 15:57<br/>(végállomás)</th><th class="timeth">1T<br/> 16:25<br/>(végállomás)</th><th class="timeth">1A<br/> 16:27<br/>(végállomás)</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1M<br/> 17:39<br/>(végállomás)</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain25"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1M<br/> 07:41<br/>(végállomás)</th><th class="timeth">1A<br/> 09:45<br/>(végállomás)</th><th class="timeth">1A<br/> 11:30</th><th class="timeth">1T<br/> 15:37</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain46"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1M<br/> 07:02</th><th class="timeth">1M<br/> 07:21</th><th class="timeth">1M<br/> 09:56</th><th class="timeth">1MV<br/> 13:29</th><th class="timeth">1M<br/> 14:03</th><th class="timeth">1M<br/> 15:41</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1M<br/> 16:36</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain13"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1V<br/> 05:57</th><th class="timeth">1V<br/> 06:40</th><th class="timeth">1M<br/> 07:09</th><th class="timeth">1M<br/> 07:28</th><th class="timeth">1J<br/> 07:48</th><th class="timeth">1A<br/> 08:49</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1M<br/> 10:03</th><th class="timeth">1A<br/> 11:20</th><th class="timeth">1A<br/> 13:06</th><th class="timeth">1MV<br/> 13:36</th><th class="timeth">1M<br/> 14:11</th><th class="timeth">1A<br/> 14:29</th></tr></table></div><div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1A<br/> 14:47</th><th class="timeth">1A<br/> 15:12</th><th class="timeth">1M<br/> 15:48</th><th class="timeth">1A<br/> 16:20</th><th class="timeth">1M<br/> 16:43</th><th class="timeth">1V<br/> 17:51</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain10"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1V<br/> 05:54</th><th class="timeth">1V<br/> 06:37</th><th class="timeth">1M<br/> 07:06</th><th class="timeth">1M<br/> 07:25</th><th class="timeth">1D<br/> 07:48</th><th class="timeth">1A<br/> 08:46</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1M<br/> 10:00</th><th class="timeth">1A<br/> 11:17</th><th class="timeth">1A<br/> 13:03</th><th class="timeth">1MV<br/> 13:33</th><th class="timeth">1M<br/> 14:08</th><th class="timeth">1A<br/> 14:26</th></tr></table></div><div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1A<br/> 14:44</th><th class="timeth">1A<br/> 15:09</th><th class="timeth">1M<br/> 15:45</th><th class="timeth">1A<br/> 16:17</th><th class="timeth">1M<br/> 16:40</th><th class="timeth">1V<br/> 17:48</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain16"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1V<br/> 06:01</th><th class="timeth">1V<br/> 06:44</th><th class="timeth">1M<br/> 07:13</th><th class="timeth">1M<br/> 07:32</th><th class="timeth">1J<br/> 07:52</th><th class="timeth">1A<br/> 08:52</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1M<br/> 10:07</th><th class="timeth">1A<br/> 11:23</th><th class="timeth">1A<br/> 13:10</th><th class="timeth">1MV<br/> 13:39</th><th class="timeth">1M<br/> 14:15</th><th class="timeth">1A<br/> 14:32<br/>(végállomás)</th></tr></table></div><div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1A<br/> 14:51</th><th class="timeth">1A<br/> 15:16</th><th class="timeth">1M<br/> 15:52</th><th class="timeth">1A<br/> 16:23</th><th class="timeth">1M<br/> 16:47</th><th class="timeth">1V<br/> 17:54</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain26"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1V<br/> 06:04</th><th class="timeth">1T<br/> 06:46</th><th class="timeth">1V<br/> 06:47</th><th class="timeth">1T<br/> 07:09</th><th class="timeth">1M<br/> 07:17</th><th class="timeth">1M<br/> 07:17</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1J<br/> 07:57</th><th class="timeth">1M<br/> 10:11</th><th class="timeth">1A<br/> 11:31</th><th class="timeth">1MV<br/> 13:43</th><th class="timeth">1M<br/> 14:19</th><th class="timeth">1T<br/> 14:28</th></tr></table></div><div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1T<br/> 14:31</th><th class="timeth">1A<br/> 14:55</th><th class="timeth">1A<br/> 15:28</th><th class="timeth">1T<br/> 15:39</th><th class="timeth">1M<br/> 15:56</th><th class="timeth">1A<br/> 16:26</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1M<br/> 17:11</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain9"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1V<br/> 05:53</th><th class="timeth">1V<br/> 06:36</th><th class="timeth">1M<br/> 07:05</th><th class="timeth">1M<br/> 07:24</th><th class="timeth">1D<br/> 07:47</th><th class="timeth">1A<br/> 08:45</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1M<br/> 09:59</th><th class="timeth">1A<br/> 11:16</th><th class="timeth">1A<br/> 13:02</th><th class="timeth">1MV<br/> 13:32</th><th class="timeth">1M<br/> 14:07</th><th class="timeth">1A<br/> 14:25</th></tr></table></div><div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1A<br/> 14:43</th><th class="timeth">1A<br/> 15:08</th><th class="timeth">1M<br/> 15:44</th><th class="timeth">1A<br/> 16:16</th><th class="timeth">1M<br/> 16:39</th><th class="timeth">1V<br/> 17:47</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain44"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1M<br/> 07:00</th><th class="timeth">1M<br/> 07:19</th><th class="timeth">1M<br/> 09:54</th><th class="timeth">1MV<br/> 13:27</th><th class="timeth">1M<br/> 14:01</th><th class="timeth">1M<br/> 15:39</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1M<br/> 16:34</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th><th class="timeth">&nbsp;</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain28"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1V<br/> 06:06</th><th class="timeth">1V<br/> 06:49</th><th class="timeth">1M<br/> 10:13</th><th class="timeth">1MV<br/> 13:45</th><th class="timeth">1M<br/> 17:13</th><th class="timeth">&nbsp;</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain38"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1V<br/> 06:34</th><th class="timeth">1V<br/> 06:58</th><th class="timeth">1D<br/> 08:33</th><th class="timeth">1M<br/> 11:05</th><th class="timeth">1M<br/> 17:36</th><th class="timeth">&nbsp;</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain3"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1V<br/> 05:47</th><th class="timeth">1V<br/> 06:30</th><th class="timeth">1M<br/> 06:53</th><th class="timeth">1M<br/> 07:12</th><th class="timeth">1J<br/> 07:45</th><th class="timeth">1A<br/> 08:39</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1M<br/> 09:47</th><th class="timeth">1A<br/> 11:10</th><th class="timeth">1A<br/> 12:56</th><th class="timeth">1MV<br/> 13:20</th><th class="timeth">1M<br/> 13:55</th><th class="timeth">1A<br/> 14:19</th></tr></table></div><div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1A<br/> 14:37</th><th class="timeth">1A<br/> 15:02</th><th class="timeth">1M<br/> 15:32</th><th class="timeth">1A<br/> 16:10</th><th class="timeth">1M<br/> 16:27</th><th class="timeth">1V<br/> 17:41</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain39"  style="display:none">
+				    	<div style="oweflow-x: auto;"><table id="timetable"><tr></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain40"  style="display:none">
+				    	<div style="oweflow-x: auto;"><table id="timetable"><tr></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain36"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1T<br/> 06:40<br/>(indulás)</th><th class="timeth">1T<br/> 07:03<br/>(indulás)</th><th class="timeth">1M<br/> 07:37</th><th class="timeth">1A<br/> 09:40</th><th class="timeth">1A<br/> 11:27</th><th class="timeth">1A<br/> 13:14</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1T<br/> 14:22<br/>(indulás)</th><th class="timeth">1A<br/> 15:21</th><th class="timeth">1T<br/> 15:32<br/>(indulás)</th><th class="timeth">1T<br/> 16:29<br/>(indulás)</th><th class="timeth">1V<br/> 17:57</th><th class="timeth">&nbsp;</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain37"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1V<br/> 06:35</th><th class="timeth">1V<br/> 06:59</th><th class="timeth">1D<br/> 08:35</th><th class="timeth">1M<br/> 11:06</th><th class="timeth">1M<br/> 17:37</th><th class="timeth">&nbsp;</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain27"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1V<br/> 06:05</th><th class="timeth">1V<br/> 06:48</th><th class="timeth">1M<br/> 10:12</th><th class="timeth">1MV<br/> 13:44</th><th class="timeth">1M<br/> 17:12</th><th class="timeth">&nbsp;</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain24"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1T<br/> 06:43</th><th class="timeth">1T<br/> 07:06</th><th class="timeth">1M<br/> 07:40</th><th class="timeth">1A<br/> 09:43</th><th class="timeth">1A<br/> 11:29</th><th class="timeth">1A<br/> 13:17<br/>(végállomás)</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1T<br/> 14:25</th><th class="timeth">1A<br/> 15:25</th><th class="timeth">1T<br/> 15:35</th><th class="timeth">1T<br/> 16:31</th><th class="timeth">1V<br/> 17:59<br/>(végállomás)</th><th class="timeth">&nbsp;</th></tr></table></div>				    </div>
+				    				    <div class="tmtbl-cnt" id="timeTableMain12"  style="display:none">
+				    	<div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1V<br/> 05:56</th><th class="timeth">1V<br/> 06:39</th><th class="timeth">1M<br/> 07:08</th><th class="timeth">1M<br/> 07:27</th><th class="timeth">1J<br/> 07:47</th><th class="timeth">1A<br/> 08:48</th></tr></table></div><div  style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1M<br/> 10:02</th><th class="timeth">1A<br/> 11:19</th><th class="timeth">1A<br/> 13:05</th><th class="timeth">1MV<br/> 13:35</th><th class="timeth">1M<br/> 14:10</th><th class="timeth">1A<br/> 14:28</th></tr></table></div><div class="srt-ln-1" style="oweflow-x: auto;"><table id="timetable"><tr><th class="timeth">1A<br/> 14:46</th><th class="timeth">1A<br/> 15:11</th><th class="timeth">1M<br/> 15:47</th><th class="timeth">1A<br/> 16:19</th><th class="timeth">1M<br/> 16:42</th><th class="timeth">1V<br/> 17:50</th></tr></table></div>				    </div>
+				    					<script>
+						function openCity(evt, cityName) {
+						  var i, tabcontent, tablinks;
+						  tabcontent = document.getElementsByClassName("tabcontent");
+						  for (i = 0; i < tabcontent.length; i++) {
+							tabcontent[i].style.display = "none";
+						  }
+						  tablinks = document.getElementsByClassName("tablinks");
+						  for (i = 0; i < tablinks.length; i++) {
+							tablinks[i].className = tablinks[i].className.replace(" active", "");
+						  }
+						  document.getElementById(cityName).style.display = "block";
+						  evt.currentTarget.className += " active";
+						}
+
+						// Get the element with id="defaultOpen" and click on it
+						//document.getElementById("defaultOpen").click();
+					</script>
+				<div style="clear: both;"></div>
+				<!-- <div class="tmtbl-cnt">
+					<h2 class="tmtbl-ttl-1">Vagy kövesd járatainkat élőben</h2>
+					<h2 class="tmtbl-ttl">Az alábbi gombra kattintva</h2>
+					<button class="tmtbl-bttn">
+						<a href="jaratkovetes"><img src="./images/elo_jaratkovetes.png" style="max-width:95%"></a>
+						<div style="clear: both;"></div>
+					</button>
+				</div> -->
+				<div style="clear: both;"></div>
+			</div>
+		</div>
+						
+		<div style="clear: both;"></div>
+ <div class="white" id="menetrendTablaDiv">
+ 		<!-- <strong class="timeTableStr">Tanítási napokon közlekedik:</strong> -->
+ 		
+     		     		<br/><br/><br/>
+     		<strong>
+     		<a href="https://kanyargo.paty.hu/documents/menetrend-KanyarGO-2026-szept-1-tol.pdf?v=1f3db7b3f95d67a8924aa7c8e90550ea" style="color:#000000;margin-left:24px;" target="_blank">Összevont menetrendi tábla megtekintése
+     		 			</a>
+ 			</strong>
+ 						<br/><br/>
+					</div>		
+		
+		    			<div id="footer">
+			<div class="ftr-txt">
+				<div class="ftr-left">
+				    <p><a href="https://kanyargo.paty.hu/Menetrend">Menetrend</a></p>
+    <p><a href="https://kanyargo.paty.hu/Terkep">Térkép</a></p>
+    <p><a href="https://kanyargo.paty.hu/GYIK">GY. I. K.</a></p>
+    </div>
+    <div class="ftr-right">
+    <p><a href="https://kanyargo.paty.hu/impresszum">Impresszum</a></p>
+    <p><a href="https://kanyargo.paty.hu/Dokumentumok/adatvedelmi-szabalyzat">Adatvédelmi szabályzat</a></p>
+    <p><a href="https://kanyargo.paty.hu/Dokumentumok/altalanos-szerzodesi-feltetelek">Általános Szerződési Feltételek</a></p>
+    <p><a href="https://kanyargo.paty.hu/kozlekedesi-informaciok">Közlekedési információk</a></p>
+    </div>
+    <div style="clear: both;"></div>
+        <div class="dev-design">
+    	Designterv:&nbsp;<a style="text-decoration:underline" href="mailto:mate.reisinger@gmail.com">Reisinger Máté</a><br/>
+    	Portál fejlesztés:&nbsp;<a style="text-decoration:underline" href="https://lunaluxdesign.hu">Luna Lux Design Kft.</a><br/><br/>
+    </div>
+    </div>
+</div>    </BODY>
+</HTML>
