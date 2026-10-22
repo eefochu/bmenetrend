@@ -7,7 +7,7 @@ import java.time.Instant
 import java.time.Duration
 
 object EmmaStopsParser {
-    const val ROUTE_FIELDS = "gtfsId shortName longName mode"
+    const val ROUTE_FIELDS = "gtfsId shortName longName mode color"
     const val STOP_FIELDS = "gtfsId name lat lon platformCode locationType parentStation { gtfsId name } routes { $ROUTE_FIELDS }"
     const val INDEX_QUERY = "{stops {gtfsId name lat lon platformCode locationType parentStation {gtfsId name}}}"
     val AREA_QUERY = """query StopsInArea(${'$'}south: Float!, ${'$'}west: Float!, ${'$'}north: Float!, ${'$'}east: Float!) {
@@ -16,9 +16,12 @@ object EmmaStopsParser {
     val SEARCH_QUERY = """query FindStops(${'$'}name: String!) { stops(name:${'$'}name) { $STOP_FIELDS } }"""
     val BOARD_QUERY = """query StopBoard(${'$'}id: String!, ${'$'}start: Long!, ${'$'}range: Int!) {
         stop(id:${'$'}id) { $STOP_FIELDS
-            stoptimesWithoutPatterns(startTime:${'$'}start,timeRange:${'$'}range,numberOfDepartures:100,omitNonPickups:true) {
-                scheduledDeparture realtimeDeparture realtime realtimeState serviceDay headsign pickupType
-                trip { gtfsId tripHeadsign route { $ROUTE_FIELDS } }
+            stoptimesForPatterns(startTime:${'$'}start,timeRange:${'$'}range,numberOfDepartures:100,omitNonPickups:true) {
+                pattern { code }
+                stoptimes {
+                    scheduledDeparture realtimeDeparture realtime realtimeState serviceDay headsign pickupType
+                    trip { gtfsId tripHeadsign directionId pattern { code } wheelchairAccessible bikesAllowed route { $ROUTE_FIELDS } }
+                }
             }
         }
     }""".trimIndent()
@@ -38,7 +41,7 @@ object EmmaStopsParser {
         val mode = row.text("mode") ?: return null
         if (mode !in if (provider == "volan") setOf("BUS", "COACH") else setOf("BUS", "TRAM", "TROLLEYBUS", "SUBWAY")) return null
         val number = row.text("shortName") ?: return null
-        return TransitRoute("$provider:$id", number, row.text("longName") ?: number, emptyList(), provider)
+        return TransitRoute("$provider:$id", number, row.text("longName") ?: number, emptyList(), provider, transportMode = mode, color = row.text("color")?.takeIf { it.matches(Regex("[a-fA-F0-9]{6}")) })
     }
     private fun stops(rows: JSONArray): Catalogue {
         val routes = linkedMapOf<String, TransitRoute>()
@@ -105,7 +108,16 @@ object EmmaStopsParser {
         require(row.getString("gtfsId") == sourceId(expectedId)) { "Wrong stop returned" }
         val catalogue = stops(JSONArray().put(row))
         require(catalogue.stops.singleOrNull()?.id == expectedId) { "Unsupported stop" }
-        val rows = row.getJSONArray("stoptimesWithoutPatterns")
+        val groups = row.optJSONArray("stoptimesForPatterns")
+        var limitReached = false
+        val rows = if (groups == null) row.getJSONArray("stoptimesWithoutPatterns") else JSONArray().also { flat ->
+            for (i in 0 until groups.length()) {
+                val group = groups.getJSONObject(i)
+                val times = group.getJSONArray("stoptimes")
+                if (times.length() >= 100) limitReached = true
+                for (j in 0 until times.length()) flat.put(times.getJSONObject(j).put("_sourcePatternCode", group.optJSONObject("pattern")?.text("code")))
+            }
+        }
         val routes = linkedMapOf<String, TransitRoute>().apply { catalogue.routes.forEach { put(it.id, it) } }
         val departures = (0 until rows.length()).mapNotNull { index ->
             val time = rows.optJSONObject(index) ?: return@mapNotNull null
@@ -116,19 +128,22 @@ object EmmaStopsParser {
             val stopProvider = catalogue.stops.single().providerId
             if (route.providerId != stopProvider) return@mapNotNull null
             val day = time.number("serviceDay")?.toLong() ?: return@mapNotNull null
-            val scheduledSeconds = time.number("scheduledDeparture")?.toLong()?.takeIf { it in 0..172799 } ?: return@mapNotNull null
+            val scheduledSeconds = time.number("scheduledDeparture")?.toLong()?.takeIf { it in 0..172799 }
             val realtimeSeconds = time.number("realtimeDeparture")?.toLong()?.takeIf { it in 0..172799 }
             val realtime = time.optBoolean("realtime", false) && realtimeSeconds != null && time.text("realtimeState") != "SCHEDULED"
-            val scheduled = runCatching { Instant.ofEpochSecond(day + scheduledSeconds) }.getOrNull() ?: return@mapNotNull null
-            val expected = if (realtime) Instant.ofEpochSecond(day + realtimeSeconds!!) else scheduled
+            val scheduled = scheduledSeconds?.let { seconds -> runCatching { Instant.ofEpochSecond(day + seconds) }.getOrNull() }
+            val expected = if (realtime) Instant.ofEpochSecond(day + realtimeSeconds!!) else scheduled ?: return@mapNotNull null
             if (expected < now || expected > now.plusSeconds(windowMinutes * 60L)) return@mapNotNull null
             routes[route.id] = route
             Departure(route.id, route.number, time.text("headsign") ?: trip.text("tripHeadsign") ?: route.name,
                 expectedId, scheduled, expected, if (realtime) ArrivalKind.LIVE else ArrivalKind.SCHEDULED,
                 // The full trip ID distinguishes departures with identical route/headsign/time.
-                directionId = tripId)
+                directionId = tripId,
+                patternCode = trip.optJSONObject("pattern")?.text("code") ?: time.text("_sourcePatternCode"), sourceDirectionId = trip.text("directionId"),
+                wheelchairAccessible = trip.text("wheelchairAccessible"), bikesAllowed = trip.text("bikesAllowed"),
+                realtimeState = time.text("realtimeState"))
         }.distinctBy { listOf(it.routeId, it.directionId, it.expectedAt) }.sortedBy { it.expectedAt }
-        return Board(expectedId, departures, catalogue.copy(routes = routes.values.toList()), now, rows.length() >= 100)
+        return Board(expectedId, departures, catalogue.copy(routes = routes.values.toList()), now, limitReached || groups == null && rows.length() >= 100)
     }
     fun freshDepartures(board: Board?, stopId: String?, now: Instant, windowMinutes: Int): List<Departure> {
         if (board == null || board.stopId != stopId || Duration.between(board.fetchedAt, now).seconds !in 0..60) return emptyList()

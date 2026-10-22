@@ -1,6 +1,6 @@
 # BMenetrend – natív Android, Biatorbágy, Páty és Budaörs
 
-Kotlin + Jetpack Compose alkalmazás, Material 3 / Material You felülettel. Android 8.0 vagy újabb rendszer szükséges; Android 12-től a téma a telefon színeihez igazodik.
+Kotlin + Jetpack Compose alkalmazás, Material 3 / Material You felülettel. Android 8.0 vagy újabb rendszer szükséges; Android 12-től a Rendszer színbeállítás a telefon színeihez igazodik. A Beállítások → Kiemelőszín alatt zöld, kék, lila, rózsaszín vagy narancssárga téma, illetve RGB-csúszkákkal vagy hexadecimális kóddal egyéni szín választható; az app megőrzi a választást. A Beállítások teljes oldalon jelenik meg, és az adatforrás-információk is innen érhetők el. A térkép követi a rendszer világos/sötét módját; sötét módban színesebb vízfelületek, jól elkülönülő utak és olvasható feliratok segítik a tájékozódást.
 
 ## A 0.3.0 változat
 
@@ -45,7 +45,7 @@ Részletes forrásleírás: [docs/ADATFORRAS.md](docs/ADATFORRAS.md) és [docs/K
 
 A Volán-buszok országosan, a BKK buszai, villamosai, trolijai és metrójárművei Budapesten az **EMMA/MÁVPlusz GraphQL** adatforrásából jelennek meg. Közvetlen BKK API-t nem használunk. A Volán-jelölők sárgák, a BKK buszai világoskék, a trolik piros, a villamosok sárga közlekedési ikont kapnak. A járműnél a vonalszám, azonosító/rendszám, célállomás, sebesség és a forrásadat ideje olvasható. A régi vagy időbélyeg nélküli pozíciókat nem mutatjuk.
 
-Az **Országos hálózat** alapból bekapcsolt, és a teljes országot egy kérés tölti be; nincs térképrészlethez kötött nagyítási korlát. Kikapcsolva a Biatorbágyot, Pátyot és Budaörsöt érintő Volán-vonalak és a Budapesten belüli BKK-járművek maradnak. Az aktív országos vonalak kereshetők; az ellenőrzött 36 helyi Volán-vonal hivatalos menetrendje továbbra is megnyitható. A Volán- és BKK-megállók országosan kereshetők, térképen kiválaszthatók és kedvencekhez adhatók. A megállókat apró, számozatlan pontok jelzik; a járművek távolabbról is láthatók. Egy járműre koppintva megnyílik a vonalszámot, irányt, járműadatokat és az EMMA által közölt, sorrendezett megállólistát tartalmazó alsó kártya. A kiválasztott megálló indulási tábláját szintén az EMMA szolgáltatja; csak a valós idejűnek jelölt adatok kapnak élő jelzést. A megállólista helyben gyorsítótárazott. Vonatokat ez az integráció nem ad hozzá. Részletek: [VOLAN.md](docs/VOLAN.md).
+Az **Országos hálózat** alapból bekapcsolt, és a teljes országot egy kérés tölti be; nincs térképrészlethez kötött nagyítási korlát. Kikapcsolva a Biatorbágyot, Pátyot és Budaörsöt érintő Volán-vonalak és a Budapesten belüli BKK-járművek maradnak. Az országos vonalkatalógus aktív jármű nélkül is kereshető; az ellenőrzött 36 helyi Volán-vonal hivatalos menetrendje továbbra is megnyitható. A Volán- és BKK-megállók országosan kereshetők, térképen kiválaszthatók és kedvencekhez adhatók. A megállókat számozatlan pontok jelzik, közepes nagyítástól nagyobb megállógyűrűkkel; a járművek távolabbról is láthatók. Egy járműre koppintva megnyílik a vonalszámot, irányt, járműadatokat és az EMMA által közölt, sorrendezett megállólistát tartalmazó alsó kártya. A kiválasztott megálló indulási tábláját szintén az EMMA szolgáltatja; csak a valós idejűnek jelölt adatok kapnak élő jelzést. A megállólista helyben gyorsítótárazott. Vonatokat ez az integráció nem ad hozzá. Részletek: [VOLAN.md](docs/VOLAN.md).
 
 ## Fordítás és telepítés
 
@@ -76,3 +76,7 @@ Térkép: [MapLibre Native](https://maplibre.org/maplibre-native/android/) és [
 - `scripts/`: a szolgáltatói PDF-importok reprodukálásához szükséges eszközök.
 
 A MapLibre 11.8 OpenGL emulátoron SwiftShader módban ismert szimbólum-megjelenítési hibába futhat. Az emulátor grafikai módját `Hardware` / host GPU módra állítsd; a kész APK-t ezzel ellenőriztük. [Upstream hibajegy](https://github.com/maplibre/maplibre-native/issues/3648).
+
+A kereső felismeri a járműtípusokat magyarul és angolul: például az `1 villamos`, `villamos 1` vagy `1 tram` az 1-es villamosra keres. A pontos vonalszámok előre kerülnek, a megállókereső gyorsítótárazott, ékezetfüggetlen szövegindexet használ. A járműkártya az EMMA következő megállója és a menet sorrendje alapján mutatja a két érintett megállót; a megállóban tartózkodás közelségből és sebességből számított, külön jelölt GPS-becslés.
+
+A vonalak közlekedési ikonnal és saját színű számbuborékkal jelennek meg. Keresés után irányt, majd felszállóhelyet választhatsz; az induláslista a kiválasztott útirányra szűr. Az EMMA által közölt útvonal a térképen is látszik, a járműkártya pedig színes megállóláncon mutatja az aktuális szakaszt. Az indulásoknál a várható és menetrendi idő, a késés, illetve az elérhető akadálymentességi és kerékpár-információ is megjelenik.

@@ -26,7 +26,7 @@
     <string name="emma_board_loading">Loading EMMA departures…</string>
     <string name="emma_board_stale">EMMA departures could not be refreshed. Showing the recent update; retrying automatically.</string>
     <string name="emma_board_unavailable">EMMA departures are unavailable for this stop. Retrying automatically.</string>
-    <string name="emma_board_limit">Showing up to 100 departures supplied by EMMA.</string>
+    <string name="emma_board_limit">The source departure limit was reached. Some later departures may be omitted.</string>
     <string name="emma_stops_saved">Using saved EMMA stops. The stop list will refresh automatically.</string>
     <string name="emma_stops_unavailable">EMMA stops could not be loaded. Retrying automatically.</string>
     <string name="emma_platform">Platform %1$s</string>

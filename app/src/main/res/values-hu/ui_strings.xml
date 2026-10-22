@@ -47,7 +47,7 @@
     <string name="ui_no_live_update">Még nincs sikeres élő frissítés</string>
     <string name="ui_live_stop_signal">Élő megállói jelzés</string>
     <string name="ui_live_stop_explanation">A forrás nem közli a járatszámot; ez a jelzés nem kapcsolható biztosan a lenti járatokhoz.</string>
-    <string name="ui_live_arrival">Élő érkezés</string>
+    <string name="ui_live_arrival">Élő előrejelzés</string>
     <string name="ui_scheduled">Menetrend szerint</string>
     <string name="ui_no_departures_title">Most nincs közeli indulás</string>
     <string name="ui_no_departures_body">A következő %1$d percben nincs listázható járat. Válassz nagyobb időablakot vagy egy másik megállót.</string>

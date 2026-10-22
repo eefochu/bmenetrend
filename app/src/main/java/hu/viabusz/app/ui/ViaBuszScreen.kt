@@ -5,6 +5,8 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -62,6 +64,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SheetValue
@@ -95,6 +98,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import hu.viabusz.app.R
+import hu.viabusz.app.data.TransitSearch
 import hu.viabusz.app.data.ArrivalKind
 import hu.viabusz.app.data.Departure
 import hu.viabusz.app.data.RouteDirection
@@ -127,6 +131,14 @@ fun ViaBuszScreen(
     onRecenter: () -> Unit = {},
     onNationwideNetworkChanged: (Boolean) -> Unit = {},
     onVehicleClosed: () -> Unit = {},
+    onAccentColorChanged: (AccentColor) -> Unit = {},
+    onCustomAccentChanged: (Int) -> Unit = {},
+    onLineOpened: (String, Boolean) -> Unit = { _, _ -> },
+    onBoardingStop: (String, String, String) -> Unit = { _, _, _ -> },
+    onClearBoarding: () -> Unit = {},
+    onShowWholeRoute: () -> Unit = {},
+    onJourneyBoardingStop: (String) -> Unit = {},
+    onVehicleOpened: (String) -> Unit = {},
     mapContent: @Composable (Modifier, Int) -> Unit,
 ) {
     var searchOpen by rememberSaveable { mutableStateOf(false) }
@@ -159,10 +171,16 @@ fun ViaBuszScreen(
         scope.launch { sheetState.bottomSheetState.partialExpand() }
     }
     val openDeparture: (Departure) -> Unit = { departure ->
-        state.routes.firstOrNull { it.id == departure.routeId }?.let { route ->
+        val observed = state.vehicles.find { it.tripId != null && it.tripId == departure.directionId }
+        if (observed != null) {
+            onVehicleOpened(observed.id)
+            searchOpen = false
+        } else state.routes.firstOrNull { it.id == departure.routeId }?.let { route ->
             routeId = route.id
-            directionId = route.directions.firstOrNull { it.id == departure.directionId }?.id
+            directionId = state.lineDetails[route.id]?.patterns?.find { departure.patternCode in it.codes }?.id
+                ?: route.directions.firstOrNull { it.id == departure.directionId }?.id
                 ?: route.directions.singleOrNull()?.id
+            onLineOpened(route.id, false)
             searchOpen = true
         }
     }
@@ -181,8 +199,10 @@ fun ViaBuszScreen(
             sheetState.bottomSheetState.partialExpand()
         }
     }
-    LaunchedEffect(state.selectedStopId, state.cameraRequest) {
-        if (state.selectedVehicle == null && state.selectedStopId != null) sheetState.bottomSheetState.partialExpand()
+    LaunchedEffect(state.selectedStopId, state.cameraRequest, state.boardingSelection) {
+        if (state.selectedVehicle == null && state.selectedStopId != null) {
+            if (state.boardingSelection != null) sheetState.bottomSheetState.expand() else sheetState.bottomSheetState.partialExpand()
+        }
     }
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -192,12 +212,6 @@ fun ViaBuszScreen(
             val peekHeightPx = with(density) { peekHeight.roundToPx() }
             val sheetHidden = sheetState.bottomSheetState.targetValue == SheetValue.Hidden
             val bottomPaddingPx = if (sheetHidden) 0 else peekHeightPx
-
-            LaunchedEffect(sheetHidden) {
-                if (state.selectedStopId != null) {
-                    onRecenter()
-                }
-            }
 
             BottomSheetScaffold(
                 scaffoldState = sheetState,
@@ -211,14 +225,19 @@ fun ViaBuszScreen(
                     if (state.selectedVehicle != null) VehiclePanel(
                         state = state,
                         onClose = onVehicleClosed,
+                        onShowRoute = onShowWholeRoute,
                         onRefresh = onRefresh,
-                        onStop = selectStop,
+                        onStop = onJourneyBoardingStop,
                         modifier = Modifier.fillMaxWidth().fillMaxHeight(0.88f),
                     ) else StopPanel(
                         state = state,
                         stop = selectedStop,
                         onRefresh = onRefresh,
                         onWindowChanged = onWindowChanged,
+                        onClearBoarding = onClearBoarding,
+                        onChangeDirection = {
+                            state.boardingSelection?.let { routeId = it.routeId; directionId = null; onLineOpened(it.routeId, false); searchOpen = true }
+                        },
                         onToggleFavorite = onToggleFavorite,
                         onSearch = openSearch,
                         onDeparture = openDeparture,
@@ -231,7 +250,7 @@ fun ViaBuszScreen(
                     // Full-screen map going under both the top search blob and the bottom sheet.
                     mapContent(Modifier.fillMaxSize(), bottomPaddingPx)
 
-                    // Top floating search blob and area/bus count badge
+                    // A quiet search bar leaves map labels and route geometry unobstructed.
                     Column(
                         modifier = Modifier
                             .align(Alignment.TopCenter)
@@ -241,39 +260,8 @@ fun ViaBuszScreen(
                     ) {
                         FloatingSearchBlob(
                             onSearch = openSearch,
-                            onInfo = { showInfo = true },
                             onSettings = { showSettings = true },
                         )
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 20.dp, vertical = 2.dp),
-                            horizontalArrangement = Arrangement.Start,
-                        ) {
-                            Surface(
-                                shape = RoundedCornerShape(16.dp),
-                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
-                                shadowElevation = 3.dp,
-                            ) {
-                                Row(
-                                    Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.DirectionsBus,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(16.dp),
-                                        tint = MaterialTheme.colorScheme.primary,
-                                    )
-                                    Text(
-                                        if (state.vehicles.isEmpty()) stringResource(R.string.ui_area)
-                                        else pluralStringResource(R.plurals.ui_buses_on_map, state.vehicles.size, state.vehicles.size),
-                                        style = MaterialTheme.typography.labelMedium,
-                                    )
-                                }
-                            }
-                        }
                     }
 
                     // Floating MyLocation button above the bottom sheet (or at bottom when sheet is hidden)
@@ -331,22 +319,28 @@ fun ViaBuszScreen(
                     onQueryChanged = { query = it },
                     route = selectedRoute,
                     direction = selectedDirection,
+                    patternId = directionId,
                     onBack = navigateBack,
-                    onRoute = { routeId = it; directionId = null },
+                    onRoute = { routeId = it; directionId = null; onLineOpened(it, false) },
                     onDirection = { directionId = it },
                     onStop = selectStop,
+                    onBoard = { line, direction, stop ->
+                        onBoardingStop(line, direction, stop)
+                        searchOpen = false
+                    },
+                    onRetryLine = { onLineOpened(it, true) },
                 )
             }
         }
     }
+    if (showSettings) SettingsPage(state, onAccentColorChanged, onCustomAccentChanged,
+        onNationwideNetworkChanged, onAbout = { showInfo = true }, onBack = { showSettings = false })
     if (showInfo) SourceDialog(onDismiss = { showInfo = false })
-    if (showSettings) NetworkSettingsDialog(state.nationwideNetwork, onNationwideNetworkChanged) { showSettings = false }
 }
 
 @Composable
 private fun FloatingSearchBlob(
     onSearch: () -> Unit,
-    onInfo: () -> Unit,
     onSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -371,34 +365,12 @@ private fun FloatingSearchBlob(
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(24.dp),
             )
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 12.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.ui_brand),
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = stringResource(R.string.ui_search_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
+            Text(stringResource(R.string.ui_search_short), Modifier.weight(1f).padding(horizontal = 12.dp),
+                style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             IconButton(onClick = onSettings) {
                 Icon(Icons.Rounded.Settings, stringResource(R.string.volan_settings))
             }
-            IconButton(onClick = onInfo) {
-                Icon(
-                    Icons.Rounded.Info,
-                    contentDescription = stringResource(R.string.ui_about_action),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+
         }
     }
 }
@@ -409,12 +381,15 @@ private fun StopPanel(
     stop: TransitStop?,
     onRefresh: () -> Unit,
     onWindowChanged: (Int) -> Unit,
+    onClearBoarding: () -> Unit,
+    onChangeDirection: () -> Unit,
     onToggleFavorite: (String) -> Unit,
     onSearch: () -> Unit,
     onDeparture: (Departure) -> Unit,
     onHide: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val routeById = remember(state.network?.routes, state.emmaRoutes) { state.routes.associateBy { it.id } }
     val timetableOnly = stop?.providerIds?.let { providers -> providers.isNotEmpty() && providers.all { it == "homm" } } == true
     Column(modifier) {
         Row(Modifier.fillMaxWidth().padding(start = 22.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -435,7 +410,7 @@ private fun StopPanel(
                 }
                 Text(stop?.name ?: stringResource(if (state.loading) R.string.ui_loading_stops else R.string.ui_select_stop), style = MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 5.dp))
                 if (stop != null) {
-                    Text(listOfNotNull(providerNames(stop.providerIds), stopLabel(stop)).joinToString(" · "), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 3.dp))
+                    Text(listOfNotNull(providerNames(stop.providerIds), stop.platformCode?.let { stringResource(R.string.emma_platform, it) }).joinToString(" · "), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 3.dp))
                 }
             }
             if (stop != null) {
@@ -453,6 +428,20 @@ private fun StopPanel(
             }
             IconButton(onClick = onHide) {
                 Icon(Icons.Rounded.KeyboardArrowDown, stringResource(R.string.ui_hide_departures))
+            }
+        }
+        state.boardingSelection?.let { selection ->
+            Surface(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 10.dp), shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        routeById[selection.routeId]?.let { LineBadge(it) }
+                        Spacer(Modifier.weight(1f))
+                        IconButton(onClick = onClearBoarding) { Icon(Icons.Rounded.Close, stringResource(R.string.line_all_departures)) }
+                    }
+                    Text(stringResource(R.string.emma_vehicle_towards, selection.title), style = MaterialTheme.typography.bodyLarge)
+                    TextButton(onClick = onChangeDirection, contentPadding = PaddingValues(0.dp)) { Text(stringResource(R.string.line_change_direction)) }
+                }
             }
         }
         LazyRow(
@@ -502,7 +491,8 @@ private fun StopPanel(
                 DepartureRow(
                     departure = departure,
                     now = state.now,
-                    providerId = state.routes.firstOrNull { it.id == departure.routeId }?.providerId ?: "viabusz",
+                    providerId = routeById[departure.routeId]?.providerId ?: "viabusz",
+                    route = routeById[departure.routeId],
                     onClick = { onDeparture(departure) },
                 )
                 if (index < state.departures.lastIndex) HorizontalDivider(Modifier.padding(horizontal = 22.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
@@ -522,7 +512,6 @@ private fun StopPanel(
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Text(stringResource(R.string.ui_data_sources), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -549,7 +538,7 @@ private fun LiveStopSignal(minutes: List<Int>) {
 }
 
 @Composable
-private fun DepartureRow(departure: Departure, now: Instant, providerId: String, onClick: () -> Unit) {
+private fun DepartureRow(departure: Departure, now: Instant, providerId: String, route: TransitRoute?, onClick: () -> Unit) {
     val live = departure.kind == ArrivalKind.LIVE
     val minutes = ceil(Duration.between(now, departure.expectedAt).seconds / 60.0).toInt().coerceAtLeast(0)
     Row(
@@ -558,7 +547,7 @@ private fun DepartureRow(departure: Departure, now: Instant, providerId: String,
         horizontalArrangement = Arrangement.spacedBy(13.dp),
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            RouteBadge(departure.routeNumber, providerId)
+            LineBadge(departure.routeNumber, providerId, route?.transportMode, route?.color)
             Text(providerName(providerId), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
@@ -568,11 +557,20 @@ private fun DepartureRow(departure: Departure, now: Instant, providerId: String,
                 Text(stringResource(if (live) R.string.ui_live_arrival else R.string.ui_scheduled), style = MaterialTheme.typography.labelMedium, color = if (live) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("· ${clockFormat.format(departure.expectedAt)}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+            if (live && departure.scheduledAt != null && kotlin.math.abs(Duration.between(departure.scheduledAt, departure.expectedAt).seconds) >= 60) {
+                val delay = Duration.between(departure.scheduledAt, departure.expectedAt).toMinutes().toInt()
+                Text(stringResource(R.string.line_scheduled_delay, clockFormat.format(departure.scheduledAt), if (delay > 0) "+$delay" else "$delay"),
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            val features = listOfNotNull(
+                if (departure.wheelchairAccessible == "POSSIBLE") stringResource(R.string.line_accessible) else null,
+                if (departure.bikesAllowed == "ALLOWED") stringResource(R.string.line_bikes) else null)
+            if (features.isNotEmpty()) Text(features.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (departure.restrictedService) Text(stringResource(R.string.ui_registration_required), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
         }
         Column(horizontalAlignment = Alignment.End) {
-            Text(if (minutes == 0) stringResource(R.string.ui_now) else "$minutes", style = MaterialTheme.typography.headlineMedium, color = if (live) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
-            if (minutes != 0) Text(stringResource(R.string.ui_minutes_unit), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(clockFormat.format(departure.expectedAt), style = MaterialTheme.typography.titleLarge, color = if (live) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+            Text(if (minutes == 0) stringResource(R.string.ui_now) else stringResource(R.string.ui_minutes_short, minutes), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -584,10 +582,13 @@ private fun SearchAndRoutes(
     onQueryChanged: (String) -> Unit,
     route: TransitRoute?,
     direction: RouteDirection?,
+    patternId: String?,
     onBack: () -> Unit,
     onRoute: (String) -> Unit,
     onDirection: (String) -> Unit,
     onStop: (String) -> Unit,
+    onBoard: (String, String, String) -> Unit,
+    onRetryLine: (String) -> Unit,
 ) {
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
@@ -607,40 +608,54 @@ private fun SearchAndRoutes(
                         modifier = Modifier.weight(1f).padding(end = 9.dp),
                     )
                 } else {
-                    RouteBadge(route.number, route.providerId)
+                    LineBadge(route)
                     Column(Modifier.padding(start = 12.dp).weight(1f)) {
-                        Text(if (route.providerId in setOf("volan", "bkk")) stringResource(R.string.ui_route_number, route.number) else stringResource(if (direction == null) R.string.ui_choose_direction else R.string.ui_stops), style = MaterialTheme.typography.titleLarge)
-                        Text("${route.number} · ${providerName(route.providerId)}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(transportLabel(route.transportMode) ?: stringResource(R.string.emma_mode_bus), style = MaterialTheme.typography.titleLarge)
+                        Text(listOfNotNull(providerName(route.providerId), transportLabel(route.transportMode)).joinToString(" · "), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
             when {
                 route == null -> SearchResults(state, query, onRoute, onStop)
-                route.providerId in setOf("volan", "bkk") -> EmmaRouteDetails(state, route)
+                route.providerId in setOf("volan", "bkk") -> EmmaLineBrowser(state, route, patternId, onDirection, onBoard) { onRetryLine(route.id) }
                 direction == null -> DirectionList(route, onDirection)
-                else -> RouteStops(state, route, direction, onStop)
+                else -> RouteStops(state, route, direction) { onBoard(route.id, direction.id, it) }
             }
         }
     }
 }
 
 @Composable
+private fun transportLabel(mode: String?): String? = when (mode) {
+    "TRAM" -> stringResource(R.string.emma_mode_tram)
+    "TROLLEYBUS" -> stringResource(R.string.emma_mode_trolley)
+    "SUBWAY" -> stringResource(R.string.emma_mode_metro)
+    "BUS", "COACH" -> stringResource(R.string.emma_mode_bus)
+    "RAIL", "SUBURBAN_RAILWAY", "TRAMTRAIN" -> stringResource(R.string.emma_mode_train)
+    else -> null
+}
+
+@Composable
 private fun SearchResults(state: UiState, query: String, onRoute: (String) -> Unit, onStop: (String) -> Unit) {
-    val normalized = remember(query) { normalize(query.trim()) }
-    if (normalized.isBlank()) return
-    val routes = state.routes.filter { normalize("${it.number} ${it.name} ${it.providerId}").contains(normalized) }
-    var stopSearchLoading by remember(state.network, state.emmaStops, normalized) { mutableStateOf(true) }
-    val stops by produceState(emptyList<TransitStop>(), state.network, state.emmaStops, normalized) {
-        delay(150)
+    val parsedQuery = remember(query) { TransitSearch.query(query) }
+    if (parsedQuery.text.isBlank()) return
+    val stopIndex by produceState<List<TransitSearch.StopEntry>?>(null, state.network?.stops, state.emmaStops) {
+        value = withContext(Dispatchers.Default) { TransitSearch.indexStops(state.stops) }
+    }
+    var stopSearchLoading by remember(parsedQuery, stopIndex, state.emmaRoutes) { mutableStateOf(true) }
+    val result by produceState(Pair(emptyList<TransitRoute>(), emptyList<TransitStop>()), parsedQuery, stopIndex, state.emmaRoutes, state.network, state.favorites) {
+        delay(120)
         value = withContext(Dispatchers.Default) {
-            state.stops.filter { normalize("${it.name} ${it.aliases.joinToString(" ")} ${it.platformCode.orEmpty()} ${it.sourceStopIds.joinToString(" ")}").contains(normalized) }
+            TransitSearch.routes(state.routes, parsedQuery) to TransitSearch.stops(stopIndex.orEmpty(), parsedQuery, state.userLocation, state.favorites)
         }
         stopSearchLoading = false
     }
+    val routes = result.first
+    val stops = result.second
     val favorites = stops.filter { it.id in state.favorites }
     val otherStops = stops.filterNot { it.id in state.favorites }
     LazyColumn(contentPadding = PaddingValues(bottom = 32.dp)) {
-        if (stopSearchLoading || !state.stopIndexLoaded && state.stopStatus == null) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
+        if (stopSearchLoading || stopIndex == null || !state.stopIndexLoaded && state.stopStatus == null) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
         if (!state.stopStatus.isNullOrBlank()) item { Notice(state.stopStatus, Icons.Rounded.LocationOn) }
         if (routes.isNotEmpty()) {
             item { SectionLabel(stringResource(R.string.ui_local_routes), stringResource(if (routes.any { it.providerId in setOf("volan", "bkk") }) R.string.volan_route_results else R.string.ui_directions_and_stops)) }
@@ -650,10 +665,10 @@ private fun SearchResults(state: UiState, query: String, onRoute: (String) -> Un
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
-                    RouteBadge(route.number, route.providerId)
+                    LineBadge(route)
                     Column(Modifier.weight(1f)) {
-                        Text("${stringResource(R.string.ui_route_number, route.number)} · ${providerName(route.providerId)}", style = MaterialTheme.typography.titleMedium)
-                        Text(route.name, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        Text(listOfNotNull(providerName(route.providerId), transportLabel(route.transportMode)).joinToString(" · "), style = MaterialTheme.typography.titleMedium)
+                        Text(if (route.name == route.number) stringResource(R.string.ui_choose_direction) else route.name, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     }
                     Icon(Icons.AutoMirrored.Rounded.ArrowForward, null, Modifier.size(19.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
@@ -667,7 +682,8 @@ private fun SearchResults(state: UiState, query: String, onRoute: (String) -> Un
             item { SectionLabel(stringResource(R.string.ui_stops), pluralStringResource(R.plurals.ui_results_count, stops.size, stops.size)) }
             items(otherStops, key = { "stop-${it.id}" }) { StopSearchRow(it, state, false, onStop) }
         }
-        if (routes.isEmpty() && stops.isEmpty() && !state.loading && !stopSearchLoading && state.stopIndexLoaded) {
+        if (routes.size >= 100 || stops.size >= 100) item { Notice(stringResource(R.string.search_refine), Icons.Rounded.Search) }
+        if (routes.isEmpty() && stops.isEmpty() && !state.loading && !stopSearchLoading && stopIndex != null && state.stopIndexLoaded) {
             item { EmptyState(stringResource(R.string.ui_no_results_title), stringResource(R.string.ui_no_results_body), Icons.Rounded.Search) }
         }
     }
@@ -734,36 +750,8 @@ private fun RouteStops(state: UiState, route: TransitRoute, direction: RouteDire
             }
         }
         itemsIndexed(direction.stopIds) { index, stopId ->
-            val stop = stopById[stopId]
-            val first = index == 0
-            val last = index == direction.stopIds.lastIndex
-            Row(
-                Modifier.fillMaxWidth().heightIn(min = 74.dp).clickable(enabled = stop != null) { onStop(stopId) }.padding(horizontal = 24.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(18.dp),
-            ) {
-                Box(Modifier.width(22.dp).height(80.dp), contentAlignment = Alignment.Center) {
-                    if (!first) Box(Modifier.align(Alignment.TopCenter).width(3.dp).height(40.dp).background(MaterialTheme.colorScheme.primary))
-                    if (!last) Box(Modifier.align(Alignment.BottomCenter).width(3.dp).height(40.dp).background(MaterialTheme.colorScheme.primary))
-                    Box(Modifier.size(if (first || last) 17.dp else 13.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary), contentAlignment = Alignment.Center) {
-                        Box(Modifier.size(if (first || last) 7.dp else 6.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surface))
-                    }
-                }
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text(stop?.name ?: stringResource(R.string.ui_unknown_stop), style = MaterialTheme.typography.titleMedium)
-                    if (first || last) Text(stringResource(if (first) R.string.ui_origin else R.string.ui_terminus), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Icon(Icons.AutoMirrored.Rounded.ArrowForward, null, Modifier.size(17.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-    }
-}
-
-@Composable
-private fun RouteBadge(number: String, providerId: String = "viabusz") {
-    Surface(shape = RoundedCornerShape(12.dp), color = if (providerId == "volan") Color(0xFFFFCC00) else MaterialTheme.colorScheme.primaryContainer) {
-        Box(Modifier.size(width = 51.dp, height = 43.dp), contentAlignment = Alignment.Center) {
-            Text(number, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = if (providerId == "volan") Color(0xFF262100) else MaterialTheme.colorScheme.onPrimaryContainer, maxLines = 1)
+            stopById[stopId]?.let { stop -> LineStopRow(stop, index == 0, index == direction.stopIds.lastIndex,
+                lineColor(route), onClick = { onStop(stopId) }) }
         }
     }
 }
@@ -848,53 +836,3 @@ private fun providerNames(providerIds: List<String>): String = providerIds.disti
 private fun normalize(text: String): String = Normalizer.normalize(text, Normalizer.Form.NFD)
     .replace("\\p{M}+".toRegex(), "")
     .lowercase(Locale.forLanguageTag("hu-HU"))
-
-
-@Composable
-private fun NetworkSettingsDialog(enabled: Boolean, onChanged: (Boolean) -> Unit, onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.volan_settings)) },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text(stringResource(R.string.volan_local_scope))
-                Row(Modifier.fillMaxWidth().heightIn(min = 64.dp)
-                    .toggleable(value = enabled, role = Role.Switch, onValueChange = onChanged)
-                    .padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(stringResource(R.string.volan_nationwide), Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
-                    Switch(checked = enabled, onCheckedChange = null)
-                }
-                Text(stringResource(R.string.volan_nationwide_hint), style = MaterialTheme.typography.bodyMedium)
-            }
-        },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.ui_close)) } },
-    )
-}
-
-@Composable
-private fun EmmaRouteDetails(state: UiState, route: TransitRoute) {
-    val uri = LocalUriHandler.current
-    val vehicles = state.vehicles.filter { it.routeId == route.id }
-    LazyColumn(contentPadding = PaddingValues(22.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        item {
-            Text(route.name, style = MaterialTheme.typography.headlineSmall)
-            Text(stringResource(R.string.volan_route_hint), Modifier.padding(top = 12.dp))
-        }
-        item {
-            route.sourceUrl?.let { url ->
-                Button(onClick = { runCatching { uri.openUri(url) } }) { Text(stringResource(R.string.volan_timetable_link)) }
-            }
-        }
-        if (vehicles.isEmpty()) item { Text(stringResource(R.string.volan_no_route_positions)) }
-        items(vehicles, key = { it.id }) { vehicle ->
-            Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(16.dp)) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(vehicle.registration.orEmpty(), style = MaterialTheme.typography.titleMedium)
-                    Text(vehicle.destination.orEmpty())
-                    Text(stringResource(R.string.volan_observation_time, clockFormat.format(vehicle.observedAt)), style = MaterialTheme.typography.labelMedium)
-                }
-            }
-        }
-    }
-}

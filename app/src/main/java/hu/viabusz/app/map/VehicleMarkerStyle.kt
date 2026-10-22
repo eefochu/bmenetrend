@@ -15,11 +15,12 @@ enum class VehicleMarkerStyle {
         TRAIN -> R.drawable.vehicle_train
     }
     companion object {
-        fun forVehicle(vehicle: Vehicle): VehicleMarkerStyle = when (vehicle.transportMode) {
+        fun forVehicle(vehicle: Vehicle): VehicleMarkerStyle = forTransport(vehicle.providerId, vehicle.transportMode)
+        fun forTransport(providerId: String, mode: String?): VehicleMarkerStyle = when (mode) {
             "TROLLEYBUS" -> TROLLEY
             "TRAM" -> TRAM
             "RAIL", "TRAIN", "SUBWAY", "SUBURBAN_RAILWAY", "TRAMTRAIN" -> TRAIN
-            else -> when (vehicle.providerId) {
+            else -> when (providerId) {
                 "volan" -> VOLAN_BUS
                 "viabusz" -> VIABUSZ_BUS
                 else -> BKK_BUS

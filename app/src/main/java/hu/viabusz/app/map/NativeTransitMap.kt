@@ -7,7 +7,9 @@ import android.graphics.RectF
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.PointF
 import androidx.compose.runtime.*
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
@@ -27,12 +29,24 @@ import org.maplibre.android.MapLibre
 import org.maplibre.android.annotations.Icon
 import org.maplibre.android.annotations.IconFactory
 import org.maplibre.android.annotations.MarkerOptions
+import org.maplibre.android.annotations.PolylineOptions
 import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.camera.CameraUpdateFactory
+import org.maplibre.android.geometry.LatLngBounds
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapView
+import org.maplibre.android.style.sources.GeoJsonSource
+import org.maplibre.geojson.Feature
+import org.maplibre.geojson.FeatureCollection
+import org.maplibre.geojson.LineString
+import org.maplibre.geojson.Point
 import org.maplibre.android.maps.Style
+import org.maplibre.android.style.layers.FillLayer
+import org.maplibre.android.style.layers.LineLayer
+import org.maplibre.android.style.layers.BackgroundLayer
+import org.maplibre.android.style.layers.SymbolLayer
+import org.maplibre.android.style.layers.PropertyFactory
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
@@ -52,7 +66,13 @@ fun NativeTransitMap(
     onMapZoomChanged: (Double) -> Unit = {},
     onVehicleSelected: (String) -> Unit = {},
     selectedVehicle: Vehicle? = null,
+    routeGeometry: List<GeoPoint> = emptyList(),
+    routeStops: List<TransitStop> = emptyList(),
+    routeColor: Int = 0xFF199DCF.toInt(),
+    fitRouteRequest: Int = 0,
 ) {
+    val darkTheme = isSystemInDarkTheme()
+    val styleUri = if (darkTheme) "https://tiles.openfreemap.org/styles/dark" else "https://tiles.openfreemap.org/styles/positron"
     val context = LocalContext.current
     val owner = LocalLifecycleOwner.current
     val onSelect by rememberUpdatedState(onStopSelected)
@@ -114,13 +134,6 @@ fun NativeTransitMap(
                 onZoom(ready.cameraPosition.zoom)
             }
             ready.setMaxZoomPreference(19.0)
-            ready.setStyle(Style.Builder().fromUri("https://tiles.openfreemap.org/styles/positron")) {
-                styleLoaded = true
-                onError(null)
-                val bounds = ready.projection.visibleRegion.latLngBounds
-                viewport = MapBounds(bounds.longitudeWest, bounds.latitudeSouth, bounds.longitudeEast, bounds.latitudeNorth)
-                onZoom(ready.cameraPosition.zoom)
-            }
             ready.setOnMarkerClickListener { marker ->
                 val vehicle = markerVehicles[marker.id]
                 if (vehicle != null) {
@@ -142,22 +155,95 @@ fun NativeTransitMap(
             mapView.onDestroy()
         }
     }
-    // A failed style request is retried when connectivity returns, only in the foreground.
-    LaunchedEffect(map, owner) {
+    // Theme changes reload only the basemap, retaining camera and current selections.
+    // Failed loads retry in the foreground using the currently selected theme.
+    LaunchedEffect(map, owner, styleUri) {
         val ready = map ?: return@LaunchedEffect
-        owner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            while (isActive) {
-                delay(30_000)
-                if (!styleLoaded) ready.setStyle(Style.Builder().fromUri("https://tiles.openfreemap.org/styles/positron")) {
-                    styleLoaded = true
-                    onError(null)
+        var active = true
+        styleLoaded = false
+        try {
+            owner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                fun loadStyle() {
+                    ready.setStyle(Style.Builder().fromUri(styleUri)) { loadedStyle ->
+                        if (active) {
+                            if (darkTheme) loadedStyle.layers.forEach { layer ->
+                                when (layer) {
+                                    is BackgroundLayer -> layer.setProperties(PropertyFactory.backgroundColor("#101823"))
+                                    is FillLayer -> when (layer.id) {
+                                        "water" -> layer.setProperties(PropertyFactory.fillColor("#173E59"))
+                                        "building" -> layer.setProperties(PropertyFactory.fillColor("#293545"))
+                                        "landuse_residential" -> layer.setProperties(PropertyFactory.fillColor("#17212C"))
+                                        "landcover_wood", "landuse_park" -> layer.setProperties(PropertyFactory.fillColor("#1C352C"))
+                                    }
+                                    is LineLayer -> {
+                                        val color = when {
+                                            layer.id == "waterway" -> "#2E6D90"
+                                            layer.id == "highway_minor" -> "#43566D"
+                                            layer.id == "highway_major_inner" -> "#687F99"
+                                            layer.id == "highway_motorway_inner" -> "#AA8C68"
+                                            layer.id.endsWith("_casing") -> "#29394B"
+                                            layer.id.startsWith("railway") -> "#786C87"
+                                            else -> null
+                                        }
+                                        color?.let { layer.setProperties(PropertyFactory.lineColor(it)) }
+                                    }
+                                }
+                            }
+                            if (darkTheme) loadedStyle.layers.filterIsInstance<SymbolLayer>()
+                                .filter { it.id.startsWith("place_") || it.id.startsWith("highway_name_") || it.id == "water_name" }
+                                .forEach { it.setProperties(
+                                    PropertyFactory.textColor("#B9C2D0"),
+                                    PropertyFactory.textHaloColor("#11161D"),
+                                    PropertyFactory.textHaloWidth(1f),
+                                ) }
+                            styleLoaded = true
+                            onError(null)
+                            val bounds = ready.projection.visibleRegion.latLngBounds
+                            viewport = MapBounds(bounds.longitudeWest, bounds.latitudeSouth, bounds.longitudeEast, bounds.latitudeNorth)
+                            onZoom(ready.cameraPosition.zoom)
+                        }
+                    }
+                }
+                loadStyle()
+                while (isActive) {
+                    delay(30_000)
+                    if (!styleLoaded) loadStyle()
                 }
             }
+        } finally { active = false }
+    }
+    LaunchedEffect(map, styleLoaded, routeGeometry, routeColor) {
+        val ready = map ?: return@LaunchedEffect
+        if (!styleLoaded) return@LaunchedEffect
+        val style = ready.style ?: return@LaunchedEffect
+        val features = if (routeGeometry.size < 2) emptyArray() else arrayOf(Feature.fromGeometry(
+            LineString.fromLngLats(routeGeometry.map { Point.fromLngLat(it.lon, it.lat) })))
+        val collection = FeatureCollection.fromFeatures(features)
+        val source = style.getSourceAs<GeoJsonSource>("selected-line")
+        if (source != null) source.setGeoJson(collection) else {
+            style.addSource(GeoJsonSource("selected-line", collection))
+            val casing = LineLayer("selected-line-casing", "selected-line").withProperties(
+                PropertyFactory.lineColor(if (darkTheme) "#17212D" else "#FFFFFF"), PropertyFactory.lineWidth(8f),
+                PropertyFactory.lineCap("round"), PropertyFactory.lineJoin("round"))
+            val line = LineLayer("selected-line-stroke", "selected-line").withProperties(
+                PropertyFactory.lineColor(routeColor), PropertyFactory.lineWidth(5f),
+                PropertyFactory.lineCap("round"), PropertyFactory.lineJoin("round"))
+            val labelLayer = style.layers.firstOrNull { it is SymbolLayer }?.id
+            if (labelLayer != null) style.addLayerBelow(casing, labelLayer) else style.addLayer(casing)
+            style.addLayerAbove(line, "selected-line-casing")
+        }
+        style.getLayerAs<LineLayer>("selected-line-stroke")?.setProperties(PropertyFactory.lineColor(routeColor))
+    }
+    LaunchedEffect(map, styleLoaded, fitRouteRequest) {
+        val ready = map ?: return@LaunchedEffect
+        if (styleLoaded && fitRouteRequest > 0 && routeGeometry.size >= 2) {
+            val bounds = LatLngBounds.Builder().includes(routeGeometry.map { LatLng(it.lat, it.lon) }).build()
+            ready.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, (40 * context.resources.displayMetrics.density).toInt()), 650)
         }
     }
     AndroidView(factory = { mapView }, modifier = modifier)
 
-    LaunchedEffect(map, styleLoaded, viewport, network, additionalStops, vehicles, selectedVehicle?.id, selectedStopId, userLocation, cameraRequest, bottomPaddingPx) {
+    LaunchedEffect(map, styleLoaded, viewport, network, additionalStops, vehicles, routeStops, routeColor, selectedVehicle?.id, selectedStopId, userLocation, cameraRequest, bottomPaddingPx) {
         val nativeMap = map ?: return@LaunchedEffect
         if (!styleLoaded) return@LaunchedEffect
         nativeMap.setPadding(0, 0, 0, bottomPaddingPx)
@@ -168,9 +254,10 @@ fun NativeTransitMap(
         if (iconCache.size > 256) iconCache.clear()
         val zoom = nativeMap.cameraPosition.zoom
         val density = context.resources.displayMetrics.density
-        fun dotIcon(provider: String, selected: Boolean = false, location: Boolean = false): Icon {
-            val sizeDp = if (location) 18 else if (selected) { if (zoom >= 14) 32 else 16 } else if (zoom >= 14) 22 else 6
-            val key = "dot-$provider-$sizeDp-$selected-$location"
+        val lineStopIds = routeStops.map { it.id }.toSet()
+        fun dotIcon(provider: String, selected: Boolean = false, location: Boolean = false, onLine: Boolean = false): Icon {
+            val sizeDp = if (location) 18 else if (selected) { if (zoom >= 14) 32 else if (zoom >= 12.5) 28 else 16 } else if (zoom >= 14) 22 else if (zoom >= 12.5) 16 else 6
+            val key = "dot-$provider-$sizeDp-$selected-$location-$onLine-$routeColor"
             return iconCache.getOrPut(key) {
                 val size = (sizeDp * density).toInt().coerceAtLeast(1)
                 val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
@@ -178,16 +265,16 @@ fun NativeTransitMap(
                 val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.WHITE }
                 val radius = size / 2f
                 canvas.drawCircle(radius, radius, radius, paint)
-                paint.color = if (location) android.graphics.Color.rgb(53, 109, 219) else when (provider) {
+                paint.color = if (onLine) routeColor else if (location) android.graphics.Color.rgb(53, 109, 219) else when (provider) {
                     "volan" -> android.graphics.Color.rgb(249, 185, 0)
                     "bkk" -> android.graphics.Color.rgb(25, 157, 207)
                     "kanyargo" -> android.graphics.Color.rgb(103, 80, 164)
                     "homm" -> android.graphics.Color.rgb(191, 87, 0)
                     else -> android.graphics.Color.rgb(64, 87, 106)
                 }
-                val border = if (zoom >= 14 && !location) 2 * density else density
+                val border = if (zoom >= 12.5 && !location) 2 * density else density
                 canvas.drawCircle(radius, radius, (radius - border).coerceAtLeast(1f), paint)
-                if (zoom >= 14 && !selected && !location) {
+                if (zoom >= 12.5 && !selected && !location) {
                     paint.color = android.graphics.Color.WHITE
                     canvas.drawCircle(radius, radius, size / 5f, paint)
                 }
@@ -229,7 +316,23 @@ fun NativeTransitMap(
                 IconFactory.getInstance(context).fromBitmap(bitmap)
             }
         }
-        StopMapClustering.groups(stops, viewport, nativeMap.cameraPosition.zoom).forEach { group ->
+        val stopGroups = StopMapClustering.groups(stops, viewport, zoom)
+        val detailLayout = if (zoom >= StopMapClustering.DETAIL_ZOOM) StopMarkerLayout.layout(
+            stopGroups.flatten().map { stop ->
+                val point = nativeMap.projection.toScreenLocation(LatLng(stop.position.lat, stop.position.lon))
+                StopMarkerLayout.Node(stop, point.x.toDouble(), point.y.toDouble())
+            }, density.toDouble()
+        ) else emptyList()
+        fun screenLocation(x: Double, y: Double) = nativeMap.projection.fromScreenLocation(PointF(x.toFloat(), y.toFloat()))
+        detailLayout.filter { it.members.size > 1 }.forEach { group ->
+            val points = group.members.map { screenLocation(it.x, it.y) }
+            nativeMap.addPolyline(PolylineOptions().addAll(points).width(6f)
+                .color(if (darkTheme) android.graphics.Color.rgb(21, 27, 36) else android.graphics.Color.WHITE))
+            nativeMap.addPolyline(PolylineOptions().addAll(points).width(2.5f)
+                .color(if (darkTheme) android.graphics.Color.rgb(171, 184, 198) else android.graphics.Color.rgb(91, 111, 130)))
+        }
+        val placements = detailLayout.flatMap { it.members }.associateBy { it.stop.id }
+        stopGroups.forEach { group ->
             if (group.size > 1) {
                 val center = LatLng(group.map { it.position.lat }.average(), group.map { it.position.lon }.average())
                 val marker = nativeMap.addMarker(MarkerOptions().position(center)
@@ -240,10 +343,13 @@ fun NativeTransitMap(
                 val stop = group.single()
                 val selected = stop.id == selectedStopId
                 val provider = if (stop.providerIds.size > 1) "shared" else stop.providerId
-                val marker = nativeMap.addMarker(MarkerOptions().position(LatLng(stop.position.lat, stop.position.lon))
+                val placement = placements[stop.id]
+                val displayPosition = placement?.let { screenLocation(it.x, it.y) }
+                    ?: LatLng(stop.position.lat, stop.position.lon)
+                val marker = nativeMap.addMarker(MarkerOptions().position(displayPosition)
                     .title(stop.name).snippet(stop.platformCode?.let { context.getString(R.string.emma_platform, it) }
                         ?: stop.id.takeIf { it.startsWith("emma:") }?.let { context.getString(R.string.emma_stop_code, it.substringAfterLast(":")) })
-                    .icon(dotIcon(provider, selected)))
+                    .icon(dotIcon(provider, selected, onLine = stop.id in lineStopIds)))
                 markerStops[marker.id] = stop.id
             }
         }

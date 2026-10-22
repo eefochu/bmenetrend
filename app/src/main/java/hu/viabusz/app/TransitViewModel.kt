@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import hu.viabusz.app.data.*
+import hu.viabusz.app.ui.AccentColor
 import hu.viabusz.app.ui.UiState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.CancellationException
@@ -27,10 +28,16 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private val preferences = application.getSharedPreferences("viabusz", 0)
     private val emmaRepository = EmmaRepository(application)
     private val stopsRepository = EmmaStopsRepository(application)
+    private val linesRepository = EmmaLinesRepository(application)
+    private var lineCatalogue = emptyList<TransitRoute>()
+    private var lineCatalogueFailed = false
+    private val lineLoadedAt = mutableMapOf<String, Instant>()
     private val journeyClient = EmmaGraphqlClient()
     private var journeyJob: Job? = null
     private var journeyKey: Pair<String, String?>? = null
     private var journeyGeneration = 0
+    private var lineJob: Job? = null
+    private var lineGeneration = 0
     private val boardMutex = Mutex()
     private var board: EmmaStopsParser.Board? = null
     private var boardJob: Job? = null
@@ -45,6 +52,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         emmaRoutes = emmaRepository.catalogue,
         selectedStopId = initialNetwork.stops.firstOrNull { it.id == "1" }?.id ?: initialNetwork.stops.firstOrNull()?.id,
         favorites = preferences.getStringSet("favorites", emptySet())?.map(SharedStops::canonicalId)?.toSet().orEmpty(),
+        customAccentArgb = preferences.getInt("custom_accent_argb", 0xFF6750A4.toInt()),
+        accentColor = AccentColor.fromKey(preferences.getString("accent_color", "system")),
         nationwideNetwork = preferences.getBoolean("emma_nationwide", true),
         windowMinutes = preferences.getInt("window", 60).takeIf { it in listOf(30, 60, 120) } ?: 60,
     ))
@@ -73,6 +82,12 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             while (isActive) {
                 refreshEmmaData()
                 delay(5_000)
+            }
+        }
+        launch {
+            while (isActive) {
+                refreshLineCatalogue()
+                delay(if (lineCatalogueFailed) 60_000 else 3_600_000)
             }
         }
         launch {
@@ -184,11 +199,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             val vehicles = (snapshot?.vehicles.orEmpty() + emmaVehicles).filter {
                 Duration.between(it.observedAt, now).seconds in -30..180
             }
-            val emmaCount = vehicles.count { it.providerId in setOf("volan", "bkk") }
             val emmaMessage = when {
-                emma?.messageResource == R.plurals.volan_positions -> if (emmaCount == 0)
-                    getApplication<Application>().getString(R.string.volan_no_positions)
-                else getApplication<Application>().resources.getQuantityString(R.plurals.volan_positions, emmaCount, emmaCount)
+                emma?.messageResource == R.plurals.volan_positions -> null
                 emma != null -> getApplication<Application>().getString(emma.messageResource)
                 emmaFetchedAt == null -> getApplication<Application>().getString(R.string.volan_loading)
                 else -> getApplication<Application>().getString(R.string.volan_unavailable)
@@ -213,10 +225,10 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                     validBoard.limitReached -> getApplication<Application>().getString(R.string.emma_board_limit)
                     else -> null
                 },
-                departures = departures,
+                departures = current.boardingSelection?.let { filter -> departures.filter(filter::matches) } ?: departures,
                 vehicles = vehicles,
                 selectedVehicle = current.selectedVehicle?.let { selected -> vehicles.find { it.id == selected.id } ?: selected },
-                emmaRoutes = EmmaParser.routeCatalogue(vehicles.filter { it.providerId in setOf("volan", "bkk") }, (emmaRepository.catalogue + stopRoutes).distinctBy { it.id }),
+                emmaRoutes = EmmaParser.routeCatalogue(vehicles.filter { it.providerId in setOf("volan", "bkk") }, (stopRoutes + lineCatalogue + emmaRepository.catalogue).distinctBy { it.id }),
                 emmaStatus = emmaMessage,
                 // Route-less ETA signals must never be attached to a guessed bus route.
                 liveStopMinutes = snapshot?.arrivals.orEmpty()
@@ -274,6 +286,18 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 if (journeyGeneration == generation && journeyKey == key) mutableState.update { it.copy(vehicleJourneyLoading = false) }
             }
         }
+    }
+
+    fun setCustomAccentColor(argb: Int) {
+        val opaque = argb or 0xFF000000.toInt()
+        if (state.value.accentColor == AccentColor.CUSTOM && state.value.customAccentArgb == opaque) return
+        preferences.edit().putInt("custom_accent_argb", opaque).putString("accent_color", AccentColor.CUSTOM.key).apply()
+        mutableState.update { it.copy(accentColor = AccentColor.CUSTOM, customAccentArgb = opaque) }
+    }
+
+    fun setAccentColor(accent: AccentColor) {
+        preferences.edit().putString("accent_color", accent.key).apply()
+        mutableState.update { it.copy(accentColor = accent) }
     }
 
     fun setNationwideNetwork(enabled: Boolean) {
@@ -350,7 +374,76 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    private suspend fun refreshLineCatalogue() {
+        try {
+            val result = linesRepository.get()
+            lineCatalogue = result.routes
+            lineCatalogueFailed = result.stale
+            recalculate()
+        } catch (cancelled: CancellationException) { throw cancelled
+        } catch (_: Exception) { lineCatalogueFailed = true }
+    }
+
+    fun selectJourneyBoardingStop(id: String) {
+        val vehicle = state.value.selectedVehicle
+        val journey = state.value.vehicleJourney
+        if (vehicle?.routeId == null || journey == null || journey.patternCode == null || journey.tripId != vehicle.tripId || journey.stops.none { it.id == id }) {
+            selectStop(id); return
+        }
+        val pattern = LinePattern(journey.patternCode, setOf(journey.patternCode), journey.destination ?: vehicle.destination.orEmpty(), journey.stops, journey.geometry)
+        selectStop(id)
+        mutableState.update { it.copy(boardingSelection = BoardingSelection(vehicle.routeId, pattern.headsign, pattern)) }
+        recalculate()
+    }
+
+    fun loadLine(id: String, force: Boolean = false) {
+        if (!force && (state.value.loadingLineId == id || lineLoadedAt[id]?.let { Duration.between(it, Instant.now()).seconds in 0..599 } == true)) return
+        val route = state.value.routes.find { it.id == id } ?: return
+        if (route.providerId !in setOf("volan", "bkk")) return
+        val generation = ++lineGeneration
+        lineJob?.cancel()
+        mutableState.update { it.copy(loadingLineId = id, lineErrorId = null) }
+        lineJob = viewModelScope.launch {
+            try {
+                val text = journeyClient.execute(EmmaRouteParser.QUERY, org.json.JSONObject().put("id", id.substringAfter(":"))
+                    .put("date", LocalDate.now(budapest).format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE)))
+                val details = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { EmmaRouteParser.parse(text, id) }
+                if (lineGeneration == generation) {
+                    lineLoadedAt[id] = Instant.now()
+                    stopRoutes = (listOf(details.route.copy(name = if (details.route.name == details.route.number) route.name else details.route.name)) + stopRoutes.filterNot { it.id == id })
+                    mutableState.update { current ->
+                        val stops = current.emmaStops.associateBy { it.id }.toMutableMap()
+                        details.patterns.flatMap { it.stops }.forEach { stop -> if (stop.id !in stops) stops[stop.id] = stop }
+                        current.copy(lineDetails = current.lineDetails + (id to details), emmaStops = stops.values.toList())
+                    }
+                    recalculate()
+                }
+            } catch (cancelled: CancellationException) { throw cancelled
+            } catch (_: Exception) {
+                if (lineGeneration == generation) mutableState.update { it.copy(lineErrorId = id) }
+            } finally {
+                if (lineGeneration == generation) mutableState.update { it.copy(loadingLineId = null) }
+            }
+        }
+    }
+
+    fun selectBoardingStop(routeId: String, directionId: String, stopId: String) {
+        val route = state.value.routes.find { it.id == routeId } ?: return
+        val pattern = state.value.lineDetails[routeId]?.boardingPattern(directionId, stopId)
+        val local = route.directions.find { it.id == directionId }
+        if (pattern == null && local == null) return
+        if (stopId !in (pattern?.stops?.map { it.id } ?: local!!.stopIds)) return
+        selectStop(stopId)
+        mutableState.update { it.copy(boardingSelection = BoardingSelection(routeId, pattern?.headsign ?: local!!.name,
+            pattern = pattern, localDirectionId = local?.id)) }
+        recalculate()
+    }
+
+    fun clearBoardingSelection() { mutableState.update { it.copy(boardingSelection = null) }; recalculate() }
+    fun showWholeRoute() { mutableState.update { it.copy(fitRouteRequest = it.fitRouteRequest + 1) } }
+
     fun selectStop(id: String) {
+        mutableState.update { it.copy(boardingSelection = null) }
         closeVehicle()
         manualStop = true
         val selectedId = state.value.network?.let { SharedStops.resolve(it, id) } ?: SharedStops.canonicalId(id)
@@ -366,6 +459,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun useNearest() {
+        mutableState.update { it.copy(boardingSelection = null) }
         closeVehicle()
         manualStop = false
         state.value.nearestStopId?.let { id -> mutableState.update { it.copy(selectedStopId = id, cameraRequest = it.cameraRequest + 1) } }

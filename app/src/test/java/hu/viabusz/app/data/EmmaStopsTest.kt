@@ -53,6 +53,26 @@ class EmmaStopsTest {
         assertEquals(ArrivalKind.SCHEDULED, board.departures.single().kind)
         assertEquals(now.plusSeconds(100), board.departures.single().expectedAt)
     }
+    @Test fun perPatternBoardFlattensAllDirectionsWithSourceFeaturesAndAddedLiveServices() {
+        val first = time().apply { getJSONObject("trip").put("directionId", "0").put("wheelchairAccessible", "POSSIBLE").put("bikesAllowed", "ALLOWED") }
+        val added = time("hkir:added").put("scheduledDeparture", -1).put("realtimeState", "ADDED")
+        val root = JSONObject(response())
+        val stop = root.getJSONObject("data").getJSONObject("stop")
+        stop.remove("stoptimesWithoutPatterns")
+        stop.put("stoptimesForPatterns", JSONArray().put(JSONObject().put("pattern", JSONObject().put("code", "hkir:out"))
+            .put("stoptimes", JSONArray().put(first))).put(JSONObject().put("pattern", JSONObject().put("code", "hkir:in"))
+            .put("stoptimes", JSONArray().put(added))))
+        val board = EmmaStopsParser.board(root.toString(), id, now, 60)
+        assertEquals(2, board.departures.size)
+        assertEquals("hkir:out", board.departures.first().patternCode)
+        assertEquals("POSSIBLE", board.departures.first().wheelchairAccessible)
+        assertEquals("ALLOWED", board.departures.first().bikesAllowed)
+        val extra = board.departures.single { it.directionId == "hkir:added" }
+        assertNull(extra.scheduledAt)
+        assertEquals(ArrivalKind.LIVE, extra.kind)
+        assertEquals("ADDED", extra.realtimeState)
+        assertFalse(board.limitReached)
+    }
     @Test fun successfulEmptyBoardRemainsValidAndDoesNotInventDepartures() {
         val text = JSONObject(response()).apply { getJSONObject("data").getJSONObject("stop").put("routes", JSONArray()) }.toString()
         val board = EmmaStopsParser.board(text, id, now, 60)
@@ -73,6 +93,7 @@ class EmmaStopsTest {
         val broad = StopMapClustering.groups(stops, bounds, 8.0)
         assertEquals(1, broad.size)
         assertEquals(2, broad.single().size)
+        assertEquals(2, StopMapClustering.groups(stops, bounds, 13.0).size)
         assertEquals(2, StopMapClustering.groups(stops, bounds, 15.0).size)
         assertTrue(StopMapClustering.groups(stops, null, 8.0).isEmpty())
     }
