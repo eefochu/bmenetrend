@@ -390,6 +390,8 @@ private fun StopPanel(
     modifier: Modifier = Modifier,
 ) {
     val routeById = remember(state.network?.routes, state.emmaRoutes) { state.routes.associateBy { it.id } }
+    val boardingInfo = stop?.platformCode?.let { stringResource(R.string.emma_platform, it) }
+        ?: stop?.takeIf { it.id.startsWith("emma:") }?.let { stringResource(R.string.emma_stop_code, it.id.substringAfterLast(":")) }
     val timetableOnly = stop?.providerIds?.let { providers -> providers.isNotEmpty() && providers.all { it == "homm" } } == true
     Column(modifier) {
         Row(Modifier.fillMaxWidth().padding(start = 22.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -410,7 +412,7 @@ private fun StopPanel(
                 }
                 Text(stop?.name ?: stringResource(if (state.loading) R.string.ui_loading_stops else R.string.ui_select_stop), style = MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 5.dp))
                 if (stop != null) {
-                    Text(listOfNotNull(providerNames(stop.providerIds), stop.platformCode?.let { stringResource(R.string.emma_platform, it) }).joinToString(" · "), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 3.dp))
+                    Text(listOfNotNull(providerNames(stop.providerIds), boardingInfo).joinToString(" · "), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 3.dp))
                 }
             }
             if (stop != null) {
@@ -493,6 +495,7 @@ private fun StopPanel(
                     now = state.now,
                     providerId = routeById[departure.routeId]?.providerId ?: "viabusz",
                     route = routeById[departure.routeId],
+                    boardingInfo = boardingInfo,
                     onClick = { onDeparture(departure) },
                 )
                 if (index < state.departures.lastIndex) HorizontalDivider(Modifier.padding(horizontal = 22.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
@@ -538,7 +541,7 @@ private fun LiveStopSignal(minutes: List<Int>) {
 }
 
 @Composable
-private fun DepartureRow(departure: Departure, now: Instant, providerId: String, route: TransitRoute?, onClick: () -> Unit) {
+private fun DepartureRow(departure: Departure, now: Instant, providerId: String, route: TransitRoute?, boardingInfo: String?, onClick: () -> Unit) {
     val live = departure.kind == ArrivalKind.LIVE
     val minutes = ceil(Duration.between(now, departure.expectedAt).seconds / 60.0).toInt().coerceAtLeast(0)
     Row(
@@ -552,6 +555,7 @@ private fun DepartureRow(departure: Departure, now: Instant, providerId: String,
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text(departure.destination, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            boardingInfo?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                 Icon(if (live) Icons.Rounded.Sensors else Icons.Rounded.AccessTime, null, Modifier.size(13.dp), tint = if (live) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(stringResource(if (live) R.string.ui_live_arrival else R.string.ui_scheduled), style = MaterialTheme.typography.labelMedium, color = if (live) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)

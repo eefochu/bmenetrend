@@ -7,44 +7,49 @@ import org.junit.Test
 import kotlin.math.hypot
 
 class StopMarkerLayoutTest {
-    private fun node(id: String, name: String = "Budapest, Interchange M", lat: Double = 47.5,
-                     x: Double = 100.0, y: Double = 100.0, parent: String? = null) =
-        StopMarkerLayout.Node(TransitStop(id, name, GeoPoint(lat, 19.0), emptyList(), parentStationId = parent), x, y)
+    private fun node(id: String, x: Double = 100.0, y: Double = 100.0) =
+        StopMarkerLayout.Node(TransitStop(id, "Same stop", GeoPoint(47.5, 19.0), emptyList(), "bkk"), x, y)
 
-    @Test fun colocatedPlatformsStayDistinctAndSeparatelyReachable() {
-        val nodes = listOf(node("bus"), node("tram", name = "Interchange"), node("metro"))
-        val groups = StopMarkerLayout.layout(nodes, 1.0)
-        assertEquals(1, groups.size)
-        val places = groups.single().members
-        assertEquals(nodes.map { it.stop.id }.toSet(), places.map { it.stop.id }.toSet())
-        places.forEachIndexed { i, a -> places.drop(i + 1).forEach { b -> assertTrue(hypot(a.x - b.x, a.y - b.y) >= 38) } }
-        assertEquals(nodes.map { it.stop }.toSet(), places.map { it.stop }.toSet())
+    @Test fun everyPlatformStaysIndependentEvenWithIdenticalNamesAndCoordinates() {
+        val nodes = (0..24).map { node("platform-$it") }
+        val placed = StopMarkerLayout.layout(nodes, 1.0)
+        assertEquals(25, placed.size)
+        assertEquals(nodes.map { it.stop }.toSet(), placed.map { it.stop }.toSet())
+        placed.forEachIndexed { i, a -> placed.drop(i + 1).forEach { b ->
+            assertTrue(hypot(a.x - b.x, a.y - b.y) >= (a.sizePx + b.sizePx) / 2)
+        } }
+        assertTrue(placed.all { it.sizePx == 22.0 })
     }
 
-    @Test fun screenOverlapAloneDoesNotInventAnInterchange() {
-        val groups = StopMarkerLayout.layout(listOf(node("a", name = "First", lat = 47.5), node("b", name = "Second", lat = 47.501)), 1.0)
-        assertEquals(2, groups.size)
-        val (a, b) = groups.flatMap { it.members }
-        assertTrue(hypot(a.x - b.x, a.y - b.y) >= 38)
+    @Test fun isolatedPlatformsRemainExactlyAtTheirSourceProjection() {
+        val nodes = listOf(node("a", 30.0, 80.0), node("b", 300.0, 400.0))
+        val placed = StopMarkerLayout.layout(nodes, 2.0)
+        placed.forEachIndexed { i, p ->
+            assertEquals(nodes[i].x, p.x, 0.0); assertEquals(nodes[i].y, p.y, 0.0)
+            assertEquals(44.0, p.sizePx, 0.0)
+        }
     }
 
-    @Test fun matchingNamesElsewhereAndDistantPlatformsRemainIndependent() {
-        val groups = StopMarkerLayout.layout(listOf(node("a"), node("b", lat = 47.51), node("c", x = 500.0)), 1.0)
-        assertEquals(3, groups.size)
+    @Test fun nearbyPlatformsKeepNormalSizeAtEachZoomAndRemainSeparatelyTappable() {
+        val nodes = listOf(node("a"), node("b", x = 112.0))
+        listOf(16.0, 22.0).forEach { normalSize ->
+            val placed = StopMarkerLayout.layout(nodes, 1.0, normalSize)
+            assertTrue(placed.all { it.sizePx == normalSize })
+            assertEquals(nodes.map { it.stop }, placed.map { it.stop })
+            assertEquals(nodes.first().x, placed.first().x, 0.0)
+            assertTrue(hypot(placed[0].x - placed[1].x, placed[0].y - placed[1].y) >= normalSize)
+        }
     }
 
-    @Test fun crowdedInterchangesNeverHideEachOtherAndLayoutIsInputOrderIndependent() {
-        val nodes = (0..31).map { node("stop-$it") } + node("other", name = "Other", lat = 47.501)
-        val first = StopMarkerLayout.layout(nodes, 2.0)
-        assertEquals(first, StopMarkerLayout.layout(nodes.reversed(), 2.0))
-        val places = first.flatMap { it.members }
-        places.forEachIndexed { i, a -> places.drop(i + 1).forEach { b -> assertTrue(hypot(a.x - b.x, a.y - b.y) >= 76 - .01) } }
-        assertEquals(33, places.size)
+    @Test fun denseLayoutIsStableRegardlessOfFeedOrder() {
+        val nodes = (0..18).map { node("stop-$it", x = 100.0 + it % 3, y = 100.0 + it / 3) }
+        assertEquals(StopMarkerLayout.layout(nodes, 2.0), StopMarkerLayout.layout(nodes.reversed(), 2.0))
     }
 
-    @Test fun unoccupiedSingleStopKeepsItsOriginalPosition() {
-        val placed = StopMarkerLayout.layout(listOf(node("one", x = 53.0, y = 78.0)), 1.0).single().members.single()
-        assertEquals(53.0, placed.x, 0.0)
-        assertEquals(78.0, placed.y, 0.0)
+    @Test fun tramStopsAreYellowAndTrolleyStopsAreRed() {
+        assertEquals(0xFFFFD800.toInt(), StopMarkerLayout.color("bkk", "TRAM"))
+        assertEquals(0xFFE31B23.toInt(), StopMarkerLayout.color("bkk", "TROLLEYBUS"))
+        assertEquals(0xFF199DCF.toInt(), StopMarkerLayout.color("bkk", "BUS"))
+        assertEquals(0xFFF9B900.toInt(), StopMarkerLayout.color("volan", "COACH"))
     }
 }

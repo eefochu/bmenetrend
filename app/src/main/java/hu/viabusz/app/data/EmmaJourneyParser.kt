@@ -16,7 +16,7 @@ data class VehicleJourney(
 object EmmaJourneyParser {
     val QUERY = """query VehicleTrip(${'$'}id: String!) {
         trip(id:${'$'}id) { gtfsId tripHeadsign geometry pattern { code } route { gtfsId shortName longName mode }
-            stops { gtfsId name lat lon platformCode }
+            stops { gtfsId name lat lon vehicleMode platformCode parentStation { gtfsId } }
         }
     }""".trimIndent()
 
@@ -35,7 +35,8 @@ object EmmaJourneyParser {
             val longitude = row.getDouble("lon")
             require(latitude in 45.7..48.6 && longitude in 16.1..22.9) { "Invalid trip stop" }
             TransitStop("emma:$source", row.getString("name"), GeoPoint(latitude, longitude), emptyList(), provider,
-                sourceStopIds = listOf(source), platformCode = row.text("platformCode"))
+                sourceStopIds = listOf(source), platformCode = row.text("platformCode"), transportMode = row.text("vehicleMode") ?: route.text("mode"),
+                parentStationId = row.optJSONObject("parentStation").text("gtfsId")?.let { "emma:$it" })
         }
         // Repeated stop occurrences matter on loop routes, so keep their exact source order.
         return VehicleJourney(expectedTripId, route.text("shortName"), route.text("longName"), trip.text("tripHeadsign"), stops, runCatching { EmmaRouteParser.tripGeometry(trip.optJSONArray("geometry")) }.getOrDefault(emptyList()), trip.optJSONObject("pattern").text("code"))
