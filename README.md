@@ -41,6 +41,12 @@ A PDF-ben említett Vitamin-domb igénymegállóhoz nincs ellenőrzött térkép
 
 Részletes forrásleírás: [docs/ADATFORRAS.md](docs/ADATFORRAS.md) és [docs/KANYARGO.md](docs/KANYARGO.md).
 
+## Országos Volán és BKK az EMMA/MÁVPlusz rendszeréből
+
+A Volán-buszok országosan, a BKK buszai, villamosai, trolijai és metrójárművei Budapesten az **EMMA/MÁVPlusz GraphQL** adatforrásából jelennek meg. Közvetlen BKK API-t nem használunk. A Volán-jelölők sárgák, a BKK buszai világoskék, a trolik piros, a villamosok sárga közlekedési ikont kapnak. A járműnél a vonalszám, azonosító/rendszám, célállomás, sebesség és a forrásadat ideje olvasható. A régi vagy időbélyeg nélküli pozíciókat nem mutatjuk.
+
+Az **Országos hálózat** alapból bekapcsolt, és a teljes országot egy kérés tölti be; nincs térképrészlethez kötött nagyítási korlát. Kikapcsolva a Biatorbágyot, Pátyot és Budaörsöt érintő Volán-vonalak és a Budapesten belüli BKK-járművek maradnak. Az aktív országos vonalak kereshetők; az ellenőrzött 36 helyi Volán-vonal hivatalos menetrendje továbbra is megnyitható. A Volán- és BKK-megállók országosan kereshetők, térképen kiválaszthatók és kedvencekhez adhatók. A megállókat apró, számozatlan pontok jelzik; a járművek távolabbról is láthatók. Egy járműre koppintva megnyílik a vonalszámot, irányt, járműadatokat és az EMMA által közölt, sorrendezett megállólistát tartalmazó alsó kártya. A kiválasztott megálló indulási tábláját szintén az EMMA szolgáltatja; csak a valós idejűnek jelölt adatok kapnak élő jelzést. A megállólista helyben gyorsítótárazott. Vonatokat ez az integráció nem ad hozzá. Részletek: [VOLAN.md](docs/VOLAN.md).
+
 ## Fordítás és telepítés
 
 JDK 17, Android SDK Platform 36 és Build Tools 35.0.0 szükséges. Android Studio alatt ezt a projektmappát nyisd meg; a `local.properties` a helyi SDK elérési útját tartalmazza.
@@ -56,7 +62,7 @@ API-kulcs, fiók és saját szerver az alapfunkciókhoz nem kell.
 
 ## Adatvédelem és térkép
 
-A helyadat a készüléken szolgál a legközelebbi megálló kiszámítására, nem kerül a közlekedési adatforrásokhoz. Helyengedély nélkül a térkép, kereső és menetrend továbbra is működik. Nincs háttérbeli helyzetkövetés, analitika, reklám vagy bejelentkezés. A térképszolgáltató a megjelenített térképrészlet lekérését és a kapcsolat IP-címét megkapja.
+A készülék GPS-koordinátája helyben szolgál a legközelebbi megálló kiszámítására. Az EMMA-adatforrás minden alkalommal azonos országos határokat kap, nem a készülék helyét vagy az aktuális térképrészletet. Helyengedély nélkül a térkép, kereső és menetrend továbbra is működik. Nincs háttérbeli helyzetkövetés, analitika, reklám vagy bejelentkezés. A térképszolgáltató a megjelenített térképrészlet lekérését és a kapcsolat IP-címét megkapja.
 
 Térkép: [MapLibre Native](https://maplibre.org/maplibre-native/android/) és [OpenFreeMap](https://openfreemap.org/quick_start/), OpenStreetMap/OpenMapTiles adatokkal. Források: [ViaBusz](https://viabusz.biatorbagy.hu/) [KanyarGO](https://kanyargo.paty.hu/), [HOMM](https://homm.hu/helyi-kozlekedes/) és [Budaörs térképe](https://budaors.hu/terkep/megallok). A BMenetrend független, nem hivatalos kliens.
 

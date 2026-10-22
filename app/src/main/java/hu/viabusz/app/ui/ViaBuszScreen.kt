@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -46,6 +47,7 @@ import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.MyLocation
 import androidx.compose.material.icons.rounded.NearMe
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Sensors
 import androidx.compose.material.icons.rounded.WifiOff
@@ -63,6 +65,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -73,6 +76,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -104,6 +108,9 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.ceil
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.delay
 
 private val clockFormat = DateTimeFormatter.ofPattern("HH:mm", Locale.forLanguageTag("hu-HU"))
     .withZone(ZoneId.of("Europe/Budapest"))
@@ -118,12 +125,15 @@ fun ViaBuszScreen(
     onWindowChanged: (Int) -> Unit,
     onToggleFavorite: (String) -> Unit,
     onRecenter: () -> Unit = {},
+    onNationwideNetworkChanged: (Boolean) -> Unit = {},
+    onVehicleClosed: () -> Unit = {},
     mapContent: @Composable (Modifier, Int) -> Unit,
 ) {
     var searchOpen by rememberSaveable { mutableStateOf(false) }
     var query by rememberSaveable { mutableStateOf("") }
     var routeId by rememberSaveable { mutableStateOf<String?>(null) }
     var directionId by rememberSaveable { mutableStateOf<String?>(null) }
+    var showSettings by rememberSaveable { mutableStateOf(false) }
     var showInfo by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val sheetState = rememberBottomSheetScaffoldState(
@@ -132,8 +142,8 @@ fun ViaBuszScreen(
             skipHiddenState = false,
         ),
     )
-    val selectedStop = state.network?.stops?.firstOrNull { it.id == state.selectedStopId }
-    val selectedRoute = state.network?.routes?.firstOrNull { it.id == routeId }
+    val selectedStop = state.stops.firstOrNull { it.id == state.selectedStopId }
+    val selectedRoute = state.routes.firstOrNull { it.id == routeId }
     val selectedDirection = selectedRoute?.directions?.firstOrNull { it.id == directionId }
     val openSearch: () -> Unit = {
         query = ""
@@ -149,7 +159,7 @@ fun ViaBuszScreen(
         scope.launch { sheetState.bottomSheetState.partialExpand() }
     }
     val openDeparture: (Departure) -> Unit = { departure ->
-        state.network?.routes?.firstOrNull { it.id == departure.routeId }?.let { route ->
+        state.routes.firstOrNull { it.id == departure.routeId }?.let { route ->
             routeId = route.id
             directionId = route.directions.firstOrNull { it.id == departure.directionId }?.id
                 ?: route.directions.singleOrNull()?.id
@@ -163,9 +173,16 @@ fun ViaBuszScreen(
             else -> searchOpen = false
         }
     }
+    BackHandler(enabled = state.selectedVehicle != null && !searchOpen, onBack = onVehicleClosed)
     BackHandler(enabled = searchOpen, onBack = navigateBack)
+    LaunchedEffect(state.selectedVehicle?.id) {
+        if (state.selectedVehicle != null) {
+            searchOpen = false
+            sheetState.bottomSheetState.partialExpand()
+        }
+    }
     LaunchedEffect(state.selectedStopId, state.cameraRequest) {
-        if (state.selectedStopId != null) sheetState.bottomSheetState.partialExpand()
+        if (state.selectedVehicle == null && state.selectedStopId != null) sheetState.bottomSheetState.partialExpand()
     }
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -191,7 +208,13 @@ fun ViaBuszScreen(
                 sheetShadowElevation = 8.dp,
                 containerColor = Color.Transparent,
                 sheetContent = {
-                    StopPanel(
+                    if (state.selectedVehicle != null) VehiclePanel(
+                        state = state,
+                        onClose = onVehicleClosed,
+                        onRefresh = onRefresh,
+                        onStop = selectStop,
+                        modifier = Modifier.fillMaxWidth().fillMaxHeight(0.88f),
+                    ) else StopPanel(
                         state = state,
                         stop = selectedStop,
                         onRefresh = onRefresh,
@@ -219,6 +242,7 @@ fun ViaBuszScreen(
                         FloatingSearchBlob(
                             onSearch = openSearch,
                             onInfo = { showInfo = true },
+                            onSettings = { showSettings = true },
                         )
                         Row(
                             modifier = Modifier
@@ -316,12 +340,14 @@ fun ViaBuszScreen(
         }
     }
     if (showInfo) SourceDialog(onDismiss = { showInfo = false })
+    if (showSettings) NetworkSettingsDialog(state.nationwideNetwork, onNationwideNetworkChanged) { showSettings = false }
 }
 
 @Composable
 private fun FloatingSearchBlob(
     onSearch: () -> Unit,
     onInfo: () -> Unit,
+    onSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -362,6 +388,9 @@ private fun FloatingSearchBlob(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
+            }
+            IconButton(onClick = onSettings) {
+                Icon(Icons.Rounded.Settings, stringResource(R.string.volan_settings))
             }
             IconButton(onClick = onInfo) {
                 Icon(
@@ -406,7 +435,7 @@ private fun StopPanel(
                 }
                 Text(stop?.name ?: stringResource(if (state.loading) R.string.ui_loading_stops else R.string.ui_select_stop), style = MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 5.dp))
                 if (stop != null) {
-                    Text(providerNames(stop.providerIds), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 3.dp))
+                    Text(listOfNotNull(providerNames(stop.providerIds), stopLabel(stop)).joinToString(" · "), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 3.dp))
                 }
             }
             if (stop != null) {
@@ -441,7 +470,7 @@ private fun StopPanel(
                 )
             }
         }
-        if (state.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
+        if (state.loading || state.departureBoardLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
         else HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
         LazyColumn(
             modifier = Modifier.weight(1f),
@@ -450,6 +479,11 @@ private fun StopPanel(
             if (!state.error.isNullOrBlank()) {
                 item { Notice(state.error, Icons.Rounded.WifiOff, isError = true) }
             }
+            if (!state.emmaStatus.isNullOrBlank()) {
+                item { Notice(state.emmaStatus, Icons.Rounded.DirectionsBus) }
+            }
+            if (!state.stopStatus.isNullOrBlank()) item { Notice(state.stopStatus, Icons.Rounded.LocationOn) }
+            if (!state.departureStatus.isNullOrBlank()) item { Notice(state.departureStatus, Icons.Rounded.AccessTime) }
             if (stop == null && !state.loading) {
                 item {
                     EmptyState(stringResource(R.string.ui_pick_stop_title), stringResource(R.string.ui_pick_stop_body), Icons.Rounded.LocationOn)
@@ -461,14 +495,14 @@ private fun StopPanel(
             if (state.liveStopMinutes.isNotEmpty()) {
                 item { LiveStopSignal(state.liveStopMinutes) }
             }
-            if (stop != null && state.departures.isEmpty() && !state.loading) {
+            if (stop != null && state.departures.isEmpty() && !state.loading && !state.departureBoardLoading && !state.departureBoardUnavailable) {
                 item { EmptyState(stringResource(R.string.ui_no_departures_title), stringResource(R.string.ui_no_departures_body, state.windowMinutes), Icons.Rounded.AccessTime) }
             }
             itemsIndexed(state.departures) { index, departure ->
                 DepartureRow(
                     departure = departure,
                     now = state.now,
-                    providerId = state.network?.routes?.firstOrNull { it.id == departure.routeId }?.providerId ?: "viabusz",
+                    providerId = state.routes.firstOrNull { it.id == departure.routeId }?.providerId ?: "viabusz",
                     onClick = { onDeparture(departure) },
                 )
                 if (index < state.departures.lastIndex) HorizontalDivider(Modifier.padding(horizontal = 22.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
@@ -483,7 +517,7 @@ private fun StopPanel(
                 Column(Modifier.padding(horizontal = 22.dp, vertical = 15.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
                         if (timetableOnly) stringResource(R.string.ui_homm_schedule_only)
-                        else state.lastUpdated?.let { stringResource(R.string.ui_last_updated, clockFormat.format(it)) }
+                        else (if (stop?.id?.startsWith("emma:") == true) state.boardUpdatedAt else state.lastUpdated)?.let { stringResource(R.string.ui_last_updated, clockFormat.format(it)) }
                             ?: stringResource(if (state.loading) R.string.ui_loading_data else R.string.ui_no_live_update),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -524,7 +558,7 @@ private fun DepartureRow(departure: Departure, now: Instant, providerId: String,
         horizontalArrangement = Arrangement.spacedBy(13.dp),
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            RouteBadge(departure.routeNumber)
+            RouteBadge(departure.routeNumber, providerId)
             Text(providerName(providerId), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
@@ -573,15 +607,16 @@ private fun SearchAndRoutes(
                         modifier = Modifier.weight(1f).padding(end = 9.dp),
                     )
                 } else {
-                    RouteBadge(route.number)
+                    RouteBadge(route.number, route.providerId)
                     Column(Modifier.padding(start = 12.dp).weight(1f)) {
-                        Text(stringResource(if (direction == null) R.string.ui_choose_direction else R.string.ui_stops), style = MaterialTheme.typography.titleLarge)
+                        Text(if (route.providerId in setOf("volan", "bkk")) stringResource(R.string.ui_route_number, route.number) else stringResource(if (direction == null) R.string.ui_choose_direction else R.string.ui_stops), style = MaterialTheme.typography.titleLarge)
                         Text("${route.number} · ${providerName(route.providerId)}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
             when {
                 route == null -> SearchResults(state, query, onRoute, onStop)
+                route.providerId in setOf("volan", "bkk") -> EmmaRouteDetails(state, route)
                 direction == null -> DirectionList(route, onDirection)
                 else -> RouteStops(state, route, direction, onStop)
             }
@@ -593,21 +628,29 @@ private fun SearchAndRoutes(
 private fun SearchResults(state: UiState, query: String, onRoute: (String) -> Unit, onStop: (String) -> Unit) {
     val normalized = remember(query) { normalize(query.trim()) }
     if (normalized.isBlank()) return
-    val routes = state.network?.routes.orEmpty().filter { normalize("${it.number} ${it.name} ${it.providerId}").contains(normalized) }
-    val stops = state.network?.stops.orEmpty().filter { normalize("${it.name} ${it.aliases.joinToString(" ")}").contains(normalized) }
+    val routes = state.routes.filter { normalize("${it.number} ${it.name} ${it.providerId}").contains(normalized) }
+    var stopSearchLoading by remember(state.network, state.emmaStops, normalized) { mutableStateOf(true) }
+    val stops by produceState(emptyList<TransitStop>(), state.network, state.emmaStops, normalized) {
+        delay(150)
+        value = withContext(Dispatchers.Default) {
+            state.stops.filter { normalize("${it.name} ${it.aliases.joinToString(" ")} ${it.platformCode.orEmpty()} ${it.sourceStopIds.joinToString(" ")}").contains(normalized) }
+        }
+        stopSearchLoading = false
+    }
     val favorites = stops.filter { it.id in state.favorites }
     val otherStops = stops.filterNot { it.id in state.favorites }
     LazyColumn(contentPadding = PaddingValues(bottom = 32.dp)) {
-        if (state.loading && state.network == null) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
+        if (stopSearchLoading || !state.stopIndexLoaded && state.stopStatus == null) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
+        if (!state.stopStatus.isNullOrBlank()) item { Notice(state.stopStatus, Icons.Rounded.LocationOn) }
         if (routes.isNotEmpty()) {
-            item { SectionLabel(stringResource(R.string.ui_local_routes), stringResource(R.string.ui_directions_and_stops)) }
+            item { SectionLabel(stringResource(R.string.ui_local_routes), stringResource(if (routes.any { it.providerId in setOf("volan", "bkk") }) R.string.volan_route_results else R.string.ui_directions_and_stops)) }
             items(routes, key = { "route-${it.id}" }) { route ->
                 Row(
                     Modifier.fillMaxWidth().clickable { onRoute(route.id) }.padding(horizontal = 22.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
-                    RouteBadge(route.number)
+                    RouteBadge(route.number, route.providerId)
                     Column(Modifier.weight(1f)) {
                         Text("${stringResource(R.string.ui_route_number, route.number)} · ${providerName(route.providerId)}", style = MaterialTheme.typography.titleMedium)
                         Text(route.name, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -624,11 +667,15 @@ private fun SearchResults(state: UiState, query: String, onRoute: (String) -> Un
             item { SectionLabel(stringResource(R.string.ui_stops), pluralStringResource(R.plurals.ui_results_count, stops.size, stops.size)) }
             items(otherStops, key = { "stop-${it.id}" }) { StopSearchRow(it, state, false, onStop) }
         }
-        if (routes.isEmpty() && stops.isEmpty() && !state.loading) {
+        if (routes.isEmpty() && stops.isEmpty() && !state.loading && !stopSearchLoading && state.stopIndexLoaded) {
             item { EmptyState(stringResource(R.string.ui_no_results_title), stringResource(R.string.ui_no_results_body), Icons.Rounded.Search) }
         }
     }
 }
+
+@Composable
+private fun stopLabel(stop: TransitStop): String? = stop.platformCode?.let { stringResource(R.string.emma_platform, it) }
+    ?: stop.id.takeIf { it.startsWith("emma:") }?.let { stringResource(R.string.emma_stop_code, it.substringAfterLast(":")) }
 
 @Composable
 private fun StopSearchRow(stop: TransitStop, state: UiState, favorite: Boolean, onStop: (String) -> Unit) {
@@ -642,8 +689,8 @@ private fun StopSearchRow(stop: TransitStop, state: UiState, favorite: Boolean, 
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(stop.name, style = MaterialTheme.typography.titleMedium)
-            val numbers = stop.routeIds.map { id -> state.network?.routes?.find { it.id == id }?.number ?: id }.distinct()
-            Text("${providerNames(stop.providerIds)} · ${numbers.joinToString("  ·  ").ifBlank { stringResource(R.string.ui_local_stop) }}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            val numbers = stop.routeIds.map { id -> state.routes.find { it.id == id }?.number ?: id }.distinct()
+            Text("${providerNames(stop.providerIds)}${stopLabel(stop)?.let { " · $it" }.orEmpty()} · ${numbers.joinToString("  ·  ").ifBlank { stringResource(R.string.ui_stops) }}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Icon(Icons.AutoMirrored.Rounded.ArrowForward, null, Modifier.size(19.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
@@ -713,10 +760,10 @@ private fun RouteStops(state: UiState, route: TransitRoute, direction: RouteDire
 }
 
 @Composable
-private fun RouteBadge(number: String) {
-    Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.primaryContainer) {
+private fun RouteBadge(number: String, providerId: String = "viabusz") {
+    Surface(shape = RoundedCornerShape(12.dp), color = if (providerId == "volan") Color(0xFFFFCC00) else MaterialTheme.colorScheme.primaryContainer) {
         Box(Modifier.size(width = 51.dp, height = 43.dp), contentAlignment = Alignment.Center) {
-            Text(number, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onPrimaryContainer, maxLines = 1)
+            Text(number, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = if (providerId == "volan") Color(0xFF262100) else MaterialTheme.colorScheme.onPrimaryContainer, maxLines = 1)
         }
     }
 }
@@ -762,6 +809,10 @@ private fun SourceDialog(onDismiss: () -> Unit) {
                 Text(stringResource(R.string.ui_about_description))
                 Text(stringResource(R.string.ui_about_live_data))
                 Text(stringResource(R.string.ui_about_homm_data))
+                Text(stringResource(R.string.volan_about))
+                TextButton(onClick = { runCatching { uriHandler.openUri("https://mavplusz.hu/") } }) {
+                    Text(stringResource(R.string.volan_source_link))
+                }
                 Text(stringResource(R.string.ui_about_location))
                 TextButton(onClick = { runCatching { uriHandler.openUri("https://viabusz.biatorbagy.hu/") } }) {
                     Text(stringResource(R.string.ui_viabusz_website))
@@ -785,6 +836,8 @@ private fun providerName(providerId: String): String = stringResource(
     when (providerId) {
         "kanyargo" -> R.string.ui_provider_kanyargo
         "homm" -> R.string.ui_provider_homm
+        "volan" -> R.string.volan_provider
+        "bkk" -> R.string.emma_bkk_provider
         else -> R.string.ui_provider_viabusz
     },
 )
@@ -795,3 +848,53 @@ private fun providerNames(providerIds: List<String>): String = providerIds.disti
 private fun normalize(text: String): String = Normalizer.normalize(text, Normalizer.Form.NFD)
     .replace("\\p{M}+".toRegex(), "")
     .lowercase(Locale.forLanguageTag("hu-HU"))
+
+
+@Composable
+private fun NetworkSettingsDialog(enabled: Boolean, onChanged: (Boolean) -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.volan_settings)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text(stringResource(R.string.volan_local_scope))
+                Row(Modifier.fillMaxWidth().heightIn(min = 64.dp)
+                    .toggleable(value = enabled, role = Role.Switch, onValueChange = onChanged)
+                    .padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(stringResource(R.string.volan_nationwide), Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+                    Switch(checked = enabled, onCheckedChange = null)
+                }
+                Text(stringResource(R.string.volan_nationwide_hint), style = MaterialTheme.typography.bodyMedium)
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.ui_close)) } },
+    )
+}
+
+@Composable
+private fun EmmaRouteDetails(state: UiState, route: TransitRoute) {
+    val uri = LocalUriHandler.current
+    val vehicles = state.vehicles.filter { it.routeId == route.id }
+    LazyColumn(contentPadding = PaddingValues(22.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        item {
+            Text(route.name, style = MaterialTheme.typography.headlineSmall)
+            Text(stringResource(R.string.volan_route_hint), Modifier.padding(top = 12.dp))
+        }
+        item {
+            route.sourceUrl?.let { url ->
+                Button(onClick = { runCatching { uri.openUri(url) } }) { Text(stringResource(R.string.volan_timetable_link)) }
+            }
+        }
+        if (vehicles.isEmpty()) item { Text(stringResource(R.string.volan_no_route_positions)) }
+        items(vehicles, key = { it.id }) { vehicle ->
+            Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(16.dp)) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(vehicle.registration.orEmpty(), style = MaterialTheme.typography.titleMedium)
+                    Text(vehicle.destination.orEmpty())
+                    Text(stringResource(R.string.volan_observation_time, clockFormat.format(vehicle.observedAt)), style = MaterialTheme.typography.labelMedium)
+                }
+            }
+        }
+    }
+}

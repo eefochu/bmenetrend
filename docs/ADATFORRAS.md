@@ -1,6 +1,6 @@
 # BMenetrend adatforrások és tényleges korlátok
 
-A 0.3-as kiadás **183 térképi megállót és 15 járatjelzést** tartalmaz. A ViaBusz/KanyarGO 111 forrásazonosítójából az ellenőrzött közös megállók összevonása után 105 térképi pont marad; ehhez adódik a HOMM 78 megállója. A szolgáltatói menetek és az indulási/érkezési szerepek megmaradnak.
+A helyi hálózat **183 térképi megállót és 15 járatjelzést** tartalmaz; ehhez adódik az EMMA országos Volán/BKK-megállólistája. A ViaBusz/KanyarGO 111 forrásazonosítójából az ellenőrzött közös megállók összevonása után 105 térképi pont marad; ehhez adódik a HOMM 78 megállója. A szolgáltatói menetek és az indulási/érkezési szerepek megmaradnak.
 
 | Szolgáltató | Tanítási menetek | Szüneti menetek | Élő adat |
 | --- | --- | --- | --- |
@@ -12,7 +12,7 @@ A menetrendeket a hivatalos PDF-ek vizuálisan ellenőrzött, reprodukálható i
 
 Részletek és források: [ViaBusz](VIABUSZ.md), [KanyarGO](KANYARGO.md), [HOMM](HOMM.md), [közös megállók](KOZOS-MEGALLOK.md).
 
-A KanyarGO hat szerződéses iskolai szakaszát a felület megjelöli. A friss GPS-pozíciók élők, a járatszámos indulások minden szolgáltatónál menetrendiek. Nincs kitalált GPS→járat összerendelés vagy HOMM-járműfeed.
+A KanyarGO hat szerződéses iskolai szakaszát a felület megjelöli. A friss GPS-pozíciók élők, a járatszámos indulások a helyi ViaBusz/KanyarGO/HOMM-hálózaton menetrendiek. Nincs kitalált GPS→járat összerendelés vagy HOMM-járműfeed.
 
 Az alábbi technikai rész a ViaBusz eredeti HTML- és élő forrásának feldolgozását dokumentálja. A HTML menettáblája összehasonlítási referencia maradt; a 0.3-as kliens **a PDF-menetrendeket használja** a tanítási és tanszüneti különbség miatt.
 
@@ -69,3 +69,9 @@ A repository naponta ellenőrzi a három szolgáltató menetrendoldalait és PDF
 ## Naptár karbantartása
 
 A `ServiceCalendar.kt` a fix és húsvéthoz kötött munkaszüneti napokat számolja; csak a ténylegesen ellenőrzött évek éves transzfereit tárolja. A 2027. évi munkarendről szóló kihirdetett rendeletet 2026-10-22-én az NJT, kormany.hu és Magyar Közlöny forrásain végzett kereséssel nem sikerült ellenőrizni. Nem tételezzük fel, hogy a 2026-os áthelyezések ismétlődnek. A 2027-es húsvéti ünnepek számítása tesztelt, de az indulási visszaszámlálás addig nem aktív arra az évre, amíg az éves rendelet alapján a `reviewedYears` táblát nem bővítik. Az app ezt külön, az évszámmal jelzi. Ez kiadás előtti karbantartási feladat; a megállókeresés és GPS-követés ettől függetlenül működik.
+
+## Országos EMMA/MÁVPlusz járműpozíciók
+
+A Volán és a BKK élő járműpozícióinak forrása az EMMA/MÁVPlusz GraphQL rendszere. Közvetlen BKK API-t és menetrendek.hu pozíciófeedet nem használunk. Az országos lekérés alapból bekapcsolt; a frissebb megfigyeléseket, a hibatűrést és az adatkorlátokat a [VOLAN.md](VOLAN.md) írja le. Ez nem változtatja meg a ViaBusz, KanyarGO és HOMM meglévő megállóhelyi menetrendi forrásait.
+
+Az EMMA országos megállólistája helyben gyorsítótárazott. A kiválasztott megálló indulási táblája ugyanebből a GraphQL API-ból érkezik; az élő és menetrendi indulásokat a forrás valós idejű jelölése alapján különböztetjük meg. A megállókat számozatlan pontok, a távolabbról is látható járműveket közlekedési ikonok jelzik. A kiválasztott járműhöz az EMMA trip-azonosítója alapján tölti be az app a menet tényleges megállólistáját.

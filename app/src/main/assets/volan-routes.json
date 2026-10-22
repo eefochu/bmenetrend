@@ -1,0 +1,338 @@
+{
+  "source": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/telepulesek-szerinti-menetrendek",
+  "reviewedOn": "2026-10-22",
+  "routes": [
+    {
+      "number": "721",
+      "name": "Érd-Sóskút-Biatorbágy, BIT",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2721",
+      "domainCode": 2721,
+      "towns": [
+        "biatorbágy"
+      ]
+    },
+    {
+      "number": "724",
+      "name": "Budapest - M7 - Sóskút - Pusztazámor",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2724",
+      "domainCode": 2724,
+      "towns": [
+        "budaörs"
+      ]
+    },
+    {
+      "number": "731",
+      "name": "Budapest - Bp., Sasadi út - M7 - Érd, Riminyáki u. - Érd",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2731",
+      "domainCode": 2731,
+      "towns": [
+        "budaörs"
+      ]
+    },
+    {
+      "number": "732",
+      "name": "Budapest / Érd, Bem tér - Érd, Iparos u. - Érd, Bem tér - Érd, aut. áll. / Budap",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2732",
+      "domainCode": 2732,
+      "towns": [
+        "budaörs"
+      ]
+    },
+    {
+      "number": "733",
+      "name": "Budapest / Érd, Bem tér - Érd, Iparos u. - Érd, Bem tér - Érd, aut. áll. / Budap",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2732",
+      "domainCode": 2732,
+      "towns": [
+        "budaörs"
+      ]
+    },
+    {
+      "number": "734",
+      "name": "Budapest - M7 - Érd, Lőcsei u. - Érd",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2734",
+      "domainCode": 2734,
+      "towns": [
+        "budaörs"
+      ]
+    },
+    {
+      "number": "735",
+      "name": "Budapest – M7 – Érd, Riminyáki utca – Érd",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2735",
+      "domainCode": 2735,
+      "towns": [
+        "budaörs"
+      ]
+    },
+    {
+      "number": "736",
+      "name": "Budapest - M7 - Érd, Ürmös u. - Érd",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2736",
+      "domainCode": 2736,
+      "towns": [
+        "budaörs"
+      ]
+    },
+    {
+      "number": "755",
+      "name": "Budaörs - Törökbálint - Érd",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2751",
+      "domainCode": 2751,
+      "towns": [
+        "budaörs"
+      ]
+    },
+    {
+      "number": "756",
+      "name": "Budapest - Budaörs - Törökbálint - Érd - Százhalombatta",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2752",
+      "domainCode": 2752,
+      "towns": [
+        "budaörs"
+      ]
+    },
+    {
+      "number": "760",
+      "name": "Budapest - Budaörs - Biatorbágy - Etyek - Bicske",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2810",
+      "domainCode": 2810,
+      "towns": [
+        "biatorbágy",
+        "budaörs"
+      ]
+    },
+    {
+      "number": "762",
+      "name": "Budapest - Biatorbágy, Vasútállomás - Sóskút",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2811",
+      "domainCode": 2811,
+      "towns": [
+        "biatorbágy",
+        "budaörs"
+      ]
+    },
+    {
+      "number": "763",
+      "name": "Budapest - Biatorbágy - Etyek",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2812",
+      "domainCode": 2812,
+      "towns": [
+        "biatorbágy",
+        "budaörs"
+      ]
+    },
+    {
+      "number": "764",
+      "name": "Budapest, Őrmező - Biatorbágy, Tópark",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2809",
+      "domainCode": 2809,
+      "towns": [
+        "biatorbágy"
+      ]
+    },
+    {
+      "number": "766",
+      "name": "Budapest - Biatorbágy - Etyek - Bicske",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2813",
+      "domainCode": 2813,
+      "towns": [
+        "biatorbágy",
+        "budaörs"
+      ]
+    },
+    {
+      "number": "767",
+      "name": "Budapest - Biatorbágy - Etyek - Bicske",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2813",
+      "domainCode": 2813,
+      "towns": [
+        "biatorbágy",
+        "budaörs"
+      ]
+    },
+    {
+      "number": "773",
+      "name": "Budapest - M1 - Páty - Budajenő - Perbál - Zsámbék",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2820",
+      "domainCode": 2820,
+      "towns": [
+        "páty"
+      ]
+    },
+    {
+      "number": "774",
+      "name": "Budapest - M1 - Páty - Budajenő - Perbál - Zsámbék",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2820",
+      "domainCode": 2820,
+      "towns": [
+        "páty"
+      ]
+    },
+    {
+      "number": "775",
+      "name": "Budapest - M1 - Zsámbék - Gyermely",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2836",
+      "domainCode": 2836,
+      "towns": [
+        "budaörs"
+      ]
+    },
+    {
+      "number": "780",
+      "name": "Budapest - Páty - Biatorbágy - Herceghalom - Zsámbék",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2825",
+      "domainCode": 2825,
+      "towns": [
+        "biatorbágy",
+        "páty"
+      ]
+    },
+    {
+      "number": "781",
+      "name": "Budapest - Páty - Zsámbék - Gyermely",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2835",
+      "domainCode": 2835,
+      "towns": [
+        "páty"
+      ]
+    },
+    {
+      "number": "782",
+      "name": "Budapest - Budakeszi - Páty - Biatorbágy - Etyek",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2824",
+      "domainCode": 2824,
+      "towns": [
+        "biatorbágy",
+        "páty"
+      ]
+    },
+    {
+      "number": "783",
+      "name": "Budapest - Páty - Zsámbék - Gyermely",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2835",
+      "domainCode": 2835,
+      "towns": [
+        "páty"
+      ]
+    },
+    {
+      "number": "784",
+      "name": "Budapest - Zsámbék - Bicske",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2827",
+      "domainCode": 2827,
+      "towns": [
+        "páty"
+      ]
+    },
+    {
+      "number": "785",
+      "name": "Budapest - Páty - Zsámbék - Gyermely",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2835",
+      "domainCode": 2835,
+      "towns": [
+        "páty"
+      ]
+    },
+    {
+      "number": "786",
+      "name": "Budapest - Zsámbék - Tarján - Tardos",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2829",
+      "domainCode": 2829,
+      "towns": [
+        "páty"
+      ]
+    },
+    {
+      "number": "787",
+      "name": "Budapest - Zsámbék - Bajna - Nagysáp - Bajót",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2833",
+      "domainCode": 2833,
+      "towns": [
+        "páty"
+      ]
+    },
+    {
+      "number": "788",
+      "name": "Budapest - Páty - Zsámbék - Herceghalom",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2830",
+      "domainCode": 2830,
+      "towns": [
+        "páty"
+      ]
+    },
+    {
+      "number": "789",
+      "name": "Budapest – Páty – Budajenő – Perbál – Zsámbék",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2838",
+      "domainCode": 2838,
+      "towns": [
+        "páty"
+      ]
+    },
+    {
+      "number": "792",
+      "name": "Zsámbék - Biatorbágy - Páty - Budajenő - Perbál",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2842",
+      "domainCode": 2842,
+      "towns": [
+        "biatorbágy",
+        "páty"
+      ]
+    },
+    {
+      "number": "793",
+      "name": "Budapest - Budajenő - Perbál - Zsámbék - Herceghalom",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2840",
+      "domainCode": 2840,
+      "towns": [
+        "páty"
+      ]
+    },
+    {
+      "number": "794",
+      "name": "Budapest - Budajenő - Perbál - Zsámbék - Herceghalom",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2840",
+      "domainCode": 2840,
+      "towns": [
+        "páty"
+      ]
+    },
+    {
+      "number": "795",
+      "name": "Budapest - Budajenő - Perbál - Zsámbék - Herceghalom",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2840",
+      "domainCode": 2840,
+      "towns": [
+        "páty"
+      ]
+    },
+    {
+      "number": "796",
+      "name": "Budapest - Budajenő - Perbál - Zsámbék - Herceghalom",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/2840",
+      "domainCode": 2840,
+      "towns": [
+        "páty"
+      ]
+    },
+    {
+      "number": "1253",
+      "name": "Budapest - Bicske - Mór",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/1253",
+      "domainCode": 1253,
+      "towns": [
+        "biatorbágy"
+      ]
+    },
+    {
+      "number": "1254",
+      "name": "Budapest - Bicske - Mór - Kisbér",
+      "url": "https://www.mavcsoport.hu/mav-szemelyszallitas/belfoldi-utazas/vonali-menetrendek/1254",
+      "domainCode": 1254,
+      "towns": [
+        "biatorbágy"
+      ]
+    }
+  ]
+}
