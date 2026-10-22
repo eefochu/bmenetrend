@@ -5,6 +5,8 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -62,6 +64,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SheetValue
@@ -127,6 +130,7 @@ fun ViaBuszScreen(
     onRecenter: () -> Unit = {},
     onNationwideNetworkChanged: (Boolean) -> Unit = {},
     onVehicleClosed: () -> Unit = {},
+    onAccentColorChanged: (AccentColor) -> Unit = {},
     mapContent: @Composable (Modifier, Int) -> Unit,
 ) {
     var searchOpen by rememberSaveable { mutableStateOf(false) }
@@ -340,7 +344,7 @@ fun ViaBuszScreen(
         }
     }
     if (showInfo) SourceDialog(onDismiss = { showInfo = false })
-    if (showSettings) NetworkSettingsDialog(state.nationwideNetwork, onNationwideNetworkChanged) { showSettings = false }
+    if (showSettings) NetworkSettingsDialog(state.nationwideNetwork, onNationwideNetworkChanged, state.accentColor, onAccentColorChanged) { showSettings = false }
 }
 
 @Composable
@@ -851,12 +855,26 @@ private fun normalize(text: String): String = Normalizer.normalize(text, Normali
 
 
 @Composable
-private fun NetworkSettingsDialog(enabled: Boolean, onChanged: (Boolean) -> Unit, onDismiss: () -> Unit) {
+private fun NetworkSettingsDialog(enabled: Boolean, onChanged: (Boolean) -> Unit, accent: AccentColor, onAccentChanged: (AccentColor) -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.volan_settings)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text(stringResource(R.string.accent_title), style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.accent_hint), style = MaterialTheme.typography.bodyMedium)
+                Column(Modifier.selectableGroup()) {
+                    AccentColor.entries.forEach { choice ->
+                        Row(Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                            .selectable(selected = accent == choice, role = Role.RadioButton, onClick = { onAccentChanged(choice) }),
+                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            RadioButton(selected = accent == choice, onClick = null)
+                            Box(Modifier.size(20.dp).clip(CircleShape).background(choice.hue?.let { Color.hsl(it, 0.65f, 0.40f) } ?: MaterialTheme.colorScheme.primary))
+                            Text(stringResource(choice.labelRes), style = MaterialTheme.typography.bodyLarge)
+                        }
+                    }
+                }
+                HorizontalDivider()
                 Text(stringResource(R.string.volan_local_scope))
                 Row(Modifier.fillMaxWidth().heightIn(min = 64.dp)
                     .toggleable(value = enabled, role = Role.Switch, onValueChange = onChanged)

@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import hu.viabusz.app.data.*
+import hu.viabusz.app.ui.AccentColor
 import hu.viabusz.app.ui.UiState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.CancellationException
@@ -45,6 +46,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         emmaRoutes = emmaRepository.catalogue,
         selectedStopId = initialNetwork.stops.firstOrNull { it.id == "1" }?.id ?: initialNetwork.stops.firstOrNull()?.id,
         favorites = preferences.getStringSet("favorites", emptySet())?.map(SharedStops::canonicalId)?.toSet().orEmpty(),
+        accentColor = AccentColor.fromKey(preferences.getString("accent_color", "system")),
         nationwideNetwork = preferences.getBoolean("emma_nationwide", true),
         windowMinutes = preferences.getInt("window", 60).takeIf { it in listOf(30, 60, 120) } ?: 60,
     ))
@@ -274,6 +276,11 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 if (journeyGeneration == generation && journeyKey == key) mutableState.update { it.copy(vehicleJourneyLoading = false) }
             }
         }
+    }
+
+    fun setAccentColor(accent: AccentColor) {
+        preferences.edit().putString("accent_color", accent.key).apply()
+        mutableState.update { it.copy(accentColor = accent) }
     }
 
     fun setNationwideNetwork(enabled: Boolean) {

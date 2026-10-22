@@ -66,7 +66,7 @@ class MainActivity : ComponentActivity() {
                     try { awaitCancellation() } finally { close() }
                 }
             }
-            ViaBuszTheme {
+            ViaBuszTheme(accent = state.accentColor) {
                 ViaBuszScreen(
                     state = state,
                     onStopSelected = model::selectStop,
@@ -86,6 +86,7 @@ class MainActivity : ComponentActivity() {
                     onRecenter = model::recenter,
                     onNationwideNetworkChanged = model::setNationwideNetwork,
                     onVehicleClosed = model::closeVehicle,
+                    onAccentColorChanged = model::setAccentColor,
                 ) { modifier, bottomPaddingPx ->
                     NativeTransitMap(state.network, state.vehicles, state.selectedStopId, state.userLocation, modifier, model::selectStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, state.selectedVehicle)
                 }

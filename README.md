@@ -1,6 +1,6 @@
 # BMenetrend – natív Android, Biatorbágy, Páty és Budaörs
 
-Kotlin + Jetpack Compose alkalmazás, Material 3 / Material You felülettel. Android 8.0 vagy újabb rendszer szükséges; Android 12-től a téma a telefon színeihez igazodik.
+Kotlin + Jetpack Compose alkalmazás, Material 3 / Material You felülettel. Android 8.0 vagy újabb rendszer szükséges; Android 12-től a Rendszer színbeállítás a telefon színeihez igazodik. A Beállítások → Kiemelőszín alatt zöld, kék, lila, rózsaszín vagy narancssárga téma választható; az app megőrzi a választást. A térkép is követi a rendszer világos/sötét módját, sötét módban jól olvasható utcai és településfeliratokkal.
 
 ## A 0.3.0 változat
 

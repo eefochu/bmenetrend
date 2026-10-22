@@ -2,6 +2,7 @@ package hu.viabusz.app.ui
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
@@ -55,11 +56,50 @@ private val DarkColors = darkColorScheme(
     outlineVariant = Color(0xFF404A3C),
 )
 
+/** Tonal roles keep the chosen hue readable in both themes, including their container colours. */
+internal fun accentColorScheme(accent: AccentColor, dark: Boolean): ColorScheme {
+    val hue = accent.hue ?: return if (dark) DarkColors else LightColors
+    fun tone(lightness: Float, saturation: Float = 0.65f, shift: Float = 0f) =
+        Color.hsl((hue + shift) % 360f, saturation, lightness)
+    return (if (dark) darkColorScheme() else lightColorScheme()).copy(
+        primary = tone(if (dark) 0.80f else 0.30f),
+        onPrimary = if (dark) tone(0.12f) else Color.White,
+        primaryContainer = tone(if (dark) 0.24f else 0.90f),
+        onPrimaryContainer = tone(if (dark) 0.93f else 0.12f),
+        inversePrimary = tone(if (dark) 0.30f else 0.80f),
+        secondary = tone(if (dark) 0.78f else 0.30f, 0.22f),
+        onSecondary = if (dark) tone(0.12f, 0.22f) else Color.White,
+        secondaryContainer = tone(if (dark) 0.24f else 0.90f, 0.22f),
+        onSecondaryContainer = tone(if (dark) 0.93f else 0.12f, 0.22f),
+        tertiary = tone(if (dark) 0.80f else 0.30f, 0.45f, 45f),
+        onTertiary = if (dark) tone(0.12f, 0.45f, 45f) else Color.White,
+        tertiaryContainer = tone(if (dark) 0.24f else 0.90f, 0.45f, 45f),
+        onTertiaryContainer = tone(if (dark) 0.93f else 0.12f, 0.45f, 45f),
+        background = tone(if (dark) 0.065f else 0.985f, 0.08f),
+        onBackground = tone(if (dark) 0.92f else 0.10f, 0.08f),
+        surface = tone(if (dark) 0.065f else 0.985f, 0.08f),
+        onSurface = tone(if (dark) 0.92f else 0.10f, 0.08f),
+        surfaceContainerLowest = tone(if (dark) 0.04f else 1.0f, 0.08f),
+        surfaceContainerLow = tone(if (dark) 0.10f else 0.97f, 0.08f),
+        surfaceContainer = tone(if (dark) 0.12f else 0.945f, 0.08f),
+        surfaceContainerHigh = tone(if (dark) 0.16f else 0.92f, 0.08f),
+        surfaceContainerHighest = tone(if (dark) 0.20f else 0.90f, 0.08f),
+        surfaceDim = tone(if (dark) 0.065f else 0.87f, 0.08f),
+        surfaceBright = tone(if (dark) 0.24f else 0.985f, 0.08f),
+        surfaceVariant = tone(if (dark) 0.24f else 0.90f, 0.12f),
+        onSurfaceVariant = tone(if (dark) 0.80f else 0.30f, 0.12f),
+        surfaceTint = tone(if (dark) 0.80f else 0.30f),
+        outline = tone(if (dark) 0.60f else 0.46f, 0.10f),
+        outlineVariant = tone(if (dark) 0.30f else 0.80f, 0.10f),
+    )
+}
+
 @Composable
-fun ViaBuszTheme(content: @Composable () -> Unit) {
+fun ViaBuszTheme(accent: AccentColor = AccentColor.SYSTEM, content: @Composable () -> Unit) {
     val darkTheme = isSystemInDarkTheme()
     val context = LocalContext.current
-    val colors = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    val colors = if (accent != AccentColor.SYSTEM) accentColorScheme(accent, darkTheme)
+    else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
     } else if (darkTheme) DarkColors else LightColors
     MaterialTheme(

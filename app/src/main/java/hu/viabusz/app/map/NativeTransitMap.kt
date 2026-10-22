@@ -8,6 +8,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import androidx.compose.runtime.*
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
@@ -33,6 +34,8 @@ import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
+import org.maplibre.android.style.layers.SymbolLayer
+import org.maplibre.android.style.layers.PropertyFactory
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
@@ -53,6 +56,8 @@ fun NativeTransitMap(
     onVehicleSelected: (String) -> Unit = {},
     selectedVehicle: Vehicle? = null,
 ) {
+    val darkTheme = isSystemInDarkTheme()
+    val styleUri = if (darkTheme) "https://tiles.openfreemap.org/styles/dark" else "https://tiles.openfreemap.org/styles/positron"
     val context = LocalContext.current
     val owner = LocalLifecycleOwner.current
     val onSelect by rememberUpdatedState(onStopSelected)
@@ -114,13 +119,6 @@ fun NativeTransitMap(
                 onZoom(ready.cameraPosition.zoom)
             }
             ready.setMaxZoomPreference(19.0)
-            ready.setStyle(Style.Builder().fromUri("https://tiles.openfreemap.org/styles/positron")) {
-                styleLoaded = true
-                onError(null)
-                val bounds = ready.projection.visibleRegion.latLngBounds
-                viewport = MapBounds(bounds.longitudeWest, bounds.latitudeSouth, bounds.longitudeEast, bounds.latitudeNorth)
-                onZoom(ready.cameraPosition.zoom)
-            }
             ready.setOnMarkerClickListener { marker ->
                 val vehicle = markerVehicles[marker.id]
                 if (vehicle != null) {
@@ -142,18 +140,39 @@ fun NativeTransitMap(
             mapView.onDestroy()
         }
     }
-    // A failed style request is retried when connectivity returns, only in the foreground.
-    LaunchedEffect(map, owner) {
+    // Theme changes reload only the basemap, retaining camera and current selections.
+    // Failed loads retry in the foreground using the currently selected theme.
+    LaunchedEffect(map, owner, styleUri) {
         val ready = map ?: return@LaunchedEffect
-        owner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            while (isActive) {
-                delay(30_000)
-                if (!styleLoaded) ready.setStyle(Style.Builder().fromUri("https://tiles.openfreemap.org/styles/positron")) {
-                    styleLoaded = true
-                    onError(null)
+        var active = true
+        styleLoaded = false
+        try {
+            owner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                fun loadStyle() {
+                    ready.setStyle(Style.Builder().fromUri(styleUri)) { loadedStyle ->
+                        if (active) {
+                            if (darkTheme) loadedStyle.layers.filterIsInstance<SymbolLayer>()
+                                .filter { it.id.startsWith("place_") || it.id.startsWith("highway_name_") || it.id == "water_name" }
+                                .forEach { it.setProperties(
+                                    PropertyFactory.textColor("#B9C2D0"),
+                                    PropertyFactory.textHaloColor("#11161D"),
+                                    PropertyFactory.textHaloWidth(1f),
+                                ) }
+                            styleLoaded = true
+                            onError(null)
+                            val bounds = ready.projection.visibleRegion.latLngBounds
+                            viewport = MapBounds(bounds.longitudeWest, bounds.latitudeSouth, bounds.longitudeEast, bounds.latitudeNorth)
+                            onZoom(ready.cameraPosition.zoom)
+                        }
+                    }
+                }
+                loadStyle()
+                while (isActive) {
+                    delay(30_000)
+                    if (!styleLoaded) loadStyle()
                 }
             }
-        }
+        } finally { active = false }
     }
     AndroidView(factory = { mapView }, modifier = modifier)
 

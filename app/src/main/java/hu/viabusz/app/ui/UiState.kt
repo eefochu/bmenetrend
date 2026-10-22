@@ -40,6 +40,7 @@ data class UiState(
     val boardUpdatedAt: Instant? = null,
     val emmaRoutes: List<TransitRoute> = emptyList(),
     val nationwideNetwork: Boolean = true,
+    val accentColor: AccentColor = AccentColor.SYSTEM,
     val emmaStatus: String? = null,
     val cameraRequest: Int = 0,
 ) {
