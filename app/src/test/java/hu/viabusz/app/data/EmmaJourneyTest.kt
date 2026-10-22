@@ -48,6 +48,6 @@ class EmmaJourneyTest {
         assertEquals(VehicleMarkerStyle.TROLLEY, VehicleMarkerStyle.forVehicle(vehicle("bkk", "TROLLEYBUS")))
         assertEquals(VehicleMarkerStyle.TRAIN, VehicleMarkerStyle.forVehicle(vehicle("bkk", "SUBWAY")))
         assertEquals(VehicleMarkerStyle.TRAIN, VehicleMarkerStyle.forVehicle(vehicle("mav", "RAIL")))
-        assertEquals(VehicleMarkerStyle.BKK_BUS, VehicleMarkerStyle.forVehicle(vehicle("viabusz", null)))
+        assertEquals(VehicleMarkerStyle.VIABUSZ_BUS, VehicleMarkerStyle.forVehicle(vehicle("viabusz", null)))
     }
 }

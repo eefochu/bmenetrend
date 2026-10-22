@@ -169,7 +169,7 @@ fun NativeTransitMap(
         val zoom = nativeMap.cameraPosition.zoom
         val density = context.resources.displayMetrics.density
         fun dotIcon(provider: String, selected: Boolean = false, location: Boolean = false): Icon {
-            val sizeDp = if (location) 18 else if (selected) 16 else if (zoom >= 14) 9 else 6
+            val sizeDp = if (location) 18 else if (selected) { if (zoom >= 14) 32 else 16 } else if (zoom >= 14) 22 else 6
             val key = "dot-$provider-$sizeDp-$selected-$location"
             return iconCache.getOrPut(key) {
                 val size = (sizeDp * density).toInt().coerceAtLeast(1)
@@ -185,29 +185,47 @@ fun NativeTransitMap(
                     "homm" -> android.graphics.Color.rgb(191, 87, 0)
                     else -> android.graphics.Color.rgb(64, 87, 106)
                 }
-                canvas.drawCircle(radius, radius, (radius - density).coerceAtLeast(1f), paint)
+                val border = if (zoom >= 14 && !location) 2 * density else density
+                canvas.drawCircle(radius, radius, (radius - border).coerceAtLeast(1f), paint)
+                if (zoom >= 14 && !selected && !location) {
+                    paint.color = android.graphics.Color.WHITE
+                    canvas.drawCircle(radius, radius, size / 5f, paint)
+                }
                 IconFactory.getInstance(context).fromBitmap(bitmap)
             }
         }
         fun vehicleIcon(vehicle: Vehicle): Icon {
             val style = VehicleMarkerStyle.forVehicle(vehicle)
-            val sizeDp = (if (zoom < 10) 24 else if (zoom < 13.5) 30 else 36) + if (vehicle.id == selectedVehicle?.id) 6 else 0
+            val sizeDp = (when {
+                zoom < 8 -> 10
+                zoom < 10 -> 14
+                zoom < 12 -> 18
+                zoom < 13.5 -> 24
+                else -> 36
+            }) + if (vehicle.id == selectedVehicle?.id) 6 else 0
             return iconCache.getOrPut("transport-$style-$sizeDp") {
                 val drawable = style.drawableRes
                 val size = (sizeDp * density).toInt().coerceAtLeast(1)
-                val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                BitmapFactory.decodeResource(context.resources, drawable, options)
-                options.inJustDecodeBounds = false
-                options.inSampleSize = 1
-                while (options.outWidth / (options.inSampleSize * 2) >= size) options.inSampleSize *= 2
-                val source = BitmapFactory.decodeResource(context.resources, drawable, options)
                 val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
                 val canvas = Canvas(bitmap)
                 val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply { color = android.graphics.Color.WHITE }
                 canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint)
                 val inset = density
-                canvas.drawBitmap(source, null, RectF(inset, inset, size - inset, size - inset), paint)
-                source.recycle()
+                if (style == VehicleMarkerStyle.VIABUSZ_BUS) {
+                    context.getDrawable(drawable)?.apply {
+                        setBounds(inset.toInt(), inset.toInt(), (size - inset).toInt(), (size - inset).toInt())
+                        draw(canvas)
+                    }
+                } else {
+                    val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                    BitmapFactory.decodeResource(context.resources, drawable, options)
+                    options.inJustDecodeBounds = false
+                    options.inSampleSize = 1
+                    while (options.outWidth / (options.inSampleSize * 2) >= size) options.inSampleSize *= 2
+                    val source = BitmapFactory.decodeResource(context.resources, drawable, options)
+                    canvas.drawBitmap(source, null, RectF(inset, inset, size - inset, size - inset), paint)
+                    source.recycle()
+                }
                 IconFactory.getInstance(context).fromBitmap(bitmap)
             }
         }
