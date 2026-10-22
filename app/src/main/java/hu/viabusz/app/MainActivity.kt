@@ -84,8 +84,10 @@ class MainActivity : ComponentActivity() {
                     onWindowChanged = model::setWindow,
                     onToggleFavorite = model::toggleFavorite,
                     onRecenter = model::recenter,
+                    onNationwideNetworkChanged = model::setNationwideNetwork,
+                    onVehicleClosed = model::closeVehicle,
                 ) { modifier, bottomPaddingPx ->
-                    NativeTransitMap(state.network, state.vehicles, state.selectedStopId, state.userLocation, modifier, model::selectStop, model::mapMessage, state.cameraRequest, bottomPaddingPx)
+                    NativeTransitMap(state.network, state.vehicles, state.selectedStopId, state.userLocation, modifier, model::selectStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, state.selectedVehicle)
                 }
             }
         }

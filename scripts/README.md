@@ -36,3 +36,7 @@ pdftoppm -scale-to 2000 -png -singlefile scripts/raw/kanyargo-break.pdf scripts/
 ```
 
 The school term/break calendar is separate in `KanyargoCalendar.kt`; it must be reviewed against the official school calendar and annual working-day transfers. Known PDF changes disable KanyarGO timetable countdowns until reviewed. Live GPS remains independent. See [ADATFORRAS.md](../docs/ADATFORRAS.md) for detailed data limitations.
+
+## Volán route catalogue
+
+`python3 scripts/import_volan_routes.py` imports route identities from the official Biatorbágy, Páty and Budaörs town listings. It uses the Python standard library. Review the new catalogue and its review date before committing. It does not import stop times or GPS data. See [VOLAN.md](../docs/VOLAN.md).

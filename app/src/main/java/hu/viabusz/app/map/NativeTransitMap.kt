@@ -2,6 +2,8 @@ package hu.viabusz.app.map
 
 import android.content.ComponentCallbacks2
 import android.content.res.Configuration
+import android.graphics.BitmapFactory
+import android.graphics.RectF
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -16,7 +18,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import hu.viabusz.app.R
+import hu.viabusz.app.data.MapBounds
 import hu.viabusz.app.data.GeoPoint
+import hu.viabusz.app.data.TransitStop
 import hu.viabusz.app.data.TransitNetwork
 import hu.viabusz.app.data.Vehicle
 import org.maplibre.android.MapLibre
@@ -44,21 +48,32 @@ fun NativeTransitMap(
     onMapError: (String?) -> Unit = {},
     cameraRequest: Int = 0,
     bottomPaddingPx: Int = 0,
+    additionalStops: List<TransitStop> = emptyList(),
+    onMapZoomChanged: (Double) -> Unit = {},
+    onVehicleSelected: (String) -> Unit = {},
+    selectedVehicle: Vehicle? = null,
 ) {
     val context = LocalContext.current
     val owner = LocalLifecycleOwner.current
     val onSelect by rememberUpdatedState(onStopSelected)
     val onError by rememberUpdatedState(onMapError)
+    val onZoom by rememberUpdatedState(onMapZoomChanged)
+    val onVehicle by rememberUpdatedState(onVehicleSelected)
+    val stops = remember(network, additionalStops) { network?.stops.orEmpty() + additionalStops }
     val mapView = remember {
         MapLibre.getInstance(context.applicationContext)
         MapView(context).apply { onCreate(null) }
     }
     var map by remember { mutableStateOf<MapLibreMap?>(null) }
+    var viewport by remember { mutableStateOf<MapBounds?>(null) }
     var styleLoaded by remember { mutableStateOf(false) }
+    var centeredVehicle by remember { mutableStateOf<String?>(null) }
     var centeredStop by remember { mutableStateOf<String?>(null) }
     var centeredRequest by remember { mutableIntStateOf(-1) }
     var lastBottomPadding by remember { mutableIntStateOf(-1) }
+    val markerVehicles = remember { mutableMapOf<Long, String>() }
     val markerStops = remember { mutableMapOf<Long, String>() }
+    val markerClusters = remember { mutableMapOf<Long, LatLng>() }
     val iconCache = remember { mutableMapOf<String, Icon>() }
     val formatter = remember { DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.of("Europe/Budapest")) }
 
@@ -92,14 +107,31 @@ fun NativeTransitMap(
                 setAttributionMargins(12, 0, 0, 12)
             }
             ready.cameraPosition = CameraPosition.Builder().target(LatLng(47.473, 18.825)).zoom(13.2).build()
-            ready.setMinZoomPreference(10.0)
+            ready.setMinZoomPreference(5.0)
+            ready.addOnCameraIdleListener {
+                val bounds = ready.projection.visibleRegion.latLngBounds
+                viewport = MapBounds(bounds.longitudeWest, bounds.latitudeSouth, bounds.longitudeEast, bounds.latitudeNorth)
+                onZoom(ready.cameraPosition.zoom)
+            }
             ready.setMaxZoomPreference(19.0)
             ready.setStyle(Style.Builder().fromUri("https://tiles.openfreemap.org/styles/positron")) {
                 styleLoaded = true
                 onError(null)
+                val bounds = ready.projection.visibleRegion.latLngBounds
+                viewport = MapBounds(bounds.longitudeWest, bounds.latitudeSouth, bounds.longitudeEast, bounds.latitudeNorth)
+                onZoom(ready.cameraPosition.zoom)
             }
             ready.setOnMarkerClickListener { marker ->
-                markerStops[marker.id]?.let { onSelect(it); true } ?: false
+                val vehicle = markerVehicles[marker.id]
+                if (vehicle != null) {
+                    onVehicle(vehicle)
+                    return@setOnMarkerClickListener true
+                }
+                val cluster = markerClusters[marker.id]
+                if (cluster != null) {
+                    ready.animateCamera(CameraUpdateFactory.newLatLngZoom(cluster, minOf(14.5, ready.cameraPosition.zoom + 2)))
+                    true
+                } else markerStops[marker.id]?.let { onSelect(it); true } ?: false
             }
         }
         onDispose {
@@ -125,67 +157,106 @@ fun NativeTransitMap(
     }
     AndroidView(factory = { mapView }, modifier = modifier)
 
-    LaunchedEffect(map, styleLoaded, network, vehicles, selectedStopId, userLocation, cameraRequest, bottomPaddingPx) {
+    LaunchedEffect(map, styleLoaded, viewport, network, additionalStops, vehicles, selectedVehicle?.id, selectedStopId, userLocation, cameraRequest, bottomPaddingPx) {
         val nativeMap = map ?: return@LaunchedEffect
         if (!styleLoaded) return@LaunchedEffect
         nativeMap.setPadding(0, 0, 0, bottomPaddingPx)
         nativeMap.clear()
         markerStops.clear()
-        fun icon(key: String, text: String, selected: Boolean = false, vehicle: Boolean = false, providerId: String = "viabusz"): Icon = iconCache.getOrPut(key) {
-            val scale = context.resources.displayMetrics.density
-            val width = (if (vehicle) 58f else if (selected) 32f else 22f) * scale
-            val height = (if (vehicle) 34f else if (selected) 32f else 22f) * scale
-            val bitmap = Bitmap.createBitmap(width.toInt(), height.toInt(), Bitmap.Config.ARGB_8888)
-            val canvas = Canvas(bitmap)
-            val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-            val providerColor = when (providerId) {
-                "kanyargo" -> android.graphics.Color.rgb(103, 80, 164)
-                "homm" -> android.graphics.Color.rgb(191, 87, 0)
-                "shared" -> android.graphics.Color.rgb(0, 104, 115)
-                else -> android.graphics.Color.rgb(32, 92, 72)
-            }
-            paint.color = android.graphics.Color.WHITE
-            if (vehicle) {
-                canvas.drawRoundRect(0f, 0f, width, height, 11 * scale, 11 * scale, paint)
-                paint.color = providerColor
-                canvas.drawRoundRect(2 * scale, 2 * scale, width - 2 * scale, height - 2 * scale, 9 * scale, 9 * scale, paint)
-                paint.color = android.graphics.Color.WHITE
-                paint.textAlign = Paint.Align.CENTER
-                paint.typeface = android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.BOLD)
-                paint.textSize = 12 * scale
-                canvas.drawText(text, width / 2, height / 2 - (paint.ascent() + paint.descent()) / 2, paint)
-            } else {
-                canvas.drawCircle(width / 2, height / 2, width / 2, paint)
-                paint.color = if (key == "location") android.graphics.Color.rgb(53, 109, 219) else providerColor
-                canvas.drawCircle(width / 2, height / 2, width / 2 - 2 * scale, paint)
-                if (!selected && key != "location") {
-                    paint.color = android.graphics.Color.WHITE
-                    canvas.drawCircle(width / 2, height / 2, width / 5, paint)
+        markerVehicles.clear()
+        markerClusters.clear()
+        if (iconCache.size > 256) iconCache.clear()
+        val zoom = nativeMap.cameraPosition.zoom
+        val density = context.resources.displayMetrics.density
+        fun dotIcon(provider: String, selected: Boolean = false, location: Boolean = false): Icon {
+            val sizeDp = if (location) 18 else if (selected) 16 else if (zoom >= 14) 9 else 6
+            val key = "dot-$provider-$sizeDp-$selected-$location"
+            return iconCache.getOrPut(key) {
+                val size = (sizeDp * density).toInt().coerceAtLeast(1)
+                val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+                val canvas = Canvas(bitmap)
+                val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.WHITE }
+                val radius = size / 2f
+                canvas.drawCircle(radius, radius, radius, paint)
+                paint.color = if (location) android.graphics.Color.rgb(53, 109, 219) else when (provider) {
+                    "volan" -> android.graphics.Color.rgb(249, 185, 0)
+                    "bkk" -> android.graphics.Color.rgb(25, 157, 207)
+                    "kanyargo" -> android.graphics.Color.rgb(103, 80, 164)
+                    "homm" -> android.graphics.Color.rgb(191, 87, 0)
+                    else -> android.graphics.Color.rgb(64, 87, 106)
                 }
+                canvas.drawCircle(radius, radius, (radius - density).coerceAtLeast(1f), paint)
+                IconFactory.getInstance(context).fromBitmap(bitmap)
             }
-            IconFactory.getInstance(context).fromBitmap(bitmap)
         }
-        network?.stops?.forEach { stop ->
-            val selected = stop.id == selectedStopId
-            val markerProvider = if (stop.providerIds.size > 1) "shared" else stop.providerId
+        fun vehicleIcon(vehicle: Vehicle): Icon {
+            val style = VehicleMarkerStyle.forVehicle(vehicle)
+            val sizeDp = (if (zoom < 10) 24 else if (zoom < 13.5) 30 else 36) + if (vehicle.id == selectedVehicle?.id) 6 else 0
+            return iconCache.getOrPut("transport-$style-$sizeDp") {
+                val drawable = style.drawableRes
+                val size = (sizeDp * density).toInt().coerceAtLeast(1)
+                val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                BitmapFactory.decodeResource(context.resources, drawable, options)
+                options.inJustDecodeBounds = false
+                options.inSampleSize = 1
+                while (options.outWidth / (options.inSampleSize * 2) >= size) options.inSampleSize *= 2
+                val source = BitmapFactory.decodeResource(context.resources, drawable, options)
+                val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+                val canvas = Canvas(bitmap)
+                val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply { color = android.graphics.Color.WHITE }
+                canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint)
+                val inset = density
+                canvas.drawBitmap(source, null, RectF(inset, inset, size - inset, size - inset), paint)
+                source.recycle()
+                IconFactory.getInstance(context).fromBitmap(bitmap)
+            }
+        }
+        StopMapClustering.groups(stops, viewport, nativeMap.cameraPosition.zoom).forEach { group ->
+            if (group.size > 1) {
+                val center = LatLng(group.map { it.position.lat }.average(), group.map { it.position.lon }.average())
+                val marker = nativeMap.addMarker(MarkerOptions().position(center)
+                    .title(context.getString(R.string.ui_stops))
+                    .icon(dotIcon("shared", selected = group.any { it.id == selectedStopId })))
+                markerClusters[marker.id] = center
+            } else {
+                val stop = group.single()
+                val selected = stop.id == selectedStopId
+                val provider = if (stop.providerIds.size > 1) "shared" else stop.providerId
+                val marker = nativeMap.addMarker(MarkerOptions().position(LatLng(stop.position.lat, stop.position.lon))
+                    .title(stop.name).snippet(stop.platformCode?.let { context.getString(R.string.emma_platform, it) }
+                        ?: stop.id.takeIf { it.startsWith("emma:") }?.let { context.getString(R.string.emma_stop_code, it.substringAfterLast(":")) })
+                    .icon(dotIcon(provider, selected)))
+                markerStops[marker.id] = stop.id
+            }
+        }
+        val visibleVehicles = vehicles.filter { vehicle ->
+            viewport?.let { vehicle.position.lat in it.south..it.north && vehicle.position.lon in it.west..it.east } ?: false
+        }
+        visibleVehicles.forEach { vehicle ->
+            val number = vehicle.routeNumber ?: network?.routes?.find { it.id == vehicle.routeId }?.number ?: context.getString(if (vehicle.providerId == "bkk") R.string.emma_vehicle else R.string.engine_vehicle_bus)
             val marker = nativeMap.addMarker(MarkerOptions()
-                .position(LatLng(stop.position.lat, stop.position.lon))
-                .title(stop.name)
-                .icon(icon("$markerProvider-${if (selected) "selected-stop" else "stop"}", "", selected, providerId = markerProvider)))
-            markerStops[marker.id] = stop.id
-        }
-        vehicles.forEach { vehicle ->
-            val number = network?.routes?.find { it.id == vehicle.routeId }?.number ?: context.getString(R.string.engine_vehicle_bus)
-            nativeMap.addMarker(MarkerOptions()
                 .position(LatLng(vehicle.position.lat, vehicle.position.lon))
-                .title("${when (vehicle.providerId) { "kanyargo" -> "KanyarGO"; "homm" -> "HOMM"; else -> "ViaBusz" }} · $number · ${vehicle.id.substringAfter(":")}")
-                .snippet(listOfNotNull(vehicle.nextStopName?.takeIf(String::isNotBlank), context.getString(R.string.engine_gps_time, formatter.format(vehicle.observedAt)), if (vehicle.routeId == null) context.getString(R.string.engine_no_vehicle_route) else null).joinToString("\n"))
-                .icon(icon("vehicle-${vehicle.providerId}-$number", number, vehicle = true, providerId = vehicle.providerId)))
+                .title("${when (vehicle.providerId) { "kanyargo" -> "KanyarGO"; "homm" -> "HOMM"; "volan" -> "Volán"; "bkk" -> "BKK"; else -> "ViaBusz" }} · $number · ${vehicle.registration ?: vehicle.id.substringAfter(":")}")
+                .snippet(listOfNotNull(vehicle.destination?.takeIf(String::isNotBlank), vehicle.nextStopName?.takeIf(String::isNotBlank), context.getString(if (vehicle.providerId in setOf("volan", "bkk")) R.string.volan_observation_time else R.string.engine_gps_time, formatter.format(vehicle.observedAt)), if (vehicle.providerId in setOf("volan", "bkk")) context.getString(R.string.volan_position_source) else null,
+                    vehicle.speedKmh?.let { context.getString(R.string.emma_speed, it.toInt()) }, if (vehicle.routeId == null) context.getString(R.string.engine_no_vehicle_route) else null).joinToString("\n"))
+                .icon(vehicleIcon(vehicle)))
+            markerVehicles[marker.id] = vehicle.id
         }
         userLocation?.let {
-            nativeMap.addMarker(MarkerOptions().position(LatLng(it.lat, it.lon)).title(context.getString(R.string.engine_you_are_here)).icon(icon("location", "")))
+            nativeMap.addMarker(MarkerOptions().position(LatLng(it.lat, it.lon)).title(context.getString(R.string.engine_you_are_here)).icon(dotIcon("location", location = true)))
         }
-        network?.stops?.find { it.id == selectedStopId }?.let { stop ->
+        if (selectedVehicle != null) {
+            if (centeredVehicle != selectedVehicle.id || lastBottomPadding != bottomPaddingPx || centeredRequest != cameraRequest) {
+                nativeMap.animateCamera(CameraUpdateFactory.newLatLngZoom(
+                    LatLng(selectedVehicle.position.lat, selectedVehicle.position.lon), maxOf(13.5, nativeMap.cameraPosition.zoom)), 650)
+                centeredVehicle = selectedVehicle.id
+                centeredRequest = cameraRequest
+                lastBottomPadding = bottomPaddingPx
+            }
+        } else {
+            centeredVehicle = null
+        }
+        if (selectedVehicle == null) stops.find { it.id == selectedStopId }?.let { stop ->
             if (centeredStop != stop.id || centeredRequest != cameraRequest || lastBottomPadding != bottomPaddingPx) {
                 val currentZoom = nativeMap.cameraPosition.zoom
                 val targetZoom = if (currentZoom < 15.0) 15.0 else currentZoom

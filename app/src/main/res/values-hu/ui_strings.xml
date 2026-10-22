@@ -27,13 +27,13 @@
     <string name="ui_clear_search">Keresés törlése</string>
     <string name="ui_choose_direction">Válassz irányt</string>
     <string name="ui_stops">Megállók</string>
-    <string name="ui_local_routes">Helyi járatok</string>
+    <string name="ui_local_routes">Járatok</string>
     <string name="ui_directions_and_stops">Irányok és megállók</string>
     <string name="ui_route_number">%1$s járat</string>
     <string name="ui_favorite_stops">Kedvenc megállók</string>
     <string name="ui_local_stop">Helyi megálló</string>
     <string name="ui_no_results_title">Nincs találat</string>
-    <string name="ui_no_results_body">Keress egy biatorbágyi, pátyi vagy budaörsi megállóra, vagy egy ViaBusz-, KanyarGO- vagy HOMM-járatra.</string>
+    <string name="ui_no_results_body">Keress országos Volán- vagy budapesti BKK-megállóra, illetve vonalszámra. A helyi ViaBusz-, KanyarGO- és HOMM-vonalak is elérhetők.</string>
     <string name="ui_direction_question">Melyik irányba utaznál?</string>
     <string name="ui_no_directions_title">Az irányok még nem érhetők el</string>
     <string name="ui_no_directions_body">Térj vissza a térképre, és frissítsd az adatokat.</string>
@@ -41,7 +41,7 @@
     <string name="ui_stop_departures_hint">Koppints egy megállóra az indulásokhoz.</string>
     <string name="ui_unknown_stop">Ismeretlen megálló</string>
     <string name="ui_origin">Kiindulópont</string>
-    <string name="ui_data_sources">Adatforrások: viabusz.biatorbagy.hu · kanyargo.paty.hu · homm.hu</string>
+    <string name="ui_data_sources">Adatforrások: viabusz.biatorbagy.hu · kanyargo.paty.hu · homm.hu · EMMA/MÁVPlusz</string>
     <string name="ui_last_updated">Utolsó frissítés: %1$s</string>
     <string name="ui_loading_data">Az adatok betöltése folyamatban</string>
     <string name="ui_no_live_update">Még nincs sikeres élő frissítés</string>
@@ -63,8 +63,8 @@
     <string name="ui_terminus">Végállomás</string>
     <string name="ui_two_hours">2 óra</string>
     <plurals name="ui_buses_on_map">
-        <item quantity="one">%1$d busz a térképen</item>
-        <item quantity="other">%1$d busz a térképen</item>
+        <item quantity="one">%1$d követett jármű</item>
+        <item quantity="other">%1$d követett jármű</item>
     </plurals>
     <plurals name="ui_results_count">
         <item quantity="one">%1$d találat</item>

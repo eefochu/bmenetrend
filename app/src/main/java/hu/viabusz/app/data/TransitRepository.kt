@@ -87,11 +87,10 @@ class TransitRepository(context: Context) {
     suspend fun refresh(): LiveSnapshot = withContext(Dispatchers.IO) {
         coroutineScope {
             val results = providers.filter { it.caller != null }.map { provider -> async { refreshProvider(provider) } }.awaitAll()
-            if (results.none { it.vehicleDataAvailable }) {
-                // Preserve the last successful refresh timestamp in the ViewModel.
-                throw IOException(message(R.string.data_all_live_unavailable))
-            } else LiveSnapshot(results.flatMap { it.vehicles }, results.flatMap { it.arrivals }, Instant.now(),
-                results.mapNotNull { it.warning }.distinct().joinToString("\n"), vehicleDataAvailable = true,
+            // An upstream outage belongs to these providers, not the whole app or EMMA.
+            LiveSnapshot(results.flatMap { it.vehicles }, results.flatMap { it.arrivals }, Instant.now(),
+                results.mapNotNull { it.warning }.distinct().joinToString("\n"),
+                vehicleDataAvailable = results.any { it.vehicleDataAvailable },
                 providerWarnings = results.flatMap { it.providerWarnings.entries }.associate { it.toPair() })
         }
     }
