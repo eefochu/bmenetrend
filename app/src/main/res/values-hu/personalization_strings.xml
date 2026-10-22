@@ -1,0 +1,13 @@
+<resources>
+    <string name="ui_search_short">Keresés</string>
+    <string name="vehicle_at_stop">Itt: %1$s · GPS-becslés</string>
+    <string name="vehicle_between_stops">Megállók között: %1$s → %2$s</string>
+    <string name="accent_custom">Egyéni</string>
+    <string name="custom_color_title">Egyéni színválasztó</string>
+    <string name="custom_color_hex">Hexadecimális szín</string>
+    <string name="custom_color_red">Piros</string>
+    <string name="custom_color_green">Zöld</string>
+    <string name="custom_color_blue">Kék</string>
+    <string name="custom_color_hint">Válassz színt a csúszkákkal, vagy adj meg hatjegyű hexadecimális kódot. A színt az app az olvasható világos és sötét témához igazítja.</string>
+    <string name="search_refine">A legjobb 100 találat látható. Pontosíts helynévvel, vonalszámmal vagy járműtípussal.</string>
+</resources>

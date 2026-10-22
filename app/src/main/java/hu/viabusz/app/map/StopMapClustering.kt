@@ -6,7 +6,7 @@ import kotlin.math.*
 
 /** A geographic grid keeps the national index off MapLibre's per-point JNI projection path. */
 object StopMapClustering {
-    const val DETAIL_ZOOM = 14.0
+    const val DETAIL_ZOOM = 12.5
     fun groups(stops: List<TransitStop>, bounds: MapBounds?, zoom: Double): List<List<TransitStop>> {
         if (bounds == null) return emptyList()
         val visible = stops.filter { it.position.lat in bounds.south..bounds.north && it.position.lon in bounds.west..bounds.east }

@@ -34,6 +34,9 @@ import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
+import org.maplibre.android.style.layers.FillLayer
+import org.maplibre.android.style.layers.LineLayer
+import org.maplibre.android.style.layers.BackgroundLayer
 import org.maplibre.android.style.layers.SymbolLayer
 import org.maplibre.android.style.layers.PropertyFactory
 import java.time.ZoneId
@@ -151,6 +154,29 @@ fun NativeTransitMap(
                 fun loadStyle() {
                     ready.setStyle(Style.Builder().fromUri(styleUri)) { loadedStyle ->
                         if (active) {
+                            if (darkTheme) loadedStyle.layers.forEach { layer ->
+                                when (layer) {
+                                    is BackgroundLayer -> layer.setProperties(PropertyFactory.backgroundColor("#101823"))
+                                    is FillLayer -> when (layer.id) {
+                                        "water" -> layer.setProperties(PropertyFactory.fillColor("#173E59"))
+                                        "building" -> layer.setProperties(PropertyFactory.fillColor("#293545"))
+                                        "landuse_residential" -> layer.setProperties(PropertyFactory.fillColor("#17212C"))
+                                        "landcover_wood", "landuse_park" -> layer.setProperties(PropertyFactory.fillColor("#1C352C"))
+                                    }
+                                    is LineLayer -> {
+                                        val color = when {
+                                            layer.id == "waterway" -> "#2E6D90"
+                                            layer.id == "highway_minor" -> "#43566D"
+                                            layer.id == "highway_major_inner" -> "#687F99"
+                                            layer.id == "highway_motorway_inner" -> "#AA8C68"
+                                            layer.id.endsWith("_casing") -> "#29394B"
+                                            layer.id.startsWith("railway") -> "#786C87"
+                                            else -> null
+                                        }
+                                        color?.let { layer.setProperties(PropertyFactory.lineColor(it)) }
+                                    }
+                                }
+                            }
                             if (darkTheme) loadedStyle.layers.filterIsInstance<SymbolLayer>()
                                 .filter { it.id.startsWith("place_") || it.id.startsWith("highway_name_") || it.id == "water_name" }
                                 .forEach { it.setProperties(
@@ -188,7 +214,7 @@ fun NativeTransitMap(
         val zoom = nativeMap.cameraPosition.zoom
         val density = context.resources.displayMetrics.density
         fun dotIcon(provider: String, selected: Boolean = false, location: Boolean = false): Icon {
-            val sizeDp = if (location) 18 else if (selected) { if (zoom >= 14) 32 else 16 } else if (zoom >= 14) 22 else 6
+            val sizeDp = if (location) 18 else if (selected) { if (zoom >= 14) 32 else if (zoom >= 12.5) 28 else 16 } else if (zoom >= 14) 22 else if (zoom >= 12.5) 16 else 6
             val key = "dot-$provider-$sizeDp-$selected-$location"
             return iconCache.getOrPut(key) {
                 val size = (sizeDp * density).toInt().coerceAtLeast(1)
@@ -204,9 +230,9 @@ fun NativeTransitMap(
                     "homm" -> android.graphics.Color.rgb(191, 87, 0)
                     else -> android.graphics.Color.rgb(64, 87, 106)
                 }
-                val border = if (zoom >= 14 && !location) 2 * density else density
+                val border = if (zoom >= 12.5 && !location) 2 * density else density
                 canvas.drawCircle(radius, radius, (radius - border).coerceAtLeast(1f), paint)
-                if (zoom >= 14 && !selected && !location) {
+                if (zoom >= 12.5 && !selected && !location) {
                     paint.color = android.graphics.Color.WHITE
                     canvas.drawCircle(radius, radius, size / 5f, paint)
                 }

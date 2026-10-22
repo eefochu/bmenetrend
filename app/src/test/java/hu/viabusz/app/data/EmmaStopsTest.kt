@@ -73,6 +73,7 @@ class EmmaStopsTest {
         val broad = StopMapClustering.groups(stops, bounds, 8.0)
         assertEquals(1, broad.size)
         assertEquals(2, broad.single().size)
+        assertEquals(2, StopMapClustering.groups(stops, bounds, 13.0).size)
         assertEquals(2, StopMapClustering.groups(stops, bounds, 15.0).size)
         assertTrue(StopMapClustering.groups(stops, null, 8.0).isEmpty())
     }

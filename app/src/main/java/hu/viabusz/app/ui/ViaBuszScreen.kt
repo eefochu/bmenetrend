@@ -98,6 +98,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import hu.viabusz.app.R
+import hu.viabusz.app.data.TransitSearch
 import hu.viabusz.app.data.ArrivalKind
 import hu.viabusz.app.data.Departure
 import hu.viabusz.app.data.RouteDirection
@@ -131,6 +132,7 @@ fun ViaBuszScreen(
     onNationwideNetworkChanged: (Boolean) -> Unit = {},
     onVehicleClosed: () -> Unit = {},
     onAccentColorChanged: (AccentColor) -> Unit = {},
+    onCustomAccentChanged: (Int) -> Unit = {},
     mapContent: @Composable (Modifier, Int) -> Unit,
 ) {
     var searchOpen by rememberSaveable { mutableStateOf(false) }
@@ -245,7 +247,6 @@ fun ViaBuszScreen(
                     ) {
                         FloatingSearchBlob(
                             onSearch = openSearch,
-                            onInfo = { showInfo = true },
                             onSettings = { showSettings = true },
                         )
                         Row(
@@ -343,14 +344,14 @@ fun ViaBuszScreen(
             }
         }
     }
+    if (showSettings) SettingsPage(state, onAccentColorChanged, onCustomAccentChanged,
+        onNationwideNetworkChanged, onAbout = { showInfo = true }, onBack = { showSettings = false })
     if (showInfo) SourceDialog(onDismiss = { showInfo = false })
-    if (showSettings) NetworkSettingsDialog(state.nationwideNetwork, onNationwideNetworkChanged, state.accentColor, onAccentColorChanged) { showSettings = false }
 }
 
 @Composable
 private fun FloatingSearchBlob(
     onSearch: () -> Unit,
-    onInfo: () -> Unit,
     onSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -375,34 +376,12 @@ private fun FloatingSearchBlob(
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(24.dp),
             )
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 12.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.ui_brand),
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = stringResource(R.string.ui_search_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
+            Text(stringResource(R.string.ui_search_short), Modifier.weight(1f).padding(horizontal = 12.dp),
+                style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             IconButton(onClick = onSettings) {
                 Icon(Icons.Rounded.Settings, stringResource(R.string.volan_settings))
             }
-            IconButton(onClick = onInfo) {
-                Icon(
-                    Icons.Rounded.Info,
-                    contentDescription = stringResource(R.string.ui_about_action),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+
         }
     }
 }
@@ -629,22 +608,36 @@ private fun SearchAndRoutes(
 }
 
 @Composable
+private fun transportLabel(mode: String?): String? = when (mode) {
+    "TRAM" -> stringResource(R.string.emma_mode_tram)
+    "TROLLEYBUS" -> stringResource(R.string.emma_mode_trolley)
+    "SUBWAY" -> stringResource(R.string.emma_mode_metro)
+    "BUS", "COACH" -> stringResource(R.string.emma_mode_bus)
+    "RAIL", "SUBURBAN_RAILWAY", "TRAMTRAIN" -> stringResource(R.string.emma_mode_train)
+    else -> null
+}
+
+@Composable
 private fun SearchResults(state: UiState, query: String, onRoute: (String) -> Unit, onStop: (String) -> Unit) {
-    val normalized = remember(query) { normalize(query.trim()) }
-    if (normalized.isBlank()) return
-    val routes = state.routes.filter { normalize("${it.number} ${it.name} ${it.providerId}").contains(normalized) }
-    var stopSearchLoading by remember(state.network, state.emmaStops, normalized) { mutableStateOf(true) }
-    val stops by produceState(emptyList<TransitStop>(), state.network, state.emmaStops, normalized) {
-        delay(150)
+    val parsedQuery = remember(query) { TransitSearch.query(query) }
+    if (parsedQuery.text.isBlank()) return
+    val stopIndex by produceState<List<TransitSearch.StopEntry>?>(null, state.network?.stops, state.emmaStops) {
+        value = withContext(Dispatchers.Default) { TransitSearch.indexStops(state.stops) }
+    }
+    var stopSearchLoading by remember(parsedQuery, stopIndex, state.emmaRoutes) { mutableStateOf(true) }
+    val result by produceState(Pair(emptyList<TransitRoute>(), emptyList<TransitStop>()), parsedQuery, stopIndex, state.emmaRoutes, state.network, state.favorites) {
+        delay(120)
         value = withContext(Dispatchers.Default) {
-            state.stops.filter { normalize("${it.name} ${it.aliases.joinToString(" ")} ${it.platformCode.orEmpty()} ${it.sourceStopIds.joinToString(" ")}").contains(normalized) }
+            TransitSearch.routes(state.routes, parsedQuery) to TransitSearch.stops(stopIndex.orEmpty(), parsedQuery, state.userLocation, state.favorites)
         }
         stopSearchLoading = false
     }
+    val routes = result.first
+    val stops = result.second
     val favorites = stops.filter { it.id in state.favorites }
     val otherStops = stops.filterNot { it.id in state.favorites }
     LazyColumn(contentPadding = PaddingValues(bottom = 32.dp)) {
-        if (stopSearchLoading || !state.stopIndexLoaded && state.stopStatus == null) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
+        if (stopSearchLoading || stopIndex == null || !state.stopIndexLoaded && state.stopStatus == null) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
         if (!state.stopStatus.isNullOrBlank()) item { Notice(state.stopStatus, Icons.Rounded.LocationOn) }
         if (routes.isNotEmpty()) {
             item { SectionLabel(stringResource(R.string.ui_local_routes), stringResource(if (routes.any { it.providerId in setOf("volan", "bkk") }) R.string.volan_route_results else R.string.ui_directions_and_stops)) }
@@ -656,7 +649,7 @@ private fun SearchResults(state: UiState, query: String, onRoute: (String) -> Un
                 ) {
                     RouteBadge(route.number, route.providerId)
                     Column(Modifier.weight(1f)) {
-                        Text("${stringResource(R.string.ui_route_number, route.number)} · ${providerName(route.providerId)}", style = MaterialTheme.typography.titleMedium)
+                        Text(listOfNotNull(stringResource(R.string.ui_route_number, route.number), providerName(route.providerId), transportLabel(route.transportMode)).joinToString(" · "), style = MaterialTheme.typography.titleMedium)
                         Text(route.name, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     }
                     Icon(Icons.AutoMirrored.Rounded.ArrowForward, null, Modifier.size(19.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -671,7 +664,8 @@ private fun SearchResults(state: UiState, query: String, onRoute: (String) -> Un
             item { SectionLabel(stringResource(R.string.ui_stops), pluralStringResource(R.plurals.ui_results_count, stops.size, stops.size)) }
             items(otherStops, key = { "stop-${it.id}" }) { StopSearchRow(it, state, false, onStop) }
         }
-        if (routes.isEmpty() && stops.isEmpty() && !state.loading && !stopSearchLoading && state.stopIndexLoaded) {
+        if (routes.size >= 100 || stops.size >= 100) item { Notice(stringResource(R.string.search_refine), Icons.Rounded.Search) }
+        if (routes.isEmpty() && stops.isEmpty() && !state.loading && !stopSearchLoading && stopIndex != null && state.stopIndexLoaded) {
             item { EmptyState(stringResource(R.string.ui_no_results_title), stringResource(R.string.ui_no_results_body), Icons.Rounded.Search) }
         }
     }
@@ -853,42 +847,6 @@ private fun normalize(text: String): String = Normalizer.normalize(text, Normali
     .replace("\\p{M}+".toRegex(), "")
     .lowercase(Locale.forLanguageTag("hu-HU"))
 
-
-@Composable
-private fun NetworkSettingsDialog(enabled: Boolean, onChanged: (Boolean) -> Unit, accent: AccentColor, onAccentChanged: (AccentColor) -> Unit, onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.volan_settings)) },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text(stringResource(R.string.accent_title), style = MaterialTheme.typography.titleMedium)
-                Text(stringResource(R.string.accent_hint), style = MaterialTheme.typography.bodyMedium)
-                Column(Modifier.selectableGroup()) {
-                    AccentColor.entries.forEach { choice ->
-                        Row(Modifier.fillMaxWidth().heightIn(min = 48.dp)
-                            .selectable(selected = accent == choice, role = Role.RadioButton, onClick = { onAccentChanged(choice) }),
-                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            RadioButton(selected = accent == choice, onClick = null)
-                            Box(Modifier.size(20.dp).clip(CircleShape).background(choice.hue?.let { Color.hsl(it, 0.65f, 0.40f) } ?: MaterialTheme.colorScheme.primary))
-                            Text(stringResource(choice.labelRes), style = MaterialTheme.typography.bodyLarge)
-                        }
-                    }
-                }
-                HorizontalDivider()
-                Text(stringResource(R.string.volan_local_scope))
-                Row(Modifier.fillMaxWidth().heightIn(min = 64.dp)
-                    .toggleable(value = enabled, role = Role.Switch, onValueChange = onChanged)
-                    .padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(stringResource(R.string.volan_nationwide), Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
-                    Switch(checked = enabled, onCheckedChange = null)
-                }
-                Text(stringResource(R.string.volan_nationwide_hint), style = MaterialTheme.typography.bodyMedium)
-            }
-        },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.ui_close)) } },
-    )
-}
 
 @Composable
 private fun EmmaRouteDetails(state: UiState, route: TransitRoute) {

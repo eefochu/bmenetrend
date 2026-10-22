@@ -13,6 +13,7 @@ query LiveVehicles {
     modes: [BUS, COACH, TRAM, TROLLEYBUS, SUBWAY]
   ) {
     vehicleId lat lon heading label lastUpdated speed
+    nextStop { stopPosition stop { gtfsId name lat lon } }
     trip {
       gtfsId tripShortName tripHeadsign
       route { gtfsId shortName longName mode color textColor }
@@ -21,7 +22,7 @@ query LiveVehicles {
 }
 ```
 
-One request covers Hungary, including Budapest. The old per-map-area requests, cell limits and zoom-in restriction are gone. Data is fetched nationwide regardless of where the map is centred. The map creates native annotations for the visible area; the full snapshot remains available for searching route details. Vehicles remain visible at every supported zoom. Stops are small unnumbered dots. At wide zooms a fine geographic grid combines nearby platforms into an approximate dot; tapping it zooms in. At zoom 14 and above each source platform has its own larger selectable stop ring (22 dp, or 32 dp when selected). This keeps national views readable without rendering tens of thousands of native stop annotations. Source platform identities remain separate in search and departure boards.
+One request covers Hungary, including Budapest. The old per-map-area requests, cell limits and zoom-in restriction are gone. Data is fetched nationwide regardless of where the map is centred. The map creates native annotations for the visible area; the full snapshot remains available for searching route details. Vehicles remain visible at every supported zoom. Stops are small unnumbered dots. At wide zooms a fine geographic grid combines nearby platforms into an approximate dot; tapping it zooms in. At zoom 12.5 and above, each source platform has a larger selectable stop ring: 16 dp at medium zoom, 22 dp at close zoom, and 28/32 dp when selected. This keeps national views readable without rendering tens of thousands of native stop annotations. Source platform identities remain separate in search and departure boards.
 
 Only the source namespaces `hkir:` (Volán BUS/COACH) and `BKK:` (BUS/TRAM/TROLLEYBUS/SUBWAY) are accepted. This is necessary because even the BUS/COACH response includes other operators. Rail and unrelated city operators are excluded. BKK data is received **through the MÁVPlusz endpoint**, never a separate BKK/FUTÁR endpoint. The user-supplied circular transport icons identify vehicles: yellow Volán bus, green ViaBusz bus, light-blue BKK bus, red trolleybus, yellow tram and dark-blue train/metro. Mode takes priority over individual route colours. Vehicle icons shrink progressively from 36 dp at close zoom to 24, 18, 14 and 10 dp in wider views, keeping city labels readable. Route numbers and destination details appear on selection. Train-style markers cover metro and supported train modes; national rail tracking is not added by this visual change.
 
@@ -46,6 +47,8 @@ On failure, a successful snapshot is retained for at most 120 seconds with an ex
 ## Vehicle cards
 
 Tapping a vehicle replaces the bottom stop panel with its route number, transport icon, operator, destination, source label/registration, speed and observation time. The map centres the selected vehicle and highlights its icon. Closing the card returns to the previous stop panel. The vehicle snapshot updates with polling; an old observation receives an explicit stale-position warning.
+
+The live vehicle query also preserves EMMA’s `nextStop.stopPosition` and full source stop identity/coordinates. The card matches this against the exact trip stop order to show the preceding and next stop. Repeated/ambiguous loop occurrences do not produce guessed segments. A report within 45 metres of one of those stops and at 8 km/h or slower shows an explicitly labelled GPS estimate of being at the stop; no confirmed stop-status field is claimed. Reports over 180 seconds old do not produce a current progress label.
 
 For EMMA vehicles with a source trip ID, `trip(id:)` supplies the actual ordered stop list, route identity and headsign. Repeated stops on loop routes remain in source order. Selecting a listed stop opens its departure board. No route variant is inferred from position or proximity. Missing trip metadata and failed requests show separate states and an explicit refresh action. Selection/trip checks plus a request generation guard keep late responses from replacing a different card. The query requests no stop times because the trip-level response may carry `serviceDay: -1`; it must not be treated as a dated live prediction.
 
@@ -73,4 +76,10 @@ Raw device GPS and the user's current viewport are not sent to EMMA. Position re
 
 The local route catalogue can still be refreshed with `python3 scripts/import_volan_routes.py`. It imports official route identities, not live positions or calendars.
 
-Verified with 73 passing unit tests, debug assembly and lint (zero errors). A live request through the production query/parser returned 1,055 fresh Volán vehicles and 765 fresh BKK vehicles during validation. Emulator checks confirmed national mode starts enabled, transport icons, unnumbered stop dots, stop search, departure boards, vehicle cards and tap-to-zoom behavior. The cached stop index remained searchable after an offline restart, while the unavailable departure board showed a scoped retry message instead of an empty timetable. Screenshots are under `app/build/reports/emma/` (generated, not source-controlled). Counts vary with service and GPS availability.
+Verified with 84 passing unit tests, debug assembly and lint (zero errors). A live request through the production query/parser returned 1,055 fresh Volán vehicles and 765 fresh BKK vehicles during validation. Emulator checks confirmed national mode starts enabled, transport icons, unnumbered stop dots, stop search, departure boards, vehicle cards and tap-to-zoom behavior. The cached stop index remained searchable after an offline restart, while the unavailable departure board showed a scoped retry message instead of an empty timetable. Screenshots are under `app/build/reports/emma/` (generated, not source-controlled). Counts vary with service and GPS availability.
+
+## Search and appearance
+
+Search normalizes the national stop index once in the background, debounces queries, and ranks exact route numbers before prefixes. Hungarian/English transport words (including `1 villamos`, `villamos 1`, `1 tram`, `M1 metró`) filter by source route mode; provider terms filter operators. Stop terms can occur in any order. The best 100 results are shown, with a refinement hint at the limit, favourites and nearby stops prioritized.
+
+Settings is a full page containing preset and custom RGB/hex accent controls, the network setting and the source-information action. Custom seed colours are converted into readable tonal roles for both themes and persisted independently from the last selected preset. The map uses a dark style with blue water, differentiated roads and green parks when the system is dark. The floating search bar has a single localized Search label and the Settings action.

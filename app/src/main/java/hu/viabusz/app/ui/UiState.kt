@@ -41,6 +41,7 @@ data class UiState(
     val emmaRoutes: List<TransitRoute> = emptyList(),
     val nationwideNetwork: Boolean = true,
     val accentColor: AccentColor = AccentColor.SYSTEM,
+    val customAccentArgb: Int = 0xFF6750A4.toInt(),
     val emmaStatus: String? = null,
     val cameraRequest: Int = 0,
 ) {

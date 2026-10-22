@@ -18,6 +18,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import hu.viabusz.app.data.VehicleStopProgress
 import hu.viabusz.app.R
 import hu.viabusz.app.map.VehicleMarkerStyle
 import java.time.Duration
@@ -30,6 +31,7 @@ private val observationFormat = DateTimeFormatter.ofPattern("HH:mm:ss").withZone
 fun VehiclePanel(state: UiState, onClose: () -> Unit, onRefresh: () -> Unit, onStop: (String) -> Unit, modifier: Modifier = Modifier) {
     val vehicle = state.selectedVehicle ?: return
     val journey = state.vehicleJourney
+    val progress = VehicleStopProgress.resolve(vehicle, journey, state.now)
     val provider = when (vehicle.providerId) { "volan" -> "Volán"; "bkk" -> "BKK"; "homm" -> "HOMM"; "kanyargo" -> "KanyarGO"; else -> "ViaBusz" }
     val style = VehicleMarkerStyle.forVehicle(vehicle)
     val mode = stringResource(when (style) {
@@ -54,6 +56,14 @@ fun VehiclePanel(state: UiState, onClose: () -> Unit, onRefresh: () -> Unit, onS
         }
         Text(destination?.let { stringResource(R.string.emma_vehicle_towards, it) } ?: stringResource(R.string.emma_vehicle_no_direction),
             Modifier.padding(start = 22.dp, end = 22.dp, top = 12.dp), style = MaterialTheme.typography.titleMedium, maxLines = 3, overflow = TextOverflow.Ellipsis)
+        progress?.let { position ->
+            Text(when {
+                position.at != null -> stringResource(R.string.vehicle_at_stop, position.at.name)
+                position.previous != null && position.next != null -> stringResource(R.string.vehicle_between_stops, position.previous.name, position.next.name)
+                else -> stringResource(R.string.emma_vehicle_next_stop, position.next!!.name)
+            }, Modifier.padding(start = 22.dp, end = 22.dp, bottom = 12.dp), style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary)
+        }
         Text(listOfNotNull(vehicle.registration, vehicle.speedKmh?.let { stringResource(R.string.emma_speed, it.toInt()) }).joinToString(" · "),
             Modifier.padding(horizontal = 22.dp, vertical = 6.dp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(stringResource(R.string.volan_observation_time, observationFormat.format(vehicle.observedAt)),
@@ -84,7 +94,7 @@ fun VehiclePanel(state: UiState, onClose: () -> Unit, onRefresh: () -> Unit, onS
                 itemsIndexed(journey!!.stops, key = { index, stop -> "$index-${stop.id}" }) { index, stop ->
                     Row(Modifier.fillMaxWidth().clickable { onStop(stop.id) }.padding(horizontal = 22.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Text("${index + 1}", Modifier.width(30.dp), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
+                        Text(if (index == progress?.nextIndex) "→" else "${index + 1}", Modifier.width(30.dp), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
                         Column(Modifier.weight(1f)) {
                             Text(stop.name, style = MaterialTheme.typography.bodyLarge)
                             stop.platformCode?.let { Text(stringResource(R.string.emma_platform, it), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }

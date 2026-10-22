@@ -57,16 +57,18 @@ private val DarkColors = darkColorScheme(
 )
 
 /** Tonal roles keep the chosen hue readable in both themes, including their container colours. */
-internal fun accentColorScheme(accent: AccentColor, dark: Boolean): ColorScheme {
-    val hue = accent.hue ?: return if (dark) DarkColors else LightColors
-    fun tone(lightness: Float, saturation: Float = 0.65f, shift: Float = 0f) =
+internal fun accentColorScheme(accent: AccentColor, dark: Boolean, customArgb: Int = 0xFF6750A4.toInt()): ColorScheme {
+    val custom = accentHueSaturation(customArgb)
+    val hue = accent.hue ?: if (accent == AccentColor.CUSTOM) custom.first else return if (dark) DarkColors else LightColors
+    fun tone(lightness: Float, saturation: Float = if (accent == AccentColor.CUSTOM) custom.second.coerceAtMost(0.85f) else 0.65f, shift: Float = 0f) =
         Color.hsl((hue + shift) % 360f, saturation, lightness)
+    val lightPrimary = if (accent == AccentColor.CUSTOM) 0.27f else 0.30f
     return (if (dark) darkColorScheme() else lightColorScheme()).copy(
-        primary = tone(if (dark) 0.80f else 0.30f),
+        primary = tone(if (dark) 0.80f else lightPrimary),
         onPrimary = if (dark) tone(0.12f) else Color.White,
         primaryContainer = tone(if (dark) 0.24f else 0.90f),
         onPrimaryContainer = tone(if (dark) 0.93f else 0.12f),
-        inversePrimary = tone(if (dark) 0.30f else 0.80f),
+        inversePrimary = tone(if (dark) lightPrimary else 0.80f),
         secondary = tone(if (dark) 0.78f else 0.30f, 0.22f),
         onSecondary = if (dark) tone(0.12f, 0.22f) else Color.White,
         secondaryContainer = tone(if (dark) 0.24f else 0.90f, 0.22f),
@@ -95,10 +97,10 @@ internal fun accentColorScheme(accent: AccentColor, dark: Boolean): ColorScheme 
 }
 
 @Composable
-fun ViaBuszTheme(accent: AccentColor = AccentColor.SYSTEM, content: @Composable () -> Unit) {
+fun ViaBuszTheme(accent: AccentColor = AccentColor.SYSTEM, customArgb: Int = 0xFF6750A4.toInt(), content: @Composable () -> Unit) {
     val darkTheme = isSystemInDarkTheme()
     val context = LocalContext.current
-    val colors = if (accent != AccentColor.SYSTEM) accentColorScheme(accent, darkTheme)
+    val colors = if (accent != AccentColor.SYSTEM) accentColorScheme(accent, darkTheme, customArgb)
     else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
     } else if (darkTheme) DarkColors else LightColors

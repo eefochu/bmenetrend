@@ -17,7 +17,7 @@ data class TransitStop(
     val parentStationId: String? = null,
 )
 data class RouteDirection(val id: String, val name: String, val stopIds: List<String>, val restrictedService: Boolean = false)
-data class TransitRoute(val id: String, val number: String, val name: String, val directions: List<RouteDirection>, val providerId: String = "viabusz", val sourceUrl: String? = null)
+data class TransitRoute(val id: String, val number: String, val name: String, val directions: List<RouteDirection>, val providerId: String = "viabusz", val sourceUrl: String? = null, val transportMode: String? = null)
 data class StopTime(val stopId: String, val minuteOfDay: Int)
 data class ScheduledTrip(val id: String, val routeId: String, val directionId: String, val stopTimes: List<StopTime>, val calendar: String = "working_days")
 data class TransitNetwork(
@@ -49,6 +49,9 @@ data class Vehicle(
     val heading: Double? = null,
     val speedKmh: Double? = null,
     val markerColor: String? = null,
+    val nextStopId: String? = null,
+    val nextStopPosition: Int? = null,
+    val nextStopPoint: GeoPoint? = null,
 )
 enum class ArrivalKind { SCHEDULED, LIVE }
 data class Departure(

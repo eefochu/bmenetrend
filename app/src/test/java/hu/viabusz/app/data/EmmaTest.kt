@@ -38,6 +38,15 @@ class EmmaTest {
         assertNull(vehicle.markerColor) // Volán always uses the app's yellow, not source route colours.
         assertFalse(vehicle.positionMayBeInterpolated)
     }
+    @Test fun preservesSourceNextStopAndItsTripPosition() {
+        val row = bus().put("nextStop", JSONObject().put("stopPosition", 4).put("stop", JSONObject()
+            .put("gtfsId", "hkir:stop").put("name", "Páty").put("lat", 47.51).put("lon", 18.82)))
+        val parsed = EmmaParser.parse(response(row), now).single()
+        assertEquals("emma:hkir:stop", parsed.nextStopId)
+        assertEquals(4, parsed.nextStopPosition)
+        assertEquals("Páty", parsed.nextStopName)
+        assertEquals(GeoPoint(47.51, 18.82), parsed.nextStopPoint)
+    }
     @Test fun acceptsBkkModesThroughEmmaWithOfficialColoursButRejectsOtherProvidersAndRail() {
         val rows = listOf("BUS", "TRAM", "TROLLEYBUS", "SUBWAY").map(::bkk)
         val result = EmmaParser.parse(response(*(rows + bkk("RAIL") + bus("VBUSZ:123") + bus("1:train")).toTypedArray()), now)

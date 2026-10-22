@@ -46,6 +46,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         emmaRoutes = emmaRepository.catalogue,
         selectedStopId = initialNetwork.stops.firstOrNull { it.id == "1" }?.id ?: initialNetwork.stops.firstOrNull()?.id,
         favorites = preferences.getStringSet("favorites", emptySet())?.map(SharedStops::canonicalId)?.toSet().orEmpty(),
+        customAccentArgb = preferences.getInt("custom_accent_argb", 0xFF6750A4.toInt()),
         accentColor = AccentColor.fromKey(preferences.getString("accent_color", "system")),
         nationwideNetwork = preferences.getBoolean("emma_nationwide", true),
         windowMinutes = preferences.getInt("window", 60).takeIf { it in listOf(30, 60, 120) } ?: 60,
@@ -276,6 +277,13 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 if (journeyGeneration == generation && journeyKey == key) mutableState.update { it.copy(vehicleJourneyLoading = false) }
             }
         }
+    }
+
+    fun setCustomAccentColor(argb: Int) {
+        val opaque = argb or 0xFF000000.toInt()
+        if (state.value.accentColor == AccentColor.CUSTOM && state.value.customAccentArgb == opaque) return
+        preferences.edit().putInt("custom_accent_argb", opaque).putString("accent_color", AccentColor.CUSTOM.key).apply()
+        mutableState.update { it.copy(accentColor = AccentColor.CUSTOM, customAccentArgb = opaque) }
     }
 
     fun setAccentColor(accent: AccentColor) {

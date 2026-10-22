@@ -12,6 +12,7 @@ object EmmaParser {
           vehicles: vehiclePositions(swLat:45.7, swLon:16.1, neLat:48.6, neLon:22.9,
             modes:[BUS,COACH,TRAM,TROLLEYBUS,SUBWAY]) {
             vehicleId lat lon heading label lastUpdated speed
+            nextStop { stopPosition stop { gtfsId name lat lon } }
             trip { gtfsId tripShortName tripHeadsign
               route { gtfsId shortName longName mode color textColor }
             }
@@ -61,6 +62,8 @@ object EmmaParser {
             if (sourceRouteId != null && !sourceRouteId.startsWith(if (provider == "volan") "hkir:" else "BKK:")) continue
             val routeNumber = route?.text("shortName")
             val color = route?.text("color")?.takeIf { it.matches(Regex("[a-fA-F0-9]{6}")) }
+            val nextTime = row.optJSONObject("nextStop")
+            val nextStop = nextTime?.optJSONObject("stop")
             val vehicle = Vehicle(
                 id = "emma:$sourceId", position = GeoPoint(lat, lon), observedAt = observed,
                 routeId = sourceRouteId?.let { "$provider:$it" }, providerId = provider,
@@ -70,6 +73,12 @@ object EmmaParser {
                 heading = row.number("heading")?.takeIf { it in 0.0..360.0 },
                 speedKmh = row.number("speed")?.takeIf { it >= 0 }?.times(3.6),
                 markerColor = if (provider == "bkk") color else null,
+                nextStopId = nextStop?.text("gtfsId")?.let { "emma:$it" },
+                nextStopName = nextStop?.text("name"),
+                nextStopPosition = nextTime?.number("stopPosition")?.toInt()?.takeIf { it >= 0 },
+                nextStopPoint = nextStop?.number("lat")?.let { latitude -> nextStop.number("lon")?.let { longitude ->
+                    if (latitude in 45.7..48.6 && longitude in 16.1..22.9) GeoPoint(latitude, longitude) else null
+                } },
             )
             if (vehicles[vehicle.id]?.observedAt?.let { it >= observed } != true) vehicles[vehicle.id] = vehicle
         }
@@ -87,6 +96,6 @@ object EmmaParser {
     fun routeCatalogue(vehicles: List<Vehicle>, local: List<TransitRoute>): List<TransitRoute> =
         (local + vehicles.mapNotNull { vehicle ->
             val id = vehicle.routeId ?: return@mapNotNull null
-            TransitRoute(id, vehicle.routeNumber ?: "?", vehicle.routeName ?: vehicle.destination.orEmpty(), emptyList(), vehicle.providerId)
+            TransitRoute(id, vehicle.routeNumber ?: "?", vehicle.routeName ?: vehicle.destination.orEmpty(), emptyList(), vehicle.providerId, transportMode = vehicle.transportMode)
         }).distinctBy { it.id }
 }

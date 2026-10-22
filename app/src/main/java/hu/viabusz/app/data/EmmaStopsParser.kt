@@ -38,7 +38,7 @@ object EmmaStopsParser {
         val mode = row.text("mode") ?: return null
         if (mode !in if (provider == "volan") setOf("BUS", "COACH") else setOf("BUS", "TRAM", "TROLLEYBUS", "SUBWAY")) return null
         val number = row.text("shortName") ?: return null
-        return TransitRoute("$provider:$id", number, row.text("longName") ?: number, emptyList(), provider)
+        return TransitRoute("$provider:$id", number, row.text("longName") ?: number, emptyList(), provider, transportMode = mode)
     }
     private fun stops(rows: JSONArray): Catalogue {
         val routes = linkedMapOf<String, TransitRoute>()
