@@ -146,6 +146,21 @@ object EmmaStopsParser {
         }.distinctBy { listOf(it.routeId, it.directionId, it.expectedAt) }.sortedBy { it.expectedAt }
         return Board(expectedId, departures, catalogue.copy(routes = routes.values.toList()), now, limitReached || groups == null && rows.length() >= 100)
     }
+    fun combineBoards(clusterStopId: String, boards: List<Board>): Board {
+        require(boards.isNotEmpty()) { "Cannot combine empty boards" }
+        if (boards.size == 1) {
+            val single = boards.single()
+            return if (single.stopId == clusterStopId) single else single.copy(stopId = clusterStopId)
+        }
+        val allDepartures = boards.flatMap { it.departures }
+            .distinctBy { listOf(it.routeId, it.directionId, it.expectedAt) }
+            .sortedBy { it.expectedAt }
+        val allStops = boards.flatMap { it.catalogue.stops }.distinctBy { it.id }
+        val allRoutes = boards.flatMap { it.catalogue.routes }.distinctBy { it.id }
+        val maxFetchedAt = boards.maxOf { it.fetchedAt }
+        val limit = boards.any { it.limitReached }
+        return Board(clusterStopId, allDepartures, Catalogue(allStops, allRoutes), maxFetchedAt, limit)
+    }
     fun freshDepartures(board: Board?, stopId: String?, now: Instant, windowMinutes: Int): List<Departure> {
         if (board == null || board.stopId != stopId || Duration.between(board.fetchedAt, now).seconds !in 0..60) return emptyList()
         return board.departures.filter { it.expectedAt >= now && it.expectedAt <= now.plusSeconds(windowMinutes * 60L) }

@@ -78,4 +78,5 @@
     <string name="ui_about_homm_data">HOMM routes 288 and 289 show timetable departures only. Live vehicle locations and live arrival estimates are not available for these routes.</string>
     <string name="ui_homm_website">HOMM official website</string>
     <string name="ui_homm_schedule_only">HOMM timetable · no live data</string>
+    <string name="ui_multiple_stations">(multiple stations)</string>
 </resources>

@@ -8,6 +8,8 @@ import hu.viabusz.app.ui.AccentColor
 import hu.viabusz.app.ui.UiState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -187,12 +189,22 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         val now = Instant.now()
         val snapshot = live?.takeIf { Duration.between(it.fetchedAt, now).seconds in 0..45 }
         mutableState.update { current ->
-            val isEmmaStop = current.selectedStopId?.startsWith("emma:") == true
-            val validBoard = board?.takeIf { it.stopId == current.selectedStopId && Duration.between(it.fetchedAt, now).seconds in 0..60 }
-            val departures = if (isEmmaStop) EmmaStopsParser.freshDepartures(board, current.selectedStopId, now, current.windowMinutes)
-                else current.network?.let { network -> current.selectedStopId?.let { stop ->
-                    repository.departures(network, snapshot, stop, now, current.windowMinutes)
-                }}.orEmpty()
+            val selectedId = current.selectedStopId
+            val cluster = if (selectedId != null) StopClusters.clusterFor(selectedId, current.stops) else emptyList()
+            val hasEmma = cluster.any { it.id.startsWith("emma:") } || selectedId?.startsWith("emma:") == true
+            val validBoard = board?.takeIf { it.stopId == selectedId && Duration.between(it.fetchedAt, now).seconds in 0..60 }
+            val emmaDepartures = if (hasEmma) EmmaStopsParser.freshDepartures(board, selectedId, now, current.windowMinutes) else emptyList()
+            val localStops = if (cluster.isNotEmpty()) cluster.filterNot { it.id.startsWith("emma:") }
+                else if (selectedId?.startsWith("emma:") != true) current.stops.filter { it.id == selectedId } else emptyList()
+            val localDepartures = current.network?.let { network ->
+                localStops.flatMap { localStop ->
+                    repository.departures(network, snapshot, localStop.id, now, current.windowMinutes)
+                }
+            }.orEmpty()
+            val rawDepartures = (emmaDepartures + localDepartures)
+                .distinctBy { listOf(it.routeId, it.directionId, it.expectedAt) }
+                .sortedBy { it.expectedAt }
+            val departures = current.boardingSelection?.let { filter -> rawDepartures.filter(filter::matches) } ?: rawDepartures
             val emma = emmaLive?.takeIf {
                 Duration.between(it.fetchedAt, now).seconds in 0..120
             }
@@ -209,36 +221,39 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 else -> getApplication<Application>().getString(R.string.volan_unavailable)
             }
             val stop = current.stops.firstOrNull { it.id == current.selectedStopId }
-            val stopProviders = stop?.providerIds.orEmpty()
+            val stopProviders = if (cluster.isNotEmpty()) cluster.flatMap { it.providerIds }.distinct() else stop?.providerIds.orEmpty()
             val hommOnly = stopProviders == listOf("homm")
             val networkWarning = stopProviders.mapNotNull { current.network?.providerWarnings?.get(it) }
                 .distinct().joinToString("\n").takeIf { it.isNotBlank() }
             val liveWarning = stopProviders.mapNotNull { snapshot?.providerWarnings?.get(it) }
                 .distinct().joinToString("\n").takeIf { it.isNotBlank() }
+            val clusterStopIds = if (cluster.isNotEmpty()) cluster.map { it.id }.toSet() else setOfNotNull(selectedId)
             current.copy(
                 now = now,
-                boardUpdatedAt = if (isEmmaStop) validBoard?.fetchedAt else null,
+                boardUpdatedAt = if (hasEmma) validBoard?.fetchedAt else null,
                 error = null,
-                departureBoardLoading = isEmmaStop && boardLoading,
-                departureBoardUnavailable = isEmmaStop && !boardLoading && (boardFailure || validBoard == null),
-                departureStatus = if (!isEmmaStop) null else when {
+                departureBoardLoading = hasEmma && boardLoading,
+                departureBoardUnavailable = hasEmma && !boardLoading && (boardFailure || (validBoard == null && localDepartures.isEmpty())),
+                departureStatus = if (!hasEmma) null else when {
                     boardLoading && validBoard == null -> getApplication<Application>().getString(R.string.emma_board_loading)
                     boardFailure && validBoard != null -> getApplication<Application>().getString(R.string.emma_board_stale)
                     boardFailure || validBoard == null -> getApplication<Application>().getString(R.string.emma_board_unavailable)
                     validBoard.limitReached -> getApplication<Application>().getString(R.string.emma_board_limit)
                     else -> null
                 },
-                departures = current.boardingSelection?.let { filter -> departures.filter(filter::matches) } ?: departures,
+                departures = departures,
                 vehicles = vehicles,
                 selectedVehicle = current.selectedVehicle?.let { selected -> vehicles.find { it.id == selected.id } ?: selected },
                 emmaRoutes = EmmaParser.routeCatalogue(vehicles.filter { it.providerId in setOf("volan", "bkk") }, (stopRoutes + lineCatalogue + emmaRepository.catalogue).distinctBy { it.id }),
                 emmaStatus = emmaMessage,
-                // Route-less ETA signals must never be attached to a guessed bus route.
                 liveStopMinutes = snapshot?.arrivals.orEmpty()
-                    .filter { current.network?.let { network -> SharedStops.resolve(network, it.stopId) } == current.selectedStopId && it.isVerifiedRealtime }
+                    .filter {
+                        val resolved = current.network?.let { network -> SharedStops.resolve(network, it.stopId) } ?: it.stopId
+                        resolved in clusterStopIds && it.isVerifiedRealtime
+                    }
                     .map { max(0, it.minutes - Duration.between(snapshot!!.fetchedAt, now).toMinutes().toInt()) }
                     .filter { it in 1..current.windowMinutes }.distinct().sorted(),
-                status = mapError ?: if (isEmmaStop) null else networkWarning ?: if (hommOnly) null else
+                status = mapError ?: if (hasEmma && localDepartures.isEmpty()) null else networkWarning ?: if (hommOnly) null else
                     if (liveError && stopProviders.any { it in setOf("viabusz", "kanyargo") })
                         getApplication<Application>().getString(R.string.data_live_unavailable, stopProviders.filter { it in setOf("viabusz", "kanyargo") }
                             .joinToString(" / ") { if (it == "viabusz") "ViaBusz" else "KanyarGO" })
@@ -345,7 +360,12 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         boardJob?.cancel()
         board = null
         boardFailure = false
-        boardLoading = key.first?.startsWith("emma:") == true
+        val selectedId = key.first
+        val emmaStops = if (selectedId != null) {
+            StopClusters.clusterFor(selectedId, state.value.stops).filter { it.id.startsWith("emma:") }
+                .ifEmpty { if (selectedId.startsWith("emma:")) state.value.stops.filter { it.id == selectedId } else emptyList() }
+        } else emptyList()
+        boardLoading = emmaStops.isNotEmpty()
         recalculate()
         if (boardLoading) boardJob = viewModelScope.launch { refreshBoard(waitForCurrent = true) }
     }
@@ -353,20 +373,39 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private suspend fun refreshBoard(waitForCurrent: Boolean = false) {
         if (!waitForCurrent && boardMutex.isLocked) return
         boardMutex.withLock {
-            val stopId = state.value.selectedStopId?.takeIf { it.startsWith("emma:") } ?: return@withLock
+            val stopId = state.value.selectedStopId ?: return@withLock
             val window = state.value.windowMinutes
+            val allStops = state.value.stops
+            val cluster = StopClusters.clusterFor(stopId, allStops)
+            val emmaStops = cluster.filter { it.id.startsWith("emma:") }
+                .ifEmpty { if (stopId.startsWith("emma:")) allStops.filter { it.id == stopId } else emptyList() }
+            if (emmaStops.isEmpty()) return@withLock
             boardLoading = true
             recalculate()
             try {
-                val result = stopsRepository.board(stopId, window)
+                val results = coroutineScope {
+                    emmaStops.map { emmaStop ->
+                        async {
+                            runCatching { stopsRepository.board(emmaStop.id, window) }.getOrNull()
+                        }
+                    }.awaitAll()
+                }.filterNotNull()
+
                 if (state.value.selectedStopId == stopId && state.value.windowMinutes == window) {
-                    board = result
-                    boardFailure = false
-                    val stop = result.catalogue.stops.single()
-                    stopRoutes = (stopRoutes + result.catalogue.routes).distinctBy { it.id }
-                    mutableState.update { current -> current.copy(emmaStops = current.emmaStops.map {
-                        if (it.id == stop.id) stop else it
-                    }) }
+                    if (results.isEmpty()) {
+                        boardFailure = true
+                    } else {
+                        board = EmmaStopsParser.combineBoards(stopId, results)
+                        boardFailure = false
+                        val routes = results.flatMap { it.catalogue.routes }.distinctBy { it.id }
+                        stopRoutes = (stopRoutes + routes).distinctBy { it.id }
+                        val newStopsMap = results.flatMap { it.catalogue.stops }.associateBy { it.id }
+                        mutableState.update { current ->
+                            current.copy(emmaStops = current.emmaStops.map {
+                                newStopsMap[it.id] ?: it
+                            })
+                        }
+                    }
                 }
             } catch (cancelled: CancellationException) { throw cancelled
             } catch (_: Exception) {
