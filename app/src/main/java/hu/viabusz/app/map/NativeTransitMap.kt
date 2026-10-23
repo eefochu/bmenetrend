@@ -49,7 +49,6 @@ import org.maplibre.geojson.LineString
 import org.maplibre.geojson.Point
 import org.maplibre.android.maps.Style
 import org.maplibre.android.style.layers.LineLayer
-import org.maplibre.android.style.layers.SymbolLayer
 import org.maplibre.android.style.layers.CircleLayer
 import org.maplibre.android.style.expressions.Expression
 import org.maplibre.android.style.layers.PropertyFactory
@@ -257,11 +256,11 @@ fun NativeTransitMap(
                 minZoom = STOP_MIN_ZOOM.toFloat()
                 maxZoom = StopMapClustering.DETAIL_ZOOM.toFloat()
             }
-            val labels = style.layers.firstOrNull { it is SymbolLayer }?.id
-            if (labels != null) style.addLayerBelow(layer, labels) else style.addLayer(layer)
+            val casingLayer = style.getLayer("selected-line-casing")
+            if (casingLayer != null) style.addLayerBelow(layer, "selected-line-casing") else style.addLayer(layer)
         }
     }
-    LaunchedEffect(map, styleLoaded, routeGeometry, routeColor) {
+    LaunchedEffect(map, styleLoaded, routeGeometry, routeColor, darkTheme) {
         val ready = map ?: return@LaunchedEffect
         if (!styleLoaded) return@LaunchedEffect
         val style = ready.style ?: return@LaunchedEffect
@@ -277,10 +276,10 @@ fun NativeTransitMap(
             val line = LineLayer("selected-line-stroke", "selected-line").withProperties(
                 PropertyFactory.lineColor(routeColor), PropertyFactory.lineWidth(5f),
                 PropertyFactory.lineCap("round"), PropertyFactory.lineJoin("round"))
-            val labelLayer = style.layers.firstOrNull { it is SymbolLayer }?.id
-            if (labelLayer != null) style.addLayerBelow(casing, labelLayer) else style.addLayer(casing)
+            style.addLayer(casing)
             style.addLayerAbove(line, "selected-line-casing")
         }
+        style.getLayerAs<LineLayer>("selected-line-casing")?.setProperties(PropertyFactory.lineColor(if (darkTheme) "#17212D" else "#FFFFFF"))
         style.getLayerAs<LineLayer>("selected-line-stroke")?.setProperties(PropertyFactory.lineColor(routeColor))
     }
     LaunchedEffect(map, styleLoaded, fitRouteRequest) {
