@@ -78,4 +78,5 @@
     <string name="ui_about_homm_data">A HOMM 288-as és 289-es járatán csak menetrendi indulások láthatók. Ezekhez a járatokhoz nem érhető el élő buszhelyzet és valós idejű érkezési becslés.</string>
     <string name="ui_homm_website">HOMM hivatalos weboldal</string>
     <string name="ui_homm_schedule_only">HOMM-menetrend · élő adatok nélkül</string>
+    <string name="ui_multiple_stations">(több megálló)</string>
 </resources>

@@ -100,6 +100,7 @@ import hu.viabusz.app.R
 import hu.viabusz.app.data.ArrivalKind
 import hu.viabusz.app.data.Departure
 import hu.viabusz.app.data.RouteDirection
+import hu.viabusz.app.data.StopClusters
 import hu.viabusz.app.data.TransitRoute
 import hu.viabusz.app.data.TransitStop
 import java.time.Duration
@@ -136,7 +137,7 @@ fun ViaBuszScreen(
     onSearchPlaces: (String, Boolean) -> Unit = { _, _ -> },
     onPlaceSelected: (hu.viabusz.app.data.PlaceResult) -> Unit = {},
     onPlaceClosed: () -> Unit = {},
-    mapContent: @Composable (Modifier, Int) -> Unit,
+    mapContent: @Composable (Modifier, Int) -> Unit = { modifier, _ -> Box(modifier) },
 ) {
     var searchOpen by rememberSaveable { mutableStateOf(false) }
     var query by rememberSaveable { mutableStateOf("") }
@@ -411,9 +412,20 @@ private fun StopPanel(
     modifier: Modifier = Modifier,
 ) {
     val routeById = remember(state.network?.routes, state.emmaRoutes) { state.routes.associateBy { it.id } }
-    val boardingInfo = stop?.platformCode?.let { stringResource(R.string.emma_platform, it) }
-        ?: stop?.takeIf { it.id.startsWith("emma:") }?.let { stringResource(R.string.emma_stop_code, it.id.substringAfterLast(":")) }
-    val timetableOnly = stop?.providerIds?.let { providers -> providers.isNotEmpty() && providers.all { it == "homm" } } == true
+    val isMulti = stop != null && (stop.isMultiStop || remember(stop.id, state.stops) { StopClusters.isMultiStop(stop.id, state.stops) })
+    val stopTitle = if (stop != null) {
+        StopClusters.stopDisplayName(stop.name, isMulti, stringResource(R.string.ui_multiple_stations))
+    } else stringResource(if (state.loading) R.string.ui_loading_stops else R.string.ui_select_stop)
+    val clusterProviders = remember(stop?.id, state.stops) {
+        if (stop == null) emptyList()
+        else {
+            val cluster = StopClusters.clusterFor(stop.id, state.stops)
+            cluster.flatMap { it.providerIds }.distinct().ifEmpty { stop.providerIds }
+        }
+    }
+    val boardingInfo = if (isMulti) null else (stop?.platformCode?.let { stringResource(R.string.emma_platform, it) }
+        ?: stop?.takeIf { it.id.startsWith("emma:") }?.let { stringResource(R.string.emma_stop_code, it.id.substringAfterLast(":")) })
+    val timetableOnly = clusterProviders.isNotEmpty() && clusterProviders.all { it == "homm" }
     Column(modifier) {
         Row(Modifier.fillMaxWidth().padding(start = 22.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
@@ -431,9 +443,9 @@ private fun StopPanel(
                         letterSpacing = 0.8.sp,
                     )
                 }
-                Text(stop?.name ?: stringResource(if (state.loading) R.string.ui_loading_stops else R.string.ui_select_stop), style = MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 5.dp))
+                Text(stopTitle, style = MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 5.dp))
                 if (stop != null) {
-                    Text(listOfNotNull(providerNames(stop.providerIds), boardingInfo).joinToString(" · "), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 3.dp))
+                    Text(listOfNotNull(providerNames(clusterProviders), boardingInfo).joinToString(" · "), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 3.dp))
                 }
             }
             if (stop != null) {
@@ -670,6 +682,8 @@ private fun stopLabel(stop: TransitStop): String? = stop.platformCode?.let { str
 
 @Composable
 internal fun StopSearchRow(stop: TransitStop, state: UiState, favorite: Boolean, onStop: (String) -> Unit) {
+    val isMulti = stop.isMultiStop || remember(stop.id, state.stops) { StopClusters.isMultiStop(stop.id, state.stops) }
+    val displayName = StopClusters.stopDisplayName(stop.name, isMulti, stringResource(R.string.ui_multiple_stations))
     Row(
         Modifier.fillMaxWidth().clickable { onStop(stop.id) }.padding(horizontal = 22.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -679,9 +693,10 @@ internal fun StopSearchRow(stop: TransitStop, state: UiState, favorite: Boolean,
             Icon(if (favorite) Icons.Rounded.Favorite else Icons.Rounded.LocationOn, null, Modifier.padding(11.dp).size(21.dp), tint = MaterialTheme.colorScheme.primary)
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(stop.name, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(displayName, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
             val numbers = stop.routeIds.map { id -> state.routes.find { it.id == id }?.number ?: id }.distinct()
-            Text(listOfNotNull(providerNames(stop.providerIds), stopLabel(stop), numbers.joinToString(" · ").takeIf { it.isNotBlank() }).joinToString(" · "), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            val boarding = if (isMulti) null else stopLabel(stop)
+            Text(listOfNotNull(providerNames(stop.providerIds), boarding, numbers.joinToString(" · ").takeIf { it.isNotBlank() }).joinToString(" · "), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Icon(Icons.AutoMirrored.Rounded.ArrowForward, null, Modifier.size(19.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }

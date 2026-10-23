@@ -16,6 +16,7 @@ data class TransitStop(
     val station: Boolean = false,
     val parentStationId: String? = null,
     val transportMode: String? = null,
+    val isMultiStop: Boolean = false,
 )
 data class RouteDirection(val id: String, val name: String, val stopIds: List<String>, val restrictedService: Boolean = false)
 data class TransitRoute(val id: String, val number: String, val name: String, val directions: List<RouteDirection>, val providerId: String = "viabusz", val sourceUrl: String? = null, val transportMode: String? = null, val color: String? = null)

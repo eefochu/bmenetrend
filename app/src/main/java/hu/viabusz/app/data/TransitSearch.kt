@@ -5,9 +5,14 @@ import java.util.Locale
 
 /** Normalize the national stop index once. Query work is token matching, not repeated accent folding. */
 object TransitSearch {
-    data class StopEntry(val stop: TransitStop, val text: String, val name: String)
+    data class StopEntry(
+        val stop: TransitStop,
+        val text: String,
+        val name: String,
+        val isMultiStop: Boolean = stop.isMultiStop,
+    )
     data class Query(val text: String, val terms: List<String>, val modes: Set<String>, val provider: String?)
-    private val marks = Regex("\\p{M}+")
+    private val marks = Regex("""\p{M}+""")
     fun normalize(text: String) = Normalizer.normalize(text, Normalizer.Form.NFD)
         .replace(marks, "").lowercase(Locale.ROOT).trim()
     private val aliases = mapOf(
@@ -18,8 +23,8 @@ object TransitSearch {
         "vonat" to setOf("RAIL", "SUBURBAN_RAILWAY", "TRAMTRAIN"), "train" to setOf("RAIL", "SUBURBAN_RAILWAY", "TRAMTRAIN"),
     )
     fun query(text: String): Query {
-        val normalized = normalize(text).replace(Regex("\\b([a-z]?\\d+[a-z]?)-(?:es|as|os)\\b"), "$1")
-        val tokens = normalized.split(Regex("\\s+")).filter(String::isNotBlank)
+        val normalized = normalize(text).replace(Regex("""\b([a-z]?\d+[a-z]?)-(?:es|as|os)\b"""), "$1")
+        val tokens = normalized.split(Regex("""\s+""")).filter(String::isNotBlank)
         val modes = tokens.flatMap { aliases[it].orEmpty() }.toSet()
         val provider = tokens.firstOrNull { it in setOf("volan", "bkk", "viabusz", "kanyargo", "homm") }
         return Query(normalized, tokens.filter { it !in aliases && it != provider }, modes, provider)
@@ -36,7 +41,18 @@ object TransitSearch {
     }.sortedWith(compareByDescending<Pair<TransitRoute, Int>> { it.second }.thenBy { it.first.number.length }.thenBy { it.first.number })
         .take(100).map { it.first }
 
-    fun indexStops(stops: List<TransitStop>) = stops.map { StopEntry(it, normalize("${it.name} ${it.aliases.joinToString(" ")} ${it.platformCode.orEmpty()} ${it.sourceStopIds.joinToString(" ")}"), normalize(it.name)) }
+    fun indexStops(stops: List<TransitStop>): List<StopEntry> {
+        val consolidated = StopClusters.consolidateForSearch(stops)
+        return consolidated.map { stop ->
+            val multiTokens = if (stop.isMultiStop) "tobbmegallo tobb megallo multiple stations multiplestations" else ""
+            StopEntry(
+                stop = stop,
+                text = normalize("${stop.name} ${stop.aliases.joinToString(" ")} ${stop.platformCode.orEmpty()} ${stop.sourceStopIds.joinToString(" ")} $multiTokens"),
+                name = normalize(stop.name),
+                isMultiStop = stop.isMultiStop,
+            )
+        }
+    }
     fun vehicles(vehicles: List<Vehicle>, query: Query): List<Vehicle> = vehicles.mapNotNull { vehicle ->
         val mode = vehicle.transportMode ?: "BUS"
         if (query.modes.isNotEmpty() && mode !in query.modes || query.provider != null && query.provider != vehicle.providerId) return@mapNotNull null
