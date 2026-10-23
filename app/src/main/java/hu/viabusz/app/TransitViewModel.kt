@@ -29,6 +29,9 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private val emmaRepository = EmmaRepository(application)
     private val stopsRepository = EmmaStopsRepository(application)
     private val linesRepository = EmmaLinesRepository(application)
+    private val placesRepository = PlacesRepository(application)
+    private var placeSearchJob: Job? = null
+    private var placeSearchGeneration = 0
     private var lineCatalogue = emptyList<TransitRoute>()
     private var lineCatalogueFailed = false
     private val lineLoadedAt = mutableMapOf<String, Instant>()
@@ -249,7 +252,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
 
     fun selectVehicle(id: String) {
         val vehicle = state.value.vehicles.find { it.id == id } ?: return
-        mutableState.update { it.copy(selectedVehicle = vehicle) }
+        mutableState.update { it.copy(selectedVehicle = vehicle, selectedPlace = null) }
         ensureVehicleJourney()
     }
 
@@ -442,8 +445,36 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     fun clearBoardingSelection() { mutableState.update { it.copy(boardingSelection = null) }; recalculate() }
     fun showWholeRoute() { mutableState.update { it.copy(fitRouteRequest = it.fitRouteRequest + 1) } }
 
+    fun searchPlaces(query: String, enabled: Boolean) {
+        val generation = ++placeSearchGeneration
+        placeSearchJob?.cancel()
+        val shouldSearch = enabled && query.trim().length >= 2
+        mutableState.update { it.copy(placeQuery = query, placeResults = emptyList(), placesLoading = shouldSearch, placesUnavailable = false) }
+        if (!shouldSearch) return
+        placeSearchJob = viewModelScope.launch {
+            delay(500)
+            try {
+                val places = placesRepository.search(query)
+                if (generation == placeSearchGeneration) mutableState.update { it.copy(placeResults = places, placesLoading = false) }
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) {
+                if (generation == placeSearchGeneration) mutableState.update { it.copy(placesLoading = false, placesUnavailable = true) }
+            }
+        }
+    }
+
+    fun selectPlace(place: PlaceResult) {
+        closeVehicle()
+        manualStop = true
+        mutableState.update { it.copy(selectedPlace = place, selectedStopId = null, boardingSelection = null, placeCameraRequest = it.placeCameraRequest + 1) }
+        recalculate()
+        ensureBoardRequest()
+    }
+
+    fun clearPlace() { mutableState.update { it.copy(selectedPlace = null) } }
+
     fun selectStop(id: String) {
-        mutableState.update { it.copy(boardingSelection = null) }
+        mutableState.update { it.copy(boardingSelection = null, selectedPlace = null) }
         closeVehicle()
         manualStop = true
         val selectedId = state.value.network?.let { SharedStops.resolve(it, id) } ?: SharedStops.canonicalId(id)
@@ -459,7 +490,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun useNearest() {
-        mutableState.update { it.copy(boardingSelection = null) }
+        mutableState.update { it.copy(boardingSelection = null, selectedPlace = null) }
         closeVehicle()
         manualStop = false
         state.value.nearestStopId?.let { id -> mutableState.update { it.copy(selectedStopId = id, cameraRequest = it.cameraRequest + 1) } }

@@ -23,7 +23,7 @@
     <string name="ui_now">Now</string>
     <string name="ui_back">Back</string>
     <string name="ui_close">Close</string>
-    <string name="ui_search_field_hint">Stop or route</string>
+    <string name="ui_search_field_hint">Places, stations or vehicles</string>
     <string name="ui_clear_search">Clear search</string>
     <string name="ui_choose_direction">Choose a direction</string>
     <string name="ui_stops">Stops</string>

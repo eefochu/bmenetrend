@@ -37,6 +37,22 @@ object TransitSearch {
         .take(100).map { it.first }
 
     fun indexStops(stops: List<TransitStop>) = stops.map { StopEntry(it, normalize("${it.name} ${it.aliases.joinToString(" ")} ${it.platformCode.orEmpty()} ${it.sourceStopIds.joinToString(" ")}"), normalize(it.name)) }
+    fun vehicles(vehicles: List<Vehicle>, query: Query): List<Vehicle> = vehicles.mapNotNull { vehicle ->
+        val mode = vehicle.transportMode ?: "BUS"
+        if (query.modes.isNotEmpty() && mode !in query.modes || query.provider != null && query.provider != vehicle.providerId) return@mapNotNull null
+        val number = normalize(vehicle.routeNumber.orEmpty())
+        val text = normalize(listOfNotNull(vehicle.registration, vehicle.id, vehicle.routeNumber, vehicle.routeName, vehicle.destination, vehicle.providerId).joinToString(" "))
+        val compact = text.replace(Regex("[^a-z0-9]"), "")
+        val numeric = query.terms.firstOrNull { it.matches(Regex("[a-z]?\\d+[a-z]?")) }
+        if (numeric != null && query.modes.isNotEmpty() && numeric != number) return@mapNotNull null
+        if (query.terms.any { !text.contains(it) && !compact.contains(it.replace(Regex("[^a-z0-9]"), "")) }) return@mapNotNull null
+        vehicle to when {
+            normalize(vehicle.registration.orEmpty()).replace("-", "") == query.text.replace("-", "") -> 100
+            number == query.text -> 50
+            else -> 0
+        }
+    }.sortedWith(compareByDescending<Pair<Vehicle, Int>> { it.second }.thenByDescending { it.first.observedAt })
+        .take(100).map { it.first }
     fun stops(index: List<StopEntry>, query: Query, location: GeoPoint?, favorites: Set<String>): List<TransitStop> {
         if (query.modes.isNotEmpty()) return emptyList()
         return index.asSequence().filter { entry ->

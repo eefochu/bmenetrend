@@ -9,6 +9,7 @@ import hu.viabusz.app.data.LineDetails
 import hu.viabusz.app.data.BoardingSelection
 import hu.viabusz.app.data.VehicleJourney
 import hu.viabusz.app.data.Vehicle
+import hu.viabusz.app.data.PlaceResult
 import java.time.Instant
 
 data class UiState(
@@ -17,6 +18,12 @@ data class UiState(
     val departures: List<Departure> = emptyList(),
     val vehicles: List<Vehicle> = emptyList(),
     val selectedVehicle: Vehicle? = null,
+    val selectedPlace: PlaceResult? = null,
+    val placeCameraRequest: Int = 0,
+    val placeResults: List<PlaceResult> = emptyList(),
+    val placeQuery: String = "",
+    val placesLoading: Boolean = false,
+    val placesUnavailable: Boolean = false,
     val lineDetails: Map<String, LineDetails> = emptyMap(),
     val loadingLineId: String? = null,
     val lineErrorId: String? = null,
