@@ -4,7 +4,6 @@
 [![Android](https://img.shields.io/badge/Android-8.0%2B%20(API%2026%2B)-3DDC84?logo=android&logoColor=white)](https://developer.android.com)
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
 [![MapLibre](https://img.shields.io/badge/MapLibre-Native%20Android-blue?logo=maplibre&logoColor=white)](https://maplibre.org)
-[![Licenc](https://img.shields.io/badge/Licenc-MIT-brightgreen)](#)
 
 > Modern, natív Androidos menetrend és élő járatkövető a budapesti agglomerációhoz és Magyarországhoz. Valós idejű járműpozíciók, szinkronizált helyi menetrendek és egységesített átszállópontok — reklámok, követés és felesleges sallang nélkül.
 
