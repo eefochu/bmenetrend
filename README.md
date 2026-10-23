@@ -1,84 +1,94 @@
-# BMenetrend – natív Android, Biatorbágy, Páty és Budaörs
+# 🚏 BMenetrend
 
-Kotlin + Jetpack Compose alkalmazás, Material 3 / Material You felülettel. Android 8.0 vagy újabb rendszer szükséges; Android 12-től a Rendszer színbeállítás a telefon színeihez igazodik. A Beállítások → Kiemelőszín alatt zöld, kék, lila, rózsaszín vagy narancssárga téma, illetve RGB-csúszkákkal vagy hexadecimális kóddal egyéni szín választható; az app megőrzi a választást. A Beállítások teljes oldalon jelenik meg, és az adatforrás-információk is innen érhetők el. A térkép követi a rendszer világos/sötét módját; sötét módban színesebb vízfelületek, jól elkülönülő utak és olvasható feliratok segítik a tájékozódást.
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.0+-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
+[![Android](https://img.shields.io/badge/Android-8.0%2B%20(API%2026%2B)-3DDC84?logo=android&logoColor=white)](https://developer.android.com)
+[![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
+[![OpenFreeMap](https://img.shields.io/badge/OpenFreeMap-Keyless%20maps-207D92)](https://openfreemap.org/)
+[![Licenc](https://img.shields.io/badge/Licenc-MIT-brightgreen)](#)
 
-## A 0.3.0 változat
+> Modern, natív Androidos menetrend és élő járatkövető a budapesti agglomerációhoz és Magyarországhoz. Valós idejű járműpozíciók, szinkronizált helyi menetrendek és egységesített átszállópontok — reklámok, követés és felesleges sallang nélkül.
 
-- A közös ViaBusz/KanyarGO megállók egy térképi pontként jelennek meg, közös induláslistával. Vasútállomás, Ritsmann Iskola, Juhász Gyula utca, Vendel tér és Szentháromság tér. A szemközti peronokat megőrizzük. A korábbi megállónevek kereshetők, a mentett kedvencek megmaradnak.
-- Bekerült a budaörsi **HOMM 288 és 289** menetrendje és megállói. A tanítási napok és a tanítási szünet/hétvége/ünnepnap külön táblát használ. Nincs HOMM élő GPS vagy érkezési becslés: a felület ezt egyértelműen jelzi.
-- **Javított ViaBusz-naptár:** a korábbi munkanapi HTML-tábla helyett a külön hivatalos tanítási és tanszüneti PDF-ekből számol. Tanszünetben például nincs 3-as indulás. A KanyarGO két naptártípusa továbbra is külön marad.
-- Megmaradt az angol alapnyelv és automatikus magyar felület, az üresen megnyíló kereső, a teljesen elrejthető indulási panel és az indulásból közvetlenül megnyitható irány szerinti megállólista.
+---
 
-## Járatok, megállók és térkép
+## ✨ Főbb funkciók
 
-**ViaBusz:** 1, 1P, 2, 3, 4; 74 forrásbeli megállóazonosító, 49 tanítási és 30 tanszüneti munkanapi menet.
+- **Több hálózat egy helyen**: A biatorbágyi, pátyi és budaörsi helyi járatok, valamint az országos Volánbusz és budapesti BKK vonalak egyetlen letisztult felületen.
+- **Élő járműradar**: Valós idejű GPS-pozíciók, útvonal-geometria, megállók közötti haladás, késési adatok és 15 másodpercenként frissülő járműkártyák.
+- **Natív vektortérkép**: Teljes képernyős [MapLibre](https://maplibre.org/) motor [OpenFreeMap](https://openfreemap.org/) vektoros csempékkel, automatikus világos témával és saját, színes éjszakai térképstílussal. API-kulcs és számlázási fiók nélkül.
+- **Kategorizált villámkereső**: Gyors keresés három kategóriában: **Helyek** (Photon / OpenStreetMap), **Megállók** (peronelrendezéssel) és **Járművek** (járatszám, rendszám vagy célállomás alapján).
+- **Önálló peronok**: A megállók külön, saját forráskoordinátáikkal jelennek meg; az egymást fedő jelölők minimális eltolással külön kiválaszthatók.
+- **Material You & egyéni színek**: Finom animációk, edge-to-edge felület, rendszerhez igazodó dinamikus Monet színek (Android 12+) vagy egyéni RGB/HEX színválasztó.
+- **Fiókmentes használat**: Nincs beépített analitika. A térkép- és keresőszolgáltatók a kérések kiszolgálásához megkapják az IP-címet és a kért adatokat.
 
-**KanyarGO:** 1A, 1D, 1J, 1M, 1MT, 1MV, 1T, 1V; 37 forrásbeli megállóazonosító, tanítási és tanszüneti menetrend. A két időszak menetei nem keverednek. A regisztrációhoz kötött iskolai szakaszokat a felület külön jelzi.
+---
 
-**HOMM:** 288, 289; 78 térképi megálló, 93 tanítási és 56 szüneti menet. A 289-es reggeli rövid menete külön útvonalváltozat. A koordináták Budaörs önkormányzatának hivatalos térképéről származnak.
+## 🚌 Támogatott közlekedési hálózatok
 
-A natív MapLibre térképen a ViaBusz megállói és járművei zöld, a KanyarGO adatai lila jelölést kapnak. A HOMM megállói narancs, a közös megállók türkiz jelölésűek. A kék pont a készülék helyzete. A kereső és az induláslista jelzi a szolgáltatót is. Részletes megfeleltetés: [KOZOS-MEGALLOK.md](docs/KOZOS-MEGALLOK.md).
+| Szolgáltató | Terület | Lefedettség és jellemzők |
+|---|---|---|
+| **ViaBusz** | Biatorbágy | `1`, `1P`, `2`, `3`, `4` járatok hivatalos tanítási és tanszüneti naptárral |
+| **KanyarGO** | Páty | `1A`, `1D`, `1J`, `1M`, `1MT`, `1MV`, `1T`, `1V` iskolai és normál menetrenddel |
+| **HOMM** | Budaörs | `288`, `289` vonalak hitelesített önkormányzati megállókkal és útvonalakkal |
+| **Volánbusz** | Országos | Helyközi és távolsági autóbuszok MÁV EMMA GraphQL adatokból |
+| **BKK** | Budapest | Buszok, villamosok, trolik és metrók MÁV EMMA integrációval |
 
-Helyengedéllyel a legközelebbi megálló automatikusan kiválasztódik. Kézi választást nem ír felül egy későbbi GPS-frissítés. Megálló választásakor a panel visszanyílik. Kedvencek és 30/60/120 perces indulási időablak helyben menthetők.
+A közös átszállópontok (pl. *Biatorbágy vasútállomás*) automatikusan egy közös, összevont indulási táblán jelennek meg.
 
-## Mit jelentenek az élő adatok?
+---
 
-A ViaBusz és a KanyarGO hivatalos weboldalának nyilvános járműfeedje friss GPS-koordinátákat szolgáltat, de az ellenőrzött válaszok **nem tartalmaznak megbízható járat-/menetazonosítót**. Ezért az azonosítatlan járművek `BUS` / `BUSZ` jelölést kapnak. Rákoppintva a szolgáltató, a járműazonosító és a GPS-adat időpontja olvasható.
+## 🛠️ Architektúra és technológiák
 
-A számozott indulások **Scheduled / Menetrend szerint** jelölésűek. Az alkalmazás nem rendeli találgatással egy buszhoz a menetrendben legközelebbi indulást. Ha a szolgáltató tényleges jármű–megálló ETA-párt küld, az külön, ellenőrzött megállói jelzésként használható; a hiányzó járatazonosítót ez sem pótolja.
+- **UI keretrendszer**: Deklaratív felület [Jetpack Compose](https://developer.android.com/jetpack/compose) és [Material 3](https://m3.material.io/) alapokon
+- **Térképmotor**: [MapLibre Native Android](https://maplibre.org/) + [OpenFreeMap](https://openfreemap.org/) vektoros csempék
+- **Hálózat és adatfolyam**: OkHttp, Kotlinx Serialization, közvetlen GraphQL kliens a MÁV EMMA / MÁVPlusz végpontokhoz
+- **Helykeresés**: Cím- és helymeghatározás a [Photon](https://photon.komoot.io/) / OpenStreetMap API segítségével
+- **Állapotkezelés**: MVVM minta Kotlin Coroutines és StateFlow architektúrával, helyi gyorsítótárral
 
-A számozott, járatonkénti valós idejű érkezéshez további szolgáltatói adatkapcsolat kell, például GTFS + GTFS-Realtime. Az app 15 másodperces szünetekkel frissít az előtérben; 180 másodpercnél régebbi GPS-pozíciót nem mutat élőként.
+---
 
-## Menetrend, érvényesség, kimaradások
+## 🚀 Fordítás és futtatás
 
-Mindhárom szolgáltató tanítási és tanszüneti menetrendjét a hivatalos PDF-ekből, vizuálisan ellenőrzött import tartalmazza. A kliens naponta ellenőrzi az aktuális oldalt és a PDF-ek lenyomatát. Új vagy megváltozott dokumentum esetén az érintett menetrend visszaszámlálása leáll, amíg az importot nem frissítik; a megállók, útvonalak és friss GPS-adatok tovább használhatók.
+### Követelmények
+- **JDK 17**
+- **Android SDK Platform 36** (Build Tools 35.0.0+)
+- **Android 8.0+** (API level 26+) készülék vagy emulátor
 
-A szolgáltatók külön cache-t és érvényességi dátumot használnak: az egyik hibája nem kapcsolja ki a másik menetrendjét. Offline a mentett hálózat böngészhető; menetrendi indulás csak aznapra érvényes, ellenőrzött adatból számolható.
+### Parancssori fordítás
 
-A magyar munkanaptár **2026-ra** ellenőrzött. A KanyarGO és HOMM tanítási/tanszüneti választásának ellenőrzött tartománya 2026. szeptember 1.–december 31., az őszi és téli szünettel; a ViaBusz új tanítási táblája október 1-jétől érvényes. A HOMM szombati, vasárnapi és ünnepnapi közlekedése a szolgáltató szüneti tábláját követi; a ViaBusz és KanyarGO csak ellenőrzött munkanapokra ad menetrendi indulásokat. A következő évekhez a hivatalos munkanap-áthelyezések és menetrendi források ellenőrzése szükséges. Ellenőrizetlen napra a program figyelmeztetést ad, és nem állít elő bizonytalan visszaszámlálást.
+```bash
+# Repository klónozása
+git clone https://github.com/micr0softstore/bmenetrend.git
+cd bmenetrend
 
-A PDF-ben említett Vitamin-domb igénymegállóhoz nincs ellenőrzött térképi koordináta és indulási idő, ezért ez nem szerepel a térképen.
+# Debug APK fordítása
+./gradlew :app:assembleDebug
 
-Részletes forrásleírás: [docs/ADATFORRAS.md](docs/ADATFORRAS.md) és [docs/KANYARGO.md](docs/KANYARGO.md).
+# Egységtesztek futtatása
+./gradlew :app:testDebugUnitTest
 
-## Országos Volán és BKK az EMMA/MÁVPlusz rendszeréből
-
-A Volán-buszok országosan, a BKK buszai, villamosai, trolijai és metrójárművei Budapesten az **EMMA/MÁVPlusz GraphQL** adatforrásából jelennek meg. Közvetlen BKK API-t nem használunk. A Volán-jelölők sárgák, a BKK buszai világoskék, a trolik piros, a villamosok sárga közlekedési ikont kapnak. A járműnél a vonalszám, azonosító/rendszám, célállomás, sebesség és a forrásadat ideje olvasható. A régi vagy időbélyeg nélküli pozíciókat nem mutatjuk.
-
-Az **Országos hálózat** alapból bekapcsolt, és a teljes országot egy kérés tölti be; nincs térképrészlethez kötött nagyítási korlát. Kikapcsolva a Biatorbágyot, Pátyot és Budaörsöt érintő Volán-vonalak és a Budapesten belüli BKK-járművek maradnak. Az országos vonalkatalógus aktív jármű nélkül is kereshető; az ellenőrzött 36 helyi Volán-vonal hivatalos menetrendje továbbra is megnyitható. A Volán- és BKK-megállók országosan kereshetők, térképen kiválaszthatók és kedvencekhez adhatók. A megállókat számozatlan pontok jelzik, közepes nagyítástól nagyobb megállógyűrűkkel; a járművek távolabbról is láthatók. Egy járműre koppintva megnyílik a vonalszámot, irányt, járműadatokat és az EMMA által közölt, sorrendezett megállólistát tartalmazó alsó kártya. A kiválasztott megálló indulási tábláját szintén az EMMA szolgáltatja; csak a valós idejűnek jelölt adatok kapnak élő jelzést. A megállólista helyben gyorsítótárazott. Vonatokat ez az integráció nem ad hozzá. Részletek: [VOLAN.md](docs/VOLAN.md).
-
-## Fordítás és telepítés
-
-JDK 17, Android SDK Platform 36 és Build Tools 35.0.0 szükséges. Android Studio alatt ezt a projektmappát nyisd meg; a `local.properties` a helyi SDK elérési útját tartalmazza.
-
-```sh
-./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+# Telepítés csatlakoztatott eszközre
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Az APK a `app/build/outputs/apk/debug/app-debug.apk` fájlban keletkezik. A mellékelt `BMenetrend-0.3.0.apk` fejlesztői aláírású, és a korábban átadott ViaBusz telepítővel azonos aláírást használ. Saját, eltérő kulccsal fordított APK csak az azonos kulcsú telepítést tudja frissíteni. Áruházi kiadáshoz saját release-aláírás szükséges.
+> [!TIP]
+> Android emulátorban a gördülékeny térképmegjelenítéshez ajánlott a hardveres gyorsítást (**Host GPU**) bekapcsolni.
 
-API-kulcs, fiók és saját szerver az alapfunkciókhoz nem kell.
+---
 
-## Adatvédelem és térkép
+## 📖 Részletes dokumentáció
 
-A készülék GPS-koordinátája helyben szolgál a legközelebbi megálló kiszámítására. Az EMMA-adatforrás minden alkalommal azonos országos határokat kap, nem a készülék helyét vagy az aktuális térképrészletet. Helyengedély nélkül a térkép, kereső és menetrend továbbra is működik. Nincs háttérbeli helyzetkövetés, analitika, reklám vagy bejelentkezés. A térképszolgáltató a megjelenített térképrészlet lekérését és a kapcsolat IP-címét megkapja.
+A háttérrendszerek működése és a specifikációk a [`docs/`](docs/) mappában találhatók:
+- [`docs/MAP.md`](docs/MAP.md) – Kulcsmentes térkép és saját éjszakai stílus
+- [`docs/ADATFORRAS.md`](docs/ADATFORRAS.md) – Nyilvános adatforrások és frissítési folyamat
+- [`docs/VOLAN.md`](docs/VOLAN.md) – MÁV EMMA GraphQL integráció és peronelrendezés
+- [`docs/KOZOS-MEGALLOK.md`](docs/KOZOS-MEGALLOK.md) – Több szolgáltató közös megállóinak összerendelése
+- [`docs/VIABUSZ.md`](docs/VIABUSZ.md) & [`docs/KANYARGO.md`](docs/KANYARGO.md) – Helyi menetrendi és naptárszabályok
 
-Térkép: [MapLibre Native](https://maplibre.org/maplibre-native/android/) és [OpenFreeMap](https://openfreemap.org/quick_start/), OpenStreetMap/OpenMapTiles adatokkal. Források: [ViaBusz](https://viabusz.biatorbagy.hu/) [KanyarGO](https://kanyargo.paty.hu/), [HOMM](https://homm.hu/helyi-kozlekedes/) és [Budaörs térképe](https://budaors.hu/terkep/megallok). A BMenetrend független, nem hivatalos kliens.
+---
 
-## Fejlesztési megjegyzések
+## 🔒 Adatvédelem és filozófia
 
-- `data/`: szolgáltatói adapterek, naptárak, forrásérvényesség, cache és indulásszámítás.
-- `ui/`: Compose képernyők, keresés és húzható panel.
-- `map/`: natív térkép és jelölők.
-- `res/values/`, `res/values-hu/`: angol és magyar szövegek.
-- `assets/`: ellenőrzött hálózati pillanatképek.
-- `scripts/`: a szolgáltatói PDF-importok reprodukálásához szükséges eszközök.
-
-A MapLibre 11.8 OpenGL emulátoron SwiftShader módban ismert szimbólum-megjelenítési hibába futhat. Az emulátor grafikai módját `Hardware` / host GPU módra állítsd; a kész APK-t ezzel ellenőriztük. [Upstream hibajegy](https://github.com/maplibre/maplibre-native/issues/3648).
-
-A kereső felismeri a járműtípusokat magyarul és angolul: például az `1 villamos`, `villamos 1` vagy `1 tram` az 1-es villamosra keres. A pontos vonalszámok előre kerülnek, a megállókereső gyorsítótárazott, ékezetfüggetlen szövegindexet használ. A járműkártya az EMMA következő megállója és a menet sorrendje alapján mutatja a két érintett megállót; a megállóban tartózkodás közelségből és sebességből számított, külön jelölt GPS-becslés.
-
-A vonalak közlekedési ikonnal és saját színű számbuborékkal jelennek meg. Keresés után irányt, majd felszállóhelyet választhatsz; az induláslista a kiválasztott útirányra szűr. Az EMMA által közölt útvonal a térképen is látszik, a járműkártya pedig színes megállóláncon mutatja az aktuális szakaszt. Az indulásoknál a várható és menetrendi idő, a késés, illetve az elérhető akadálymentességi és kerékpár-információ is megjelenik.
-
-A kereső Helyek, Megállók és Járművek részekre bontja a találatokat, kategóriánként három előnézettel és Továbbiak gombbal. A Photon/OpenStreetMap helykereső az olyan kereséseket is felismeri, mint a `11.kerület`; helyválasztáskor a térkép a találatra ugrik. A járművek rendszám és célállomás alapján is kereshetők.
+A BMenetrend független, nyílt közösségi segédprogram.
+- A GPS-helyzet a készüléken a helyzetjelölőhöz és a legközelebbi megálló megtalálásához használatos; nem küldjük el az EMMA vagy a Photon szolgáltatásnak.
+- Nincsenek beépített analitikák, követőkódok vagy háttérben futó adatgyűjtők.
+- A térképhez, helykereséshez és menetrendekhez nincs szükség fiókra vagy privát API-kulcsokra. A térképcsempék és keresési találatok letöltése internetkapcsolatot igényel.

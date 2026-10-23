@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="map_provider_privacy">OpenFreeMap supplies the basemap without an API key or account. Its tile servers receive your IP address and the map areas requested.</string>
+    <string name="map_provider_source">OpenFreeMap · map source</string>
+    <string name="map_style_credit">Night map design adapted from OpenFreeMap / OpenMapTiles Dark Matter and CartoDB Basemaps by Stamen and Paul Norman (CC BY 3.0 / 4.0).</string>
+</resources>
