@@ -7,6 +7,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import hu.viabusz.app.map.HevLineStyle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -20,9 +26,10 @@ import hu.viabusz.app.R
 import hu.viabusz.app.data.TransitRoute
 import hu.viabusz.app.data.TransitStop
 import hu.viabusz.app.map.VehicleMarkerStyle
+import hu.viabusz.app.map.MetroLineStyle
 
 fun lineColor(provider: String, mode: String?, source: String? = null): Color {
-    if (mode == "SUBWAY" && source?.matches(Regex("[a-fA-F0-9]{6}")) == true) return Color((0xFF000000L or source.toLong(16)).toInt())
+    if (mode in setOf("SUBWAY", "SUBURBAN_RAILWAY") && source?.matches(Regex("[a-fA-F0-9]{6}")) == true) return Color((0xFF000000L or source.toLong(16)).toInt())
     return when (mode) {
         "TRAM" -> Color(0xFFFFD800)
         "TROLLEYBUS" -> Color(0xFFE31B23)
@@ -40,6 +47,25 @@ fun lineColor(route: TransitRoute) = lineColor(route.providerId, route.transport
 
 @Composable
 fun LineBadge(number: String, provider: String, mode: String? = null, sourceColor: String? = null, showIcon: Boolean = true) {
+    val metro = MetroLineStyle.forLine(number, mode)
+    if (metro != null) {
+        val context = LocalContext.current
+        val height = with(LocalDensity.current) { 36.dp.roundToPx() }
+        val emblem = remember(metro, height) { MetroLineStyle.render(context, metro, height).asImageBitmap() }
+        Image(emblem, stringResource(R.string.metro_line_badge, metro.number), Modifier.size(36.dp))
+        return
+    }
+    val hev = HevLineStyle.forLine(number, mode)
+    if (hev != null) {
+        val context = LocalContext.current
+        val heightPx = with(LocalDensity.current) { 36.dp.roundToPx() }
+        val emblem = remember(hev, heightPx) { HevLineStyle.render(context, hev, heightPx).asImageBitmap() }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Image(emblem, stringResource(R.string.hev_line_badge, hev.number), Modifier.size(36.dp))
+            if (hev.number.length > 2) Text(hev.number.substring(2), Modifier.padding(start = 4.dp), style = MaterialTheme.typography.labelLarge)
+        }
+        return
+    }
     val color = lineColor(provider, mode, sourceColor)
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         if (showIcon) Image(painterResource(VehicleMarkerStyle.forTransport(provider, mode).drawableRes),
@@ -48,7 +74,7 @@ fun LineBadge(number: String, provider: String, mode: String? = null, sourceColo
         Surface(shape = RoundedCornerShape(8.dp), color = color) {
             Box(Modifier.heightIn(min = 36.dp).widthIn(min = 44.dp).padding(horizontal = 10.dp, vertical = 6.dp), contentAlignment = Alignment.Center) {
                 Text(number, color = if (color.luminance() > .179) Color(0xFF171B20) else Color.White,
-                    style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1)
+                    style = MaterialTheme.typography.titleMedium, fontFamily = OpenSans, fontWeight = FontWeight.Bold, maxLines = 1)
             }
         }
     }
@@ -58,7 +84,7 @@ fun LineBadge(route: TransitRoute, showIcon: Boolean = true) = LineBadge(route.n
 
 @Composable
 fun LineStopRow(stop: TransitStop, first: Boolean, last: Boolean, color: Color, onClick: () -> Unit,
-                past: Boolean = false, highlighted: Boolean = false, vehicleIcon: Int? = null) {
+                past: Boolean = false, highlighted: Boolean = false, vehicleIcon: Int? = null, vehicleBitmap: ImageBitmap? = null) {
     val rail = if (past) color.copy(alpha = .45f) else color
     val surface = MaterialTheme.colorScheme.surface
     Surface(color = if (highlighted) color.copy(alpha = .10f) else Color.Transparent) {
@@ -72,7 +98,8 @@ fun LineStopRow(stop: TransitStop, first: Boolean, last: Boolean, color: Color, 
                     drawCircle(rail, if (first || last) 8.dp.toPx() else 6.dp.toPx(), Offset(x, y))
                     if (first || last) drawCircle(surface, 3.dp.toPx(), Offset(x, y))
                 }
-                vehicleIcon?.let { Image(painterResource(it), stringResource(R.string.line_vehicle_here), Modifier.size(30.dp)) }
+                if (vehicleBitmap != null) Image(vehicleBitmap, stringResource(R.string.line_vehicle_here), Modifier.width(44.dp).height(30.dp))
+                else vehicleIcon?.let { Image(painterResource(it), stringResource(R.string.line_vehicle_here), Modifier.size(30.dp)) }
             }
             Column(Modifier.weight(1f).padding(start = 12.dp, top = 16.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(stop.name, style = MaterialTheme.typography.bodyLarge, fontWeight = if (highlighted) FontWeight.SemiBold else FontWeight.Normal,
@@ -86,11 +113,12 @@ fun LineStopRow(stop: TransitStop, first: Boolean, last: Boolean, color: Color, 
 }
 
 @Composable
-fun LineVehicleBetween(color: Color, icon: Int) {
+fun LineVehicleBetween(color: Color, icon: Int, bitmap: ImageBitmap? = null) {
     Row(Modifier.fillMaxWidth().height(58.dp).padding(start = 12.dp, end = 22.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.width(48.dp).fillMaxHeight(), contentAlignment = Alignment.Center) {
             Canvas(Modifier.matchParentSize()) { drawLine(color, Offset(size.width / 2, 0f), Offset(size.width / 2, size.height), 5.dp.toPx()) }
-            Image(painterResource(icon), stringResource(R.string.line_vehicle_here), Modifier.size(30.dp))
+            if (bitmap != null) Image(bitmap, stringResource(R.string.line_vehicle_here), Modifier.width(44.dp).height(30.dp))
+            else Image(painterResource(icon), stringResource(R.string.line_vehicle_here), Modifier.size(30.dp))
         }
         Text(stringResource(R.string.line_on_the_way), Modifier.padding(start = 12.dp), style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant)

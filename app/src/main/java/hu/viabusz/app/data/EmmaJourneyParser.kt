@@ -26,6 +26,7 @@ object EmmaJourneyParser {
         val provider = EmmaStopsParser.provider(expectedTripId) ?: error("Unsupported trip")
         val route = trip.optJSONObject("route")
         require(route?.optString("gtfsId")?.let(EmmaStopsParser::provider) == provider) { "Wrong trip operator" }
+        if (provider == "hev") require(HevSupport.accepts(route.text("mode"), route.text("shortName"), route.text("longName"))) { "Not a HÉV trip" }
         val rows = trip.getJSONArray("stops")
         val stops = (0 until rows.length()).map { index ->
             val row = rows.getJSONObject(index)
@@ -35,11 +36,11 @@ object EmmaJourneyParser {
             val longitude = row.getDouble("lon")
             require(latitude in 45.7..48.6 && longitude in 16.1..22.9) { "Invalid trip stop" }
             TransitStop("emma:$source", row.getString("name"), GeoPoint(latitude, longitude), emptyList(), provider,
-                sourceStopIds = listOf(source), platformCode = row.text("platformCode"), transportMode = row.text("vehicleMode") ?: route.text("mode"),
+                sourceStopIds = listOf(source), platformCode = row.text("platformCode"), transportMode = if (provider == "hev") "SUBURBAN_RAILWAY" else row.text("vehicleMode") ?: route.text("mode"),
                 parentStationId = row.optJSONObject("parentStation").text("gtfsId")?.let { "emma:$it" })
         }
         // Repeated stop occurrences matter on loop routes, so keep their exact source order.
-        return VehicleJourney(expectedTripId, route.text("shortName"), route.text("longName"), trip.text("tripHeadsign"), stops, runCatching { EmmaRouteParser.tripGeometry(trip.optJSONArray("geometry")) }.getOrDefault(emptyList()), trip.optJSONObject("pattern").text("code"))
+        return VehicleJourney(expectedTripId, if (provider == "hev") HevSupport.number(route.text("shortName"), route.text("longName")) else route.text("shortName"), route.text("longName"), trip.text("tripHeadsign"), stops, runCatching { EmmaRouteParser.tripGeometry(trip.optJSONArray("geometry")) }.getOrDefault(emptyList()), trip.optJSONObject("pattern").text("code"))
     }
     private fun JSONObject?.text(key: String) = this?.optString(key)?.takeUnless { it.isBlank() || it == "null" }
 }

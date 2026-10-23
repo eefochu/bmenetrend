@@ -4,4 +4,8 @@
     <string name="map_provider_source">OpenFreeMap · térképforrás</string>
     <string name="map_style_credit">Az éjszakai térkép az OpenFreeMap / OpenMapTiles Dark Matter és a Stamen, Paul Norman által készített CartoDB Basemaps módosított stílusa (CC BY 3.0 / 4.0).</string>
     <string name="map_exit_route">Útvonalnézet bezárása</string>
+    <string name="metro_line_badge">M%1$s metró</string>
+    <string name="emma_mode_hev">HÉV</string>
+    <string name="emma_provider_hev">MÁV-HÉV</string>
+    <string name="hev_line_badge">%1$s HÉV</string>
 </resources>

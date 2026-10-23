@@ -1,0 +1,116 @@
+package hu.viabusz.app.ui
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import hu.viabusz.app.R
+import hu.viabusz.app.data.ArrivalKind
+import hu.viabusz.app.data.Departure
+import java.time.Duration
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import kotlin.math.ceil
+import kotlin.math.roundToInt
+
+private val nearbyClock = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.of("Europe/Budapest"))
+
+@Composable
+fun NearbyPanel(state: UiState, onStop: (String) -> Unit, onDeparture: (Departure) -> Unit,
+                onRefresh: () -> Unit, onLocate: () -> Unit, onHide: () -> Unit,
+                onWindow: (Int) -> Unit, modifier: Modifier = Modifier) {
+    var windowMenu by remember { mutableStateOf(false) }
+    LazyColumn(modifier.navigationBarsPadding(), contentPadding = PaddingValues(bottom = 24.dp)) {
+        item {
+            Row(Modifier.fillMaxWidth().padding(start = 22.dp, end = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.nearby_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Box {
+                        Row(Modifier.clickable { windowMenu = true }.padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(stringResource(if (state.nearbyAtUser) R.string.nearby_you else R.string.nearby_map) + " · " + stringResource(R.string.ui_minutes_short, state.windowMinutes),
+                                Modifier.weight(1f, fill = false), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(Icons.Rounded.ArrowDropDown, null, Modifier.size(16.dp))
+                        }
+                        DropdownMenu(expanded = windowMenu, onDismissRequest = { windowMenu = false }) {
+                            listOf(30, 60, 120).forEach { minutes -> DropdownMenuItem(
+                                text = { Text(stringResource(R.string.ui_minutes_short, minutes)) },
+                                onClick = { onWindow(minutes); windowMenu = false },
+                                trailingIcon = { if (minutes == state.windowMinutes) Icon(Icons.Rounded.Check, null) }) }
+                        }
+                    }
+                }
+                IconButton(onClick = onLocate) { Icon(Icons.Rounded.MyLocation, stringResource(R.string.nearby_locate)) }
+                IconButton(onClick = onRefresh) { Icon(Icons.Rounded.Refresh, stringResource(R.string.ui_refresh_departures)) }
+                IconButton(onClick = onHide) { Icon(Icons.Rounded.KeyboardArrowDown, stringResource(R.string.ui_hide_departures)) }
+            }
+            if (state.nearbyLoading) LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 6.dp))
+        }
+        if (state.nearbyStations.isEmpty() && !state.nearbyLoading) item {
+            Text(state.stopStatus ?: stringResource(R.string.nearby_empty), Modifier.padding(horizontal = 22.dp, vertical = 20.dp),
+                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        state.nearbyStations.forEach { station ->
+            item(key = "station-${station.stop.id}") {
+                Row(Modifier.fillMaxWidth().clickable { onStop(station.stop.id) }.padding(horizontal = 22.dp, vertical = 13.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Rounded.LocationOn, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                    Text(station.stop.name, Modifier.weight(1f), style = MaterialTheme.typography.titleSmall,
+                        maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(stringResource(R.string.nearby_distance, station.distanceMeters.roundToInt()),
+                        style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Icon(Icons.Rounded.ChevronRight, null, Modifier.size(18.dp))
+                }
+                if (station.departures.isEmpty() && !station.loading) Text(
+                    stringResource(if (station.unavailable) R.string.nearby_unavailable else R.string.nearby_no_departures),
+                    Modifier.padding(start = 48.dp, end = 22.dp, bottom = 16.dp), style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            station.departures.take(3).forEach { departure ->
+                item(key = "${station.stop.id}-${departure.routeId}-${departure.directionId}-${departure.expectedAt}") {
+                    val route = state.routes.firstOrNull { it.id == departure.routeId }
+                    val platform = station.platforms.firstOrNull { it.id == departure.stopId }
+                    val live = departure.kind == ArrivalKind.LIVE
+                    val minutes = ceil(Duration.between(state.now, departure.expectedAt).seconds / 60.0).toInt().coerceAtLeast(0)
+                    Surface(Modifier.padding(horizontal = 16.dp, vertical = 3.dp).fillMaxWidth(), shape = RoundedCornerShape(18.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerLow) {
+                        Row(Modifier.clickable { onDeparture(departure) }.padding(horizontal = 12.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            LineBadge(departure.routeNumber, route?.providerId ?: platform?.providerId ?: "bkk", route?.transportMode ?: platform?.transportMode, route?.color)
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                Text(departure.destination, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Icon(if (live) Icons.Rounded.Sensors else Icons.Rounded.AccessTime, null, Modifier.size(12.dp),
+                                        tint = if (live) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(stringResource(if (live) R.string.ui_live_arrival else R.string.ui_scheduled), style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                platform?.platformCode?.let { code -> Text(stringResource(R.string.nearby_platform, code),
+                                    style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(if (minutes == 0) stringResource(R.string.ui_now) else stringResource(R.string.ui_minutes_short, minutes),
+                                    style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
+                                    color = if (live) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                                Text(nearbyClock.format(departure.expectedAt), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+                }
+            }
+            if (station.unavailable && station.departures.isNotEmpty()) item {
+                Text(stringResource(R.string.nearby_partial), Modifier.padding(horizontal = 22.dp, vertical = 6.dp),
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}

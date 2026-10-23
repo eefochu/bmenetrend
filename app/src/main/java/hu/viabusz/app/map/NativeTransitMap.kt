@@ -84,6 +84,9 @@ fun NativeTransitMap(
     selectedPlace: PlaceResult? = null,
     placeCameraRequest: Int = 0,
     lineFocus: LineMapFocus? = null,
+    browsingNearby: Boolean = false,
+    locationCameraRequest: Int = 0,
+    onViewportChanged: (MapBounds, GeoPoint) -> Unit = { _, _ -> },
 ) {
     val darkTheme = isSystemInDarkTheme()
     val styleUri = if (darkTheme) "asset://map/night.json" else "https://tiles.openfreemap.org/styles/positron"
@@ -91,6 +94,7 @@ fun NativeTransitMap(
     val owner = LocalLifecycleOwner.current
     val onSelect by rememberUpdatedState(onStopSelected)
     val onError by rememberUpdatedState(onMapError)
+    val onArea by rememberUpdatedState(onViewportChanged)
     val onZoom by rememberUpdatedState(onMapZoomChanged)
     val onVehicle by rememberUpdatedState(onVehicleSelected)
     val stops = remember(network?.stops, additionalStops, routeStops) { (network?.stops.orEmpty() + additionalStops + routeStops).distinctBy { it.id } }
@@ -113,6 +117,8 @@ fun NativeTransitMap(
     var map by remember { mutableStateOf<MapLibreMap?>(null) }
     var viewport by remember { mutableStateOf<MapBounds?>(null) }
     var styleLoaded by remember { mutableStateOf(false) }
+    var locatedOnce by rememberSaveable { mutableStateOf(false) }
+    var locatedRequest by remember { mutableIntStateOf(-1) }
     var centeredStop by remember { mutableStateOf<String?>(null) }
     var centeredRequest by remember { mutableIntStateOf(-1) }
     var lastBottomPadding by remember { mutableIntStateOf(-1) }
@@ -164,6 +170,7 @@ fun NativeTransitMap(
                 savedLon = ready.cameraPosition.target!!.longitude
                 savedZoom = zoom
                 onZoom(zoom)
+                onArea(viewport!!, GeoPoint(savedLat, savedLon))
             }
             ready.setMaxZoomPreference(19.0)
             ready.setOnMarkerClickListener { marker ->
@@ -225,6 +232,7 @@ fun NativeTransitMap(
                             savedLon = ready.cameraPosition.target!!.longitude
                             savedZoom = zoom
                             onZoom(zoom)
+                            onArea(viewport!!, GeoPoint(savedLat, savedLon))
                         }
                     }
                 }
@@ -260,7 +268,7 @@ fun NativeTransitMap(
         style.getLayerAs<LineLayer>("selected-line-stroke")?.setProperties(PropertyFactory.lineColor(routeColor))
     }
     LaunchedEffect(map, styleLoaded, lineFocus?.key, paths, focusStops, fitRouteRequest,
-        selectedStopId, selectedPlace, placeCameraRequest, cameraRequest, bottomPaddingPx, size) {
+        selectedStopId, selectedPlace, placeCameraRequest, cameraRequest, bottomPaddingPx, size, browsingNearby, userLocation, locationCameraRequest) {
         val ready = map ?: return@LaunchedEffect
         if (!styleLoaded || size.width <= 0 || size.height <= 0) return@LaunchedEffect
         if (focused && previousFocusKey == null) previousCamera = ready.cameraPosition
@@ -294,6 +302,10 @@ fun NativeTransitMap(
             if (bounds != null) ready.animateCamera(CameraUpdateFactory.newLatLngBounds(
                 LatLngBounds.from(bounds.north, bounds.east, bounds.south, bounds.west), (48 * context.resources.displayMetrics.density).toInt()), 650)
             else ready.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(selectedPlace.position.lat, selectedPlace.position.lon), 15.0), 650)
+        } else if (browsingNearby && userLocation != null && (!locatedOnce || (locatedRequest != locationCameraRequest && locationCameraRequest > 0))) {
+            locatedOnce = true
+            locatedRequest = locationCameraRequest
+            ready.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(userLocation.lat, userLocation.lon), 15.0), 650)
         } else displayStops.find { it.id == selectedStopId }?.let { stop ->
             if (centeredStop != stop.id || centeredRequest != cameraRequest || lastBottomPadding != bottomPaddingPx) {
                 ready.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(stop.position.lat, stop.position.lon), maxOf(15.0, ready.cameraPosition.zoom)), 650)
@@ -334,16 +346,18 @@ fun NativeTransitMap(
         }
         fun vehicleIcon(vehicle: Vehicle): Icon {
             val style = VehicleMarkerStyle.forVehicle(vehicle)
+            val metro = MetroLineStyle.forLine(vehicle.routeNumber, vehicle.transportMode)
+            val hev = HevLineStyle.forLine(vehicle.routeNumber, vehicle.transportMode)
             if (!focused && zoom < VEHICLE_ICON_MIN_ZOOM) {
                 val sizeDp = if (vehicle.id == selectedVehicle?.id) 10 else 6
-                return iconCache.getOrPut("transport-dot-$style-$sizeDp") {
+                return iconCache.getOrPut("transport-dot-$style-${metro?.number}-${hev?.number}-$sizeDp") {
                     val size = (sizeDp * density).toInt().coerceAtLeast(1)
                     val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
                     val canvas = Canvas(bitmap)
                     val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.WHITE }
                     val radius = size / 2f
                     canvas.drawCircle(radius, radius, radius, paint)
-                    paint.color = style.color
+                    paint.color = hev?.color ?: metro?.color ?: style.color
                     canvas.drawCircle(radius, radius, (radius - .65f * density).coerceAtLeast(1f), paint)
                     IconFactory.getInstance(context).fromBitmap(bitmap)
                 }
@@ -352,6 +366,12 @@ fun NativeTransitMap(
                 zoom < 13.5 -> 24
                 else -> 36
             }) + if (vehicle.id == selectedVehicle?.id) 6 else 0
+            if (hev != null) return iconCache.getOrPut("hev-${hev.number}-$sizeDp") {
+                IconFactory.getInstance(context).fromBitmap(HevLineStyle.render(context, hev, (sizeDp * density).toInt().coerceAtLeast(1)))
+            }
+            if (metro != null) return iconCache.getOrPut("metro-${metro.number}-$sizeDp") {
+                IconFactory.getInstance(context).fromBitmap(MetroLineStyle.render(context, metro, (sizeDp * density).toInt().coerceAtLeast(1)))
+            }
             return iconCache.getOrPut("transport-$style-$sizeDp") {
                 val drawable = style.drawableRes
                 val size = (sizeDp * density).toInt().coerceAtLeast(1)
@@ -440,8 +460,8 @@ fun NativeTransitMap(
             val number = vehicle.routeNumber ?: network?.routes?.find { it.id == vehicle.routeId }?.number ?: context.getString(if (vehicle.providerId == "bkk") R.string.emma_vehicle else R.string.engine_vehicle_bus)
             val options = MarkerOptions()
                 .position(LatLng(vehicle.position.lat, vehicle.position.lon))
-                .title("${when (vehicle.providerId) { "kanyargo" -> "KanyarGO"; "homm" -> "HOMM"; "volan" -> "Volán"; "bkk" -> "BKK"; else -> "ViaBusz" }} · $number · ${vehicle.registration ?: vehicle.id.substringAfter(":")}")
-                .snippet(listOfNotNull(vehicle.destination?.takeIf(String::isNotBlank), vehicle.nextStopName?.takeIf(String::isNotBlank), context.getString(if (vehicle.providerId in setOf("volan", "bkk")) R.string.volan_observation_time else R.string.engine_gps_time, formatter.format(vehicle.observedAt)), if (vehicle.providerId in setOf("volan", "bkk")) context.getString(R.string.volan_position_source) else null,
+                .title("${when (vehicle.providerId) { "hev" -> "HÉV"; "kanyargo" -> "KanyarGO"; "homm" -> "HOMM"; "volan" -> "Volán"; "bkk" -> "BKK"; else -> "ViaBusz" }} · $number · ${vehicle.registration ?: vehicle.id.substringAfter(":")}")
+                .snippet(listOfNotNull(vehicle.destination?.takeIf(String::isNotBlank), vehicle.nextStopName?.takeIf(String::isNotBlank), context.getString(if (vehicle.providerId in setOf("volan", "bkk", "hev")) R.string.volan_observation_time else R.string.engine_gps_time, formatter.format(vehicle.observedAt)), if (vehicle.providerId in setOf("volan", "bkk", "hev")) context.getString(R.string.volan_position_source) else null,
                     vehicle.speedKmh?.let { context.getString(R.string.emma_speed, it.toInt()) }, if (vehicle.routeId == null) context.getString(R.string.engine_no_vehicle_route) else null).joinToString("\n"))
                 .icon(vehicleIcon(vehicle))
             val marker = vehicleMarkers.getOrPut(vehicle.id) { nativeMap.addMarker(options) }
