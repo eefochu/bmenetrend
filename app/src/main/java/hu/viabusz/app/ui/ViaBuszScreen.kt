@@ -208,7 +208,11 @@ fun ViaBuszScreen(
             val density = LocalDensity.current
             val peekHeightPx = with(density) { peekHeight.roundToPx() }
             val sheetHidden = sheetState.bottomSheetState.targetValue == SheetValue.Hidden
-            val bottomPaddingPx = if (sheetHidden) 0 else peekHeightPx
+            val bottomPaddingPx = when (sheetState.bottomSheetState.targetValue) {
+                SheetValue.Hidden -> 0
+                SheetValue.Expanded -> with(density) { (maxHeight * 0.88f).roundToPx() }
+                else -> peekHeightPx
+            }
 
             BottomSheetScaffold(
                 scaffoldState = sheetState,
@@ -765,6 +769,11 @@ private fun SourceDialog(onDismiss: () -> Unit) {
                     Text(stringResource(R.string.volan_source_link))
                 }
                 Text(stringResource(R.string.ui_about_location))
+                Text(stringResource(R.string.map_provider_privacy))
+                Text(stringResource(R.string.map_style_credit), style = MaterialTheme.typography.bodySmall)
+                TextButton(onClick = { runCatching { uriHandler.openUri("https://openfreemap.org/") } }) {
+                    Text(stringResource(R.string.map_provider_source))
+                }
                 Text(stringResource(R.string.search_places_privacy))
                 TextButton(onClick = { runCatching { uriHandler.openUri("https://github.com/komoot/photon") } }) {
                     Text(stringResource(R.string.search_places_source))

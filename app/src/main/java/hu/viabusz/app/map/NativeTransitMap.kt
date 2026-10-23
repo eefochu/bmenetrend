@@ -11,6 +11,7 @@ import android.graphics.PointF
 import android.view.MotionEvent
 import android.annotation.SuppressLint
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -34,6 +35,7 @@ import org.maplibre.android.MapLibre
 import org.maplibre.android.annotations.Icon
 import org.maplibre.android.annotations.IconFactory
 import org.maplibre.android.annotations.MarkerOptions
+import org.maplibre.android.annotations.Marker
 import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLngBounds
@@ -46,9 +48,7 @@ import org.maplibre.geojson.FeatureCollection
 import org.maplibre.geojson.LineString
 import org.maplibre.geojson.Point
 import org.maplibre.android.maps.Style
-import org.maplibre.android.style.layers.FillLayer
 import org.maplibre.android.style.layers.LineLayer
-import org.maplibre.android.style.layers.BackgroundLayer
 import org.maplibre.android.style.layers.SymbolLayer
 import org.maplibre.android.style.layers.CircleLayer
 import org.maplibre.android.style.expressions.Expression
@@ -60,7 +60,7 @@ private const val STOP_MIN_ZOOM = 12.0
 private const val VEHICLE_MIN_ZOOM = 9.0
 private const val VEHICLE_ICON_MIN_ZOOM = 12.0
 
-/** A native MapLibre map; no browser/WebView and no API key. */
+/** Keyless OpenFreeMap basemap, with a bundled custom night style. */
 @Composable
 @SuppressLint("ClickableViewAccessibility") // Passive touch observation; MapView still handles every gesture and click.
 fun NativeTransitMap(
@@ -85,14 +85,18 @@ fun NativeTransitMap(
     placeCameraRequest: Int = 0,
 ) {
     val darkTheme = isSystemInDarkTheme()
-    val styleUri = if (darkTheme) "https://tiles.openfreemap.org/styles/dark" else "https://tiles.openfreemap.org/styles/positron"
+    val styleUri = if (darkTheme) "asset://map/night.json" else "https://tiles.openfreemap.org/styles/positron"
     val context = LocalContext.current
     val owner = LocalLifecycleOwner.current
     val onSelect by rememberUpdatedState(onStopSelected)
     val onError by rememberUpdatedState(onMapError)
     val onZoom by rememberUpdatedState(onMapZoomChanged)
     val onVehicle by rememberUpdatedState(onVehicleSelected)
-    val stops = remember(network, additionalStops) { network?.stops.orEmpty() + additionalStops }
+    val stops = remember(network?.stops, additionalStops, routeStops) { (network?.stops.orEmpty() + additionalStops + routeStops).distinctBy { it.id } }
+    var savedLat by rememberSaveable { mutableDoubleStateOf(47.473) }
+    var savedLon by rememberSaveable { mutableDoubleStateOf(18.825) }
+    var savedZoom by rememberSaveable { mutableDoubleStateOf(13.2) }
+    var zoom by remember { mutableDoubleStateOf(savedZoom) }
     val touchPoint = remember { PointF(Float.NaN, Float.NaN) }
     val mapView = remember {
         MapLibre.getInstance(context.applicationContext)
@@ -111,6 +115,10 @@ fun NativeTransitMap(
     var centeredStop by remember { mutableStateOf<String?>(null) }
     var centeredRequest by remember { mutableIntStateOf(-1) }
     var lastBottomPadding by remember { mutableIntStateOf(-1) }
+    val stopMarkers = remember { mutableMapOf<String, Marker>() }
+    val vehicleMarkers = remember { mutableMapOf<String, Marker>() }
+    var locationMarker by remember { mutableStateOf<Marker?>(null) }
+    var placeMarker by remember { mutableStateOf<Marker?>(null) }
     val markerVehicles = remember { mutableMapOf<Long, String>() }
     val markerStops = remember { mutableMapOf<Long, String>() }
     val stopHitTargets = remember { mutableMapOf<Long, Pair<LatLng, Float>>() }
@@ -146,12 +154,16 @@ fun NativeTransitMap(
                 setCompassMargins(0, topInset, inset, 0)
                 setAttributionMargins(12, 0, 0, 12)
             }
-            ready.cameraPosition = CameraPosition.Builder().target(LatLng(47.473, 18.825)).zoom(13.2).build()
+            ready.cameraPosition = CameraPosition.Builder().target(LatLng(savedLat, savedLon)).zoom(savedZoom).build()
             ready.setMinZoomPreference(5.0)
             ready.addOnCameraIdleListener {
                 val bounds = ready.projection.visibleRegion.latLngBounds
                 viewport = MapBounds(bounds.longitudeWest, bounds.latitudeSouth, bounds.longitudeEast, bounds.latitudeNorth)
-                onZoom(ready.cameraPosition.zoom)
+                zoom = ready.cameraPosition.zoom
+                savedLat = ready.cameraPosition.target!!.latitude
+                savedLon = ready.cameraPosition.target!!.longitude
+                savedZoom = zoom
+                onZoom(zoom)
             }
             ready.setMaxZoomPreference(19.0)
             ready.setOnMarkerClickListener { marker ->
@@ -187,6 +199,11 @@ fun NativeTransitMap(
             mapView.onDestroy()
         }
     }
+    LaunchedEffect(map, bottomPaddingPx, selectedPlace) {
+        val inset = (12 * context.resources.displayMetrics.density).toInt()
+        val bottom = maxOf(bottomPaddingPx, if (selectedPlace != null) (110 * context.resources.displayMetrics.density).toInt() else 0)
+        map?.uiSettings?.setAttributionMargins(inset, 0, 0, bottom + inset)
+    }
     // Theme changes reload only the basemap, retaining camera and current selections.
     // Failed loads retry in the foreground using the currently selected theme.
     LaunchedEffect(map, owner, styleUri) {
@@ -196,43 +213,17 @@ fun NativeTransitMap(
         try {
             owner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 fun loadStyle() {
-                    ready.setStyle(Style.Builder().fromUri(styleUri)) { loadedStyle ->
+                    ready.setStyle(Style.Builder().fromUri(styleUri)) { _ ->
                         if (active) {
-                            if (darkTheme) loadedStyle.layers.forEach { layer ->
-                                when (layer) {
-                                    is BackgroundLayer -> layer.setProperties(PropertyFactory.backgroundColor("#101823"))
-                                    is FillLayer -> when (layer.id) {
-                                        "water" -> layer.setProperties(PropertyFactory.fillColor("#173E59"))
-                                        "building" -> layer.setProperties(PropertyFactory.fillColor("#293545"))
-                                        "landuse_residential" -> layer.setProperties(PropertyFactory.fillColor("#17212C"))
-                                        "landcover_wood", "landuse_park" -> layer.setProperties(PropertyFactory.fillColor("#1C352C"))
-                                    }
-                                    is LineLayer -> {
-                                        val color = when {
-                                            layer.id == "waterway" -> "#2E6D90"
-                                            layer.id == "highway_minor" -> "#43566D"
-                                            layer.id == "highway_major_inner" -> "#687F99"
-                                            layer.id == "highway_motorway_inner" -> "#AA8C68"
-                                            layer.id.endsWith("_casing") -> "#29394B"
-                                            layer.id.startsWith("railway") -> "#786C87"
-                                            else -> null
-                                        }
-                                        color?.let { layer.setProperties(PropertyFactory.lineColor(it)) }
-                                    }
-                                }
-                            }
-                            if (darkTheme) loadedStyle.layers.filterIsInstance<SymbolLayer>()
-                                .filter { it.id.startsWith("place_") || it.id.startsWith("highway_name_") || it.id == "water_name" }
-                                .forEach { it.setProperties(
-                                    PropertyFactory.textColor("#B9C2D0"),
-                                    PropertyFactory.textHaloColor("#11161D"),
-                                    PropertyFactory.textHaloWidth(1f),
-                                ) }
                             styleLoaded = true
                             onError(null)
                             val bounds = ready.projection.visibleRegion.latLngBounds
                             viewport = MapBounds(bounds.longitudeWest, bounds.latitudeSouth, bounds.longitudeEast, bounds.latitudeNorth)
-                            onZoom(ready.cameraPosition.zoom)
+                            zoom = ready.cameraPosition.zoom
+                            savedLat = ready.cameraPosition.target!!.latitude
+                            savedLon = ready.cameraPosition.target!!.longitude
+                            savedZoom = zoom
+                            onZoom(zoom)
                         }
                     }
                 }
@@ -311,16 +302,16 @@ fun NativeTransitMap(
     }
     AndroidView(factory = { mapView }, modifier = modifier)
 
-    LaunchedEffect(map, styleLoaded, viewport, network, additionalStops, vehicles, routeStops, routeColor, selectedVehicle?.id, selectedStopId, selectedPlace, userLocation, cameraRequest, bottomPaddingPx) {
+    LaunchedEffect(map, styleLoaded, viewport, zoom, network, additionalStops, vehicles, routeStops, routeColor, selectedVehicle?.id, selectedStopId, selectedPlace, userLocation, cameraRequest, bottomPaddingPx) {
         val nativeMap = map ?: return@LaunchedEffect
         if (!styleLoaded) return@LaunchedEffect
         nativeMap.setPadding(0, 0, 0, bottomPaddingPx)
-        nativeMap.clear()
+        val activeStops = mutableSetOf<String>()
+        val activeVehicles = mutableSetOf<String>()
         markerStops.clear()
         stopHitTargets.clear()
         markerVehicles.clear()
         if (iconCache.size > 256) iconCache.clear()
-        val zoom = nativeMap.cameraPosition.zoom
         val density = context.resources.displayMetrics.density
         fun dotIcon(provider: String, selected: Boolean = false, location: Boolean = false, mode: String? = null, sizeOverride: Int? = null): Icon {
             val sizeDp = if (location) 18 else if (selected) { if (zoom >= 14) 32 else if (zoom >= 12.5) 28 else 16 } else if (zoom >= 14) 22 else if (zoom >= 12.5) 16 else 6
@@ -397,8 +388,11 @@ fun NativeTransitMap(
                 val stop = placement.stop
                 val position = nativeMap.projection.fromScreenLocation(PointF(placement.x.toFloat(), placement.y.toFloat()))
                 val provider = if (stop.providerIds.size > 1) "shared" else stop.providerId
-                val marker = nativeMap.addMarker(MarkerOptions().position(position).title(stop.name)
-                    .icon(dotIcon(provider, stop.id == selectedStopId, mode = stop.transportMode, sizeOverride = placement.sizePx.toInt())))
+                val icon = dotIcon(provider, stop.id == selectedStopId, mode = stop.transportMode, sizeOverride = placement.sizePx.toInt())
+                val marker = stopMarkers.getOrPut(stop.id) { nativeMap.addMarker(MarkerOptions().position(position).title(stop.name).icon(icon)) }
+                marker.position = position
+                marker.icon = icon
+                activeStops += stop.id
                 markerStops[marker.id] = stop.id
                 stopHitTargets[marker.id] = position to (placement.sizePx / 2).toFloat()
             }
@@ -408,19 +402,35 @@ fun NativeTransitMap(
         }
         visibleVehicles.forEach { vehicle ->
             val number = vehicle.routeNumber ?: network?.routes?.find { it.id == vehicle.routeId }?.number ?: context.getString(if (vehicle.providerId == "bkk") R.string.emma_vehicle else R.string.engine_vehicle_bus)
-            val marker = nativeMap.addMarker(MarkerOptions()
+            val options = MarkerOptions()
                 .position(LatLng(vehicle.position.lat, vehicle.position.lon))
                 .title("${when (vehicle.providerId) { "kanyargo" -> "KanyarGO"; "homm" -> "HOMM"; "volan" -> "Volán"; "bkk" -> "BKK"; else -> "ViaBusz" }} · $number · ${vehicle.registration ?: vehicle.id.substringAfter(":")}")
                 .snippet(listOfNotNull(vehicle.destination?.takeIf(String::isNotBlank), vehicle.nextStopName?.takeIf(String::isNotBlank), context.getString(if (vehicle.providerId in setOf("volan", "bkk")) R.string.volan_observation_time else R.string.engine_gps_time, formatter.format(vehicle.observedAt)), if (vehicle.providerId in setOf("volan", "bkk")) context.getString(R.string.volan_position_source) else null,
                     vehicle.speedKmh?.let { context.getString(R.string.emma_speed, it.toInt()) }, if (vehicle.routeId == null) context.getString(R.string.engine_no_vehicle_route) else null).joinToString("\n"))
-                .icon(vehicleIcon(vehicle)))
+                .icon(vehicleIcon(vehicle))
+            val marker = vehicleMarkers.getOrPut(vehicle.id) { nativeMap.addMarker(options) }
+            marker.position = options.position
+            marker.icon = options.icon
+            marker.title = options.title
+            marker.snippet = options.snippet
+            activeVehicles += vehicle.id
             markerVehicles[marker.id] = vehicle.id
         }
-        userLocation?.let {
-            nativeMap.addMarker(MarkerOptions().position(LatLng(it.lat, it.lon)).title(context.getString(R.string.engine_you_are_here)).icon(dotIcon("location", location = true)))
+        stopMarkers.keys.filter { it !in activeStops }.toList().forEach { stopMarkers.remove(it)?.let(nativeMap::removeMarker) }
+        vehicleMarkers.keys.filter { it !in activeVehicles }.toList().forEach { vehicleMarkers.remove(it)?.let(nativeMap::removeMarker) }
+        if (userLocation == null) {
+            locationMarker?.let(nativeMap::removeMarker); locationMarker = null
+        } else {
+            val position = LatLng(userLocation.lat, userLocation.lon)
+            if (locationMarker == null) locationMarker = nativeMap.addMarker(MarkerOptions().position(position).title(context.getString(R.string.engine_you_are_here)).icon(dotIcon("location", location = true)))
+            else locationMarker?.position = position
         }
-        selectedPlace?.let { place ->
-            nativeMap.addMarker(MarkerOptions().position(LatLng(place.position.lat, place.position.lon)).title(place.name))
+        if (selectedPlace == null) {
+            placeMarker?.let(nativeMap::removeMarker); placeMarker = null
+        } else {
+            val position = LatLng(selectedPlace.position.lat, selectedPlace.position.lon)
+            if (placeMarker == null) placeMarker = nativeMap.addMarker(MarkerOptions().position(position).title(selectedPlace.name))
+            else { placeMarker?.position = position; placeMarker?.title = selectedPlace.name }
         }
         if (selectedVehicle != null) {
             if (centeredVehicle != selectedVehicle.id || lastBottomPadding != bottomPaddingPx || centeredRequest != cameraRequest) {

@@ -3,6 +3,7 @@
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.0+-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
 [![Android](https://img.shields.io/badge/Android-8.0%2B%20(API%2026%2B)-3DDC84?logo=android&logoColor=white)](https://developer.android.com)
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
+[![OpenFreeMap](https://img.shields.io/badge/OpenFreeMap-Keyless%20maps-207D92)](https://openfreemap.org/)
 [![MapLibre](https://img.shields.io/badge/MapLibre-Native%20Android-blue?logo=maplibre&logoColor=white)](https://maplibre.org)
 
 > Modern, natív Androidos menetrend és élő járatkövető a budapesti agglomerációhoz és Magyarországhoz. Valós idejű járműpozíciók, szinkronizált helyi menetrendek és egységesített átszállópontok — reklámok, követés és felesleges sallang nélkül.
@@ -13,11 +14,11 @@
 
 - **Több hálózat egy helyen**: A biatorbágyi, pátyi és budaörsi helyi járatok, valamint az országos Volánbusz és budapesti BKK vonalak egyetlen letisztult felületen.
 - **Élő járműradar**: Valós idejű GPS-pozíciók, útvonal-geometria, megállók közötti haladás, késési adatok és 15 másodpercenként frissülő járműkártyák.
-- **Natív vektortérkép**: Teljes képernyős [MapLibre](https://maplibre.org/) motor [OpenFreeMap](https://openfreemap.org/) vektoros csempékkel, automatikus világos és sötét témával.
+- **Natív vektortérkép**: Teljes képernyős [MapLibre](https://maplibre.org/) motor [OpenFreeMap](https://openfreemap.org/) vektoros csempékkel, automatikus világos témával és saját, színes éjszakai térképstílussal. API-kulcs és számlázási fiók nélkül.
 - **Kategorizált villámkereső**: Gyors keresés három kategóriában: **Helyek** (Photon / OpenStreetMap), **Megállók** (peronelrendezéssel) és **Járművek** (járatszám, rendszám vagy célállomás alapján).
-- **Összekapcsolt peronok**: A közös megállók és nagyobb csomópontok peronjai részletes nézetben automatikusan összefüggő láncként, vizuálisan összekötve jelennek meg.
+- **Önálló peronok**: A megállók külön, saját forráskoordinátáikkal jelennek meg; az egymást fedő jelölők minimális eltolással külön kiválaszthatók.
 - **Material You & egyéni színek**: Finom animációk, edge-to-edge felület, rendszerhez igazodó dinamikus Monet színek (Android 12+) vagy egyéni RGB/HEX színválasztó.
-- **100% privát, fiókmentes**: Minden adatfeldolgozás közvetlenül az eszközön történik. Nincs regisztráció, nincs analitika és nincs adatgyűjtés.
+- **Fiókmentes használat**: Nincs beépített analitika. A térkép- és keresőszolgáltatók a kérések kiszolgálásához megkapják az IP-címet és a kért adatokat.
 
 ---
 
@@ -77,6 +78,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 ## 📖 Részletes dokumentáció
 
 A háttérrendszerek működése és a specifikációk a [`docs/`](docs/) mappában találhatók:
+- [`docs/MAP.md`](docs/MAP.md) – Kulcsmentes térkép és saját éjszakai stílus
 - [`docs/ADATFORRAS.md`](docs/ADATFORRAS.md) – Nyilvános adatforrások és frissítési folyamat
 - [`docs/VOLAN.md`](docs/VOLAN.md) – MÁV EMMA GraphQL integráció és peronelrendezés
 - [`docs/KOZOS-MEGALLOK.md`](docs/KOZOS-MEGALLOK.md) – Több szolgáltató közös megállóinak összerendelése
@@ -87,6 +89,6 @@ A háttérrendszerek működése és a specifikációk a [`docs/`](docs/) mappá
 ## 🔒 Adatvédelem és filozófia
 
 A BMenetrend független, nyílt közösségi segédprogram.
-- A GPS-helyzet **kizárólag a készüléken** kerül felhasználásra a legközelebbi megálló megtalálásához.
+- A GPS-helyzet a készüléken a helyzetjelölőhöz és a legközelebbi megálló megtalálásához használatos; nem küldjük el az EMMA vagy a Photon szolgáltatásnak.
 - Nincsenek beépített analitikák, követőkódok vagy háttérben futó adatgyűjtők.
-- Az alapvető böngészéshez és menetrendekhez nincs szükség fiókra vagy privát API-kulcsokra.
+- A térképhez, helykereséshez és menetrendekhez nincs szükség fiókra vagy privát API-kulcsokra. A térképcsempék és keresési találatok letöltése internetkapcsolatot igényel.
