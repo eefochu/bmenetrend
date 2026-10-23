@@ -57,7 +57,7 @@
     <string name="ui_search_stop">Find a stop</string>
     <string name="ui_about_description">ViaBusz, KanyarGO and HOMM stops, routes and departures in Biatorbágy, Páty and Budaörs. An unofficial app.</string>
     <string name="ui_about_live_data">Timetable departures are labelled Scheduled. Live vehicle locations and verified arrival estimates use the public operator feeds when available. Some live updates do not include a route number.</string>
-    <string name="ui_about_location">Your location is used for the position marker and nearest-stop selection. Device GPS is not sent to transit providers.</string>
+    <string name="ui_about_location">The position marker and nearest-stop selection use your location locally. EMMA calculates journeys using the start and destination coordinates and departure time. Planning from your current location sends those GPS coordinates to EMMA.</string>
     <string name="ui_viabusz_website">ViaBusz official website</string>
     <string name="ui_kanyargo_website">KanyarGO official website</string>
     <string name="ui_registration_required">School service · registration required</string>

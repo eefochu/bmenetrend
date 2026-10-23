@@ -1,0 +1,177 @@
+{
+  "data": {
+    "plan": {
+      "itineraries": [
+        {
+          "startTime": 1792789745000,
+          "endTime": 1792793261000,
+          "legs": [
+            {
+              "mode": "WALK",
+              "startTime": 1792789745000,
+              "endTime": 1792789920000,
+              "distance": 112.72,
+              "realTime": false,
+              "interlineWithPreviousLeg": false,
+              "from": {
+                "name": "Origin",
+                "lat": 47.479964,
+                "lon": 18.83392,
+                "stop": null
+              },
+              "to": {
+                "name": "Biatorbágy",
+                "lat": 47.480278,
+                "lon": 18.834444,
+                "stop": {
+                  "gtfsId": "1:005501057_3",
+                  "name": "Biatorbágy",
+                  "platformCode": "3"
+                }
+              },
+              "route": null,
+              "trip": null
+            },
+            {
+              "mode": "RAIL",
+              "startTime": 1792789980000,
+              "endTime": 1792790940000,
+              "distance": 17132.27,
+              "realTime": true,
+              "interlineWithPreviousLeg": false,
+              "from": {
+                "name": "Biatorbágy",
+                "lat": 47.480278,
+                "lon": 18.834444,
+                "stop": {
+                  "gtfsId": "1:005501057_3",
+                  "name": "Biatorbágy",
+                  "platformCode": "3"
+                }
+              },
+              "to": {
+                "name": "Budapest-Kelenföld",
+                "lat": 47.464444,
+                "lon": 19.02,
+                "stop": {
+                  "gtfsId": "1:005501024_6",
+                  "name": "Budapest-Kelenföld",
+                  "platformCode": "6"
+                }
+              },
+              "route": {
+                "gtfsId": "1:V2986_106",
+                "shortName": "<span class=\"MNR2007\">&#335;</span>",
+                "longName": "S10",
+                "mode": "RAIL",
+                "color": "FFFFFF"
+              },
+              "trip": {
+                "gtfsId": "1:36226473",
+                "tripShortName": "4941 passenger train",
+                "tripHeadsign": "Budapest-Déli"
+              }
+            },
+            {
+              "mode": "WALK",
+              "startTime": 1792790970000,
+              "endTime": 1792791100000,
+              "distance": 98.43,
+              "realTime": false,
+              "interlineWithPreviousLeg": false,
+              "from": {
+                "name": "Budapest-Kelenföld",
+                "lat": 47.464444,
+                "lon": 19.02,
+                "stop": {
+                  "gtfsId": "1:005501024_6",
+                  "name": "Budapest-Kelenföld",
+                  "platformCode": "6"
+                }
+              },
+              "to": {
+                "name": "Budapest, Kelenföld vasútállomás",
+                "lat": 47.464255,
+                "lon": 19.020587,
+                "stop": {
+                  "gtfsId": "BKK:056216",
+                  "name": "Budapest, Kelenföld vasútállomás",
+                  "platformCode": null
+                }
+              },
+              "route": null,
+              "trip": null
+            },
+            {
+              "mode": "SUBWAY",
+              "startTime": 1792792020000,
+              "endTime": 1792792810000,
+              "distance": 6778.1,
+              "realTime": false,
+              "interlineWithPreviousLeg": false,
+              "from": {
+                "name": "Budapest, Kelenföld vasútállomás",
+                "lat": 47.464255,
+                "lon": 19.020587,
+                "stop": {
+                  "gtfsId": "BKK:056216",
+                  "name": "Budapest, Kelenföld vasútállomás",
+                  "platformCode": null
+                }
+              },
+              "to": {
+                "name": "Budapest, Keleti pályaudvar",
+                "lat": 47.500485,
+                "lon": 19.081704,
+                "stop": {
+                  "gtfsId": "BKK:056234",
+                  "name": "Budapest, Keleti pályaudvar",
+                  "platformCode": null
+                }
+              },
+              "route": {
+                "gtfsId": "BKK:5400",
+                "shortName": "M4",
+                "longName": null,
+                "mode": "SUBWAY",
+                "color": "4CA22F"
+              },
+              "trip": {
+                "gtfsId": "BKK:D00838124",
+                "tripShortName": null,
+                "tripHeadsign": "Keleti pályaudvar"
+              }
+            },
+            {
+              "mode": "WALK",
+              "startTime": 1792792840000,
+              "endTime": 1792793261000,
+              "distance": 354.54,
+              "realTime": false,
+              "interlineWithPreviousLeg": false,
+              "from": {
+                "name": "Budapest, Keleti pályaudvar",
+                "lat": 47.500485,
+                "lon": 19.081704,
+                "stop": {
+                  "gtfsId": "BKK:056234",
+                  "name": "Budapest, Keleti pályaudvar",
+                  "platformCode": null
+                }
+              },
+              "to": {
+                "name": "Destination",
+                "lat": 47.499683,
+                "lon": 19.082881,
+                "stop": null
+              },
+              "route": null,
+              "trip": null
+            }
+          ]
+        }
+      ],
+      "routingErrors": []
+    }
+  }
+}

@@ -154,8 +154,12 @@ object EmmaStopsParser {
             val trip = time.optJSONObject("trip") ?: return@mapNotNull null
             val tripId = trip.text("gtfsId") ?: return@mapNotNull null
             val route = trip.optJSONObject("route")?.let(::route) ?: return@mapNotNull null
-            val stopProvider = catalogue.stops.single().providerId
+            val selectedStop = catalogue.stops.single()
+            if (!StopBoardScope.acceptsStop(selectedStop, time.optJSONObject("stop")?.text("gtfsId"))) return@mapNotNull null
+            val stopProvider = selectedStop.providerId
             if (route.providerId != stopProvider) return@mapNotNull null
+            val stopMode = catalogue.stops.single().transportMode
+            if (!StopBoardScope.acceptsMode(stopMode, route.transportMode)) return@mapNotNull null
             val day = time.number("serviceDay")?.toLong() ?: return@mapNotNull null
             val scheduledSeconds = time.number("scheduledDeparture")?.toLong()?.takeIf { it in 0..172799 }
             val realtimeSeconds = time.number("realtimeDeparture")?.toLong()?.takeIf { it in 0..172799 }

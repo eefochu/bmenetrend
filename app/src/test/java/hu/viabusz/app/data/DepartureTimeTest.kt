@@ -30,13 +30,13 @@ class DepartureTimeTest {
         assertFalse(TransitMapVisibility.vehicle("RAIL",6.5))
         assertTrue(TransitMapVisibility.stop("BUS",5.0,focused=true))
     }
-    @Test fun favouriteStationsRetainEverySourcePlatformAndIgnoreMapDistance() {
+    @Test fun favouriteStopsKeepOnlyTheirOwnSourcePlatformAndIgnoreMapDistance() {
         val a=TransitStop("emma:1:a_1","Station A",GeoPoint(47.4,19.0),emptyList(),"mav",parentStationId="emma:1:a")
         val b=a.copy(id="emma:1:a_2",platformCode="2",position=GeoPoint(47.4001,19.0001))
         val c=a.copy(id="emma:1:c_1",name="Station C",parentStationId="emma:1:c",position=GeoPoint(46.0,20.0))
         val stations=FavoriteDepartures.stations(setOf(a.id,c.id,"removed"),listOf(a,b,c))
         assertEquals(listOf(a.id,c.id),stations.map { it.stop.id })
-        assertEquals(setOf(a.id,b.id),stations.first().platforms.map { it.id }.toSet())
+        assertEquals(listOf(a),stations.first().platforms)
         assertEquals(listOf(c),stations.last().platforms)
         assertTrue(FavoriteDepartures.stations(emptySet(),listOf(a,b,c)).isEmpty())
     }

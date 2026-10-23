@@ -97,6 +97,6 @@ A háttérrendszerek működése és a specifikációk a [`docs/`](docs/) mappá
 ## 🔒 Adatvédelem és filozófia
 
 A BMenetrend független, nyílt közösségi segédprogram.
-- A GPS-helyzet a készüléken a helyzetjelölőhöz és a legközelebbi megálló megtalálásához használatos; nem küldjük el az EMMA vagy a Photon szolgáltatásnak.
+- A helyjelölő és a legközelebbi megálló kiválasztása helyben használja a GPS-helyzetet. Az útvonaltervezéshez az EMMA megkapja a kiindulópont és a cél koordinátáit, valamint az indulási időt. Ha a jelenlegi helyzetedről tervezel, ez a GPS-koordinátáidat is jelenti. A Photon a keresőszöveget kapja meg, a GPS-helyzetet nem.
 - Nincsenek beépített analitikák, követőkódok vagy háttérben futó adatgyűjtők.
 - A térképhez, helykereséshez és menetrendekhez nincs szükség fiókra vagy privát API-kulcsokra. A térképcsempék és keresési találatok letöltése internetkapcsolatot igényel.

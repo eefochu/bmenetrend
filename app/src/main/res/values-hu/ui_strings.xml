@@ -57,7 +57,7 @@
     <string name="ui_search_stop">Megálló keresése</string>
     <string name="ui_about_description">ViaBusz-, KanyarGO- és HOMM-megállók, járatok és indulások Biatorbágyon, Pátyon és Budaörsön. Nem hivatalos alkalmazás.</string>
     <string name="ui_about_live_data">A menetrendi indulásokat külön felirat jelöli. Az élő buszhelyzet és az igazolt érkezési becslés az üzemeltetők nyilvános adataiból érkezik, ha elérhető. Egyes élő jelzésekhez a forrás nem ad járatszámot.</string>
-    <string name="ui_about_location">A helyzetedet a saját helyjelölő és a legközelebbi megálló kiválasztásához használjuk. A készülék GPS-adatait nem küldjük a közlekedési szolgáltatóknak.</string>
+    <string name="ui_about_location">A helyjelölő és a legközelebbi megálló kiválasztása helyben használja a helyzetedet. Az EMMA a kiindulópont és a cél koordinátái, valamint az indulási idő alapján tervez. Ha a jelenlegi helyzetedről tervezel, a GPS-koordinátáidat is elküldjük az EMMA szolgáltatásnak.</string>
     <string name="ui_viabusz_website">ViaBusz hivatalos weboldal</string>
     <string name="ui_kanyargo_website">KanyarGO hivatalos weboldal</string>
     <string name="ui_registration_required">Iskolásjárat · előzetes regisztráció szükséges</string>

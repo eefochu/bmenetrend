@@ -85,6 +85,23 @@ class EmmaStopsTest {
         assertEquals(id, board.stopId)
         assertTrue(runCatching { EmmaStopsParser.board(text, "emma:BKK:other", now, 60) }.isFailure)
     }
+    @Test fun trolleyPlatformRejectsOtherModesAndOtherPhysicalBoardingPoints() {
+        val root = JSONObject(response())
+        val selected = root.getJSONObject("data").getJSONObject("stop")
+        selected.put("gtfsId","BKK:trolley").put("vehicleMode","TROLLEYBUS")
+        val times = JSONArray()
+        listOf("TROLLEYBUS","BUS","TRAM","SUBWAY","RAIL").forEach { mode ->
+            times.put(time("BKK:$mode").put("stop",JSONObject().put("gtfsId","BKK:trolley")).apply {
+                getJSONObject("trip").put("route",route().put("gtfsId","BKK:$mode").put("mode",mode))
+            })
+        }
+        times.put(time("BKK:other").put("stop",JSONObject().put("gtfsId","BKK:opposite")).apply {
+            getJSONObject("trip").put("route",route().put("gtfsId","BKK:other").put("mode","TROLLEYBUS"))
+        })
+        selected.put("stoptimesWithoutPatterns",times)
+        val board=EmmaStopsParser.board(root.toString(),"emma:BKK:trolley",now,60)
+        assertEquals(listOf("BKK:TROLLEYBUS"),board.departures.map { it.directionId })
+    }
     @Test fun oldAndWrongStopBoardsCannotLeakIntoCurrentSelection() {
         val board = EmmaStopsParser.board(response(time()), id, now, 60)
         assertEquals(1, EmmaStopsParser.freshDepartures(board, id, now.plusSeconds(20), 30).size)
@@ -96,10 +113,10 @@ class EmmaStopsTest {
         val stops = EmmaStopsParser.index(index(stop(), stop("hkir:platform2"), stop("BKK:other").put("lon", 19.2))).stops
         val bounds = MapBounds(19.0, 47.4, 19.1, 47.5)
         val broad = StopMapClustering.groups(stops, bounds, 8.0)
-        assertEquals(1, broad.size)
-        assertEquals(2, broad.single().size)
+        assertEquals(2, broad.size)
+        assertTrue(broad.all { it.size == 1 })
         assertEquals(2, broad.flatten().map { it.id }.distinct().size)
-        assertEquals(1, StopMapClustering.groups(stops, bounds, 13.0).size)
+        assertEquals(2, StopMapClustering.groups(stops, bounds, 13.0).size)
         assertEquals(2, StopMapClustering.groups(stops, bounds, 15.0).size)
         assertTrue(StopMapClustering.groups(stops, null, 8.0).isEmpty())
     }

@@ -29,6 +29,24 @@ class TripPlannerTest {
         assertTrue(first.legs.all { !it.realtime })
         assertTrue(TripPlanner.feasible(first.legs,result.readyAt))
     }
+    @Test fun emmaPlansBiatorbagyToKeletiWithTrainAndMetro() {
+        // One trimmed live EMMA itinerary, preserving source times and line identities.
+        val from = PlannerEndpoint("hkir:hkir_777140_3", "Biatorbágy, vasútállomás", "", GeoPoint(47.479964,18.83392))
+        val to = PlannerEndpoint("BKK:F01336", "Budapest, Keleti pályaudvar", "", GeoPoint(47.499683,19.082881))
+        val ready = Instant.parse("2026-10-23T20:38:26Z")
+        val values = TripPlanner.variables(from, to, ready)
+        assertEquals("47.479964,18.83392", values.getString("from"))
+        assertEquals("47.499683,19.082881", values.getString("to"))
+        assertTrue(TripPlanner.QUERY.contains("{mode:TRANSIT}"))
+        val result = TripPlanner.parse(fixture("biatorbagy-keleti"), from, to, ready.minusSeconds(120), ready)
+        val journey = result.itineraries.single()
+        val rides = journey.legs.filterNot { it.walking }
+        assertEquals(listOf("RAIL", "SUBWAY"), rides.map { it.mode })
+        assertEquals("4941", rides.first().trainNumber)
+        assertEquals("M4", rides.last().route!!.number)
+        assertEquals(1, journey.transfers)
+        assertTrue(TripPlanner.feasible(journey.legs, ready))
+    }
     @Test fun realTransferResponseKeepsWalkingAndPracticalTransferTime() {
         val text=fixture("transfer"); val result=parse(text)
         assertTrue(result.itineraries.isNotEmpty())

@@ -4,7 +4,9 @@ The Map and Plan / Tervezés destinations use Material 3 bottom navigation and r
 
 ## Routing and timing
 
-Planning uses the existing public EMMA/MÁVPlusz GraphQL endpoint and its verified `plan` query. No direct BKK API, private key or additional server is used.
+Planning uses the existing public EMMA/MÁVPlusz GraphQL endpoint and its verified `plan` query. All transit routing is performed by EMMA, including rail, metro, HÉV, tram, trolleybus and bus services supplied by its planner. There is no local route search or timetable-download prerequisite. No direct BKK API, private key or additional server is used.
+
+The request sends origin and destination coordinates and the chosen departure time to EMMA. Using the current location as the origin sends those GPS coordinates. Stop/platform selection and departure boards retain their exact source stop IDs and transport modes; planning does not merge them.
 
 - Leave now requests departure after two minutes of preparation. Choose a date and time requests that exact start time in Europe/Budapest, including days ahead. Walking, boarding and transfer allowances still apply. Past departures and ambiguous/nonexistent clock-change times are rejected; the wall-time-only API cannot distinguish repeated hours. Material calendar dates are converted from UTC date identifiers before combining them with Budapest time.
 - The walking speed is 1.15 m/s (about 4.1 km/h). EMMA supplies actual street-network walking legs, including crossings, elevation and station access. Walking time is not calculated from straight-line distance.
@@ -20,7 +22,7 @@ Times use Europe/Budapest, including date rollover and daylight saving time. Net
 
 ## Validation
 
-Public source responses captured on 2026-10-23 in `app/src/test/resources/planner/` cover direct M2 journeys with access/egress walks and a real M2–M3 transfer. Unit tests cover arrival ranking, walking/boarding feasibility, transfer walking plus slack, through vehicles, stale departures, malformed source data and Budapest date rollover. The request and response fields were checked against the live endpoint; its schema introspection is disabled.
+Public source responses captured on 2026-10-23 in `app/src/test/resources/planner/` cover direct M2 journeys with access/egress walks and a real M2–M3 transfer. Unit tests cover arrival ranking, walking/boarding feasibility, transfer walking plus slack, through vehicles, stale departures, malformed source data and Budapest date rollover. A trimmed live Biatorbágy–Keleti response also covers a national train followed by M4, including the train service number and source transfer times. The request and response fields were checked against the live endpoint; its schema introspection is disabled.
 
 The timing options are documented by [OpenTripPlanner](https://docs.opentripplanner.org/api/dev-2.x/graphql-gtfs/queries/plan). Source walking times can be faster than the configured flat-ground speed on individual sloped or mechanically assisted segments; validation preserves those times rather than rejecting legitimate journeys.
 
