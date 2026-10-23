@@ -267,7 +267,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
 
     fun selectVehicle(id: String) {
         val vehicle = state.value.vehicles.find { it.id == id } ?: return
-        mutableState.update { it.copy(selectedVehicle = vehicle, selectedPlace = null) }
+        mutableState.update { it.copy(selectedVehicle = vehicle, selectedPlace = null, boardingSelection = null) }
+        vehicle.routeId?.let { loadLine(it) }
         ensureVehicleJourney()
     }
 

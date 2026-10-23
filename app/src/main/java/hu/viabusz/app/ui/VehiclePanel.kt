@@ -7,7 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -51,6 +51,7 @@ fun VehiclePanel(state: UiState, onClose: () -> Unit, onRefresh: () -> Unit, onS
     }
     Column(modifier) {
         Row(Modifier.fillMaxWidth().padding(start = 22.dp, end = 8.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onClose) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.ui_back)) }
             LineBadge(number ?: "?", vehicle.providerId, vehicle.transportMode, vehicle.markerColor)
             Column(Modifier.weight(1f).padding(start = 12.dp)) {
                 Text(provider, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
@@ -59,7 +60,6 @@ fun VehiclePanel(state: UiState, onClose: () -> Unit, onRefresh: () -> Unit, onS
             IconButton(onClick = onRefresh, enabled = !state.vehicleJourneyLoading) {
                 Icon(Icons.Rounded.Refresh, stringResource(R.string.emma_vehicle_refresh))
             }
-            IconButton(onClick = onClose) { Icon(Icons.Rounded.Close, stringResource(R.string.emma_vehicle_close)) }
         }
         Text(destination?.let { stringResource(R.string.emma_vehicle_towards, it) } ?: stringResource(R.string.emma_vehicle_no_direction),
             Modifier.padding(start = 22.dp, end = 22.dp, top = 12.dp), style = MaterialTheme.typography.titleMedium, maxLines = 3, overflow = TextOverflow.Ellipsis)

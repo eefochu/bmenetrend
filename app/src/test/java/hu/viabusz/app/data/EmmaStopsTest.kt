@@ -96,9 +96,10 @@ class EmmaStopsTest {
         val stops = EmmaStopsParser.index(index(stop(), stop("hkir:platform2"), stop("BKK:other").put("lon", 19.2))).stops
         val bounds = MapBounds(19.0, 47.4, 19.1, 47.5)
         val broad = StopMapClustering.groups(stops, bounds, 8.0)
-        assertEquals(2, broad.size)
-        assertTrue(broad.all { it.size == 1 })
-        assertEquals(2, StopMapClustering.groups(stops, bounds, 13.0).size)
+        assertEquals(1, broad.size)
+        assertEquals(2, broad.single().size)
+        assertEquals(2, broad.flatten().map { it.id }.distinct().size)
+        assertEquals(1, StopMapClustering.groups(stops, bounds, 13.0).size)
         assertEquals(2, StopMapClustering.groups(stops, bounds, 15.0).size)
         assertTrue(StopMapClustering.groups(stops, null, 8.0).isEmpty())
     }

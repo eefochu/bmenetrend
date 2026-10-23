@@ -3,4 +3,5 @@
     <string name="map_provider_privacy">A térképalapot az OpenFreeMap szolgáltatja API-kulcs és fiók nélkül. A csempeszerver megkapja az IP-címet és a kért térképrészleteket.</string>
     <string name="map_provider_source">OpenFreeMap · térképforrás</string>
     <string name="map_style_credit">Az éjszakai térkép az OpenFreeMap / OpenMapTiles Dark Matter és a Stamen, Paul Norman által készített CartoDB Basemaps módosított stílusa (CC BY 3.0 / 4.0).</string>
+    <string name="map_exit_route">Útvonalnézet bezárása</string>
 </resources>
