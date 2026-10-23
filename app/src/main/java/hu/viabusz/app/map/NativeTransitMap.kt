@@ -299,9 +299,26 @@ fun NativeTransitMap(
             lastBottomPadding = bottomPaddingPx
         } else if (selectedPlace != null) {
             val bounds = selectedPlace.bounds
-            if (bounds != null) ready.animateCamera(CameraUpdateFactory.newLatLngBounds(
-                LatLngBounds.from(bounds.north, bounds.east, bounds.south, bounds.west), (48 * context.resources.displayMetrics.density).toInt()), 650)
-            else ready.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(selectedPlace.position.lat, selectedPlace.position.lon), 15.0), 650)
+            var boundsAnimated = false
+            if (bounds != null) {
+                try {
+                    val latNorth = maxOf(bounds.north, bounds.south)
+                    val latSouth = minOf(bounds.north, bounds.south)
+                    val lonEast = maxOf(bounds.east, bounds.west)
+                    val lonWest = minOf(bounds.east, bounds.west)
+                    val padding = (48 * context.resources.displayMetrics.density).toInt()
+                    if (latNorth - latSouth > 0.0001 && lonEast - lonWest > 0.0001 && padding * 2 < size.width && padding * 2 < size.height) {
+                        ready.animateCamera(CameraUpdateFactory.newLatLngBounds(
+                            LatLngBounds.from(latNorth, lonEast, latSouth, lonWest), padding), 650)
+                        boundsAnimated = true
+                    }
+                } catch (_: Exception) {
+                    boundsAnimated = false
+                }
+            }
+            if (!boundsAnimated) {
+                ready.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(selectedPlace.position.lat, selectedPlace.position.lon), 15.0), 650)
+            }
         } else if (browsingNearby && userLocation != null && (!locatedOnce || (locatedRequest != locationCameraRequest && locationCameraRequest > 0))) {
             locatedOnce = true
             locatedRequest = locationCameraRequest
@@ -343,6 +360,20 @@ fun NativeTransitMap(
                 }
                 IconFactory.getInstance(context).fromBitmap(bitmap)
             }
+        }
+        fun placeIcon(): Icon = iconCache.getOrPut("place-pin-marker") {
+            val size = (34 * density).toInt().coerceAtLeast(1)
+            val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+            val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+            val radius = size / 2f
+            paint.color = android.graphics.Color.WHITE
+            canvas.drawCircle(radius, radius, radius, paint)
+            paint.color = android.graphics.Color.parseColor("#D32F2F")
+            canvas.drawCircle(radius, radius, (radius - 2.5f * density).coerceAtLeast(1f), paint)
+            paint.color = android.graphics.Color.WHITE
+            canvas.drawCircle(radius, radius, (radius - 6f * density).coerceAtLeast(1f), paint)
+            IconFactory.getInstance(context).fromBitmap(bitmap)
         }
         fun vehicleIcon(vehicle: Vehicle): Icon {
             val style = VehicleMarkerStyle.forVehicle(vehicle)
@@ -484,8 +515,21 @@ fun NativeTransitMap(
             placeMarker?.let(nativeMap::removeMarker); placeMarker = null
         } else {
             val position = LatLng(selectedPlace.position.lat, selectedPlace.position.lon)
-            if (placeMarker == null) placeMarker = nativeMap.addMarker(MarkerOptions().position(position).title(selectedPlace.name))
-            else { placeMarker?.position = position; placeMarker?.title = selectedPlace.name }
+            val pIcon = placeIcon()
+            if (placeMarker == null) {
+                placeMarker = nativeMap.addMarker(
+                    MarkerOptions()
+                        .position(position)
+                        .title(selectedPlace.name)
+                        .snippet(selectedPlace.address.takeIf { it.isNotBlank() })
+                        .icon(pIcon)
+                )
+            } else {
+                placeMarker?.position = position
+                placeMarker?.title = selectedPlace.name
+                placeMarker?.snippet = selectedPlace.address.takeIf { it.isNotBlank() }
+                placeMarker?.icon = pIcon
+            }
         }
     }
 }

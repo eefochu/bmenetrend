@@ -17,6 +17,7 @@
 - **Natív vektortérkép**: Teljes képernyős [MapLibre](https://maplibre.org/) motor [OpenFreeMap](https://openfreemap.org/) vektoros csempékkel, automatikus világos témával és saját, színes éjszakai térképstílussal. API-kulcs és számlázási fiók nélkül.
 - **Kategorizált villámkereső**: Gyors keresés három kategóriában: **Helyek** (Photon / OpenStreetMap), **Megállók** (peronelrendezéssel) és **Járművek** (járatszám, rendszám vagy célállomás alapján).
 - **Önálló peronok**: A megállók külön, saját forráskoordinátáikkal jelennek meg; az egymást fedő jelölők minimális eltolással külön kiválaszthatók.
+- **Utazástervezés**: Külön Tervezés fül cím- és megállókereséssel, EMMA-alapú útvonalakkal, legkorábbi érkezés szerinti sorrenddel, valódi gyalogos szakaszokkal és átszállási tartalékkal. Indulás most vagy kiválasztott napon és időpontban; színes menetidősávok és megnyitható, időpontokkal, peronokkal és köztes megállókkal ellátott útvonallánc.
 - **Közeli járatok**: Alapértelmezett alsó kártya a helyzetedhez vagy a térkép közepéhez közeli megállók következő indulásaival, élő és menetrendi jelzéssel.
 - **Open Sans**: Beépített betűkészlet, 700-as vastagságú járatszámokkal; a metrók és HÉV-ek csak a számozott emblémakört használják.
 - **Material You & egyéni színek**: Finom animációk, edge-to-edge felület, rendszerhez igazodó dinamikus Monet színek (Android 12+) vagy egyéni RGB/HEX színválasztó.

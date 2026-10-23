@@ -10,4 +10,5 @@
     <string name="nearby_no_departures">No departures in this time window. Tap the stop for more.</string>
     <string name="nearby_platform">Platform %1$s</string>
     <string name="nearby_partial">Some platforms could not be refreshed. Retrying automatically.</string>
+    <string name="nearby_no_departures_2h">No incoming vehicles in nearby stations in the next 2 hours.</string>
 </resources>

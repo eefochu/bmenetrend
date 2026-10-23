@@ -21,7 +21,7 @@ object NearbyDepartures {
         location?.takeIf { (bounds == null || contains(bounds, it)) && StopClusters.distanceMeters(center, it) < 700 } ?: center
 
     /** Bound the number of station boards even in dense city centres or at country-level zoom. */
-    fun select(stops: List<TransitStop>, anchor: GeoPoint, bounds: MapBounds?): List<NearbyStation> {
+    fun select(stops: List<TransitStop>, anchor: GeoPoint, bounds: MapBounds?, maxStations: Int = 3): List<NearbyStation> {
         val candidates = stops.asSequence()
             .filter { !it.station && (bounds == null || contains(bounds, it.position)) }
             .filter { kotlin.math.abs(it.position.lat - anchor.lat) < 0.014 && kotlin.math.abs(it.position.lon - anchor.lon) < 0.022 }
@@ -35,7 +35,7 @@ object NearbyDepartures {
                 .sortedBy { StopClusters.distanceMeters(anchor, it.position) }.take(4)
             used.addAll(StopClusters.clusterFor(stop, candidates.map { it.first }).map { it.id })
             groups += NearbyStation(stop, platforms.ifEmpty { listOf(stop) }, distance)
-            if (groups.size == 3) break
+            if (groups.size == maxStations) break
         }
         return groups
     }

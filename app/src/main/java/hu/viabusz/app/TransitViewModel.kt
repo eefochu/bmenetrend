@@ -7,6 +7,7 @@ import hu.viabusz.app.data.*
 import hu.viabusz.app.ui.AccentColor
 import hu.viabusz.app.ui.UiState
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -60,7 +61,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         customAccentArgb = preferences.getInt("custom_accent_argb", 0xFF6750A4.toInt()),
         accentColor = AccentColor.fromKey(preferences.getString("accent_color", "system")),
         nationwideNetwork = preferences.getBoolean("emma_nationwide", true),
-        windowMinutes = preferences.getInt("window", 60).takeIf { it in listOf(30, 60, 120) } ?: 60,
+        windowMinutes = preferences.getInt("window", 120).takeIf { it in listOf(30, 60, 120) } ?: 120,
     ))
     val state: StateFlow<UiState> = mutableState
     private val refreshMutex = Mutex()
@@ -75,6 +76,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private var nearbyActive = false
     private var nearbyJob: Job? = null
     private var nearbyGeneration = 0
+    private var mapSettledJob: Job? = null
+    private var lastSettledCenter: GeoPoint? = null
     private var mapCenter = GeoPoint(47.473, 18.825)
     private var mapBounds: MapBounds? = null
     private var nearbyKey = emptyList<String>()
@@ -84,6 +87,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private var nearbyWindow = 60
     private var nearbyLoading = false
     private var mapError: String? = null
+    private var mapVisible = true
     private var liveError = false
 
     private var cachedClusterStopId: String? = null
@@ -107,19 +111,19 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         nearbyActive = true
         launch {
             while (isActive) {
-                ensureNearbyRequest(force = true)
+                if (mapVisible) ensureNearbyRequest(force = true)
                 delay(30_000)
             }
         }
         launch {
             while (isActive) {
-                recalculate()
-                delay(1_000)
+                if (mapVisible) recalculate()
+                delay(5_000)
             }
         }
         launch {
             while (isActive) {
-                refreshEmmaData()
+                if (mapVisible) refreshEmmaData()
                 delay(5_000)
             }
         }
@@ -137,16 +141,28 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         }
         launch {
             while (isActive) {
-                refreshBoard()
+                if (mapVisible) refreshBoard()
                 delay(20_000)
             }
         }
         try {
             while (isActive) {
-                refreshData()
+                if (mapVisible) refreshData()
                 delay(if (liveError || live?.vehicleDataAvailable == false) 30_000 else 15_000)
             }
-        } finally { nearbyActive = false; boardJob?.cancel(); nearbyJob?.cancel(); nearbyLoading = false }
+        } finally { nearbyActive = false; boardJob?.cancel(); nearbyJob?.cancel(); mapSettledJob?.cancel(); nearbyLoading = false }
+    }
+
+    fun setMapVisible(visible: Boolean) {
+        if (mapVisible == visible) return
+        mapVisible = visible
+        if (visible) {
+            recalculate()
+            viewModelScope.launch { refreshEmmaData() }
+            viewModelScope.launch { refreshData() }
+            ensureBoardRequest(force = true)
+            ensureNearbyRequest()
+        } else { mapSettledJob?.cancel(); nearbyJob?.cancel(); boardJob?.cancel() }
     }
 
     // Resource strings stored in state must be refreshed after the system language changes.
@@ -162,6 +178,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun refresh() {
+        mapSettledJob?.cancel()
         viewModelScope.launch { refreshData(forceNetwork = true) }
         viewModelScope.launch { refreshEmmaData(force = true) }
         ensureNearbyRequest(force = true)
@@ -230,7 +247,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             val validBoard = board?.takeIf { it.stopId == selectedId && Duration.between(it.fetchedAt, now).seconds in 0..60 }
             val emmaDepartures = if (hasEmma) EmmaStopsParser.freshDepartures(board, selectedId, now, current.windowMinutes) else emptyList()
             val localStops = if (cluster.isNotEmpty()) cluster.filterNot { it.id.startsWith("emma:") }
-                else if (selectedId?.startsWith("emma:") != true) current.stops.filter { it.id == selectedId } else emptyList()
+                else emptyList()
             val localDepartures = current.network?.let { network ->
                 localStops.flatMap { localStop ->
                     repository.departures(network, snapshot, localStop.id, now, current.windowMinutes)
@@ -255,7 +272,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 emmaFetchedAt == null -> getApplication<Application>().getString(R.string.volan_loading)
                 else -> getApplication<Application>().getString(R.string.volan_unavailable)
             }
-            val stop = current.findStop(current.selectedStopId)
+            val stop = cluster.firstOrNull { it.id == selectedId }
             val stopProviders = if (cluster.isNotEmpty()) cluster.flatMap { it.providerIds }.distinct() else stop?.providerIds.orEmpty()
             val hommOnly = stopProviders == listOf("homm")
             val networkWarning = stopProviders.mapNotNull { current.network?.providerWarnings?.get(it) }
@@ -265,14 +282,18 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             val clusterStopIds = if (cluster.isNotEmpty()) cluster.map { it.id }.toSet() else setOfNotNull(selectedId)
             current.copy(
                 now = now,
-                nearbyStations = nearbySelection.map { station ->
+                nearbyStations = nearbySelection.mapNotNull { station ->
                     val rows = station.platforms.flatMap { platform ->
-                        if (platform.id.startsWith("emma:")) EmmaStopsParser.freshDepartures(nearbyBoards[platform.id], platform.id, now, current.windowMinutes)
-                        else current.network?.let { repository.departures(it, snapshot, platform.id, now, current.windowMinutes) }.orEmpty()
+                        if (platform.id.startsWith("emma:")) EmmaStopsParser.freshDepartures(nearbyBoards[platform.id], platform.id, now, 120)
+                        else current.network?.let { repository.departures(it, snapshot, platform.id, now, 120) }.orEmpty()
                     }.distinctBy { listOf(it.routeId, it.directionId, it.expectedAt) }.sortedBy { it.expectedAt }
-                    station.copy(departures = rows, loading = nearbyLoading,
-                        unavailable = station.platforms.any { it.id in nearbyFailed || (it.id.startsWith("emma:") && nearbyBoards[it.id]?.let { board -> Duration.between(board.fetchedAt, now).seconds !in 0..60 } != false) } && !nearbyLoading)
-                },
+                    if (!nearbyLoading && rows.isEmpty()) {
+                        null
+                    } else {
+                        station.copy(departures = rows, loading = nearbyLoading,
+                            unavailable = station.platforms.any { it.id in nearbyFailed || (it.id.startsWith("emma:") && nearbyBoards[it.id]?.let { board -> Duration.between(board.fetchedAt, now).seconds !in 0..60 } != false) } && !nearbyLoading)
+                    }
+                }.take(3),
                 nearbyLoading = nearbyLoading || (!current.stopIndexLoaded && !stopIndexFailed && nearbySelection.isEmpty()),
                 boardUpdatedAt = if (hasEmma) validBoard?.fetchedAt else null,
                 error = null,
@@ -325,6 +346,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
 
     fun returnToNearby() {
         closeVehicle()
+        mapSettledJob?.cancel()
         mutableState.update { it.copy(showNearby = true, boardingSelection = null) }
         ensureNearbyRequest()
     }
@@ -332,48 +354,67 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     fun updateMapArea(bounds: MapBounds, center: GeoPoint) {
         mapBounds = bounds
         mapCenter = center
-        if (state.value.showNearby) ensureNearbyRequest()
+        if (!state.value.showNearby) return
+        mapSettledJob?.cancel()
+        mapSettledJob = viewModelScope.launch {
+            delay(1200)
+            val prev = lastSettledCenter
+            val dist = if (prev != null) distanceMeters(prev, center) else Double.MAX_VALUE
+            if (dist > 30.0 || nearbySelection.isEmpty()) {
+                lastSettledCenter = center
+                ensureNearbyRequest()
+            }
+        }
     }
 
     private fun ensureNearbyRequest(force: Boolean = false) {
-        if (!nearbyActive || !state.value.showNearby) return
+        if (!mapVisible || !nearbyActive || !state.value.showNearby) return
         val current = state.value
         val anchor = NearbyDepartures.anchor(mapCenter, mapBounds, current.userLocation)
-        nearbySelection = NearbyDepartures.select(current.stops, anchor, mapBounds)
+        nearbySelection = NearbyDepartures.select(current.stops, anchor, mapBounds, maxStations = 6)
         mutableState.update { it.copy(nearbyAtUser = anchor == current.userLocation) }
-        val key = nearbySelection.flatMap { it.platforms }.map { it.id } + current.windowMinutes.toString()
+        val window = 120
+        val key = nearbySelection.flatMap { it.platforms }.map { it.id } + window.toString()
         if (key == nearbyKey && (nearbyJob?.isActive == true || (!force && nearbyJob?.isCancelled != true))) { recalculate(); return }
-        if (nearbyWindow != current.windowMinutes) {
+        if (nearbyWindow != window) {
             nearbyBoards.clear()
-            nearbyWindow = current.windowMinutes
+            nearbyWindow = window
         }
         nearbyKey = key
         val generation = ++nearbyGeneration
         nearbyJob?.cancel()
         nearbyLoading = true
         recalculate()
-        val platforms = nearbySelection.flatMap { it.platforms }.filter { it.id.startsWith("emma:") }.distinctBy { it.id }
-        val window = current.windowMinutes
+        val stations = nearbySelection.toList()
+        nearbyFailed = emptySet()
         nearbyJob = viewModelScope.launch {
             delay(600)
             val semaphore = kotlinx.coroutines.sync.Semaphore(3)
             val results = coroutineScope {
-                platforms.map { stop -> async {
-                    semaphore.acquire()
-                    try {
-                        val cached = nearbyBoards[stop.id]?.takeIf { !force && Duration.between(it.fetchedAt, Instant.now()).seconds in 0..29 }
-                        val result = cached ?: stopsRepository.board(stop.id, window)
-                        stop.id to result
-                    } catch (cancelled: CancellationException) { throw cancelled }
-                    catch (_: Exception) { stop.id to null }
-                    finally { semaphore.release() }
-                } }.awaitAll()
+                stations.map { station -> async {
+                    val stationResults = coroutineScope {
+                        station.platforms.filter { it.id.startsWith("emma:") }.distinctBy { it.id }.map { stop -> async {
+                            semaphore.acquire()
+                            try {
+                                val cached = nearbyBoards[stop.id]?.takeIf { !force && Duration.between(it.fetchedAt, Instant.now()).seconds in 0..29 }
+                                stop.id to (cached ?: stopsRepository.board(stop.id, window))
+                            } catch (cancelled: CancellationException) { throw cancelled }
+                            catch (_: Exception) { stop.id to null }
+                            finally { semaphore.release() }
+                        } }.awaitAll()
+                    }
+                    // One slow station must not hold back departures that are already available.
+                    if (generation == nearbyGeneration) {
+                        nearbyFailed = nearbyFailed + stationResults.filter { it.second == null }.map { it.first }
+                        stationResults.forEach { (id, board) -> if (board != null) nearbyBoards[id] = board }
+                        while (nearbyBoards.size > 36) nearbyBoards.remove(nearbyBoards.keys.first())
+                        stopRoutes = (stationResults.flatMap { it.second?.catalogue?.routes.orEmpty() } + stopRoutes).distinctBy { it.id }
+                        recalculate()
+                    }
+                    stationResults
+                } }.awaitAll().flatten()
             }
             if (generation != nearbyGeneration) return@launch
-            nearbyFailed = results.filter { it.second == null }.map { it.first }.toSet()
-            results.forEach { (id, board) -> if (board != null) nearbyBoards[id] = board }
-            while (nearbyBoards.size > 36) nearbyBoards.remove(nearbyBoards.keys.first())
-            stopRoutes = (results.flatMap { it.second?.catalogue?.routes.orEmpty() } + stopRoutes).distinctBy { it.id }
             val enriched = results.flatMap { it.second?.catalogue?.stops.orEmpty() }.associateBy { it.id }
             mutableState.update { it.copy(emmaStops = it.emmaStops.map { stop -> enriched[stop.id] ?: stop }) }
             nearbyLoading = false
@@ -445,6 +486,10 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             recalculate()
             ensureBoardRequest()
             ensureNearbyRequest()
+            val stopsSnapshot = state.value.stops
+            viewModelScope.launch(Dispatchers.Default) {
+                TransitSearch.indexStops(stopsSnapshot)
+            }
         } catch (cancelled: CancellationException) { throw cancelled
         } catch (_: Exception) {
             stopIndexFailed = true
@@ -457,6 +502,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun ensureBoardRequest(force: Boolean = false) {
+        if (!mapVisible) return
         if (state.value.showNearby) { boardJob?.cancel(); boardKey = null; return }
         val key = state.value.selectedStopId to state.value.windowMinutes
         if (!force && key == boardKey) return
@@ -475,7 +521,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private suspend fun refreshBoard(waitForCurrent: Boolean = false) {
-        if (state.value.showNearby) return
+        if (!mapVisible || state.value.showNearby) return
         if (!waitForCurrent && boardMutex.isLocked) return
         boardMutex.withLock {
             val stopId = state.value.selectedStopId ?: return@withLock
@@ -597,7 +643,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         mutableState.update { it.copy(placeQuery = query, placeResults = emptyList(), placesLoading = shouldSearch, placesUnavailable = false) }
         if (!shouldSearch) return
         placeSearchJob = viewModelScope.launch {
-            delay(500)
+            delay(250)
             try {
                 val places = placesRepository.search(query)
                 if (generation == placeSearchGeneration) mutableState.update { it.copy(placeResults = places, placesLoading = false) }
@@ -611,14 +657,17 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     fun selectPlace(place: PlaceResult) {
         closeVehicle()
         manualStop = true
+        mapSettledJob?.cancel()
+        lastSettledCenter = place.position
         mutableState.update { it.copy(showNearby = true, selectedPlace = place, selectedStopId = null, boardingSelection = null, placeCameraRequest = it.placeCameraRequest + 1) }
         recalculate()
         ensureBoardRequest()
-        ensureNearbyRequest()
+        ensureNearbyRequest(force = true)
     }
 
     fun clearPlace() {
         if (state.value.selectedPlace == null) return
+        mapSettledJob?.cancel()
         mutableState.update { it.copy(selectedPlace = null) }
         recalculate()
         ensureNearbyRequest()
@@ -641,6 +690,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     fun useNearest() {
         closeVehicle()
         manualStop = false
+        mapSettledJob?.cancel()
+        lastSettledCenter = state.value.userLocation
         state.value.nearestStopId?.let { id -> mutableState.update { it.copy(showNearby = false, selectedStopId = id, selectedPlace = null, cameraRequest = it.cameraRequest + 1, boardingSelection = null) } }
         recalculate()
         ensureBoardRequest()
@@ -663,6 +714,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     fun mapMessage(message: String?) { mapError = message; recalculate() }
     fun setWindow(minutes: Int) {
         if (minutes !in listOf(30, 60, 120)) return
+        mapSettledJob?.cancel()
         preferences.edit().putInt("window", minutes).apply()
         mutableState.update { it.copy(windowMinutes = minutes) }
         recalculate()

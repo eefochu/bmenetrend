@@ -21,14 +21,14 @@ class EmmaGraphqlClient(private val client: OkHttpClient = defaultHttpClient()) 
         return suspendCancellableCoroutine { continuation ->
             continuation.invokeOnCancellation { call.cancel() }
             call.enqueue(object : Callback {
-                override fun onFailure(call: Call, e: IOException) { continuation.resumeWithException(e) }
+                override fun onFailure(call: Call, e: IOException) { if (continuation.isActive) continuation.resumeWithException(e) }
                 override fun onResponse(call: Call, response: Response) {
                     try {
                         val text = response.use {
                             if (!it.isSuccessful) throw IOException("EMMA HTTP ${it.code}")
                             it.body?.string() ?: throw IOException("Empty EMMA response")
                         }
-                        continuation.resume(text)
+                        if (continuation.isActive) continuation.resume(text)
                     } catch (error: Exception) { continuation.resumeWithException(error) }
                 }
             })

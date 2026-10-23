@@ -18,14 +18,23 @@ class PlacesRepository(context: Context) {
     private val directory = File(context.cacheDir, "places-v1")
     private val mutex = Mutex()
     private var lastRequest = 0L
+    private val memoryCache = object : LinkedHashMap<String, List<PlaceResult>>(32, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<PlaceResult>>?): Boolean = size > 64
+    }
 
     suspend fun search(raw: String): List<PlaceResult> = mutex.withLock {
         val query = PlaceSearch.query(raw)
+        val memoryHit = synchronized(memoryCache) { memoryCache[query] }
+        if (memoryHit != null) return@withLock memoryHit
+
         val key = MessageDigest.getInstance("SHA-256").digest(TransitSearch.normalize(query).toByteArray()).joinToString("") { "%02x".format(it) }
         val file = File(directory, "$key.json")
         val cached = withContext(Dispatchers.IO) { runCatching { if (file.isFile) file.readText() else null }.getOrNull() }
         if (cached != null && System.currentTimeMillis() - file.lastModified() in 0..86_399_999) {
-            runCatching { PlaceSearch.parse(cached, query) }.getOrNull()?.let { return@withLock it }
+            runCatching { PlaceSearch.parse(cached, query) }.getOrNull()?.let {
+                synchronized(memoryCache) { memoryCache[query] = it }
+                return@withLock it
+            }
         }
         delay((1000 - (android.os.SystemClock.elapsedRealtime() - lastRequest)).coerceAtLeast(0))
         lastRequest = android.os.SystemClock.elapsedRealtime()
@@ -47,8 +56,16 @@ class PlacesRepository(context: Context) {
                 })
             }
         } catch (cancelled: CancellationException) { throw cancelled }
-        catch (error: Exception) { if (cached != null) return@withLock PlaceSearch.parse(cached, query); throw error }
+        catch (error: Exception) {
+            if (cached != null) {
+                val fallback = PlaceSearch.parse(cached, query)
+                synchronized(memoryCache) { memoryCache[query] = fallback }
+                return@withLock fallback
+            }
+            throw error
+        }
         val results = withContext(Dispatchers.Default) { PlaceSearch.parse(text, query) }
+        synchronized(memoryCache) { memoryCache[query] = results }
         withContext(Dispatchers.IO) {
             runCatching {
                 directory.mkdirs()

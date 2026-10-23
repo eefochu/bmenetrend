@@ -1,7 +1,6 @@
 package hu.viabusz.app.ui
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.selection.toggleable
@@ -44,6 +43,7 @@ import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.MyLocation
 import androidx.compose.material.icons.rounded.NearMe
@@ -76,9 +76,11 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -86,6 +88,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -128,6 +132,7 @@ fun ViaBuszScreen(
     onRecenter: () -> Unit = {},
     onNationwideNetworkChanged: (Boolean) -> Unit = {},
     onVehicleClosed: () -> Unit = {},
+    onReturnToNearby: () -> Unit = onVehicleClosed,
     onAccentColorChanged: (AccentColor) -> Unit = {},
     onCustomAccentChanged: (Int) -> Unit = {},
     onLineOpened: (String, Boolean) -> Unit = { _, _ -> },
@@ -155,8 +160,11 @@ fun ViaBuszScreen(
         ),
     )
     var shownStopToken by remember { mutableStateOf<Pair<String?, Int>?>(null) }
-    val selectedStop = state.findStop(state.selectedStopId)
-    val selectedRoute = routeId?.let(state::findRoute)
+    val selectedStop = remember(state.selectedStopId, state.network?.stops, state.emmaStops) {
+        state.findStop(state.selectedStopId)
+    }
+    val routesById = remember(state.network?.routes, state.emmaRoutes) { state.routesById }
+    val selectedRoute = routesById[routeId]
     val selectedDirection = selectedRoute?.directions?.firstOrNull { it.id == directionId }
     val openSearch: () -> Unit = {
         query = ""
@@ -169,7 +177,6 @@ fun ViaBuszScreen(
         searchOpen = false
         routeId = null
         directionId = null
-        scope.launch { sheetState.bottomSheetState.partialExpand() }
     }
     val openDeparture: (Departure) -> Unit = { departure ->
         val observed = state.vehicles.find { it.tripId != null && it.tripId == departure.directionId }
@@ -192,34 +199,50 @@ fun ViaBuszScreen(
             else -> searchOpen = false
         }
     }
+    val minimize: () -> Unit = {
+        scope.launch { sheetState.bottomSheetState.hide() }
+    }
     val exitRouteView: () -> Unit = {
         onClearBoarding()
-        onVehicleClosed()
-        scope.launch { sheetState.bottomSheetState.hide() }
+        onReturnToNearby()
+        minimize()
     }
-    BackHandler(enabled = !searchOpen && state.selectedVehicle == null && state.boardingSelection == null && sheetState.bottomSheetState.targetValue != SheetValue.Hidden) {
-        scope.launch { sheetState.bottomSheetState.hide() }
+    val sheet = sheetState.bottomSheetState
+    // Discrete anchor changes drive controls. Drag offsets stay inside Material's layout phase.
+    val isExpanded by remember { derivedStateOf { sheet.currentValue == SheetValue.Expanded } }
+    val isMinimized by remember { derivedStateOf { sheet.currentValue == SheetValue.Hidden } }
+    val collapse: () -> Unit = {
+        scope.launch {
+            if (sheet.targetValue == SheetValue.Expanded) sheet.partialExpand() else sheet.hide()
+        }
     }
-    BackHandler(enabled = state.boardingSelection != null && state.selectedVehicle == null && !searchOpen, onBack = exitRouteView)
-    BackHandler(enabled = state.selectedVehicle != null && !searchOpen, onBack = exitRouteView)
+    val toggleExpand: () -> Unit = {
+        scope.launch {
+            if (sheet.targetValue == SheetValue.Expanded) sheet.partialExpand() else sheet.expand()
+        }
+    }
+    BackHandler(enabled = !searchOpen && !showSettings && !isMinimized, onBack = {
+        if (state.selectedVehicle != null || state.boardingSelection != null || !state.showNearby) exitRouteView()
+        else collapse()
+    })
     BackHandler(enabled = searchOpen, onBack = navigateBack)
-    LaunchedEffect(sheetState.bottomSheetState.targetValue) {
-        if (sheetState.bottomSheetState.targetValue == SheetValue.Hidden) {
+    LaunchedEffect(sheet.currentValue) {
+        if (sheet.currentValue == SheetValue.Hidden && (state.selectedVehicle != null || state.boardingSelection != null || !state.showNearby)) {
             onClearBoarding()
-            onVehicleClosed()
+            onReturnToNearby()
         }
     }
     LaunchedEffect(state.selectedVehicle?.id) {
         if (state.selectedVehicle != null) {
             searchOpen = false
-            sheetState.bottomSheetState.partialExpand()
+            sheet.partialExpand()
         }
     }
     LaunchedEffect(state.selectedStopId, state.cameraRequest, state.boardingSelection) {
         if (!state.showNearby && state.selectedVehicle == null && state.selectedStopId != null) {
             val token = state.selectedStopId to state.cameraRequest
-            if (state.boardingSelection != null) sheetState.bottomSheetState.expand()
-            else if (token != shownStopToken) sheetState.bottomSheetState.partialExpand()
+            if (state.boardingSelection != null) sheet.expand()
+            else if (token != shownStopToken) sheet.partialExpand()
             shownStopToken = token
         }
     }
@@ -227,24 +250,37 @@ fun ViaBuszScreen(
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Box(Modifier.fillMaxSize()) {
             val screenHeight = LocalConfiguration.current.screenHeightDp.dp
-            val peekHeight = (screenHeight * 0.34f).coerceIn(110.dp, 330.dp)
+            val peekHeight = (screenHeight * 0.36f).coerceIn(220.dp, 340.dp)
             val density = LocalDensity.current
             val peekHeightPx = with(density) { peekHeight.roundToPx() }
-            val sheetHidden = sheetState.bottomSheetState.targetValue == SheetValue.Hidden
-            val bottomPaddingPx = when (sheetState.bottomSheetState.targetValue) {
-                SheetValue.Hidden -> 0
-                SheetValue.Expanded -> with(density) { (screenHeight * 0.88f).roundToPx() }
-                else -> peekHeightPx
-            }
+            var layoutHeightPx by remember { mutableIntStateOf(0) }
+            // Full expansion overlays the map; refitting it here competes with the sheet animation.
+            val bottomPaddingPx = if (isMinimized) 0 else peekHeightPx
 
             BottomSheetScaffold(
                 scaffoldState = sheetState,
+                modifier = Modifier.onSizeChanged { layoutHeightPx = it.height },
                 sheetPeekHeight = peekHeight,
                 sheetShape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
                 sheetContainerColor = MaterialTheme.colorScheme.surface,
                 sheetTonalElevation = 1.dp,
                 sheetShadowElevation = 8.dp,
                 containerColor = Color.Transparent,
+                sheetDragHandle = {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(onClick = toggleExpand)
+                            .padding(top = 10.dp, bottom = 6.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Surface(
+                            modifier = Modifier.size(width = 36.dp, height = 4.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                            shape = RoundedCornerShape(2.dp)
+                        ) {}
+                    }
+                },
                 sheetContent = {
                     if (state.selectedVehicle != null) VehiclePanel(
                         state = state,
@@ -253,10 +289,23 @@ fun ViaBuszScreen(
                         onRefresh = onRefresh,
                         onStop = onJourneyBoardingStop,
                         modifier = Modifier.fillMaxWidth().fillMaxHeight(0.88f),
-                    ) else if (state.showNearby) NearbyPanel(
-                        state, selectStop, openDeparture, onRefresh, onLocate,
-                        { scope.launch { sheetState.bottomSheetState.hide() } }, onWindowChanged,
-                        Modifier.fillMaxWidth().fillMaxHeight(0.88f),
+                    ) else if (state.showNearby || selectedStop == null) NearbyPanel(
+                        stations = state.nearbyStations,
+                        routesById = routesById,
+                        atUser = state.nearbyAtUser,
+                        loading = state.nearbyLoading,
+                        stopStatus = state.stopStatus,
+                        windowMinutes = state.windowMinutes,
+                        now = state.now,
+                        onStop = selectStop,
+                        onDeparture = openDeparture,
+                        onRefresh = onRefresh,
+                        onLocate = onLocate,
+                        onToggleExpand = toggleExpand,
+                        onCollapse = collapse,
+                        onWindow = onWindowChanged,
+                        modifier = Modifier.fillMaxWidth().fillMaxHeight(0.88f),
+                        isExpanded = isExpanded,
                     ) else StopPanel(
                         state = state,
                         stop = selectedStop,
@@ -269,8 +318,10 @@ fun ViaBuszScreen(
                         onToggleFavorite = onToggleFavorite,
                         onSearch = openSearch,
                         onDeparture = openDeparture,
-                        onHide = { scope.launch { sheetState.bottomSheetState.hide() } },
+                        onToggleExpand = toggleExpand,
+                        onCollapse = collapse,
                         modifier = Modifier.fillMaxWidth().fillMaxHeight(0.88f),
+                        isExpanded = isExpanded,
                     )
                 },
             ) { _ ->
@@ -302,11 +353,7 @@ fun ViaBuszScreen(
                         )
                     }
 
-                    // Floating MyLocation button above the bottom sheet (or at bottom when sheet is hidden)
-                    val locateBottomPadding by animateDpAsState(
-                        targetValue = if (sheetHidden) 24.dp else (peekHeight + 16.dp),
-                        label = "locateBottomPadding",
-                    )
+                    // Floating MyLocation button above the bottom sheet
                     FilledTonalIconButton(
                         onClick = onLocate,
                         modifier = Modifier
@@ -314,7 +361,8 @@ fun ViaBuszScreen(
                             .padding(end = 16.dp, bottom = 24.dp)
                             .size(52.dp)
                             .graphicsLayer {
-                                translationY = -(locateBottomPadding - 24.dp).toPx()
+                                val visibleSheet = runCatching { layoutHeightPx - sheet.requireOffset() }.getOrDefault(0f)
+                                translationY = -visibleSheet.coerceIn(0f, peekHeightPx.toFloat())
                             },
                         shape = CircleShape,
                     ) {
@@ -324,8 +372,18 @@ fun ViaBuszScreen(
                         )
                     }
 
+                    if (isMinimized) FilledTonalButton(
+                        onClick = { scope.launch { sheet.partialExpand() } },
+                        modifier = Modifier.align(Alignment.BottomStart).padding(start = 16.dp, bottom = 24.dp),
+                        shape = RoundedCornerShape(24.dp),
+                    ) {
+                        Icon(Icons.Rounded.DirectionsBus, null, Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.ui_show_departures))
+                    }
+
                     state.selectedPlace?.let { place ->
-                        Surface(Modifier.align(Alignment.BottomStart).padding(start = 16.dp, end = 84.dp, bottom = 24.dp),
+                        Surface(Modifier.align(Alignment.BottomStart).padding(start = 16.dp, end = 84.dp, bottom = if (isMinimized) 96.dp else peekHeight + 12.dp),
                             shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainerHigh, shadowElevation = 3.dp) {
                             Row(Modifier.padding(start = 18.dp, top = 12.dp, bottom = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Rounded.LocationOn, null, tint = MaterialTheme.colorScheme.primary)
@@ -334,29 +392,6 @@ fun ViaBuszScreen(
                                     if (place.address.isNotBlank()) Text(place.address, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
                                 }
                                 IconButton(onClick = onPlaceClosed) { Icon(Icons.Rounded.Close, stringResource(R.string.search_close_place)) }
-                            }
-                        }
-                    }
-                    if (sheetHidden && state.selectedPlace == null) {
-                        Surface(
-                            onClick = { scope.launch { sheetState.bottomSheetState.partialExpand() } },
-                            modifier = Modifier
-                                .align(Alignment.BottomStart)
-                                .padding(start = 16.dp, bottom = 24.dp),
-                            shape = RoundedCornerShape(24.dp),
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            shadowElevation = 3.dp,
-                        ) {
-                            Row(
-                                Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                Icon(Icons.Rounded.DirectionsBus, null, Modifier.size(20.dp))
-                                Text(
-                                    stringResource(R.string.ui_show_departures),
-                                    style = MaterialTheme.typography.labelLarge,
-                                )
                             }
                         }
                     }
@@ -387,7 +422,7 @@ fun ViaBuszScreen(
                     onPlace = { place ->
                         onPlaceSelected(place)
                         searchOpen = false
-                        scope.launch { sheetState.bottomSheetState.hide() }
+                        scope.launch { sheetState.bottomSheetState.partialExpand() }
                     },
                     onVehicle = { onVehicleOpened(it); searchOpen = false },
                 )
@@ -446,18 +481,23 @@ private fun StopPanel(
     onToggleFavorite: (String) -> Unit,
     onSearch: () -> Unit,
     onDeparture: (Departure) -> Unit,
-    onHide: () -> Unit,
+    onToggleExpand: () -> Unit,
+    onCollapse: () -> Unit,
     modifier: Modifier = Modifier,
+    isExpanded: Boolean = true,
 ) {
-    val routeById = remember(state.routes) { state.routesById }
-    val isMulti = stop != null && (stop.isMultiStop || remember(stop.id, state.stops) { StopClusters.isMultiStop(stop.id, state.stops) })
+    val latestDepartureAction by rememberUpdatedState(onDeparture)
+    val openDeparture = remember { { departure: Departure -> latestDepartureAction(departure) } }
+    val allStops = remember(state.network?.stops, state.emmaStops) { state.stops }
+    val routeById = remember(state.network?.routes, state.emmaRoutes) { state.routesById }
+    val isMulti = stop != null && (stop.isMultiStop || remember(stop.id, allStops) { StopClusters.isMultiStop(stop.id, allStops) })
     val stopTitle = if (stop != null) {
         StopClusters.stopDisplayName(stop.name, isMulti, stringResource(R.string.ui_multiple_stations))
     } else stringResource(if (state.loading) R.string.ui_loading_stops else R.string.ui_select_stop)
-    val clusterProviders = remember(stop?.id, state.stops) {
+    val clusterProviders = remember(stop?.id, allStops) {
         if (stop == null) emptyList()
         else {
-            val cluster = StopClusters.clusterFor(stop.id, state.stops)
+            val cluster = StopClusters.clusterFor(stop.id, allStops)
             cluster.flatMap { it.providerIds }.distinct().ifEmpty { stop.providerIds }
         }
     }
@@ -466,7 +506,11 @@ private fun StopPanel(
     val timetableOnly = clusterProviders.isNotEmpty() && clusterProviders.all { it == "homm" }
     Column(modifier) {
         Row(Modifier.fillMaxWidth().padding(start = 22.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
+            Column(
+                Modifier
+                    .weight(1f)
+                    .clickable(enabled = !isExpanded, onClick = onToggleExpand)
+            ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                     Icon(
                         if (stop != null && stop.id == state.nearestStopId) Icons.Rounded.NearMe else Icons.Rounded.LocationOn,
@@ -499,8 +543,9 @@ private fun StopPanel(
                 if (state.refreshing) CircularProgressIndicator(Modifier.size(21.dp), strokeWidth = 2.dp)
                 else Icon(Icons.Rounded.Refresh, stringResource(R.string.ui_refresh_departures))
             }
-            IconButton(onClick = onHide) {
-                Icon(Icons.Rounded.KeyboardArrowDown, stringResource(R.string.ui_hide_departures))
+            IconButton(onClick = onCollapse) {
+                Icon(Icons.Rounded.KeyboardArrowDown,
+                    stringResource(if (isExpanded) R.string.ui_collapse_departures else R.string.ui_hide_departures))
             }
         }
         state.boardingSelection?.let { selection ->
@@ -572,7 +617,7 @@ private fun StopPanel(
                     providerId = routeById[departure.routeId]?.providerId ?: "viabusz",
                     route = routeById[departure.routeId],
                     boardingInfo = boardingInfo,
-                    onClick = { onDeparture(departure) },
+                    onClick = { openDeparture(departure) },
                 )
                 if (index < state.departures.lastIndex) HorizontalDivider(Modifier.padding(horizontal = 22.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
             }
