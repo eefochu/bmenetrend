@@ -64,7 +64,7 @@ Vehicle, stop-index, board and legacy-provider failures are independent. A ViaBu
 
 This integration does not add national rail services. Vehicle positions are not used to invent stop arrival predictions or scheduled movement.
 
-Raw device GPS and the user's current viewport are not sent to EMMA. Position requests use fixed national bounds; the stop index request is global. Departure-board requests send the selected source stop ID and time window. Location remains local for nearest-stop selection. The source sees the network request and IP address.
+Vehicle position requests use fixed national bounds; the stop index request is global. Departure-board requests send the selected source stop ID and time window. Nearest-stop selection is local. Separately, EMMA calculates trip plans using the requested origin and destination coordinates and departure time. If the origin is the current location, this includes device GPS coordinates. The source sees requests and the IP address. See [PLANNER.md](PLANNER.md).
 
 ## Validation
 
@@ -103,6 +103,6 @@ Arabic/Roman district aliases such as `11.kerület`, `XI. kerület` and `distric
 
 The basemap uses MapLibre Native Android with OpenFreeMap tiles, fonts and sprites. No API key, billing account or device service account is required. [MAP.md](MAP.md) documents the local Night style, its palette and source licences.
 
-Visible native markers update incrementally rather than clearing the scene on every vehicle poll. Precise tap hit testing preserves independent platform selection. Selected trip geometry uses a GeoJSON line with a contrasting casing; camera updates fit route geometry and place bounds. Visible stations use a GPU circle layer, with grouped overview dots below zoom 14.5 and independent platform rings above it.
+Visible native markers update incrementally rather than clearing the scene on every vehicle poll. Precise tap hit testing preserves independent platform selection. Selected trip geometry uses a GeoJSON line with a contrasting casing; camera updates fit route geometry and place bounds. Visible stations use a GPU circle layer, with independent source platforms at their own coordinates; coincident markers remain individually selectable.
 
-Basemap requests go directly to OpenFreeMap. Device GPS is not sent to EMMA or Photon; map servers receive IP addresses and requested tile areas. The app retains attribution and caches map resources through MapLibre.
+Basemap requests go directly to OpenFreeMap. Photon receives search text, without GPS. EMMA receives origin and destination coordinates and departure time for journey planning, including GPS when planning from the current location; map servers receive IP addresses and requested tile areas. The app retains attribution and caches map resources through MapLibre.

@@ -103,21 +103,9 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private val favoriteBoards = linkedMapOf<String, EmmaStopsParser.Board>()
     private var liveError = false
 
-    private var cachedClusterStopId: String? = null
-    private var cachedClusterStopsCount = -1
-    private var cachedClusterResult: List<TransitStop> = emptyList()
-
-    private fun getCluster(stopId: String?, stops: List<TransitStop>): List<TransitStop> {
-        if (stopId == null) return emptyList()
-        if (cachedClusterStopId == stopId && cachedClusterStopsCount == stops.size) {
-            return cachedClusterResult
-        }
-        val result = StopClusters.clusterFor(stopId, stops)
-        cachedClusterStopId = stopId
-        cachedClusterStopsCount = stops.size
-        cachedClusterResult = result
-        return result
-    }
+    /** A departure card belongs to the selected source stop, never a nearby name/parent cluster. */
+    private fun selectedStops(stopId: String?, stops: List<TransitStop>): List<TransitStop> =
+        stops.firstOrNull { it.id == stopId }?.let(::listOf).orEmpty()
 
     /** Owned by the activity's STARTED lifecycle; all polling stops in the background. */
     suspend fun observe() = coroutineScope {
@@ -344,7 +332,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         val snapshot = live?.takeIf { Duration.between(it.fetchedAt, now).seconds in 0..45 }
         mutableState.update { current ->
             val selectedId = current.selectedStopId.takeUnless { current.showNearby }
-            val cluster = if (selectedId != null) getCluster(selectedId, current.stops) else emptyList()
+            val cluster = if (selectedId != null) selectedStops(selectedId, current.stops) else emptyList()
             val hasEmma = cluster.any { it.id.startsWith("emma:") } || selectedId?.startsWith("emma:") == true
             val validBoard = board?.takeIf { it.stopId == selectedId && Duration.between(it.fetchedAt, now).seconds in 0..60 }
             val emmaDepartures = if (hasEmma) EmmaStopsParser.freshDepartures(board, selectedId, now, current.windowMinutes) else emptyList()
@@ -616,7 +604,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         boardFailure = false
         val selectedId = key.first
         val emmaStops = if (selectedId != null) {
-            getCluster(selectedId, state.value.stops).filter { it.id.startsWith("emma:") }
+            selectedStops(selectedId, state.value.stops).filter { it.id.startsWith("emma:") }
                 .ifEmpty { if (selectedId.startsWith("emma:")) state.value.stops.filter { it.id == selectedId } else emptyList() }
         } else emptyList()
         boardLoading = emmaStops.isNotEmpty()
@@ -631,7 +619,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             val stopId = state.value.selectedStopId ?: return@withLock
             val window = state.value.windowMinutes
             val allStops = state.value.stops
-            val cluster = getCluster(stopId, allStops)
+            val cluster = selectedStops(stopId, allStops)
             val emmaStops = EmmaBoardTargets.select(cluster.filter { it.id.startsWith("emma:") })
                 .ifEmpty { if (stopId.startsWith("emma:")) allStops.filter { it.id == stopId } else emptyList() }
             if (emmaStops.isEmpty()) return@withLock
@@ -834,7 +822,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
 
 internal fun nearestStop(network: TransitNetwork, location: GeoPoint): String? = nearestStop(network.stops, location)
 internal fun nearestStop(stops: Collection<TransitStop>, location: GeoPoint): String? =
-    stops.minByOrNull { distanceMeters(location, it.position) }?.id
+    stops.asSequence().filterNot { it.station }.minByOrNull { distanceMeters(location, it.position) }?.id
 
 internal fun distanceMeters(a: GeoPoint, b: GeoPoint): Double {
     val lat = Math.toRadians(b.lat - a.lat)

@@ -27,16 +27,6 @@ object NearbyDepartures {
             .filter { kotlin.math.abs(it.position.lat - anchor.lat) < 0.014 && kotlin.math.abs(it.position.lon - anchor.lon) < 0.022 }
             .map { it to StopClusters.distanceMeters(anchor, it.position) }
             .filter { it.second <= RADIUS_METERS }.sortedBy { it.second }.take(120).toList()
-        val used = mutableSetOf<String>()
-        val groups = mutableListOf<NearbyStation>()
-        for ((stop, distance) in candidates) {
-            if (stop.id in used) continue
-            val platforms = EmmaBoardTargets.select(StopClusters.clusterFor(stop, candidates.map { it.first }))
-                .sortedBy { StopClusters.distanceMeters(anchor, it.position) }.take(4)
-            used.addAll(StopClusters.clusterFor(stop, candidates.map { it.first }).map { it.id })
-            groups += NearbyStation(stop, platforms.ifEmpty { listOf(stop) }, distance)
-            if (groups.size == maxStations) break
-        }
-        return groups
+        return candidates.take(maxStations).map { (stop, distance) -> NearbyStation(stop, listOf(stop), distance) }
     }
 }

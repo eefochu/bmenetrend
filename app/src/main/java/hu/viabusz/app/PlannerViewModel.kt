@@ -98,6 +98,7 @@ class PlannerViewModel(application: Application) : AndroidViewModel(application)
         planGeneration++; planJob?.cancel()
         mutable.update { it.copy(result = null, planning = false, error = null, selectedId = null) }
     }
+    fun cancelPlan() { invalidate() }
     fun selectItinerary(id: String?) { mutable.update { it.copy(selectedId = id) } }
     fun setDeparture(departure: Instant?) {
         if (departure == state.value.departure) return

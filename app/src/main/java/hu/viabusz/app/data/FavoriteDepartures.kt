@@ -6,7 +6,7 @@ object FavoriteDepartures {
         val byId = stops.associateBy { it.id }
         return ids.mapNotNull { id ->
             val stop = byId[id] ?: return@mapNotNull null
-            val platforms = EmmaBoardTargets.select(StopClusters.clusterFor(stop, stops))
+            val platforms = listOf(stop)
             NearbyStation(stop, platforms.ifEmpty { listOf(stop) }, 0.0)
         }.sortedBy { it.stop.name }
     }

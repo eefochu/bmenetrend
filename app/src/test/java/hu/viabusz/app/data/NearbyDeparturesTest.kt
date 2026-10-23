@@ -20,14 +20,15 @@ class NearbyDeparturesTest {
         assertEquals(center, NearbyDepartures.anchor(center, MapBounds(19.039,47.499,19.0405,47.5005), location))
     }
 
-    @Test fun physicalStationIsOneGroupButBoardingPlatformsKeepTheirIds() {
+    @Test fun nearbyPlatformsStaySeparateEvenWhenTheyShareAName() {
         val a = stop("a", "Széll Kálmán tér")
         val b = stop("b", "Széll Kálmán tér", lon = 19.0403)
         val c = stop("c", "Másik megálló", lat = 47.502)
         val selected = NearbyDepartures.select(listOf(c, b, a), center, bounds)
-        assertEquals(2, selected.size)
+        assertEquals(3, selected.size)
         assertEquals("a", selected.first().stop.id)
-        assertEquals(setOf("a", "b"), selected.first().platforms.map { it.id }.toSet())
+        assertEquals(listOf("a"), selected.first().platforms.map { it.id })
+        assertEquals(listOf("b"), selected[1].platforms.map { it.id })
         assertEquals("c", selected.last().stop.id)
     }
 

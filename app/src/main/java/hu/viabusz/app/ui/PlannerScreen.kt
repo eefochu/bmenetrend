@@ -95,6 +95,7 @@ fun PlannerScreen(model: PlannerViewModel, onRequestLocation: () -> Unit) {
                 Spacer(Modifier.width(10.dp))
                 Text(stringResource(if (state.planning) R.string.planner_loading else if (state.result != null) R.string.planner_refresh else R.string.planner_find))
             }
+            if (state.planning) TextButton(onClick = model::cancelPlan) { Text(stringResource(R.string.planner_cancel)) }
             Text(stringResource(if (state.departure == null) R.string.planner_timing else R.string.planner_timing_later), Modifier.padding(top = 10.dp, start = 4.dp, end = 4.dp),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
