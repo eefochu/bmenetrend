@@ -88,7 +88,7 @@ class MainActivity : ComponentActivity() {
                     onToggleFavorite = model::toggleFavorite,
                     onRecenter = model::recenter,
                     onNationwideNetworkChanged = model::setNationwideNetwork,
-                    onVehicleClosed = model::closeVehicle,
+                    onVehicleClosed = model::returnToNearby,
                     onAccentColorChanged = model::setAccentColor,
                     onCustomAccentChanged = model::setCustomAccentColor,
                     onLineOpened = model::loadLine,
@@ -119,7 +119,7 @@ class MainActivity : ComponentActivity() {
                             else model.selectStop(id)
                         }
                     }
-                    NativeTransitMap(state.network, state.vehicles, state.selectedStopId, state.userLocation, modifier, onMapStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, state.selectedVehicle, routeGeometry = geometry, routeStops = stops, routeColor = color.toArgb(), fitRouteRequest = state.fitRouteRequest, selectedPlace = state.selectedPlace, placeCameraRequest = state.placeCameraRequest, lineFocus = focus)
+                    NativeTransitMap(state.network, state.vehicles, state.selectedStopId.takeUnless { state.showNearby }, state.userLocation, modifier, onMapStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, state.selectedVehicle, routeGeometry = geometry, routeStops = stops, routeColor = color.toArgb(), fitRouteRequest = state.fitRouteRequest, selectedPlace = state.selectedPlace, placeCameraRequest = state.placeCameraRequest, lineFocus = focus, browsingNearby = state.showNearby, locationCameraRequest = state.locationCameraRequest, onViewportChanged = model::updateMapArea)
                 }
             }
         }

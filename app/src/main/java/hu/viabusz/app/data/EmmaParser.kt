@@ -10,7 +10,7 @@ object EmmaParser {
     val QUERY = """
         query LiveVehicles {
           vehicles: vehiclePositions(swLat:45.7, swLon:16.1, neLat:48.6, neLon:22.9,
-            modes:[BUS,COACH,TRAM,TROLLEYBUS,SUBWAY]) {
+            modes:[BUS,COACH,TRAM,TROLLEYBUS,SUBWAY,SUBURBAN_RAILWAY]) {
             vehicleId lat lon heading label lastUpdated speed
             nextStop { stopPosition stop { gtfsId name lat lon } }
             trip { gtfsId tripShortName tripHeadsign
@@ -49,6 +49,7 @@ object EmmaParser {
             val provider = when {
                 sourceId.startsWith("hkir:") && sourceId.length > 5 && (mode == null || mode in setOf("BUS", "COACH")) -> "volan"
                 sourceId.startsWith("BKK:") && sourceId.length > 4 && mode in bkkModes -> "bkk"
+                sourceId.startsWith("1:") && HevSupport.accepts(mode, route?.text("shortName"), route?.text("longName")) -> "hev"
                 else -> continue
             }
             val lat = row.number("lat") ?: continue
@@ -59,8 +60,8 @@ object EmmaParser {
             val observed = runCatching { Instant.ofEpochSecond(seconds.toLong()) }.getOrNull() ?: continue
             if (Duration.between(observed, now).seconds !in -30..180) continue
             val sourceRouteId = route?.text("gtfsId")
-            if (sourceRouteId != null && !sourceRouteId.startsWith(if (provider == "volan") "hkir:" else "BKK:")) continue
-            val routeNumber = route?.text("shortName")
+            if (sourceRouteId != null && !sourceRouteId.startsWith(when (provider) { "volan" -> "hkir:"; "hev" -> "1:"; else -> "BKK:" })) continue
+            val routeNumber = if (provider == "hev") HevSupport.number(route?.text("shortName"), route?.text("longName")) else route?.text("shortName")
             val color = route?.text("color")?.takeIf { it.matches(Regex("[a-fA-F0-9]{6}")) }
             val nextTime = row.optJSONObject("nextStop")
             val nextStop = nextTime?.optJSONObject("stop")
@@ -72,7 +73,7 @@ object EmmaParser {
                 tripId = trip?.text("gtfsId"), routeName = route?.text("longName"), transportMode = mode,
                 heading = row.number("heading")?.takeIf { it in 0.0..360.0 },
                 speedKmh = row.number("speed")?.takeIf { it >= 0 }?.times(3.6),
-                markerColor = if (provider == "bkk") color else null,
+                markerColor = if (provider == "hev") routeNumber?.let(HevSupport::color) else if (provider == "bkk") color else null,
                 nextStopId = nextStop?.text("gtfsId")?.let { "emma:$it" },
                 nextStopName = nextStop?.text("name"),
                 nextStopPosition = nextTime?.number("stopPosition")?.toInt()?.takeIf { it >= 0 },
@@ -89,7 +90,7 @@ object EmmaParser {
         val localIds = routes.map { "volan:${it.sourceId}" }.toSet()
         return vehicles.filter { vehicle ->
             if (vehicle.providerId == "volan") vehicle.routeId in localIds
-            else vehicle.providerId == "bkk" && vehicle.position.lon in 18.85..19.4 && vehicle.position.lat in 47.3..47.7
+            else vehicle.providerId == "hev" || vehicle.providerId == "bkk" && vehicle.position.lon in 18.85..19.4 && vehicle.position.lat in 47.3..47.7
         }
     }
 

@@ -11,6 +11,11 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.graphics.asImageBitmap
+import hu.viabusz.app.map.HevLineStyle
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
@@ -23,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import hu.viabusz.app.data.VehicleStopProgress
 import hu.viabusz.app.R
 import hu.viabusz.app.map.VehicleMarkerStyle
+import hu.viabusz.app.map.MetroLineStyle
 import java.time.Duration
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -36,15 +42,24 @@ fun VehiclePanel(state: UiState, onClose: () -> Unit, onRefresh: () -> Unit, onS
     val listState = rememberLazyListState()
     val color = lineColor(vehicle.providerId, vehicle.transportMode, vehicle.markerColor)
     val progress = VehicleStopProgress.resolve(vehicle, journey, state.now)
-    val provider = when (vehicle.providerId) { "volan" -> "Volán"; "bkk" -> "BKK"; "homm" -> "HOMM"; "kanyargo" -> "KanyarGO"; else -> "ViaBusz" }
+    val provider = when (vehicle.providerId) { "hev" -> stringResource(R.string.emma_provider_hev); "volan" -> "Volán"; "bkk" -> "BKK"; "homm" -> "HOMM"; "kanyargo" -> "KanyarGO"; else -> "ViaBusz" }
     val style = VehicleMarkerStyle.forVehicle(vehicle)
     val mode = stringResource(when (style) {
         VehicleMarkerStyle.TROLLEY -> R.string.emma_mode_trolley
         VehicleMarkerStyle.TRAM -> R.string.emma_mode_tram
-        VehicleMarkerStyle.TRAIN -> if (vehicle.transportMode == "SUBWAY") R.string.emma_mode_metro else R.string.emma_mode_train
+        VehicleMarkerStyle.TRAIN -> when (vehicle.transportMode) { "SUBWAY" -> R.string.emma_mode_metro; "SUBURBAN_RAILWAY" -> R.string.emma_mode_hev; else -> R.string.emma_mode_train }
         else -> R.string.emma_mode_bus
     })
     val number = journey?.routeNumber ?: vehicle.routeNumber
+    val hev = HevLineStyle.forLine(number, vehicle.transportMode)
+    val context = LocalContext.current
+    val height = with(LocalDensity.current) { 30.dp.roundToPx() }
+    val metro = MetroLineStyle.forLine(number, vehicle.transportMode)
+    val hevBitmap = remember(hev, metro, height) {
+        hev?.let { HevLineStyle.render(context, it, height).asImageBitmap() }
+            ?: metro?.let { MetroLineStyle.render(context, it, height).asImageBitmap() }
+    }
+    val vehicleIcon = MetroLineStyle.forLine(number, vehicle.transportMode)?.drawable ?: style.drawableRes
     val destination = journey?.destination ?: vehicle.destination ?: journey?.stops?.lastOrNull()?.name
     LaunchedEffect(journey?.tripId, progress?.nextIndex) {
         if (journey != null && progress?.nextIndex != null) listState.scrollToItem(progress.nextIndex.coerceAtLeast(0))
@@ -82,7 +97,7 @@ fun VehiclePanel(state: UiState, onClose: () -> Unit, onRefresh: () -> Unit, onS
             }
             if (journey != null) item {
                 Column(Modifier.padding(horizontal = 22.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    journey.routeName?.takeIf { it != destination }?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+                    journey.routeName?.takeIf { it != destination && it != number }?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
                     if (journey.geometry.size >= 2) OutlinedButton(onClick = onShowRoute) { Text(stringResource(R.string.line_show_route)) }
                 }
             }
@@ -103,11 +118,11 @@ fun VehiclePanel(state: UiState, onClose: () -> Unit, onRefresh: () -> Unit, onS
                     Modifier.padding(start = 22.dp, end = 22.dp, top = 20.dp, bottom = 8.dp), style = MaterialTheme.typography.titleSmall) }
                 itemsIndexed(journey!!.stops, key = { index, stop -> "$index-${stop.id}" }) { index, stop ->
                     val atIndex = if (progress?.at == null) null else if (progress.at.id == progress.next?.id) progress.nextIndex else progress.nextIndex?.minus(1)
-                    if (index == progress?.nextIndex && progress.at == null && progress.previous != null) LineVehicleBetween(color, style.drawableRes)
+                    if (index == progress?.nextIndex && progress.at == null && progress.previous != null) LineVehicleBetween(color, vehicleIcon, hevBitmap)
                     LineStopRow(stop, index == 0, index == journey.stops.lastIndex, color,
                         onClick = { onStop(stop.id) }, past = progress?.nextIndex?.let { index < it && index != atIndex } == true,
                         highlighted = index == progress?.nextIndex || index == atIndex,
-                        vehicleIcon = if (index == atIndex) style.drawableRes else null)
+                        vehicleIcon = if (index == atIndex) vehicleIcon else null, vehicleBitmap = if (index == atIndex) hevBitmap else null)
                 }
             }
         }

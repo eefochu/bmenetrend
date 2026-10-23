@@ -19,6 +19,7 @@ object TransitSearch {
         "villamos" to setOf("TRAM"), "tram" to setOf("TRAM"),
         "troli" to setOf("TROLLEYBUS"), "trolibusz" to setOf("TROLLEYBUS"), "trolley" to setOf("TROLLEYBUS"), "trolleybus" to setOf("TROLLEYBUS"),
         "busz" to setOf("BUS", "COACH"), "autobusz" to setOf("BUS", "COACH"), "bus" to setOf("BUS", "COACH"), "coach" to setOf("BUS", "COACH"),
+        "hev" to setOf("SUBURBAN_RAILWAY"), "suburban" to setOf("SUBURBAN_RAILWAY"),
         "metro" to setOf("SUBWAY"), "subway" to setOf("SUBWAY"),
         "vonat" to setOf("RAIL", "SUBURBAN_RAILWAY", "TRAMTRAIN"), "train" to setOf("RAIL", "SUBURBAN_RAILWAY", "TRAMTRAIN"),
     )

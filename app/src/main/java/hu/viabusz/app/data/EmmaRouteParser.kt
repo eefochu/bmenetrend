@@ -35,10 +35,12 @@ object EmmaRouteParser {
             val source = row.text("gtfsId") ?: return@mapNotNull null
             val provider = EmmaStopsParser.provider(source) ?: return@mapNotNull null
             val mode = row.text("mode") ?: return@mapNotNull null
-            if (mode !in if (provider == "volan") setOf("BUS", "COACH") else setOf("BUS", "TRAM", "TROLLEYBUS", "SUBWAY")) return@mapNotNull null
-            val number = row.text("shortName") ?: return@mapNotNull null
+            if (provider == "hev") {
+                if (!HevSupport.accepts(mode, row.text("shortName"), row.text("longName"))) return@mapNotNull null
+            } else if (mode !in if (provider == "volan") setOf("BUS", "COACH") else setOf("BUS", "TRAM", "TROLLEYBUS", "SUBWAY")) return@mapNotNull null
+            val number = if (provider == "hev") HevSupport.number(row.text("shortName"), row.text("longName")) ?: return@mapNotNull null else row.text("shortName") ?: return@mapNotNull null
             TransitRoute("$provider:$source", number, row.text("longName") ?: number, emptyList(), provider,
-                transportMode = mode, color = row.text("color")?.takeIf { it.matches(Regex("[a-fA-F0-9]{6}")) })
+                transportMode = mode, color = if (provider == "hev") HevSupport.color(number) else row.text("color")?.takeIf { it.matches(Regex("[a-fA-F0-9]{6}")) })
         }.distinctBy { it.id }.also { require(it.isNotEmpty()) { "Missing line catalogue" } }
     }
     val QUERY = """query LineDetails(${'$'}id:String!, ${'$'}date:String!) {
@@ -51,16 +53,16 @@ object EmmaRouteParser {
         val source = row.getString("gtfsId")
         val provider = EmmaStopsParser.provider(source) ?: error("Unsupported route")
         require("$provider:$source" == expectedRouteId) { "Wrong route returned" }
-        val number = row.text("shortName") ?: error("Missing line number")
+        val number = if (provider == "hev") HevSupport.number(row.text("shortName"), row.text("longName")) ?: error("Missing HÉV line") else row.text("shortName") ?: error("Missing line number")
         val mode = row.text("mode") ?: error("Missing mode")
-        require(mode in if (provider == "volan") setOf("BUS", "COACH") else setOf("BUS", "TRAM", "TROLLEYBUS", "SUBWAY"))
+        require(if (provider == "hev") HevSupport.accepts(mode, row.text("shortName"), row.text("longName")) else mode in if (provider == "volan") setOf("BUS", "COACH") else setOf("BUS", "TRAM", "TROLLEYBUS", "SUBWAY"))
         val route = TransitRoute(expectedRouteId, number, row.text("longName") ?: number, emptyList(), provider,
-            transportMode = mode, color = row.text("color")?.takeIf { it.matches(Regex("[a-fA-F0-9]{6}")) })
+            transportMode = mode, color = if (provider == "hev") HevSupport.color(number) else row.text("color")?.takeIf { it.matches(Regex("[a-fA-F0-9]{6}")) })
         val patterns = row.getJSONArray("patterns")
         val parsed = (0 until patterns.length()).mapNotNull { i ->
             val pattern = patterns.getJSONObject(i)
             val code = pattern.text("code") ?: return@mapNotNull null
-            if (!code.startsWith(if (provider == "volan") "hkir:" else "BKK:")) return@mapNotNull null
+            if (!code.startsWith(when (provider) { "volan" -> "hkir:"; "hev" -> "1:"; else -> "BKK:" })) return@mapNotNull null
             val rows = pattern.getJSONArray("stops")
             val stops = (0 until rows.length()).map { index ->
                 val stop = rows.getJSONObject(index)
@@ -68,7 +70,7 @@ object EmmaRouteParser {
                 require(EmmaStopsParser.provider(id) == provider)
                 val point = point(stop.getDouble("lat"), stop.getDouble("lon"))
                 TransitStop("emma:$id", stop.getString("name"), point, listOf(expectedRouteId), provider,
-                    sourceStopIds = listOf(id), platformCode = stop.text("platformCode"), transportMode = stop.text("vehicleMode") ?: mode,
+                    sourceStopIds = listOf(id), platformCode = stop.text("platformCode"), transportMode = if (provider == "hev") "SUBURBAN_RAILWAY" else stop.text("vehicleMode") ?: mode,
                     parentStationId = stop.optJSONObject("parentStation")?.text("gtfsId")?.let { "emma:$it" })
             }
             if (stops.size < 2) return@mapNotNull null

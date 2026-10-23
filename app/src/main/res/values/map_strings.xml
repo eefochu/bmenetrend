@@ -4,4 +4,8 @@
     <string name="map_provider_source">OpenFreeMap · map source</string>
     <string name="map_style_credit">Night map design adapted from OpenFreeMap / OpenMapTiles Dark Matter and CartoDB Basemaps by Stamen and Paul Norman (CC BY 3.0 / 4.0).</string>
     <string name="map_exit_route">Exit route view</string>
+    <string name="metro_line_badge">Metro M%1$s</string>
+    <string name="emma_mode_hev">HÉV</string>
+    <string name="emma_provider_hev">MÁV-HÉV</string>
+    <string name="hev_line_badge">%1$s HÉV</string>
 </resources>

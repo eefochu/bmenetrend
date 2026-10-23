@@ -17,6 +17,8 @@
 - **Natív vektortérkép**: Teljes képernyős [MapLibre](https://maplibre.org/) motor [OpenFreeMap](https://openfreemap.org/) vektoros csempékkel, automatikus világos témával és saját, színes éjszakai térképstílussal. API-kulcs és számlázási fiók nélkül.
 - **Kategorizált villámkereső**: Gyors keresés három kategóriában: **Helyek** (Photon / OpenStreetMap), **Megállók** (peronelrendezéssel) és **Járművek** (járatszám, rendszám vagy célállomás alapján).
 - **Önálló peronok**: A megállók külön, saját forráskoordinátáikkal jelennek meg; az egymást fedő jelölők minimális eltolással külön kiválaszthatók.
+- **Közeli járatok**: Alapértelmezett alsó kártya a helyzetedhez vagy a térkép közepéhez közeli megállók következő indulásaival, élő és menetrendi jelzéssel.
+- **Open Sans**: Beépített betűkészlet, 700-as vastagságú járatszámokkal; a metrók és HÉV-ek csak a számozott emblémakört használják.
 - **Material You & egyéni színek**: Finom animációk, edge-to-edge felület, rendszerhez igazodó dinamikus Monet színek (Android 12+) vagy egyéni RGB/HEX színválasztó.
 - **Fiókmentes használat**: Nincs beépített analitika. A térkép- és keresőszolgáltatók a kérések kiszolgálásához megkapják az IP-címet és a kért adatokat.
 
@@ -31,6 +33,7 @@
 | **HOMM** | Budaörs | `288`, `289` vonalak hitelesített önkormányzati megállókkal és útvonalakkal |
 | **Volánbusz** | Országos | Helyközi és távolsági autóbuszok MÁV EMMA GraphQL adatokból |
 | **BKK** | Budapest | Buszok, villamosok, trolik és metrók MÁV EMMA integrációval |
+| **MÁV-HÉV** | Budapest és agglomeráció | H5, H6, H7, H8 és H9: élő pozíciók, állomások és indulások MÁVPlusz-adatokból |
 
 A közös átszállópontok (pl. *Biatorbágy vasútállomás*) automatikusan egy közös, összevont indulási táblán jelennek meg.
 
@@ -81,6 +84,7 @@ A háttérrendszerek működése és a specifikációk a [`docs/`](docs/) mappá
 - [`docs/MAP.md`](docs/MAP.md) – Kulcsmentes térkép és saját éjszakai stílus
 - [`docs/ADATFORRAS.md`](docs/ADATFORRAS.md) – Nyilvános adatforrások és frissítési folyamat
 - [`docs/VOLAN.md`](docs/VOLAN.md) – MÁV EMMA GraphQL integráció és peronelrendezés
+- [`docs/HEV.md`](docs/HEV.md) – HÉV-adatforrások és vonalemblémák
 - [`docs/KOZOS-MEGALLOK.md`](docs/KOZOS-MEGALLOK.md) – Több szolgáltató közös megállóinak összerendelése
 - [`docs/VIABUSZ.md`](docs/VIABUSZ.md) & [`docs/KANYARGO.md`](docs/KANYARGO.md) – Helyi menetrendi és naptárszabályok
 

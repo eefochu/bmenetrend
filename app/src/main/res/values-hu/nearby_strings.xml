@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nearby_title">Közeli járatok</string>
+    <string name="nearby_you">A hozzád közeli megállókban</string>
+    <string name="nearby_map">A térképen látható környék megállóiban</string>
+    <string name="nearby_locate">Hozzám közeli járatok</string>
+    <string name="nearby_empty">Itt nincs megálló 1,5 km-en belül. Mozgasd a térképet, vagy használd a helyzetedet.</string>
+    <string name="nearby_distance">%1$d m</string>
+    <string name="nearby_unavailable">Az indulások nem érhetők el. Automatikusan újrapróbáljuk.</string>
+    <string name="nearby_no_departures">Ebben az időszakban nincs indulás. Továbbiakért koppints a megállóra.</string>
+    <string name="nearby_platform">Kocsiállás / vágány: %1$s</string>
+    <string name="nearby_partial">Néhány megállóhely frissítése nem sikerült. Automatikusan újrapróbáljuk.</string>
+</resources>

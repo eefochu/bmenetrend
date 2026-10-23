@@ -13,6 +13,10 @@ import hu.viabusz.app.data.PlaceResult
 import java.time.Instant
 
 data class UiState(
+    val showNearby: Boolean = true,
+    val nearbyStations: List<hu.viabusz.app.data.NearbyStation> = emptyList(),
+    val nearbyAtUser: Boolean = false,
+    val nearbyLoading: Boolean = true,
     val network: TransitNetwork? = null,
     val selectedStopId: String? = null,
     val departures: List<Departure> = emptyList(),
@@ -58,6 +62,7 @@ data class UiState(
     val customAccentArgb: Int = 0xFF6750A4.toInt(),
     val emmaStatus: String? = null,
     val cameraRequest: Int = 0,
+    val locationCameraRequest: Int = 0,
 ) {
     val stops: List<TransitStop> get() = network?.stops.orEmpty() + emmaStops
     val routes: List<TransitRoute> get() = network?.routes.orEmpty() + emmaRoutes

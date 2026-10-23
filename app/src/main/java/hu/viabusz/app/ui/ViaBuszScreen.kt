@@ -215,7 +215,7 @@ fun ViaBuszScreen(
         }
     }
     LaunchedEffect(state.selectedStopId, state.cameraRequest, state.boardingSelection) {
-        if (state.selectedVehicle == null && state.selectedStopId != null) {
+        if (!state.showNearby && state.selectedVehicle == null && state.selectedStopId != null) {
             val token = state.selectedStopId to state.cameraRequest
             if (state.boardingSelection != null) sheetState.bottomSheetState.expand()
             else if (token != shownStopToken) sheetState.bottomSheetState.partialExpand()
@@ -251,6 +251,10 @@ fun ViaBuszScreen(
                         onRefresh = onRefresh,
                         onStop = onJourneyBoardingStop,
                         modifier = Modifier.fillMaxWidth().fillMaxHeight(0.88f),
+                    ) else if (state.showNearby) NearbyPanel(
+                        state, selectStop, openDeparture, onRefresh, onLocate,
+                        { scope.launch { sheetState.bottomSheetState.hide() } }, onWindowChanged,
+                        Modifier.fillMaxWidth().fillMaxHeight(0.88f),
                     ) else StopPanel(
                         state = state,
                         stop = selectedStop,
@@ -688,7 +692,7 @@ private fun SearchAndRoutes(
             }
             when {
                 route == null -> CategorizedSearch(state, query, category, { category = it }, onRoute, onStop, onVehicle, onPlace, onSearchPlaces)
-                route.providerId in setOf("volan", "bkk") -> EmmaLineBrowser(state, route, patternId, onDirection, onBoard) { onRetryLine(route.id) }
+                route.providerId in setOf("volan", "bkk", "hev") -> EmmaLineBrowser(state, route, patternId, onDirection, onBoard) { onRetryLine(route.id) }
                 direction == null -> DirectionList(route, onDirection)
                 else -> RouteStops(state, route, direction) { onBoard(route.id, direction.id, it) }
             }
@@ -702,7 +706,8 @@ internal fun transportLabel(mode: String?): String? = when (mode) {
     "TROLLEYBUS" -> stringResource(R.string.emma_mode_trolley)
     "SUBWAY" -> stringResource(R.string.emma_mode_metro)
     "BUS", "COACH" -> stringResource(R.string.emma_mode_bus)
-    "RAIL", "SUBURBAN_RAILWAY", "TRAMTRAIN" -> stringResource(R.string.emma_mode_train)
+    "SUBURBAN_RAILWAY" -> stringResource(R.string.emma_mode_hev)
+    "RAIL", "TRAMTRAIN" -> stringResource(R.string.emma_mode_train)
     else -> null
 }
 
@@ -843,6 +848,7 @@ private fun SourceDialog(onDismiss: () -> Unit) {
 @Composable
 internal fun providerName(providerId: String): String = stringResource(
     when (providerId) {
+        "hev" -> R.string.emma_provider_hev
         "kanyargo" -> R.string.ui_provider_kanyargo
         "homm" -> R.string.ui_provider_homm
         "volan" -> R.string.volan_provider

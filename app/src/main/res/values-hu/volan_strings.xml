@@ -8,12 +8,12 @@
     <string name="volan_no_positions">EMMA · Nincs friss követett jármű a kiválasztott hálózaton.</string>
     <string name="volan_observation_time">Forrásadat ideje: %1$s</string>
     <string name="volan_position_source">EMMA / MÁVPlusz</string>
-    <string name="volan_about">A Volán- és BKK-járművek pozíciói az EMMA/MÁVPlusz rendszeréből érkeznek. Közvetlen BKK API-t nem használunk. Csak friss forrásadatokat mutatunk; a követés hiánya nem jelent járatkimaradást. A megállók és indulási táblák is az EMMA rendszeréből érkeznek. Csak az élőként jelölt indulások tartalmaznak valós idejű előrejelzést. A járművek távolabbról is láthatók, a megállókat apró pontok jelzik. A járművekre koppintva megnyílnak a menet adatai és megállói.</string>
+    <string name="volan_about">A Volán-, BKK- és HÉV--járművek pozíciói az EMMA/MÁVPlusz rendszeréből érkeznek. Közvetlen BKK API-t nem használunk. Csak friss forrásadatokat mutatunk; a követés hiánya nem jelent járatkimaradást. A megállók és indulási táblák is az EMMA rendszeréből érkeznek. Csak az élőként jelölt indulások tartalmaznak valós idejű előrejelzést. A járművek távolabbról is láthatók, a megállókat apró pontok jelzik. A járművekre koppintva megnyílnak a menet adatai és megállói.</string>
     <string name="volan_source_link">MÁVPlusz térkép</string>
     <string name="volan_route_hint">Alább a vonal követett járművei láthatók. Az élő térképi pozíciók nem adnak megállóhelyi indulási előrejelzést.</string>
     <string name="volan_timetable_link">Hivatalos vonali menetrend</string>
     <string name="volan_no_route_positions">Nincs friss követett jármű ezen a vonalon a kiválasztott hálózaton.</string>
-    <string name="volan_loading">EMMA · Országos Volán- és BKK-járművek betöltése…</string>
+    <string name="volan_loading">EMMA · Országos Volán-, BKK- és HÉV--járművek betöltése…</string>
     <plurals name="volan_positions">
         <item quantity="one">EMMA · %1$d követett jármű · MÁVPlusz</item>
         <item quantity="other">EMMA · %1$d követett jármű · MÁVPlusz</item>

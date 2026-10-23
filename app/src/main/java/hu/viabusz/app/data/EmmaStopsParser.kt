@@ -32,6 +32,7 @@ object EmmaStopsParser {
     fun provider(sourceId: String): String? = when {
         sourceId.startsWith("hkir:") && sourceId.length > 5 -> "volan"
         sourceId.startsWith("BKK:") && sourceId.length > 4 -> "bkk"
+        sourceId.startsWith("1:") && sourceId.length > 2 -> "hev"
         else -> null
     }
     fun sourceId(appId: String): String = appId.removePrefix("emma:").also { require(provider(it) != null) }
@@ -39,9 +40,11 @@ object EmmaStopsParser {
         val id = row.text("gtfsId") ?: return null
         val provider = provider(id) ?: return null
         val mode = row.text("mode") ?: return null
-        if (mode !in if (provider == "volan") setOf("BUS", "COACH") else setOf("BUS", "TRAM", "TROLLEYBUS", "SUBWAY")) return null
-        val number = row.text("shortName") ?: return null
-        return TransitRoute("$provider:$id", number, row.text("longName") ?: number, emptyList(), provider, transportMode = mode, color = row.text("color")?.takeIf { it.matches(Regex("[a-fA-F0-9]{6}")) })
+        if (provider == "hev") {
+            if (!HevSupport.accepts(mode, row.text("shortName"), row.text("longName"))) return null
+        } else if (mode !in if (provider == "volan") setOf("BUS", "COACH") else setOf("BUS", "TRAM", "TROLLEYBUS", "SUBWAY")) return null
+        val number = if (provider == "hev") HevSupport.number(row.text("shortName"), row.text("longName")) ?: return null else row.text("shortName") ?: return null
+        return TransitRoute("$provider:$id", number, row.text("longName") ?: number, emptyList(), provider, transportMode = mode, color = if (provider == "hev") HevSupport.color(number) else row.text("color")?.takeIf { it.matches(Regex("[a-fA-F0-9]{6}")) })
     }
     private fun stops(rows: JSONArray): Catalogue {
         val routes = linkedMapOf<String, TransitRoute>()
@@ -55,12 +58,14 @@ object EmmaStopsParser {
             if (lat !in 45.7..48.6 || lon !in 16.1..22.9) return@mapNotNull null
             val rawRoutes = row.optJSONArray("routes")
             val serving = (0 until (rawRoutes?.length() ?: 0)).mapNotNull { rawRoutes?.optJSONObject(it)?.let(::route) }
+            // Namespace 1 also contains national/foreign rail: retain only identifiable HÉV stops.
+            if (provider == "hev" && !(source.startsWith("1:0036") && row.text("vehicleMode") == "SUBURBAN_RAILWAY") && !name.endsWith(" H") && serving.none { it.providerId == "hev" }) return@mapNotNull null
             val station = row.text("locationType") == "STATION"
             serving.forEach { routes[it.id] = it }
             TransitStop("emma:$source", name, GeoPoint(lat, lon), serving.map { it.id }, provider,
                 sourceStopIds = listOf(source), platformCode = row.text("platformCode"), station = station,
                 parentStationId = row.optJSONObject("parentStation")?.text("gtfsId")?.let { "emma:$it" },
-                transportMode = row.text("vehicleMode") ?: serving.mapNotNull { it.transportMode }.distinct().singleOrNull())
+                transportMode = if (provider == "hev") "SUBURBAN_RAILWAY" else row.text("vehicleMode") ?: serving.mapNotNull { it.transportMode }.distinct().singleOrNull())
         }.distinctBy { it.id }
         return Catalogue(stops, routes.values.toList())
     }
