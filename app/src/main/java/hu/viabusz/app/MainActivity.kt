@@ -103,7 +103,7 @@ class MainActivity : ComponentActivity() {
                 ) { modifier, bottomPaddingPx ->
                     val vehicle = state.selectedVehicle
                     val pattern = state.boardingSelection?.pattern
-                    val route = state.routes.find { it.id == state.boardingSelection?.routeId }
+                    val route = state.boardingSelection?.routeId?.let(state::findRoute)
                     val focus = remember(vehicle?.id, vehicle?.routeId, state.boardingSelection, state.network, state.emmaRoutes, state.lineDetails, state.vehicleJourney, state.emmaStops) {
                         LineMapFocus.create(vehicle, state.boardingSelection, state.routes, state.lineDetails, state.vehicleJourney, state.stops)
                     }

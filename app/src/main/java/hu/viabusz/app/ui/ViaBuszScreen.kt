@@ -11,7 +11,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -87,6 +86,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalUriHandler
@@ -154,8 +155,8 @@ fun ViaBuszScreen(
         ),
     )
     var shownStopToken by remember { mutableStateOf<Pair<String?, Int>?>(null) }
-    val selectedStop = state.stops.firstOrNull { it.id == state.selectedStopId }
-    val selectedRoute = state.routes.firstOrNull { it.id == routeId }
+    val selectedStop = state.findStop(state.selectedStopId)
+    val selectedRoute = routeId?.let(state::findRoute)
     val selectedDirection = selectedRoute?.directions?.firstOrNull { it.id == directionId }
     val openSearch: () -> Unit = {
         query = ""
@@ -175,7 +176,7 @@ fun ViaBuszScreen(
         if (observed != null) {
             onVehicleOpened(observed.id)
             searchOpen = false
-        } else state.routes.firstOrNull { it.id == departure.routeId }?.let { route ->
+        } else (state.findRoute(departure.routeId))?.let { route ->
             routeId = route.id
             directionId = state.lineDetails[route.id]?.patterns?.find { departure.patternCode in it.codes }?.id
                 ?: route.directions.firstOrNull { it.id == departure.directionId }?.id
@@ -224,14 +225,15 @@ fun ViaBuszScreen(
     }
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        BoxWithConstraints(Modifier.fillMaxSize()) {
-            val peekHeight = (maxHeight * 0.34f).coerceIn(110.dp, 330.dp)
+        Box(Modifier.fillMaxSize()) {
+            val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+            val peekHeight = (screenHeight * 0.34f).coerceIn(110.dp, 330.dp)
             val density = LocalDensity.current
             val peekHeightPx = with(density) { peekHeight.roundToPx() }
             val sheetHidden = sheetState.bottomSheetState.targetValue == SheetValue.Hidden
             val bottomPaddingPx = when (sheetState.bottomSheetState.targetValue) {
                 SheetValue.Hidden -> 0
-                SheetValue.Expanded -> with(density) { (maxHeight * 0.88f).roundToPx() }
+                SheetValue.Expanded -> with(density) { (screenHeight * 0.88f).roundToPx() }
                 else -> peekHeightPx
             }
 
@@ -309,8 +311,11 @@ fun ViaBuszScreen(
                         onClick = onLocate,
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
-                            .padding(end = 16.dp, bottom = locateBottomPadding)
-                            .size(52.dp),
+                            .padding(end = 16.dp, bottom = 24.dp)
+                            .size(52.dp)
+                            .graphicsLayer {
+                                translationY = -(locateBottomPadding - 24.dp).toPx()
+                            },
                         shape = CircleShape,
                     ) {
                         Icon(
@@ -426,7 +431,6 @@ private fun FloatingSearchBlob(
             IconButton(onClick = onSettings) {
                 Icon(Icons.Rounded.Settings, stringResource(R.string.volan_settings))
             }
-
         }
     }
 }
@@ -445,7 +449,7 @@ private fun StopPanel(
     onHide: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val routeById = remember(state.network?.routes, state.emmaRoutes) { state.routes.associateBy { it.id } }
+    val routeById = remember(state.routes) { state.routesById }
     val isMulti = stop != null && (stop.isMultiStop || remember(stop.id, state.stops) { StopClusters.isMultiStop(stop.id, state.stops) })
     val stopTitle = if (stop != null) {
         StopClusters.stopDisplayName(stop.name, isMulti, stringResource(R.string.ui_multiple_stations))
@@ -519,8 +523,8 @@ private fun StopPanel(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(top = 6.dp, bottom = 3.dp),
         ) {
-            item { Text(stringResource(R.string.ui_departures), Modifier.padding(end = 5.dp), style = MaterialTheme.typography.labelLarge) }
-            items(listOf(30, 60, 120)) { minutes ->
+            item(contentType = "label") { Text(stringResource(R.string.ui_departures), Modifier.padding(end = 5.dp), style = MaterialTheme.typography.labelLarge) }
+            items(listOf(30, 60, 120), key = { it }, contentType = { "chip" }) { minutes ->
                 FilterChip(
                     selected = state.windowMinutes == minutes,
                     onClick = { onWindowChanged(minutes) },
@@ -535,15 +539,15 @@ private fun StopPanel(
             contentPadding = PaddingValues(bottom = 24.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()),
         ) {
             if (!state.error.isNullOrBlank()) {
-                item { Notice(state.error, Icons.Rounded.WifiOff, isError = true) }
+                item(contentType = "notice") { Notice(state.error, Icons.Rounded.WifiOff, isError = true) }
             }
             if (!state.emmaStatus.isNullOrBlank()) {
-                item { Notice(state.emmaStatus, Icons.Rounded.DirectionsBus) }
+                item(contentType = "notice") { Notice(state.emmaStatus, Icons.Rounded.DirectionsBus) }
             }
-            if (!state.stopStatus.isNullOrBlank()) item { Notice(state.stopStatus, Icons.Rounded.LocationOn) }
-            if (!state.departureStatus.isNullOrBlank()) item { Notice(state.departureStatus, Icons.Rounded.AccessTime) }
+            if (!state.stopStatus.isNullOrBlank()) item(contentType = "notice") { Notice(state.stopStatus, Icons.Rounded.LocationOn) }
+            if (!state.departureStatus.isNullOrBlank()) item(contentType = "notice") { Notice(state.departureStatus, Icons.Rounded.AccessTime) }
             if (stop == null && !state.loading) {
-                item {
+                item(contentType = "empty") {
                     EmptyState(stringResource(R.string.ui_pick_stop_title), stringResource(R.string.ui_pick_stop_body), Icons.Rounded.LocationOn)
                     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                         Button(onClick = onSearch) { Text(stringResource(R.string.ui_search_stop)) }
@@ -551,15 +555,20 @@ private fun StopPanel(
                 }
             }
             if (state.liveStopMinutes.isNotEmpty()) {
-                item { LiveStopSignal(state.liveStopMinutes) }
+                item(contentType = "live_signal") { LiveStopSignal(state.liveStopMinutes) }
             }
             if (stop != null && state.departures.isEmpty() && !state.loading && !state.departureBoardLoading && !state.departureBoardUnavailable) {
-                item { EmptyState(stringResource(R.string.ui_no_departures_title), stringResource(R.string.ui_no_departures_body, state.windowMinutes), Icons.Rounded.AccessTime) }
+                item(contentType = "empty") { EmptyState(stringResource(R.string.ui_no_departures_title), stringResource(R.string.ui_no_departures_body, state.windowMinutes), Icons.Rounded.AccessTime) }
             }
-            itemsIndexed(state.departures) { index, departure ->
+            itemsIndexed(
+                state.departures,
+                key = { _, departure -> "${departure.routeId}-${departure.directionId}-${departure.expectedAt.epochSecond}" },
+                contentType = { _, _ -> "departure" }
+            ) { index, departure ->
+                val minutes = ceil(Duration.between(state.now, departure.expectedAt).seconds / 60.0).toInt().coerceAtLeast(0)
                 DepartureRow(
                     departure = departure,
-                    now = state.now,
+                    minutes = minutes,
                     providerId = routeById[departure.routeId]?.providerId ?: "viabusz",
                     route = routeById[departure.routeId],
                     boardingInfo = boardingInfo,
@@ -568,12 +577,12 @@ private fun StopPanel(
                 if (index < state.departures.lastIndex) HorizontalDivider(Modifier.padding(horizontal = 22.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
             }
             if (!state.status.isNullOrBlank()) {
-                item { Notice(state.status, Icons.Rounded.Info) }
+                item(contentType = "notice") { Notice(state.status, Icons.Rounded.Info) }
             }
             if (!state.locationMessage.isNullOrBlank()) {
-                item { Notice(state.locationMessage, Icons.Rounded.MyLocation) }
+                item(contentType = "notice") { Notice(state.locationMessage, Icons.Rounded.MyLocation) }
             }
-            item {
+            item(contentType = "footer") {
                 Column(Modifier.padding(horizontal = 22.dp, vertical = 15.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
                         if (timetableOnly) stringResource(R.string.ui_homm_schedule_only)
@@ -608,9 +617,8 @@ private fun LiveStopSignal(minutes: List<Int>) {
 }
 
 @Composable
-private fun DepartureRow(departure: Departure, now: Instant, providerId: String, route: TransitRoute?, boardingInfo: String?, onClick: () -> Unit) {
+private fun DepartureRow(departure: Departure, minutes: Int, providerId: String, route: TransitRoute?, boardingInfo: String?, onClick: () -> Unit) {
     val live = departure.kind == ArrivalKind.LIVE
-    val minutes = ceil(Duration.between(now, departure.expectedAt).seconds / 60.0).toInt().coerceAtLeast(0)
     Row(
         modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).padding(horizontal = 22.dp, vertical = 15.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -729,7 +737,7 @@ internal fun StopSearchRow(stop: TransitStop, state: UiState, favorite: Boolean,
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(displayName, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            val numbers = stop.routeIds.map { id -> state.routes.find { it.id == id }?.number ?: id }.distinct()
+            val numbers = stop.routeIds.map { id -> state.findRoute(id)?.number ?: id }.distinct()
             val boarding = if (isMulti) null else stopLabel(stop)
             Text(listOfNotNull(providerNames(stop.providerIds), boarding, numbers.joinToString(" · ").takeIf { it.isNotBlank() }).joinToString(" · "), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -740,11 +748,11 @@ internal fun StopSearchRow(stop: TransitStop, state: UiState, favorite: Boolean,
 @Composable
 private fun DirectionList(route: TransitRoute, onDirection: (String) -> Unit) {
     LazyColumn(contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 14.dp, bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item {
+        item(contentType = "header") {
             Text(route.name, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(4.dp))
             Text(stringResource(R.string.ui_direction_question), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 4.dp, top = 7.dp, bottom = 12.dp))
         }
-        items(route.directions, key = { it.id }) { direction ->
+        items(route.directions, key = { it.id }, contentType = { "direction" }) { direction ->
             Surface(onClick = { onDirection(direction.id) }, shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surfaceContainerLow) {
                 Row(Modifier.fillMaxWidth().padding(20.dp), horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.AutoMirrored.Rounded.ArrowForward, null, tint = MaterialTheme.colorScheme.primary)
@@ -756,15 +764,15 @@ private fun DirectionList(route: TransitRoute, onDirection: (String) -> Unit) {
                 }
             }
         }
-        if (route.directions.isEmpty()) item { EmptyState(stringResource(R.string.ui_no_directions_title), stringResource(R.string.ui_no_directions_body), Icons.Rounded.Info) }
+        if (route.directions.isEmpty()) item(contentType = "empty") { EmptyState(stringResource(R.string.ui_no_directions_title), stringResource(R.string.ui_no_directions_body), Icons.Rounded.Info) }
     }
 }
 
 @Composable
 private fun RouteStops(state: UiState, route: TransitRoute, direction: RouteDirection, onStop: (String) -> Unit) {
-    val stopById = remember(state.network) { state.network?.stops.orEmpty().associateBy { it.id } }
+    val stopById = remember(state.network) { state.stopsById }
     LazyColumn(contentPadding = PaddingValues(bottom = 36.dp)) {
-        item {
+        item(contentType = "header") {
             Surface(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 16.dp), shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.primaryContainer) {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                     Text(stringResource(R.string.ui_route_direction, route.number), style = MaterialTheme.typography.labelSmall, letterSpacing = 1.sp, color = MaterialTheme.colorScheme.onPrimaryContainer)
@@ -774,7 +782,7 @@ private fun RouteStops(state: UiState, route: TransitRoute, direction: RouteDire
                 }
             }
         }
-        itemsIndexed(direction.stopIds) { index, stopId ->
+        itemsIndexed(direction.stopIds, key = { index, stopId -> "$index-$stopId" }, contentType = { _, _ -> "route_stop" }) { index, stopId ->
             stopById[stopId]?.let { stop -> LineStopRow(stop, index == 0, index == direction.stopIds.lastIndex,
                 lineColor(route), onClick = { onStop(stopId) }) }
         }

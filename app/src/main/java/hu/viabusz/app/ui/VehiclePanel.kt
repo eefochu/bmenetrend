@@ -92,31 +92,31 @@ fun VehiclePanel(state: UiState, onClose: () -> Unit, onRefresh: () -> Unit, onS
             Modifier.padding(start = 22.dp, end = 22.dp, bottom = 12.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (state.vehicleJourneyLoading) LinearProgressIndicator(Modifier.fillMaxWidth()) else HorizontalDivider()
         LazyColumn(Modifier.weight(1f), state = listState, contentPadding = PaddingValues(bottom = 24.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())) {
-            if (Duration.between(vehicle.observedAt, state.now).seconds > 180) item {
+            if (Duration.between(vehicle.observedAt, state.now).seconds > 180) item(contentType = "old_position") {
                 Text(stringResource(R.string.emma_vehicle_old_position), Modifier.padding(22.dp), color = MaterialTheme.colorScheme.error)
             }
-            if (journey != null) item {
+            if (journey != null) item(contentType = "route_summary") {
                 Column(Modifier.padding(horizontal = 22.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     journey.routeName?.takeIf { it != destination && it != number }?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
                     if (journey.geometry.size >= 2) OutlinedButton(onClick = onShowRoute) { Text(stringResource(R.string.line_show_route)) }
                 }
             }
-            if (state.vehicleJourneyLoading) item {
+            if (state.vehicleJourneyLoading) item(contentType = "loading") {
                 Text(stringResource(R.string.emma_vehicle_loading), Modifier.padding(22.dp))
             }
-            if (state.vehicleJourneyError) item {
+            if (state.vehicleJourneyError) item(contentType = "error") {
                 Text(stringResource(R.string.emma_vehicle_unavailable), Modifier.padding(22.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            if (!state.vehicleJourneyLoading && !state.vehicleJourneyError && journey?.stops.isNullOrEmpty()) item {
+            if (!state.vehicleJourneyLoading && !state.vehicleJourneyError && journey?.stops.isNullOrEmpty()) item(contentType = "no_stops") {
                 Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     vehicle.nextStopName?.let { Text(stringResource(R.string.emma_vehicle_next_stop, it), style = MaterialTheme.typography.titleSmall) }
                     Text(stringResource(R.string.emma_vehicle_no_stops), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             if (!journey?.stops.isNullOrEmpty()) {
-                item { Text(pluralStringResource(R.plurals.emma_journey_stops, journey!!.stops.size, journey.stops.size),
+                item(contentType = "stops_header") { Text(pluralStringResource(R.plurals.emma_journey_stops, journey!!.stops.size, journey.stops.size),
                     Modifier.padding(start = 22.dp, end = 22.dp, top = 20.dp, bottom = 8.dp), style = MaterialTheme.typography.titleSmall) }
-                itemsIndexed(journey!!.stops, key = { index, stop -> "$index-${stop.id}" }) { index, stop ->
+                itemsIndexed(journey!!.stops, key = { index, stop -> "$index-${stop.id}" }, contentType = { _, _ -> "journey_stop" }) { index, stop ->
                     val atIndex = if (progress?.at == null) null else if (progress.at.id == progress.next?.id) progress.nextIndex else progress.nextIndex?.minus(1)
                     if (index == progress?.nextIndex && progress.at == null && progress.previous != null) LineVehicleBetween(color, vehicleIcon, hevBitmap)
                     LineStopRow(stop, index == 0, index == journey.stops.lastIndex, color,

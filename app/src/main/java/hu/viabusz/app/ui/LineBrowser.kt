@@ -8,8 +8,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -18,22 +19,32 @@ import hu.viabusz.app.R
 import hu.viabusz.app.data.TransitRoute
 
 @Composable
-fun EmmaLineBrowser(state: UiState, route: TransitRoute, patternId: String?, onDirection: (String) -> Unit,
-                    onBoard: (String, String, String) -> Unit, onRetry: () -> Unit) {
+fun EmmaLineBrowser(
+    state: UiState,
+    route: TransitRoute,
+    patternId: String?,
+    onDirection: (String) -> Unit,
+    onBoard: (String, String, String) -> Unit,
+    onRetry: () -> Unit,
+) {
     val details = state.lineDetails[route.id]
-    val pattern = details?.patterns?.find { it.id == patternId }
-    val color = lineColor(details?.route ?: route)
+    val pattern = details?.patterns?.find { it.id == patternId } ?: details?.patterns?.firstOrNull()
+    val color = lineColor(route)
+    val primaryVariants = remember(details?.patterns) {
+        details?.patterns?.groupBy { it.familyKey }?.values?.map { it.first() }.orEmpty()
+    }
     LazyColumn(contentPadding = PaddingValues(bottom = 32.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())) {
         item {
-            Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(stringResource(if (pattern == null) R.string.ui_choose_direction else R.string.line_choose_boarding), style = MaterialTheme.typography.headlineSmall)
+            Column(Modifier.padding(horizontal = 22.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                LineBadge(route, showIcon = false)
+                Text(route.name, style = MaterialTheme.typography.titleLarge)
                 Text(pattern?.headsign ?: stringResource(R.string.line_direction_hint), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (pattern != null) Text(pluralStringResource(R.plurals.emma_journey_stops, pattern.stops.size, pattern.stops.size), style = MaterialTheme.typography.labelMedium)
                 val variants = details?.patterns?.filter { it.familyKey == pattern?.familyKey }.orEmpty()
                 if (pattern != null && variants.size > 1) {
                     Text(stringResource(R.string.line_starting_point), style = MaterialTheme.typography.labelMedium)
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(variants, key = { it.id }) { variant ->
+                        items(variants, key = { it.id }, contentType = { "variant_chip" }) { variant ->
                             FilterChip(selected = variant.id == pattern.id, onClick = { onDirection(variant.id) }, label = {
                                 Text(variant.stops.first().name.removePrefix("Budapest, "), Modifier.widthIn(max = 220.dp), maxLines = 2)
                             })
@@ -51,7 +62,7 @@ fun EmmaLineBrowser(state: UiState, route: TransitRoute, patternId: String?, onD
         }
         if (details != null && details.patterns.isEmpty()) item { Text(stringResource(R.string.line_no_directions), Modifier.padding(22.dp)) }
         if (pattern == null && details != null) {
-            items(details.patterns.groupBy { it.familyKey }.values.map { it.first() }, key = { it.id }) { variant ->
+            items(primaryVariants, key = { it.id }, contentType = { "line_variant" }) { variant ->
                 Surface(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 6.dp), shape = MaterialTheme.shapes.large,
                     color = MaterialTheme.colorScheme.surfaceContainerLow) {
                     Row(Modifier.clickable { onDirection(variant.id) }.padding(18.dp), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -65,7 +76,7 @@ fun EmmaLineBrowser(state: UiState, route: TransitRoute, patternId: String?, onD
                 }
             }
         } else if (pattern != null) {
-            itemsIndexed(pattern.stops, key = { index, stop -> "$index-${stop.id}" }) { index, stop ->
+            itemsIndexed(pattern.stops, key = { index, stop -> "$index-${stop.id}" }, contentType = { _, _ -> "pattern_stop" }) { index, stop ->
                 LineStopRow(stop, index == 0, index == pattern.stops.lastIndex, color, onClick = { onBoard(route.id, pattern.id, stop.id) })
             }
         }

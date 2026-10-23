@@ -1,7 +1,9 @@
 package hu.viabusz.app.data
 
+import androidx.compose.runtime.Immutable
 import org.json.JSONObject
 
+@Immutable
 data class VehicleJourney(
     val tripId: String,
     val routeNumber: String?,

@@ -1,11 +1,17 @@
 package hu.viabusz.app.data
 
+import androidx.compose.runtime.Immutable
 import org.json.JSONArray
 import org.json.JSONObject
 
+private val HEX_COLOR_REGEX = Regex("[a-fA-F0-9]{6}")
+
+@Immutable
 data class LinePattern(val id: String, val codes: Set<String>, val headsign: String, val stops: List<TransitStop>, val geometry: List<GeoPoint>, val serviceCount: Int = 0, val directionId: String? = null) {
     val familyKey: List<String> get() = if (directionId == null) listOf(id) else listOf(directionId, headsign, stops.last().id)
 }
+
+@Immutable
 data class LineDetails(val route: TransitRoute, val patterns: List<LinePattern>) {
     fun boardingPattern(patternId: String, stopId: String): LinePattern? {
         val selected = patterns.find { it.id == patternId } ?: return null
@@ -18,6 +24,8 @@ data class LineDetails(val route: TransitRoute, val patterns: List<LinePattern>)
         return selected.copy(codes = codes.ifEmpty { selected.codes })
     }
 }
+
+@Immutable
 data class BoardingSelection(val routeId: String, val title: String, val pattern: LinePattern? = null, val localDirectionId: String? = null) {
     fun matches(departure: Departure): Boolean = departure.routeId == routeId && when {
         pattern != null -> departure.patternCode in pattern.codes
@@ -40,7 +48,7 @@ object EmmaRouteParser {
             } else if (mode !in if (provider == "volan") setOf("BUS", "COACH") else setOf("BUS", "TRAM", "TROLLEYBUS", "SUBWAY")) return@mapNotNull null
             val number = if (provider == "hev") HevSupport.number(row.text("shortName"), row.text("longName")) ?: return@mapNotNull null else row.text("shortName") ?: return@mapNotNull null
             TransitRoute("$provider:$source", number, row.text("longName") ?: number, emptyList(), provider,
-                transportMode = mode, color = if (provider == "hev") HevSupport.color(number) else row.text("color")?.takeIf { it.matches(Regex("[a-fA-F0-9]{6}")) })
+                transportMode = mode, color = if (provider == "hev") HevSupport.color(number) else row.text("color")?.takeIf { it.matches(HEX_COLOR_REGEX) })
         }.distinctBy { it.id }.also { require(it.isNotEmpty()) { "Missing line catalogue" } }
     }
     val QUERY = """query LineDetails(${'$'}id:String!, ${'$'}date:String!) {
@@ -57,7 +65,7 @@ object EmmaRouteParser {
         val mode = row.text("mode") ?: error("Missing mode")
         require(if (provider == "hev") HevSupport.accepts(mode, row.text("shortName"), row.text("longName")) else mode in if (provider == "volan") setOf("BUS", "COACH") else setOf("BUS", "TRAM", "TROLLEYBUS", "SUBWAY"))
         val route = TransitRoute(expectedRouteId, number, row.text("longName") ?: number, emptyList(), provider,
-            transportMode = mode, color = if (provider == "hev") HevSupport.color(number) else row.text("color")?.takeIf { it.matches(Regex("[a-fA-F0-9]{6}")) })
+            transportMode = mode, color = if (provider == "hev") HevSupport.color(number) else row.text("color")?.takeIf { it.matches(HEX_COLOR_REGEX) })
         val patterns = row.getJSONArray("patterns")
         val parsed = (0 until patterns.length()).mapNotNull { i ->
             val pattern = patterns.getJSONObject(i)

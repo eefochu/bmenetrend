@@ -1,11 +1,17 @@
 package hu.viabusz.app.data
 
+import androidx.compose.runtime.Immutable
 import java.time.Instant
 import java.time.LocalDate
 
 /** Provider IDs stay stable in source assets; verified shared platforms are merged for display. */
+@Immutable
 data class GeoPoint(val lat: Double, val lon: Double)
+
+@Immutable
 data class MapBounds(val west: Double, val south: Double, val east: Double, val north: Double)
+
+@Immutable
 data class TransitStop(
     val id: String, val name: String, val position: GeoPoint, val routeIds: List<String>,
     val providerId: String = "viabusz",
@@ -18,10 +24,20 @@ data class TransitStop(
     val transportMode: String? = null,
     val isMultiStop: Boolean = false,
 )
+
+@Immutable
 data class RouteDirection(val id: String, val name: String, val stopIds: List<String>, val restrictedService: Boolean = false)
+
+@Immutable
 data class TransitRoute(val id: String, val number: String, val name: String, val directions: List<RouteDirection>, val providerId: String = "viabusz", val sourceUrl: String? = null, val transportMode: String? = null, val color: String? = null)
+
+@Immutable
 data class StopTime(val stopId: String, val minuteOfDay: Int)
+
+@Immutable
 data class ScheduledTrip(val id: String, val routeId: String, val directionId: String, val stopTimes: List<StopTime>, val calendar: String = "working_days")
+
+@Immutable
 data class TransitNetwork(
     val stops: List<TransitStop>,
     val routes: List<TransitRoute>,
@@ -34,6 +50,8 @@ data class TransitNetwork(
     val providerServiceDates: Map<String, LocalDate?> = emptyMap(),
     val providerWarnings: Map<String, String> = emptyMap(),
 )
+
+@Immutable
 data class Vehicle(
     val id: String,
     val position: GeoPoint,
@@ -55,7 +73,10 @@ data class Vehicle(
     val nextStopPosition: Int? = null,
     val nextStopPoint: GeoPoint? = null,
 )
+
 enum class ArrivalKind { SCHEDULED, LIVE }
+
+@Immutable
 data class Departure(
     val routeId: String,
     val routeNumber: String,
@@ -73,6 +94,8 @@ data class Departure(
     val bikesAllowed: String? = null,
     val realtimeState: String? = null,
 )
+
+@Immutable
 data class LiveArrival(
     val stopId: String,
     val minutes: Int,
@@ -82,6 +105,8 @@ data class LiveArrival(
     // The aggregate getStartTimesMP feed does not identify whether a value is GPS-based.
     val isVerifiedRealtime: Boolean = false,
 )
+
+@Immutable
 data class LiveSnapshot(
     val vehicles: List<Vehicle>,
     val arrivals: List<LiveArrival>,
