@@ -14,6 +14,7 @@ object StopClusters {
     private val transitWordsRegex = Regex("""\b(m|metro|va|vasutallomas|pu|palyaudvar|autobusz-allomas|autobusz-palyaudvar|autobuszallomas|kocsiallas|vagany)\b""")
     private val adjectiveStemRegex = Regex("""\b([a-z]{3,})i\b""")
     private val cityPrefixRegex = Regex("""^(budapest|budaors|biatorbagy|paty|erd|solymar|szentendre|dunakeszi|godollo)\s+""")
+    private val whitespaceRegex = Regex("""\s+""")
 
     fun normalize(text: String): String =
         Normalizer.normalize(text, Normalizer.Form.NFD)
@@ -28,8 +29,8 @@ object StopClusters {
         s = s.replace(cityPrefixRegex, "")
         s = s.replace(transitWordsRegex, " ")
         s = s.replace(adjectiveStemRegex, "$1")
-        s = s.replace(Regex("""\s+"""), " ").trim()
-        return s.ifEmpty { normalize(raw).replace(punctRegex, " ").replace(Regex("""\s+"""), " ").trim() }
+        s = s.replace(whitespaceRegex, " ").trim()
+        return s.ifEmpty { normalize(raw).replace(punctRegex, " ").replace(whitespaceRegex, " ").trim() }
     }
 
     fun areNamesCloselyMatching(nameA: String, nameB: String): Boolean {

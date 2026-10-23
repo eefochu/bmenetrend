@@ -22,6 +22,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import hu.viabusz.app.R
 import hu.viabusz.app.data.TransitRoute
 import hu.viabusz.app.data.TransitStop
@@ -72,9 +73,25 @@ fun LineBadge(number: String, provider: String, mode: String? = null, sourceColo
             stringResource(when (mode) { "TRAM" -> R.string.emma_mode_tram; "TROLLEYBUS" -> R.string.emma_mode_trolley;
                 "SUBWAY" -> R.string.emma_mode_metro; "RAIL", "SUBURBAN_RAILWAY", "TRAMTRAIN" -> R.string.emma_mode_train; else -> R.string.emma_mode_bus }), Modifier.size(28.dp))
         Surface(shape = RoundedCornerShape(8.dp), color = color) {
-            Box(Modifier.heightIn(min = 36.dp).widthIn(min = 44.dp).padding(horizontal = 10.dp, vertical = 6.dp), contentAlignment = Alignment.Center) {
-                Text(number, color = if (color.luminance() > .179) Color(0xFF171B20) else Color.White,
-                    style = MaterialTheme.typography.titleMedium, fontFamily = OpenSans, fontWeight = FontWeight.Bold, maxLines = 1)
+            Box(
+                Modifier
+                    .heightIn(min = 32.dp)
+                    .widthIn(min = 38.dp)
+                    .padding(horizontal = 9.dp, vertical = 2.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = number,
+                    color = if (color.luminance() > .179) Color(0xFF171B20) else Color.White,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = (-0.5).sp,
+                        lineHeight = 20.sp,
+                    ),
+                    fontFamily = OpenSans,
+                    maxLines = 1,
+                )
             }
         }
     }

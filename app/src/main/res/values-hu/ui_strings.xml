@@ -6,6 +6,7 @@
     <string name="ui_provider_kanyargo">KanyarGO</string>
     <string name="ui_show_departures">Indulások megjelenítése</string>
     <string name="ui_hide_departures">Indulások elrejtése, térkép nagyítása</string>
+    <string name="ui_expand_departures">Indulások kibontása</string>
     <string name="ui_nearest_stop_action">Legközelebbi megálló a helyzetem alapján</string>
     <string name="ui_about_action">Az alkalmazásról és az adatokról</string>
     <string name="ui_search_hint">Megálló vagy járat keresése</string>
@@ -79,4 +80,5 @@
     <string name="ui_homm_website">HOMM hivatalos weboldal</string>
     <string name="ui_homm_schedule_only">HOMM-menetrend · élő adatok nélkül</string>
     <string name="ui_multiple_stations">(több megálló)</string>
+    <string name="ui_collapse_departures">Indulások részleges nézete</string>
 </resources>

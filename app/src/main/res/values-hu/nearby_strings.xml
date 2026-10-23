@@ -10,4 +10,5 @@
     <string name="nearby_no_departures">Ebben az időszakban nincs indulás. Továbbiakért koppints a megállóra.</string>
     <string name="nearby_platform">Kocsiállás / vágány: %1$s</string>
     <string name="nearby_partial">Néhány megállóhely frissítése nem sikerült. Automatikusan újrapróbáljuk.</string>
+    <string name="nearby_no_departures_2h">Nincs közeli járat a következő 2 órában. Mozgasd a térképet, vagy nézz körül később.</string>
 </resources>

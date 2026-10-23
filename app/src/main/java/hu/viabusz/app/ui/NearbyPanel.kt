@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.dp
 import hu.viabusz.app.R
 import hu.viabusz.app.data.ArrivalKind
 import hu.viabusz.app.data.Departure
+import hu.viabusz.app.data.NearbyStation
+import java.time.Instant
 import hu.viabusz.app.data.TransitRoute
 import hu.viabusz.app.data.TransitStop
 import java.time.Duration
@@ -28,18 +30,39 @@ import kotlin.math.roundToInt
 private val nearbyClock = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.of("Europe/Budapest"))
 
 @Composable
-fun NearbyPanel(state: UiState, onStop: (String) -> Unit, onDeparture: (Departure) -> Unit,
-                onRefresh: () -> Unit, onLocate: () -> Unit, onHide: () -> Unit,
-                onWindow: (Int) -> Unit, modifier: Modifier = Modifier) {
+fun NearbyPanel(
+    stations: List<NearbyStation>,
+    routesById: Map<String, TransitRoute>,
+    atUser: Boolean,
+    loading: Boolean,
+    stopStatus: String?,
+    windowMinutes: Int,
+    now: Instant,
+    onStop: (String) -> Unit,
+    onDeparture: (Departure) -> Unit,
+    onRefresh: () -> Unit,
+    onLocate: () -> Unit,
+    onToggleExpand: () -> Unit,
+    onCollapse: () -> Unit,
+    onWindow: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    isExpanded: Boolean = true,
+) {
     var windowMenu by remember { mutableStateOf(false) }
+    val latestDepartureAction by rememberUpdatedState(onDeparture)
+    val openDeparture = remember { { departure: Departure -> latestDepartureAction(departure) } }
     LazyColumn(modifier.navigationBarsPadding(), contentPadding = PaddingValues(bottom = 24.dp)) {
-        item(contentType = "nearby_header") {
-            Row(Modifier.fillMaxWidth().padding(start = 22.dp, end = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
+        item(key = "nearby-header", contentType = "nearby_header") {
+            Row(Modifier.fillMaxWidth().padding(start = 22.dp, end = 8.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(
+                    Modifier
+                        .weight(1f)
+                        .clickable(enabled = !isExpanded, onClick = onToggleExpand)
+                ) {
                     Text(stringResource(R.string.nearby_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     Box {
                         Row(Modifier.clickable { windowMenu = true }.padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(stringResource(if (state.nearbyAtUser) R.string.nearby_you else R.string.nearby_map) + " · " + stringResource(R.string.ui_minutes_short, state.windowMinutes),
+                            Text(stringResource(if (atUser) R.string.nearby_you else R.string.nearby_map) + " · " + stringResource(R.string.ui_minutes_short, windowMinutes),
                                 Modifier.weight(1f, fill = false), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Icon(Icons.Rounded.ArrowDropDown, null, Modifier.size(16.dp))
                         }
@@ -47,21 +70,26 @@ fun NearbyPanel(state: UiState, onStop: (String) -> Unit, onDeparture: (Departur
                             listOf(30, 60, 120).forEach { minutes -> DropdownMenuItem(
                                 text = { Text(stringResource(R.string.ui_minutes_short, minutes)) },
                                 onClick = { onWindow(minutes); windowMenu = false },
-                                trailingIcon = { if (minutes == state.windowMinutes) Icon(Icons.Rounded.Check, null) }) }
+                                trailingIcon = { if (minutes == windowMinutes) Icon(Icons.Rounded.Check, null) }) }
                         }
                     }
                 }
                 IconButton(onClick = onLocate) { Icon(Icons.Rounded.MyLocation, stringResource(R.string.nearby_locate)) }
                 IconButton(onClick = onRefresh) { Icon(Icons.Rounded.Refresh, stringResource(R.string.ui_refresh_departures)) }
-                IconButton(onClick = onHide) { Icon(Icons.Rounded.KeyboardArrowDown, stringResource(R.string.ui_hide_departures)) }
+                IconButton(onClick = onCollapse) {
+                    Icon(Icons.Rounded.KeyboardArrowDown,
+                        stringResource(if (isExpanded) R.string.ui_collapse_departures else R.string.ui_hide_departures))
+                }
             }
-            if (state.nearbyLoading) LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 6.dp))
+            Box(Modifier.fillMaxWidth().height(10.dp).padding(horizontal = 22.dp), contentAlignment = Alignment.Center) {
+                if (loading) LinearProgressIndicator(Modifier.fillMaxWidth())
+            }
         }
-        if (state.nearbyStations.isEmpty() && !state.nearbyLoading) item(contentType = "nearby_empty") {
-            Text(state.stopStatus ?: stringResource(R.string.nearby_empty), Modifier.padding(horizontal = 22.dp, vertical = 20.dp),
+        if (stations.isEmpty() && !loading) item(key = "nearby-empty", contentType = "nearby_empty") {
+            Text(stopStatus ?: stringResource(R.string.nearby_no_departures_2h), Modifier.padding(horizontal = 22.dp, vertical = 20.dp),
                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        state.nearbyStations.forEach { station ->
+        stations.forEach { station ->
             item(key = "station-${station.stop.id}", contentType = "station_header") {
                 Row(Modifier.fillMaxWidth().clickable { onStop(station.stop.id) }.padding(horizontal = 22.dp, vertical = 13.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -79,19 +107,19 @@ fun NearbyPanel(state: UiState, onStop: (String) -> Unit, onDeparture: (Departur
             }
             station.departures.take(3).forEach { departure ->
                 item(key = "${station.stop.id}-${departure.routeId}-${departure.directionId}-${departure.expectedAt}", contentType = "station_departure") {
-                    val route = state.findRoute(departure.routeId)
+                    val route = routesById[departure.routeId]
                     val platform = station.platforms.firstOrNull { it.id == departure.stopId }
-                    val minutes = ceil(Duration.between(state.now, departure.expectedAt).seconds / 60.0).toInt().coerceAtLeast(0)
+                    val minutes = ceil(Duration.between(now, departure.expectedAt).seconds / 60.0).toInt().coerceAtLeast(0)
                     NearbyDepartureCard(
                         departure = departure,
                         route = route,
                         platform = platform,
                         minutes = minutes,
-                        onClick = { onDeparture(departure) },
+                        onClick = { openDeparture(departure) },
                     )
                 }
             }
-            if (station.unavailable && station.departures.isNotEmpty()) item(contentType = "station_partial") {
+            if (station.unavailable && station.departures.isNotEmpty()) item(key = "partial-${station.stop.id}", contentType = "station_partial") {
                 Text(stringResource(R.string.nearby_partial), Modifier.padding(horizontal = 22.dp, vertical = 6.dp),
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -120,24 +148,14 @@ private fun NearbyDepartureCard(
         ) {
             LineBadge(departure.routeNumber, route?.providerId ?: platform?.providerId ?: "bkk", route?.transportMode ?: platform?.transportMode, route?.color)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(departure.destination, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Icon(if (live) Icons.Rounded.Sensors else Icons.Rounded.AccessTime, null, Modifier.size(12.dp),
-                        tint = if (live) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(stringResource(if (live) R.string.ui_live_arrival else R.string.ui_scheduled), style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                platform?.platformCode?.let { code ->
-                    Text(stringResource(R.string.nearby_platform, code),
-                        style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(departure.destination, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(nearbyClock.format(departure.expectedAt), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    platform?.platformCode?.let { Text(stringResource(R.string.emma_platform, it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 }
             }
-            Column(horizontalAlignment = Alignment.End) {
-                Text(if (minutes == 0) stringResource(R.string.ui_now) else stringResource(R.string.ui_minutes_short, minutes),
-                    style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
-                    color = if (live) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
-                Text(nearbyClock.format(departure.expectedAt), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+            if (live) Icon(Icons.Rounded.Sensors, stringResource(R.string.ui_live_arrival), Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+            Text(stringResource(R.string.ui_minutes_short, minutes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
         }
     }
 }

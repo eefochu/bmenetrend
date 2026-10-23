@@ -16,6 +16,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import hu.viabusz.app.ui.MainTab
+import hu.viabusz.app.ui.MainNavigation
+import hu.viabusz.app.ui.PlannerScreen
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.core.content.ContextCompat
 import androidx.core.location.LocationManagerCompat
@@ -39,6 +43,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val model: TransitViewModel = viewModel()
+            val planner: PlannerViewModel = viewModel()
+            var tab by rememberSaveable { mutableStateOf(MainTab.MAP) }
             val state by model.state.collectAsStateWithLifecycle()
             val language = LocalConfiguration.current.locales.toLanguageTags()
             LaunchedEffect(language) { model.onLocaleChanged() }
@@ -69,7 +75,19 @@ class MainActivity : ComponentActivity() {
                     try { awaitCancellation() } finally { close() }
                 }
             }
+            LaunchedEffect(tab) { model.setMapVisible(tab == MainTab.MAP) }
+            LaunchedEffect(state.userLocation) { planner.updateLocation(state.userLocation) }
+            LaunchedEffect(tab, state.network?.stops, state.emmaStops) {
+                if (tab == MainTab.PLANNER) planner.updateStops(state.stops)
+            }
+            val requestLocation: () -> Unit = {
+                locationAllowed = hasLocationPermission()
+                if (!locationAllowed) permission.launch(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION))
+                else if (!LocationManagerCompat.isLocationEnabled(getSystemService(Context.LOCATION_SERVICE) as LocationManager))
+                    startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+            }
             ViaBuszTheme(accent = state.accentColor, customArgb = state.customAccentArgb) {
+                MainNavigation(tab, { tab = it }, planner = { PlannerScreen(planner, requestLocation) }, map = {
                 ViaBuszScreen(
                     state = state,
                     onStopSelected = model::selectStop,
@@ -121,6 +139,7 @@ class MainActivity : ComponentActivity() {
                     }
                     NativeTransitMap(state.network, state.vehicles, state.selectedStopId.takeUnless { state.showNearby }, state.userLocation, modifier, onMapStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, state.selectedVehicle, routeGeometry = geometry, routeStops = stops, routeColor = color.toArgb(), fitRouteRequest = state.fitRouteRequest, selectedPlace = state.selectedPlace, placeCameraRequest = state.placeCameraRequest, lineFocus = focus, browsingNearby = state.showNearby, locationCameraRequest = state.locationCameraRequest, onViewportChanged = model::updateMapArea)
                 }
+                })
             }
         }
     }

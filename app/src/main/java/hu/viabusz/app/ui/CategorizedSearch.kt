@@ -48,11 +48,15 @@ internal fun CategorizedSearch(
 ) {
     val parsed = remember(query) { TransitSearch.query(query) }
     val searchPlaces = category == SearchCategory.ALL || category == SearchCategory.PLACES
-    val stopIndex by produceState<List<TransitSearch.StopEntry>?>(null, state.network?.stops, state.emmaStops) {
+    val stopIndex by produceState(TransitSearch.getCachedStopIndex(state.stops), state.network?.stops, state.emmaStops) {
         value = withContext(Dispatchers.Default) { TransitSearch.indexStops(state.stops) }
     }
     val matches by produceState(SearchMatches(), query, category, stopIndex, state.network?.routes, state.emmaRoutes, state.vehicles, state.favorites) {
-        delay(120)
+        if (query.isBlank()) {
+            value = SearchMatches(query, category)
+            return@produceState
+        }
+        delay(80)
         value = withContext(Dispatchers.Default) {
             SearchMatches(
                 query,
