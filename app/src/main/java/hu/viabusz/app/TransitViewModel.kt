@@ -86,6 +86,22 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private var mapError: String? = null
     private var liveError = false
 
+    private var cachedClusterStopId: String? = null
+    private var cachedClusterStopsCount = -1
+    private var cachedClusterResult: List<TransitStop> = emptyList()
+
+    private fun getCluster(stopId: String?, stops: List<TransitStop>): List<TransitStop> {
+        if (stopId == null) return emptyList()
+        if (cachedClusterStopId == stopId && cachedClusterStopsCount == stops.size) {
+            return cachedClusterResult
+        }
+        val result = StopClusters.clusterFor(stopId, stops)
+        cachedClusterStopId = stopId
+        cachedClusterStopsCount = stops.size
+        cachedClusterResult = result
+        return result
+    }
+
     /** Owned by the activity's STARTED lifecycle; all polling stops in the background. */
     suspend fun observe() = coroutineScope {
         nearbyActive = true
@@ -209,7 +225,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         val snapshot = live?.takeIf { Duration.between(it.fetchedAt, now).seconds in 0..45 }
         mutableState.update { current ->
             val selectedId = current.selectedStopId.takeUnless { current.showNearby }
-            val cluster = if (selectedId != null) StopClusters.clusterFor(selectedId, current.stops) else emptyList()
+            val cluster = if (selectedId != null) getCluster(selectedId, current.stops) else emptyList()
             val hasEmma = cluster.any { it.id.startsWith("emma:") } || selectedId?.startsWith("emma:") == true
             val validBoard = board?.takeIf { it.stopId == selectedId && Duration.between(it.fetchedAt, now).seconds in 0..60 }
             val emmaDepartures = if (hasEmma) EmmaStopsParser.freshDepartures(board, selectedId, now, current.windowMinutes) else emptyList()
@@ -239,7 +255,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 emmaFetchedAt == null -> getApplication<Application>().getString(R.string.volan_loading)
                 else -> getApplication<Application>().getString(R.string.volan_unavailable)
             }
-            val stop = current.stops.firstOrNull { it.id == current.selectedStopId }
+            val stop = current.findStop(current.selectedStopId)
             val stopProviders = if (cluster.isNotEmpty()) cluster.flatMap { it.providerIds }.distinct() else stop?.providerIds.orEmpty()
             val hommOnly = stopProviders == listOf("homm")
             val networkWarning = stopProviders.mapNotNull { current.network?.providerWarnings?.get(it) }
@@ -450,7 +466,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         boardFailure = false
         val selectedId = key.first
         val emmaStops = if (selectedId != null) {
-            StopClusters.clusterFor(selectedId, state.value.stops).filter { it.id.startsWith("emma:") }
+            getCluster(selectedId, state.value.stops).filter { it.id.startsWith("emma:") }
                 .ifEmpty { if (selectedId.startsWith("emma:")) state.value.stops.filter { it.id == selectedId } else emptyList() }
         } else emptyList()
         boardLoading = emmaStops.isNotEmpty()
@@ -465,7 +481,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             val stopId = state.value.selectedStopId ?: return@withLock
             val window = state.value.windowMinutes
             val allStops = state.value.stops
-            val cluster = StopClusters.clusterFor(stopId, allStops)
+            val cluster = getCluster(stopId, allStops)
             val emmaStops = cluster.filter { it.id.startsWith("emma:") }
                 .ifEmpty { if (stopId.startsWith("emma:")) allStops.filter { it.id == stopId } else emptyList() }
             if (emmaStops.isEmpty()) return@withLock
@@ -530,7 +546,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
 
     fun loadLine(id: String, force: Boolean = false) {
         if (!force && (state.value.loadingLineId == id || lineLoadedAt[id]?.let { Duration.between(it, Instant.now()).seconds in 0..599 } == true)) return
-        val route = state.value.routes.find { it.id == id } ?: return
+        val route = state.value.findRoute(id) ?: return
         if (route.providerId !in setOf("volan", "bkk", "hev")) return
         val generation = ++lineGeneration
         lineJob?.cancel()
@@ -560,7 +576,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun selectBoardingStop(routeId: String, directionId: String, stopId: String) {
-        val route = state.value.routes.find { it.id == routeId } ?: return
+        val route = state.value.findRoute(routeId) ?: return
         val pattern = state.value.lineDetails[routeId]?.boardingPattern(directionId, stopId)
         val local = route.directions.find { it.id == directionId }
         if (pattern == null && local == null) return
@@ -598,35 +614,37 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         mutableState.update { it.copy(showNearby = true, selectedPlace = place, selectedStopId = null, boardingSelection = null, placeCameraRequest = it.placeCameraRequest + 1) }
         recalculate()
         ensureBoardRequest()
+        ensureNearbyRequest()
     }
 
-    fun clearPlace() { mutableState.update { it.copy(selectedPlace = null) } }
+    fun clearPlace() {
+        if (state.value.selectedPlace == null) return
+        mutableState.update { it.copy(selectedPlace = null) }
+        recalculate()
+        ensureNearbyRequest()
+    }
 
     fun selectStop(id: String) {
-        mutableState.update { it.copy(boardingSelection = null, selectedPlace = null) }
         closeVehicle()
         manualStop = true
         val selectedId = state.value.network?.let { SharedStops.resolve(it, id) } ?: SharedStops.canonicalId(id)
-        mutableState.update { it.copy(showNearby = false, selectedStopId = selectedId, cameraRequest = it.cameraRequest + 1) }
+        mutableState.update { it.copy(showNearby = false, selectedStopId = selectedId, selectedPlace = null, cameraRequest = it.cameraRequest + 1, boardingSelection = null) }
         recalculate()
         ensureBoardRequest()
     }
 
     fun recenter() {
-        if (state.value.selectedStopId != null) {
-            mutableState.update { it.copy(cameraRequest = it.cameraRequest + 1) }
-        }
+        manualStop = false
+        mutableState.update { it.copy(cameraRequest = it.cameraRequest + 1) }
     }
 
     fun useNearest() {
-        returnToNearby()
-        mutableState.update { it.copy(locationCameraRequest = it.locationCameraRequest + 1) }
-        mutableState.update { it.copy(boardingSelection = null, selectedPlace = null) }
         closeVehicle()
         manualStop = false
-        state.value.nearestStopId?.let { id -> mutableState.update { it.copy(selectedStopId = id, cameraRequest = it.cameraRequest + 1) } }
+        state.value.nearestStopId?.let { id -> mutableState.update { it.copy(showNearby = false, selectedStopId = id, selectedPlace = null, cameraRequest = it.cameraRequest + 1, boardingSelection = null) } }
         recalculate()
         ensureBoardRequest()
+        ensureNearbyRequest()
     }
 
     fun updateLocation(point: GeoPoint) {

@@ -1,5 +1,6 @@
 package hu.viabusz.app.ui
 
+import androidx.compose.runtime.Immutable
 import hu.viabusz.app.data.Departure
 import hu.viabusz.app.data.GeoPoint
 import hu.viabusz.app.data.TransitNetwork
@@ -12,6 +13,7 @@ import hu.viabusz.app.data.Vehicle
 import hu.viabusz.app.data.PlaceResult
 import java.time.Instant
 
+@Immutable
 data class UiState(
     val showNearby: Boolean = true,
     val nearbyStations: List<hu.viabusz.app.data.NearbyStation> = emptyList(),
@@ -64,6 +66,34 @@ data class UiState(
     val cameraRequest: Int = 0,
     val locationCameraRequest: Int = 0,
 ) {
-    val stops: List<TransitStop> get() = network?.stops.orEmpty() + emmaStops
-    val routes: List<TransitRoute> get() = network?.routes.orEmpty() + emmaRoutes
+    val stops: List<TransitStop> by lazy(LazyThreadSafetyMode.NONE) {
+        val netStops = network?.stops
+        if (netStops.isNullOrEmpty()) emmaStops
+        else if (emmaStops.isEmpty()) netStops
+        else netStops + emmaStops
+    }
+
+    val routes: List<TransitRoute> by lazy(LazyThreadSafetyMode.NONE) {
+        val netRoutes = network?.routes
+        if (netRoutes.isNullOrEmpty()) emmaRoutes
+        else if (emmaRoutes.isEmpty()) netRoutes
+        else netRoutes + emmaRoutes
+    }
+
+    val routesById: Map<String, TransitRoute> by lazy(LazyThreadSafetyMode.NONE) {
+        val map = HashMap<String, TransitRoute>((network?.routes?.size ?: 0) + emmaRoutes.size)
+        network?.routes?.forEach { map[it.id] = it }
+        emmaRoutes.forEach { map[it.id] = it }
+        map
+    }
+
+    val stopsById: Map<String, TransitStop> by lazy(LazyThreadSafetyMode.NONE) {
+        val map = HashMap<String, TransitStop>((network?.stops?.size ?: 0) + emmaStops.size)
+        network?.stops?.forEach { map[it.id] = it }
+        emmaStops.forEach { map[it.id] = it }
+        map
+    }
+
+    fun findRoute(id: String?): TransitRoute? = if (id != null) routesById[id] else null
+    fun findStop(id: String?): TransitStop? = if (id != null) stopsById[id] else null
 }

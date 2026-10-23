@@ -1,6 +1,9 @@
 package hu.viabusz.app.data
 
+import androidx.compose.runtime.Immutable
+
 /** A physical station with its individual boarding platforms preserved for timetable queries. */
+@Immutable
 data class NearbyStation(
     val stop: TransitStop,
     val platforms: List<TransitStop>,

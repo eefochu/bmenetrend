@@ -1,15 +1,20 @@
 package hu.viabusz.app.data
 
+import androidx.compose.runtime.Immutable
 import org.json.JSONObject
 
+@Immutable
 data class PlaceResult(val id: String, val name: String, val address: String, val position: GeoPoint, val bounds: MapBounds? = null)
 
 object PlaceSearch {
     private val roman = listOf("I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX", "XXI", "XXII", "XXIII")
+    private val DISTRICT_REGEX_1 = Regex("""^(\d{1,2}|[ivx]+)\.?\s*(?:kerulet|ker\.?|district)$""")
+    private val DISTRICT_REGEX_2 = Regex("""^district\s+(\d{1,2}|[ivx]+)\.?$""")
+
     fun district(text: String): Int? {
         val normalized = TransitSearch.normalize(text).removePrefix("budapest").trim()
-        val match = Regex("^(\\d{1,2}|[ivx]+)\\.?\\s*(?:kerulet|ker\\.?|district)$").matchEntire(normalized)
-            ?: Regex("^district\\s+(\\d{1,2}|[ivx]+)\\.?$").matchEntire(normalized) ?: return null
+        val match = DISTRICT_REGEX_1.matchEntire(normalized)
+            ?: DISTRICT_REGEX_2.matchEntire(normalized) ?: return null
         val number = match.groupValues[1].toIntOrNull() ?: roman.indexOf(match.groupValues[1].uppercase()).let { if (it < 0) 0 else it + 1 }
         return number.takeIf { it in 1..23 }
     }

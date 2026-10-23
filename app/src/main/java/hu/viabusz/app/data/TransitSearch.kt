@@ -1,18 +1,28 @@
 package hu.viabusz.app.data
 
+import androidx.compose.runtime.Immutable
 import java.text.Normalizer
 import java.util.Locale
 
 /** Normalize the national stop index once. Query work is token matching, not repeated accent folding. */
 object TransitSearch {
+    @Immutable
     data class StopEntry(
         val stop: TransitStop,
         val text: String,
         val name: String,
         val isMultiStop: Boolean = stop.isMultiStop,
     )
+
+    @Immutable
     data class Query(val text: String, val terms: List<String>, val modes: Set<String>, val provider: String?)
+
     private val marks = Regex("""\p{M}+""")
+    private val numberSuffixRegex = Regex("""\b([a-z]?\d+[a-z]?)-(?:es|as|os)\b""")
+    private val whitespaceRegex = Regex("""\s+""")
+    private val numericTermRegex = Regex("[a-z]?\\d+[a-z]?")
+    private val nonAlphanumericRegex = Regex("[^a-z0-9]")
+
     fun normalize(text: String) = Normalizer.normalize(text, Normalizer.Form.NFD)
         .replace(marks, "").lowercase(Locale.ROOT).trim()
     private val aliases = mapOf(
@@ -24,8 +34,8 @@ object TransitSearch {
         "vonat" to setOf("RAIL", "SUBURBAN_RAILWAY", "TRAMTRAIN"), "train" to setOf("RAIL", "SUBURBAN_RAILWAY", "TRAMTRAIN"),
     )
     fun query(text: String): Query {
-        val normalized = normalize(text).replace(Regex("""\b([a-z]?\d+[a-z]?)-(?:es|as|os)\b"""), "$1")
-        val tokens = normalized.split(Regex("""\s+""")).filter(String::isNotBlank)
+        val normalized = normalize(text).replace(numberSuffixRegex, "$1")
+        val tokens = normalized.split(whitespaceRegex).filter(String::isNotBlank)
         val modes = tokens.flatMap { aliases[it].orEmpty() }.toSet()
         val provider = tokens.firstOrNull { it in setOf("volan", "bkk", "viabusz", "kanyargo", "homm") }
         return Query(normalized, tokens.filter { it !in aliases && it != provider }, modes, provider)
@@ -35,7 +45,7 @@ object TransitSearch {
         if (query.modes.isNotEmpty() && mode !in query.modes || query.provider != null && query.provider != route.providerId) return@mapNotNull null
         val number = normalize(route.number)
         val text = normalize("${route.number} ${route.name} ${route.providerId}")
-        val numeric = query.terms.firstOrNull { it.matches(Regex("[a-z]?\\d+[a-z]?")) }
+        val numeric = query.terms.firstOrNull { it.matches(numericTermRegex) }
         if (numeric != null && query.modes.isNotEmpty() && numeric != number) return@mapNotNull null
         if (query.terms.any { if (it == numeric) !number.startsWith(it) else !text.contains(it) }) return@mapNotNull null
         route to if (numeric == number) 100 else if (number == query.text) 100 else 0
@@ -59,10 +69,10 @@ object TransitSearch {
         if (query.modes.isNotEmpty() && mode !in query.modes || query.provider != null && query.provider != vehicle.providerId) return@mapNotNull null
         val number = normalize(vehicle.routeNumber.orEmpty())
         val text = normalize(listOfNotNull(vehicle.registration, vehicle.id, vehicle.routeNumber, vehicle.routeName, vehicle.destination, vehicle.providerId).joinToString(" "))
-        val compact = text.replace(Regex("[^a-z0-9]"), "")
-        val numeric = query.terms.firstOrNull { it.matches(Regex("[a-z]?\\d+[a-z]?")) }
+        val compact = text.replace(nonAlphanumericRegex, "")
+        val numeric = query.terms.firstOrNull { it.matches(numericTermRegex) }
         if (numeric != null && query.modes.isNotEmpty() && numeric != number) return@mapNotNull null
-        if (query.terms.any { !text.contains(it) && !compact.contains(it.replace(Regex("[^a-z0-9]"), "")) }) return@mapNotNull null
+        if (query.terms.any { !text.contains(it) && !compact.contains(it.replace(nonAlphanumericRegex, "")) }) return@mapNotNull null
         vehicle to when {
             normalize(vehicle.registration.orEmpty()).replace("-", "") == query.text.replace("-", "") -> 100
             number == query.text -> 50

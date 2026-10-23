@@ -11,6 +11,9 @@ object StopMapClustering {
     const val PLATFORM_ZOOM = 14.5
     private const val MAX_PLATFORM_DISTANCE_METRES = 250.0
 
+    private val marksRegex = Regex("""\p{M}+""")
+    private val nonAlphanumericRegex = Regex("""[^\p{L}\p{N}]+""")
+
     fun groups(stops: List<TransitStop>, bounds: MapBounds?, zoom: Double): List<List<TransitStop>> {
         if (bounds == null) return emptyList()
         val visible = stops.asSequence().filter { it.position.lat in bounds.south..bounds.north && it.position.lon in bounds.west..bounds.east }
@@ -21,7 +24,7 @@ object StopMapClustering {
         fun keys(stop: TransitStop): List<String> = buildList {
             stop.parentStationId?.let { add("parent:$it") }
             val name = Normalizer.normalize(stop.name.lowercase(java.util.Locale.ROOT), Normalizer.Form.NFD)
-                .replace(Regex("\\p{M}+"), "").replace(Regex("[^\\p{L}\\p{N}]+"), " ").trim()
+                .replace(marksRegex, "").replace(nonAlphanumericRegex, " ").trim()
             if (name.isNotEmpty()) add("name:$name")
         }
         visible.forEach { stop ->
