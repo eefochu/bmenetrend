@@ -1,13 +1,13 @@
 # HÉV integration
 
-H5, H6, H7, H8 and H9 use the same public MÁVPlusz OTP GraphQL endpoint as the existing live feeds. No separate BKK API or API key is used. The app requests `SUBURBAN_RAILWAY` vehicle positions and accepts only identified HÉV routes from the `1:` source namespace; general rail and foreign S-Bahn routes remain excluded.
+H5, H6, H7, H8 and H9 use the same public MÁVPlusz OTP GraphQL endpoint as the existing live feeds. No separate BKK API or API key is used. The app requests `SUBURBAN_RAILWAY` vehicle positions and accepts only identified HÉV routes from the `1:` source namespace; national rail is handled separately under the `mav` provider, and unidentified foreign S-Bahn routes remain excluded.
 
 ## Source details
 
 - Source route IDs are retained, for example `1:V3922_109` for H5; app route IDs are `hev:1:V3922_109`.
 - HÉV route `shortName` contains MNR font markup. The passenger line number comes from `longName`, such as `H5`. Source variants such as H8A/H8E retain their suffix.
 - Live vehicles preserve source GPS coordinates, next-stop references and observation timestamps. The existing age/future-time checks apply. Stops and trip/pattern geometry come from the source; no vehicle motion or route shape is fabricated.
-- HÉV stop IDs also use `1:`. The static index accepts the verified `1:0036…` HÉV stop range in SUBURBAN_RAILWAY mode, H-suffixed station names, or stops serving an identified HÉV route. General rail and foreign suburban stations are excluded. Some source HÉV platforms have a null vehicle mode, so station identity and serving routes also matter.
+- HÉV stop IDs also use `1:`. The static index accepts the verified `1:0036…` HÉV stop range in SUBURBAN_RAILWAY mode, H-suffixed station names, or stops serving an identified HÉV route. National rail stations use the separate `mav` provider; unidentified foreign suburban stations are excluded. Some source HÉV platforms have a null vehicle mode, so station identity and serving routes also matter.
 - Existing raw catalogue caches are reparsed to include HÉV without a destructive cache reset. Line browsing, direction and boarding selection, source-marked realtime departures, route focus and both-direction geometry reuse the existing flow. HÉV remains available in the local-network setting as well as nationwide mode.
 
 ## Emblems

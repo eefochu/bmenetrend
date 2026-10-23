@@ -1,0 +1,72 @@
+{
+  "data": {
+    "routes": [
+      {
+        "gtfsId": "1:V3005_403",
+        "shortName": "<span class=\"MNR2007\">&#449;</span>",
+        "longName": "1",
+        "mode": "TRAMTRAIN",
+        "color": "FFFFFF"
+      },
+      {
+        "gtfsId": "1:V3922_109",
+        "shortName": "<span class=\"MNR2007\">&#440;</span>",
+        "longName": "H5",
+        "mode": "SUBURBAN_RAILWAY",
+        "color": "FFFFFF"
+      },
+      {
+        "gtfsId": "1:V2986_106",
+        "shortName": "<span class=\"MNR2007\">&#335;</span>",
+        "longName": "S10",
+        "mode": "RAIL",
+        "color": "FFFFFF"
+      },
+      {
+        "gtfsId": "1:V2959_106",
+        "shortName": "<span class=\"MNR2007\">&#358;</span>",
+        "longName": "S40",
+        "mode": "RAIL",
+        "color": "FFFFFF"
+      },
+      {
+        "gtfsId": "1:V3000_106",
+        "shortName": "<span class=\"MNR2007\">&#446;</span>",
+        "longName": "S76",
+        "mode": "RAIL",
+        "color": "FFFFFF"
+      },
+      {
+        "gtfsId": "1:E35636221",
+        "shortName": "<span class=\"MNR2007\">&#477;</span>",
+        "longName": "IR PANNÓNIA",
+        "mode": "RAIL",
+        "color": "FEFEFE"
+      },
+      {
+        "gtfsId": "1:E36226343",
+        "shortName": "<span class=\"MNR2007\">&#474;</span>",
+        "longName": "IC SAVARIA",
+        "mode": "RAIL",
+        "color": "FEFEFE"
+      },
+      {
+        "gtfsId": "1:E35051199",
+        "shortName": "<span class=\"MNR2007\">&#474;</span>",
+        "longName": "IC TOKAJ",
+        "mode": "RAIL",
+        "color": "FEFEFE"
+      },
+      {
+        "gtfsId": "1:E29649269",
+        "shortName": "<span class=\"MNR2007\">&#484;</span>",
+        "longName": "Sz 5091",
+        "mode": "RAIL",
+        "color": "FEFEFE"
+      }
+    ]
+  },
+  "_fixtureNow": 1792780432,
+  "_fixtureTripId": "1:36017892",
+  "_fixtureRouteId": "1:V2986_106"
+}

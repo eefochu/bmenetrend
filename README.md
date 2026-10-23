@@ -18,6 +18,8 @@
 - **Kategorizált villámkereső**: Gyors keresés három kategóriában: **Helyek** (Photon / OpenStreetMap), **Megállók** (peronelrendezéssel) és **Járművek** (járatszám, rendszám vagy célállomás alapján).
 - **Önálló peronok**: A megállók külön, saját forráskoordinátáikkal jelennek meg; az egymást fedő jelölők minimális eltolással külön kiválaszthatók.
 - **Utazástervezés**: Külön Tervezés fül cím- és megállókereséssel, EMMA-alapú útvonalakkal, legkorábbi érkezés szerinti sorrenddel, valódi gyalogos szakaszokkal és átszállási tartalékkal. Indulás most vagy kiválasztott napon és időpontban; színes menetidősávok és megnyitható, időpontokkal, peronokkal és köztes megállókkal ellátott útvonallánc.
+- **Kedvenc megállók**: Saját fül a szívvel mentett állomások és megállók érkező járataival, valós idejű jelzésekkel és legfeljebb 5 órás indulási ablakkal. A visszaszámlálás tömör: `4p`, `1ó 3p`.
+- **Vasút**: Országos MÁVPlusz-vonatkövetés, vonalszám, vonatszám, vonatnév, vágányadatok és a tényleges útvonal megállói. A vasúti megállók és járművek tágabb nézetben is láthatók, azonos méretezéssel.
 - **Közeli járatok**: Alapértelmezett alsó kártya a helyzetedhez vagy a térkép közepéhez közeli megállók következő indulásaival, élő és menetrendi jelzéssel.
 - **Open Sans**: Beépített betűkészlet, 700-as vastagságú járatszámokkal; a metrók és HÉV-ek csak a számozott emblémakört használják.
 - **Material You & egyéni színek**: Finom animációk, edge-to-edge felület, rendszerhez igazodó dinamikus Monet színek (Android 12+) vagy egyéni RGB/HEX színválasztó.
@@ -34,6 +36,7 @@
 | **HOMM** | Budaörs | `288`, `289` vonalak hitelesített önkormányzati megállókkal és útvonalakkal |
 | **Volánbusz** | Országos | Helyközi és távolsági autóbuszok MÁV EMMA GraphQL adatokból |
 | **BKK** | Budapest | Buszok, villamosok, trolik és metrók MÁV EMMA integrációval |
+| **Vasút (EMMA)** | Országos | S/Z/G-vonalak, IC/IR és más vonatok, TramTrain, élő pozíciók és vágányadatok |
 | **MÁV-HÉV** | Budapest és agglomeráció | H5, H6, H7, H8 és H9: élő pozíciók, állomások és indulások MÁVPlusz-adatokból |
 
 A közös átszállópontok (pl. *Biatorbágy vasútállomás*) automatikusan egy közös, összevont indulási táblán jelennek meg.

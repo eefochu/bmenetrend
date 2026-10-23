@@ -1,0 +1,3184 @@
+{
+  "data": {
+    "stop": {
+      "gtfsId": "1:005501024_0",
+      "name": "Budapest-Kelenföld",
+      "lat": 47.464444,
+      "lon": 19.02,
+      "vehicleMode": "RAIL",
+      "platformCode": null,
+      "locationType": "STOP",
+      "parentStation": {
+        "gtfsId": "1:005501024",
+        "name": "Budapest-Kelenföld"
+      },
+      "routes": [
+        {
+          "gtfsId": "1:V2912_106",
+          "shortName": "<span class=\"MNR2007\">&#387;</span>",
+          "longName": "G10",
+          "mode": "RAIL",
+          "color": "FFFFFF"
+        },
+        {
+          "gtfsId": "1:V2986_106",
+          "shortName": "<span class=\"MNR2007\">&#335;</span>",
+          "longName": "S10",
+          "mode": "RAIL",
+          "color": "FFFFFF"
+        },
+        {
+          "gtfsId": "1:V2917_106",
+          "shortName": "<span class=\"MNR2007\">&#350;</span>",
+          "longName": "S12",
+          "mode": "RAIL",
+          "color": "FFFFFF"
+        },
+        {
+          "gtfsId": "1:V2931_106",
+          "shortName": "<span class=\"MNR2007\">&#354;</span>",
+          "longName": "S30",
+          "mode": "RAIL",
+          "color": "FFFFFF"
+        },
+        {
+          "gtfsId": "1:V2990_106",
+          "shortName": "<span class=\"MNR2007\">&#383;</span>",
+          "longName": "Z30",
+          "mode": "RAIL",
+          "color": "FECC00"
+        },
+        {
+          "gtfsId": "1:V2963_106",
+          "shortName": "<span class=\"MNR2007\">&#357;</span>",
+          "longName": "S36",
+          "mode": "RAIL",
+          "color": "FFFFFF"
+        },
+        {
+          "gtfsId": "1:V2997_106",
+          "shortName": "<span class=\"MNR2007\">&#399;</span>",
+          "longName": "G40",
+          "mode": "RAIL",
+          "color": "FFFFFF"
+        },
+        {
+          "gtfsId": "1:V2959_106",
+          "shortName": "<span class=\"MNR2007\">&#358;</span>",
+          "longName": "S40",
+          "mode": "RAIL",
+          "color": "FFFFFF"
+        },
+        {
+          "gtfsId": "1:V2947_106",
+          "shortName": "<span class=\"MNR2007\">&#359;</span>",
+          "longName": "S42",
+          "mode": "RAIL",
+          "color": "FFFFFF"
+        },
+        {
+          "gtfsId": "1:V3013_106",
+          "shortName": "<span class=\"MNR2007\">&#525;</span>",
+          "longName": "Z42",
+          "mode": "RAIL",
+          "color": "FECC00"
+        },
+        {
+          "gtfsId": "1:V2934_106",
+          "shortName": "<span class=\"MNR2007\">&#390;</span>",
+          "longName": "G43",
+          "mode": "RAIL",
+          "color": "FFFFFF"
+        },
+        {
+          "gtfsId": "1:V3601_106",
+          "shortName": "<span class=\"MNR2007\">&#401;</span>",
+          "longName": "G44",
+          "mode": "RAIL",
+          "color": "FFFFFF"
+        },
+        {
+          "gtfsId": "1:E36242192",
+          "shortName": "<span class=\"MNR2007\">&#473;</span>",
+          "longName": "Gy AGRAM - TÓPART",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36231459",
+          "shortName": "<span class=\"MNR2007\">&#474;</span>",
+          "longName": "IC AGRAM - TÓPART",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36225874",
+          "shortName": "<span class=\"MNR2007\">&#474;</span>",
+          "longName": "IC ARRABONA",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36437562",
+          "shortName": "<span class=\"MNR2007\">&#467;</span>",
+          "longName": "EC AVALA/IVO ANDRIĆ",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36019954",
+          "shortName": "<span class=\"MNR2007\">&#473;</span>",
+          "longName": "Gy BAKONY",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36016714",
+          "shortName": "<span class=\"MNR2007\">&#474;</span>",
+          "longName": "IC BAKONY",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36016657",
+          "shortName": "<span class=\"MNR2007\">&#474;</span>",
+          "longName": "IC BALATON",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36019990",
+          "shortName": "<span class=\"MNR2007\">&#473;</span>",
+          "longName": "Gy BALATON",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36226212",
+          "shortName": "<span class=\"MNR2007\">&#467;</span>",
+          "longName": "EC BARTÓK BÉLA/CSÁRDÁS/LEHÁR FERENC/LISZT FERENC/SEMMELWEIS IGNÁC",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36448194",
+          "shortName": "<span class=\"MNR2007\">&#473;</span>",
+          "longName": "Gy CITADELLA",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36103393",
+          "shortName": "<span class=\"MNR2007\">&#474;</span>",
+          "longName": "IC CITADELLA",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36226213",
+          "shortName": "<span class=\"MNR2007\">&#467;</span>",
+          "longName": "EC CSÁRDÁS/LISZT FERENC",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36322930",
+          "shortName": "<span class=\"MNR2007\">&#473;</span>",
+          "longName": "Gy DACIA - RUTHENIA",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36322664",
+          "shortName": "<span class=\"MNR2007\">&#467;</span>",
+          "longName": "EC DACIA/DACIA - RUTHENIA",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36437557",
+          "shortName": "<span class=\"MNR2007\">&#473;</span>",
+          "longName": "Gy DACIA/DACIA - RUTHENIA",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36018610",
+          "shortName": "<span class=\"MNR2007\">&#477;</span>",
+          "longName": "IR DÉLI -> PARTI",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36017994",
+          "shortName": "<span class=\"MNR2007\">&#477;</span>",
+          "longName": "IR DÉLI <- PARTI",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36016622",
+          "shortName": "<span class=\"MNR2007\">&#477;</span>",
+          "longName": "IR DÉLI -> PARTI/DÉLI <- PARTI",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36226271",
+          "shortName": "<span class=\"MNR2007\">&#474;</span>",
+          "longName": "IC DRÁVA",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36103629",
+          "shortName": "<span class=\"MNR2007\">&#473;</span>",
+          "longName": "Gy GÖCSEJ",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36103351",
+          "shortName": "<span class=\"MNR2007\">&#474;</span>",
+          "longName": "IC GÖCSEJ",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36225966",
+          "shortName": "<span class=\"MNR2007\">&#467;</span>",
+          "longName": "EC HORTOBÁGY",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36226304",
+          "shortName": "<span class=\"MNR2007\">&#470;</span>",
+          "longName": "EN KÁLMÁN IMRE",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E35636123",
+          "shortName": "<span class=\"MNR2007\">&#474;</span>",
+          "longName": "IC KRESZ GÉZA/RIPPL-RÓNAI",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E35764789",
+          "shortName": "<span class=\"MNR2007\">&#473;</span>",
+          "longName": "Gy KRESZ GÉZA/RIPPL-RÓNAI",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36016627",
+          "shortName": "<span class=\"MNR2007\">&#474;</span>",
+          "longName": "IC MECSEK",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36226697",
+          "shortName": "<span class=\"MNR2007\">&#474;</span>",
+          "longName": "IC MURA",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36020177",
+          "shortName": "<span class=\"MNR2007\">&#477;</span>",
+          "longName": "IR RÁBA",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36226343",
+          "shortName": "<span class=\"MNR2007\">&#474;</span>",
+          "longName": "IC SAVARIA",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E35803906",
+          "shortName": "<span class=\"MNR2007\">&#474;</span>",
+          "longName": "IC SCARBANTIA",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E35700551",
+          "shortName": "<span class=\"MNR2007\">&#474;</span>",
+          "longName": "IC SOMOGY",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E35764790",
+          "shortName": "<span class=\"MNR2007\">&#473;</span>",
+          "longName": "Gy SOMOGY",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36016619",
+          "shortName": "<span class=\"MNR2007\">&#472;</span>",
+          "longName": "Ex SUGOVICA",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E34710066",
+          "shortName": "<span class=\"MNR2007\">&#467;</span>",
+          "longName": "EC SZAMOS",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E35636142",
+          "shortName": "<span class=\"MNR2007\">&#472;</span>",
+          "longName": "Ex TENKES",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36226681",
+          "shortName": "<span class=\"MNR2007\">&#467;</span>",
+          "longName": "EC TISZA",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36438076",
+          "shortName": "<span class=\"MNR2007\">&#467;</span>",
+          "longName": "EC TISZA - SZAMOS",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36226673",
+          "shortName": "<span class=\"MNR2007\">&#467;</span>",
+          "longName": "EC TISZA/TISZA - SZAMOS",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36019982",
+          "shortName": "<span class=\"MNR2007\">&#473;</span>",
+          "longName": "Gy TÓPART",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36016624",
+          "shortName": "<span class=\"MNR2007\">&#474;</span>",
+          "longName": "IC TÓPART",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36226179",
+          "shortName": "<span class=\"MNR2007\">&#481;</span>",
+          "longName": "rjx 162",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36226136",
+          "shortName": "<span class=\"MNR2007\">&#481;</span>",
+          "longName": "rjx 165",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36018642",
+          "shortName": "<span class=\"MNR2007\">&#484;</span>",
+          "longName": "Sz 18748",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36226635",
+          "shortName": "<span class=\"MNR2007\">&#481;</span>",
+          "longName": "rjx 19949/264/269",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36390403",
+          "shortName": "<span class=\"MNR2007\">&#481;</span>",
+          "longName": "rjx 261",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36226603",
+          "shortName": "<span class=\"MNR2007\">&#481;</span>",
+          "longName": "rjx 261/67",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36226647",
+          "shortName": "<span class=\"MNR2007\">&#481;</span>",
+          "longName": "rjx 264",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36226123",
+          "shortName": "<span class=\"MNR2007\">&#481;</span>",
+          "longName": "rjx 266/267",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36226124",
+          "shortName": "<span class=\"MNR2007\">&#481;</span>",
+          "longName": "rjx 267",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36411904",
+          "shortName": "<span class=\"MNR2007\">&#481;</span>",
+          "longName": "rjx 269",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36019798",
+          "shortName": "<span class=\"MNR2007\">&#484;</span>",
+          "longName": "Sz 4219/8020",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36019794",
+          "shortName": "<span class=\"MNR2007\">&#484;</span>",
+          "longName": "Sz 4829",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36019795",
+          "shortName": "<span class=\"MNR2007\">&#484;</span>",
+          "longName": "Sz 4917/4929",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36226003",
+          "shortName": "<span class=\"MNR2007\">&#481;</span>",
+          "longName": "rjx 60/62/63/64/65/66",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36226082",
+          "shortName": "<span class=\"MNR2007\">&#481;</span>",
+          "longName": "rjx 61",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36226546",
+          "shortName": "<span class=\"MNR2007\">&#481;</span>",
+          "longName": "rjx 62",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36226015",
+          "shortName": "<span class=\"MNR2007\">&#481;</span>",
+          "longName": "rjx 63/64/65",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36226023",
+          "shortName": "<span class=\"MNR2007\">&#481;</span>",
+          "longName": "rjx 64",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36438090",
+          "shortName": "<span class=\"MNR2007\">&#481;</span>",
+          "longName": "rjx 67",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36226055",
+          "shortName": "<span class=\"MNR2007\">&#481;</span>",
+          "longName": "rjx 68",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36103527",
+          "shortName": "<span class=\"MNR2007\">&#482;</span>",
+          "longName": "S 8609",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36017989",
+          "shortName": "<span class=\"MNR2007\">&#484;</span>",
+          "longName": "Sz 8729",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36018606",
+          "shortName": "<span class=\"MNR2007\">&#484;</span>",
+          "longName": "Sz 8738",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E31960437",
+          "shortName": "<span class=\"MNR2007\">&#482;</span>",
+          "longName": "S 9006/9056/9066",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36018112",
+          "shortName": "<span class=\"MNR2007\">&#482;</span>",
+          "longName": "S 9009",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E28635770",
+          "shortName": "<span class=\"MNR2007\">&#482;</span>",
+          "longName": "S 9057",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E35373966",
+          "shortName": "<span class=\"MNR2007\">&#482;</span>",
+          "longName": "S 9059",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36016717",
+          "shortName": "<span class=\"MNR2007\">&#484;</span>",
+          "longName": "Sz 9068",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36196041",
+          "shortName": "<span class=\"MNR2007\">&#482;</span>",
+          "longName": "S 9307",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36196038",
+          "shortName": "<span class=\"MNR2007\">&#482;</span>",
+          "longName": "S 9309",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36018110",
+          "shortName": "<span class=\"MNR2007\">&#482;</span>",
+          "longName": "S 968",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36016722",
+          "shortName": "<span class=\"MNR2007\">&#482;</span>",
+          "longName": "S 969",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E35883139",
+          "shortName": "<span class=\"MNR2007\">&#482;</span>",
+          "longName": "S 9702/9703/9704/9705/9706/9707",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36016712",
+          "shortName": "<span class=\"MNR2007\">&#482;</span>",
+          "longName": "S 9708",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E35883138",
+          "shortName": "<span class=\"MNR2007\">&#482;</span>",
+          "longName": "S 9709",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E36103263",
+          "shortName": "<span class=\"MNR2007\">&#484;</span>",
+          "longName": "Sz 9749",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        },
+        {
+          "gtfsId": "1:E35883140",
+          "shortName": "<span class=\"MNR2007\">&#482;</span>",
+          "longName": "S 9792/9793/9794/9795/9796/9797",
+          "mode": "RAIL",
+          "color": "FEFEFE"
+        }
+      ],
+      "stoptimesForPatterns": [
+        {
+          "pattern": {
+            "code": "1:E36226603::rt#2108"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 73080,
+              "realtimeDeparture": 74340,
+              "realtime": true,
+              "realtimeState": "MODIFIED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Keleti",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_14",
+                "platformCode": "14"
+              },
+              "trip": {
+                "gtfsId": "1:36226603",
+                "tripShortName": "67 railjet xpress",
+                "tripHeadsign": "Budapest-Keleti",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36226603::rt#2108"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:E36226603",
+                  "shortName": "<span class=\"MNR2007\">&#481;</span>",
+                  "longName": "rjx 261/67",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36019982::rt#1892"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 74520,
+              "realtimeDeparture": 74580,
+              "realtime": true,
+              "realtimeState": "UPDATED",
+              "serviceDay": 1792706400,
+              "headsign": "Fonyód",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_4",
+                "platformCode": "4"
+              },
+              "trip": {
+                "gtfsId": "1:36019982",
+                "tripShortName": "878 TÓPART gyorsvonat",
+                "tripHeadsign": "Fonyód",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36019982::rt#1892"
+                },
+                "wheelchairAccessible": "NO_INFORMATION",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:E36019982",
+                  "shortName": "<span class=\"MNR2007\">&#473;</span>",
+                  "longName": "Gy TÓPART",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36016624::rt#1891"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 74520,
+              "realtimeDeparture": 74580,
+              "realtime": true,
+              "realtimeState": "MODIFIED",
+              "serviceDay": 1792706400,
+              "headsign": "Fonyód",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_4",
+                "platformCode": "4"
+              },
+              "trip": {
+                "gtfsId": "1:36016624",
+                "tripShortName": "878 TÓPART InterCity",
+                "tripHeadsign": "Fonyód",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36016624::rt#1891"
+                },
+                "wheelchairAccessible": "NO_INFORMATION",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:E36016624",
+                  "shortName": "<span class=\"MNR2007\">&#474;</span>",
+                  "longName": "IC TÓPART",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2990_106::rt#809"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 74520,
+              "realtimeDeparture": 74700,
+              "realtime": true,
+              "realtimeState": "MODIFIED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Déli",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_5",
+                "platformCode": "5"
+              },
+              "trip": {
+                "gtfsId": "1:36017974",
+                "tripShortName": "4521 személyvonat",
+                "tripHeadsign": "Budapest-Déli",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2990_106::rt#809"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2990_106",
+                  "shortName": "<span class=\"MNR2007\">&#383;</span>",
+                  "longName": "Z30",
+                  "mode": "RAIL",
+                  "color": "FECC00"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2934_106::rt#2109"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 74700,
+              "realtimeDeparture": 74700,
+              "realtime": true,
+              "realtimeState": "MODIFIED",
+              "serviceDay": 1792706400,
+              "headsign": "Székesfehérvár",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_7",
+                "platformCode": "7"
+              },
+              "trip": {
+                "gtfsId": "1:35635866",
+                "tripShortName": "3538 személyvonat",
+                "tripHeadsign": "Székesfehérvár",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2934_106::rt#2109"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2934_106",
+                  "shortName": "<span class=\"MNR2007\">&#390;</span>",
+                  "longName": "G43",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2963_106::rt#1942"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 75300,
+              "realtimeDeparture": 75300,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792706400,
+              "headsign": "Tárnok",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_1",
+                "platformCode": "1"
+              },
+              "trip": {
+                "gtfsId": "1:36016872",
+                "tripShortName": "3898 személyvonat",
+                "tripHeadsign": "Tárnok",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2963_106::rt#1942"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2963_106",
+                  "shortName": "<span class=\"MNR2007\">&#357;</span>",
+                  "longName": "S36",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36226304::rt#197"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 75300,
+              "realtimeDeparture": 75300,
+              "realtime": true,
+              "realtimeState": "MODIFIED",
+              "serviceDay": 1792706400,
+              "headsign": "Salzburg Hbf",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_15",
+                "platformCode": "15"
+              },
+              "trip": {
+                "gtfsId": "1:36226304",
+                "tripShortName": "462 KÁLMÁN IMRE EuroNight",
+                "tripHeadsign": "Salzburg Hbf",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36226304::rt#197"
+                },
+                "wheelchairAccessible": "NO_INFORMATION",
+                "bikesAllowed": "NO_INFORMATION",
+                "route": {
+                  "gtfsId": "1:E36226304",
+                  "shortName": "<span class=\"MNR2007\">&#470;</span>",
+                  "longName": "EN KÁLMÁN IMRE",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36226304::rt#199"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 75300,
+              "realtimeDeparture": 75300,
+              "realtime": true,
+              "realtimeState": "UPDATED",
+              "serviceDay": 1792706400,
+              "headsign": "Stuttgart Hbf",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_15",
+                "platformCode": "15"
+              },
+              "trip": {
+                "gtfsId": "1:36226919",
+                "tripShortName": "50462 KÁLMÁN IMRE EuroNight",
+                "tripHeadsign": "Stuttgart Hbf",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36226304::rt#199"
+                },
+                "wheelchairAccessible": "NO_INFORMATION",
+                "bikesAllowed": "NO_INFORMATION",
+                "route": {
+                  "gtfsId": "1:E36226304",
+                  "shortName": "<span class=\"MNR2007\">&#470;</span>",
+                  "longName": "EN KÁLMÁN IMRE",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36226304::rt#198"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 75300,
+              "realtimeDeparture": 75300,
+              "realtime": true,
+              "realtimeState": "UPDATED",
+              "serviceDay": 1792706400,
+              "headsign": "Zürich HB",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_15",
+                "platformCode": "15"
+              },
+              "trip": {
+                "gtfsId": "1:36437081",
+                "tripShortName": "40462 KÁLMÁN IMRE EuroNight",
+                "tripHeadsign": "Zürich HB",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36226304::rt#198"
+                },
+                "wheelchairAccessible": "NO_INFORMATION",
+                "bikesAllowed": "NO_INFORMATION",
+                "route": {
+                  "gtfsId": "1:E36226304",
+                  "shortName": "<span class=\"MNR2007\">&#470;</span>",
+                  "longName": "EN KÁLMÁN IMRE",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2959_106::rt#1991"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 75420,
+              "realtimeDeparture": 75420,
+              "realtime": true,
+              "realtimeState": "MODIFIED",
+              "serviceDay": 1792706400,
+              "headsign": "Pincehely",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_6",
+                "platformCode": "6"
+              },
+              "trip": {
+                "gtfsId": "1:36018185",
+                "tripShortName": "8028 személyvonat",
+                "tripHeadsign": "Pincehely",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2959_106::rt#1991"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2959_106",
+                  "shortName": "<span class=\"MNR2007\">&#358;</span>",
+                  "longName": "S40",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2959_106::rt#1987"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 75720,
+              "realtimeDeparture": 75720,
+              "realtime": true,
+              "realtimeState": "MODIFIED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Déli",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_2",
+                "platformCode": "2"
+              },
+              "trip": {
+                "gtfsId": "1:36018248",
+                "tripShortName": "8011 személyvonat",
+                "tripHeadsign": "Budapest-Déli",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2959_106::rt#1987"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2959_106",
+                  "shortName": "<span class=\"MNR2007\">&#358;</span>",
+                  "longName": "S40",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E35883140::rt#1405"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 74820,
+              "realtimeDeparture": 75900,
+              "realtime": true,
+              "realtimeState": "MODIFIED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Déli",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_5",
+                "platformCode": "5"
+              },
+              "trip": {
+                "gtfsId": "1:36017161",
+                "tripShortName": "9793 sebesvonat",
+                "tripHeadsign": "Budapest-Déli",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E35883140::rt#1405"
+                },
+                "wheelchairAccessible": "NO_INFORMATION",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:E35883140",
+                  "shortName": "<span class=\"MNR2007\">&#482;</span>",
+                  "longName": "S 9792/9793/9794/9795/9796/9797",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36018110::rt#1897"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 76020,
+              "realtimeDeparture": 76020,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792706400,
+              "headsign": "Ajka",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_3",
+                "platformCode": "3"
+              },
+              "trip": {
+                "gtfsId": "1:36018110",
+                "tripShortName": "968 sebesvonat",
+                "tripHeadsign": "Ajka",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36018110::rt#1897"
+                },
+                "wheelchairAccessible": "NO_INFORMATION",
+                "bikesAllowed": "NO_INFORMATION",
+                "route": {
+                  "gtfsId": "1:E36018110",
+                  "shortName": "<span class=\"MNR2007\">&#482;</span>",
+                  "longName": "S 968",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36103629::rt#2093"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 75120,
+              "realtimeDeparture": 76500,
+              "realtime": true,
+              "realtimeState": "UPDATED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Déli",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_2",
+                "platformCode": "2"
+              },
+              "trip": {
+                "gtfsId": "1:36103642",
+                "tripShortName": "963 GÖCSEJ gyorsvonat",
+                "tripHeadsign": "Budapest-Déli",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36103629::rt#2093"
+                },
+                "wheelchairAccessible": "NO_INFORMATION",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:E36103629",
+                  "shortName": "<span class=\"MNR2007\">&#473;</span>",
+                  "longName": "Gy GÖCSEJ",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36103351::rt#2092"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 75120,
+              "realtimeDeparture": 76500,
+              "realtime": true,
+              "realtimeState": "MODIFIED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Déli",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_2",
+                "platformCode": "2"
+              },
+              "trip": {
+                "gtfsId": "1:36103351",
+                "tripShortName": "963 GÖCSEJ InterCity",
+                "tripHeadsign": "Budapest-Déli",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36103351::rt#2092"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:E36103351",
+                  "shortName": "<span class=\"MNR2007\">&#474;</span>",
+                  "longName": "IC GÖCSEJ",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36016657::rt#364"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 76620,
+              "realtimeDeparture": 76620,
+              "realtime": true,
+              "realtimeState": "MODIFIED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Déli",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_2",
+                "platformCode": "2"
+              },
+              "trip": {
+                "gtfsId": "1:36018044",
+                "tripShortName": "861 BALATON InterCity",
+                "tripHeadsign": "Budapest-Déli",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36016657::rt#364"
+                },
+                "wheelchairAccessible": "NO_INFORMATION",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:E36016657",
+                  "shortName": "<span class=\"MNR2007\">&#474;</span>",
+                  "longName": "IC BALATON",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36019990::rt#365"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 76620,
+              "realtimeDeparture": 76620,
+              "realtime": true,
+              "realtimeState": "UPDATED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Déli",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_2",
+                "platformCode": "2"
+              },
+              "trip": {
+                "gtfsId": "1:36020003",
+                "tripShortName": "861 BALATON gyorsvonat",
+                "tripHeadsign": "Budapest-Déli",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36019990::rt#365"
+                },
+                "wheelchairAccessible": "NO_INFORMATION",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:E36019990",
+                  "shortName": "<span class=\"MNR2007\">&#473;</span>",
+                  "longName": "Gy BALATON",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2990_106::rt#821"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 76620,
+              "realtimeDeparture": 76620,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792706400,
+              "headsign": "Székesfehérvár",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_4",
+                "platformCode": "4"
+              },
+              "trip": {
+                "gtfsId": "1:36016583",
+                "tripShortName": "4548 személyvonat",
+                "tripHeadsign": "Székesfehérvár",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2990_106::rt#821"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2990_106",
+                  "shortName": "<span class=\"MNR2007\">&#383;</span>",
+                  "longName": "Z30",
+                  "mode": "RAIL",
+                  "color": "FECC00"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2934_106::rt#2114"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 76500,
+              "realtimeDeparture": 76620,
+              "realtime": true,
+              "realtimeState": "MODIFIED",
+              "serviceDay": 1792706400,
+              "headsign": "Kőbánya-Kispest",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_7",
+                "platformCode": "7"
+              },
+              "trip": {
+                "gtfsId": "1:36390358",
+                "tripShortName": "3531 személyvonat",
+                "tripHeadsign": "Kőbánya-Kispest",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2934_106::rt#2114"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2934_106",
+                  "shortName": "<span class=\"MNR2007\">&#390;</span>",
+                  "longName": "G43",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V3013_106::rt#767"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 76800,
+              "realtimeDeparture": 76800,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792706400,
+              "headsign": "Dunaújváros",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_5",
+                "platformCode": "5"
+              },
+              "trip": {
+                "gtfsId": "1:36018188",
+                "tripShortName": "4298 személyvonat",
+                "tripHeadsign": "Dunaújváros",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V3013_106::rt#767"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V3013_106",
+                  "shortName": "<span class=\"MNR2007\">&#525;</span>",
+                  "longName": "Z42",
+                  "mode": "RAIL",
+                  "color": "FECC00"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2959_106::rt#783"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 77220,
+              "realtimeDeparture": 77220,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792706400,
+              "headsign": "Százhalombatta",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_5",
+                "platformCode": "5"
+              },
+              "trip": {
+                "gtfsId": "1:36016815",
+                "tripShortName": "4348 személyvonat",
+                "tripHeadsign": "Százhalombatta",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2959_106::rt#783"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2959_106",
+                  "shortName": "<span class=\"MNR2007\">&#358;</span>",
+                  "longName": "S40",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2986_106::rt#840"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 77220,
+              "realtimeDeparture": 77220,
+              "realtime": true,
+              "realtimeState": "MODIFIED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Déli",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_6",
+                "platformCode": "6"
+              },
+              "trip": {
+                "gtfsId": "1:36225927",
+                "tripShortName": "4921 személyvonat",
+                "tripHeadsign": "Budapest-Déli",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2986_106::rt#840"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2986_106",
+                  "shortName": "<span class=\"MNR2007\">&#335;</span>",
+                  "longName": "S10",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2959_106::rt#1945"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 77520,
+              "realtimeDeparture": 77520,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Déli",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_2",
+                "platformCode": "2"
+              },
+              "trip": {
+                "gtfsId": "1:36016855",
+                "tripShortName": "4341 személyvonat",
+                "tripHeadsign": "Budapest-Déli",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2959_106::rt#1945"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2959_106",
+                  "shortName": "<span class=\"MNR2007\">&#358;</span>",
+                  "longName": "S40",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2986_106::rt#831"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 77520,
+              "realtimeDeparture": 77520,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792706400,
+              "headsign": "Komárom",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_10",
+                "platformCode": "10"
+              },
+              "trip": {
+                "gtfsId": "1:36017872",
+                "tripShortName": "4848 személyvonat",
+                "tripHeadsign": "Komárom",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2986_106::rt#831"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2986_106",
+                  "shortName": "<span class=\"MNR2007\">&#335;</span>",
+                  "longName": "S10",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2990_106::rt#802"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 78120,
+              "realtimeDeparture": 78120,
+              "realtime": true,
+              "realtimeState": "MODIFIED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Déli",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_5",
+                "platformCode": "5"
+              },
+              "trip": {
+                "gtfsId": "1:36016603",
+                "tripShortName": "4531 személyvonat",
+                "tripHeadsign": "Budapest-Déli",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2990_106::rt#802"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2990_106",
+                  "shortName": "<span class=\"MNR2007\">&#383;</span>",
+                  "longName": "Z30",
+                  "mode": "RAIL",
+                  "color": "FECC00"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2934_106::rt#1940"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 78300,
+              "realtimeDeparture": 78300,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792706400,
+              "headsign": "Székesfehérvár",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_10",
+                "platformCode": "10"
+              },
+              "trip": {
+                "gtfsId": "1:35635868",
+                "tripShortName": "3548 személyvonat",
+                "tripHeadsign": "Székesfehérvár",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2934_106::rt#1940"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2934_106",
+                  "shortName": "<span class=\"MNR2007\">&#390;</span>",
+                  "longName": "G43",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36019954::rt#377"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 78720,
+              "realtimeDeparture": 78780,
+              "realtime": true,
+              "realtimeState": "UPDATED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Déli",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_2",
+                "platformCode": "2"
+              },
+              "trip": {
+                "gtfsId": "1:36019969",
+                "tripShortName": "901 BAKONY gyorsvonat",
+                "tripHeadsign": "Budapest-Déli",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36019954::rt#377"
+                },
+                "wheelchairAccessible": "NO_INFORMATION",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:E36019954",
+                  "shortName": "<span class=\"MNR2007\">&#473;</span>",
+                  "longName": "Gy BAKONY",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36016714::rt#376"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 78720,
+              "realtimeDeparture": 78780,
+              "realtime": true,
+              "realtimeState": "MODIFIED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Déli",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_2",
+                "platformCode": "2"
+              },
+              "trip": {
+                "gtfsId": "1:36018127",
+                "tripShortName": "901 BAKONY InterCity",
+                "tripHeadsign": "Budapest-Déli",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36016714::rt#376"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:E36016714",
+                  "shortName": "<span class=\"MNR2007\">&#474;</span>",
+                  "longName": "IC BAKONY",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36226136::rt#122"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 76680,
+              "realtimeDeparture": 78840,
+              "realtime": true,
+              "realtimeState": "MODIFIED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Keleti",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_15",
+                "platformCode": "15"
+              },
+              "trip": {
+                "gtfsId": "1:36226136",
+                "tripShortName": "165 railjet xpress",
+                "tripHeadsign": "Budapest-Keleti",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36226136::rt#122"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:E36226136",
+                  "shortName": "<span class=\"MNR2007\">&#481;</span>",
+                  "longName": "rjx 165",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36322664::rt#170"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 78900,
+              "realtimeDeparture": 78900,
+              "realtime": true,
+              "realtimeState": "MODIFIED",
+              "serviceDay": 1792706400,
+              "headsign": "Bucureşti Nord",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_15",
+                "platformCode": "15"
+              },
+              "trip": {
+                "gtfsId": "1:36322844",
+                "tripShortName": "347 DACIA - RUTHENIA EuroCity",
+                "tripHeadsign": "Bucureşti Nord",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36322664::rt#170"
+                },
+                "wheelchairAccessible": "NO_INFORMATION",
+                "bikesAllowed": "NO_INFORMATION",
+                "route": {
+                  "gtfsId": "1:E36322664",
+                  "shortName": "<span class=\"MNR2007\">&#467;</span>",
+                  "longName": "EC DACIA/DACIA - RUTHENIA",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36322930::rt#171"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 78900,
+              "realtimeDeparture": 78900,
+              "realtime": true,
+              "realtimeState": "UPDATED",
+              "serviceDay": 1792706400,
+              "headsign": "Kyiv-Pas.",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_15",
+                "platformCode": "15"
+              },
+              "trip": {
+                "gtfsId": "1:36448315",
+                "tripShortName": "40347 DACIA - RUTHENIA gyorsvonat",
+                "tripHeadsign": "Kyiv-Pas.",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36322930::rt#171"
+                },
+                "wheelchairAccessible": "NO_INFORMATION",
+                "bikesAllowed": "NO_INFORMATION",
+                "route": {
+                  "gtfsId": "1:E36322930",
+                  "shortName": "<span class=\"MNR2007\">&#473;</span>",
+                  "longName": "Gy DACIA - RUTHENIA",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36322930::rt#172"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 78900,
+              "realtimeDeparture": 78900,
+              "realtime": true,
+              "realtimeState": "UPDATED",
+              "serviceDay": 1792706400,
+              "headsign": "Chop",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_15",
+                "platformCode": "15"
+              },
+              "trip": {
+                "gtfsId": "1:36448306",
+                "tripShortName": "50347 DACIA - RUTHENIA gyorsvonat",
+                "tripHeadsign": "Chop",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36322930::rt#172"
+                },
+                "wheelchairAccessible": "NO_INFORMATION",
+                "bikesAllowed": "NO_INFORMATION",
+                "route": {
+                  "gtfsId": "1:E36322930",
+                  "shortName": "<span class=\"MNR2007\">&#473;</span>",
+                  "longName": "Gy DACIA - RUTHENIA",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2912_106::rt#1339"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 78960,
+              "realtimeDeparture": 78960,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792706400,
+              "headsign": "Győr",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_7",
+                "platformCode": "7"
+              },
+              "trip": {
+                "gtfsId": "1:36061664",
+                "tripShortName": "9318 személyvonat",
+                "tripHeadsign": "Győr",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2912_106::rt#1339"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2912_106",
+                  "shortName": "<span class=\"MNR2007\">&#387;</span>",
+                  "longName": "G10",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2959_106::rt#2041"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 79020,
+              "realtimeDeparture": 79020,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792706400,
+              "headsign": "Pusztaszabolcs",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_5",
+                "platformCode": "5"
+              },
+              "trip": {
+                "gtfsId": "1:36016612",
+                "tripShortName": "4138 személyvonat",
+                "tripHeadsign": "Pusztaszabolcs",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2959_106::rt#2041"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2959_106",
+                  "shortName": "<span class=\"MNR2007\">&#358;</span>",
+                  "longName": "S40",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36016627::rt#321"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 78420,
+              "realtimeDeparture": 79140,
+              "realtime": true,
+              "realtimeState": "MODIFIED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Déli",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_5",
+                "platformCode": "5"
+              },
+              "trip": {
+                "gtfsId": "1:36018035",
+                "tripShortName": "811 MECSEK InterCity",
+                "tripHeadsign": "Budapest-Déli",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36016627::rt#321"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:E36016627",
+                  "shortName": "<span class=\"MNR2007\">&#474;</span>",
+                  "longName": "IC MECSEK",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2947_106::rt#774"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 79320,
+              "realtimeDeparture": 79320,
+              "realtime": true,
+              "realtimeState": "MODIFIED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Déli",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_2",
+                "platformCode": "2"
+              },
+              "trip": {
+                "gtfsId": "1:36016617",
+                "tripShortName": "4231 személyvonat",
+                "tripHeadsign": "Budapest-Déli",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2947_106::rt#774"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2947_106",
+                  "shortName": "<span class=\"MNR2007\">&#359;</span>",
+                  "longName": "S42",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V3601_106::rt#1950"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 79920,
+              "realtimeDeparture": 79920,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Déli",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_2",
+                "platformCode": "2"
+              },
+              "trip": {
+                "gtfsId": "1:36016562",
+                "tripShortName": "4711 személyvonat",
+                "tripHeadsign": "Budapest-Déli",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V3601_106::rt#1950"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V3601_106",
+                  "shortName": "<span class=\"MNR2007\">&#401;</span>",
+                  "longName": "G44",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36018606::rt#1289"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 79920,
+              "realtimeDeparture": 79920,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792706400,
+              "headsign": "Siófok",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_4",
+                "platformCode": "4"
+              },
+              "trip": {
+                "gtfsId": "1:36018606",
+                "tripShortName": "8738 személyvonat",
+                "tripHeadsign": "Siófok",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36018606::rt#1289"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:E36018606",
+                  "shortName": "<span class=\"MNR2007\">&#484;</span>",
+                  "longName": "Sz 8738",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36226212::rt#164"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 80280,
+              "realtimeDeparture": 80280,
+              "realtime": true,
+              "realtimeState": "MODIFIED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Keleti",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_15",
+                "platformCode": "15"
+              },
+              "trip": {
+                "gtfsId": "1:36226746",
+                "tripShortName": "341 SEMMELWEIS IGNÁC EuroCity",
+                "tripHeadsign": "Budapest-Keleti",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36226212::rt#164"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:E36226212",
+                  "shortName": "<span class=\"MNR2007\">&#467;</span>",
+                  "longName": "EC BARTÓK BÉLA/CSÁRDÁS/LEHÁR FERENC/LISZT FERENC/SEMMELWEIS IGNÁC",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36242192::rt#2037"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 80220,
+              "realtimeDeparture": 80400,
+              "realtime": true,
+              "realtimeState": "UPDATED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Déli",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_5",
+                "platformCode": "5"
+              },
+              "trip": {
+                "gtfsId": "1:36242192",
+                "tripShortName": "201 AGRAM - TÓPART gyorsvonat",
+                "tripHeadsign": "Budapest-Déli",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36242192::rt#2037"
+                },
+                "wheelchairAccessible": "NO_INFORMATION",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:E36242192",
+                  "shortName": "<span class=\"MNR2007\">&#473;</span>",
+                  "longName": "Gy AGRAM - TÓPART",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36231459::rt#2036"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 80220,
+              "realtimeDeparture": 80400,
+              "realtime": true,
+              "realtimeState": "MODIFIED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Déli",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_5",
+                "platformCode": "5"
+              },
+              "trip": {
+                "gtfsId": "1:36231459",
+                "tripShortName": "201 AGRAM - TÓPART InterCity",
+                "tripHeadsign": "Budapest-Déli",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36231459::rt#2036"
+                },
+                "wheelchairAccessible": "NO_INFORMATION",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:E36231459",
+                  "shortName": "<span class=\"MNR2007\">&#474;</span>",
+                  "longName": "IC AGRAM - TÓPART",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V3601_106::rt#2083"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 80820,
+              "realtimeDeparture": 80820,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792706400,
+              "headsign": "Székesfehérvár",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_5",
+                "platformCode": "5"
+              },
+              "trip": {
+                "gtfsId": "1:36017958",
+                "tripShortName": "4758 személyvonat",
+                "tripHeadsign": "Székesfehérvár",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V3601_106::rt#2083"
+                },
+                "wheelchairAccessible": "NO_INFORMATION",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V3601_106",
+                  "shortName": "<span class=\"MNR2007\">&#401;</span>",
+                  "longName": "G44",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2986_106::rt#2074"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 80820,
+              "realtimeDeparture": 80820,
+              "realtime": true,
+              "realtimeState": "MODIFIED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Déli",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_6",
+                "platformCode": "6"
+              },
+              "trip": {
+                "gtfsId": "1:36226466",
+                "tripShortName": "4931 személyvonat",
+                "tripHeadsign": "Budapest-Déli",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2986_106::rt#2074"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2986_106",
+                  "shortName": "<span class=\"MNR2007\">&#335;</span>",
+                  "longName": "S10",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2959_106::rt#1943"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 81120,
+              "realtimeDeparture": 81120,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Déli",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_2",
+                "platformCode": "2"
+              },
+              "trip": {
+                "gtfsId": "1:36018250",
+                "tripShortName": "4351 személyvonat",
+                "tripHeadsign": "Budapest-Déli",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2959_106::rt#1943"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2959_106",
+                  "shortName": "<span class=\"MNR2007\">&#358;</span>",
+                  "longName": "S40",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2986_106::rt#849"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 81120,
+              "realtimeDeparture": 81120,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792706400,
+              "headsign": "Győr",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_10",
+                "platformCode": "10"
+              },
+              "trip": {
+                "gtfsId": "1:36020180",
+                "tripShortName": "4958 személyvonat",
+                "tripHeadsign": "Győr",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2986_106::rt#849"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2986_106",
+                  "shortName": "<span class=\"MNR2007\">&#335;</span>",
+                  "longName": "S10",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2931_106::rt#819"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 82020,
+              "realtimeDeparture": 82020,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Déli",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_2",
+                "platformCode": "2"
+              },
+              "trip": {
+                "gtfsId": "1:36017976",
+                "tripShortName": "4541 személyvonat",
+                "tripHeadsign": "Budapest-Déli",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2931_106::rt#819"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2931_106",
+                  "shortName": "<span class=\"MNR2007\">&#354;</span>",
+                  "longName": "S30",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36016717::rt#1329"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 82020,
+              "realtimeDeparture": 82020,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792706400,
+              "headsign": "Veszprém",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_4",
+                "platformCode": "4"
+              },
+              "trip": {
+                "gtfsId": "1:36016717",
+                "tripShortName": "9068 személyvonat",
+                "tripHeadsign": "Veszprém",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36016717::rt#1329"
+                },
+                "wheelchairAccessible": "NO_INFORMATION",
+                "bikesAllowed": "NO_INFORMATION",
+                "route": {
+                  "gtfsId": "1:E36016717",
+                  "shortName": "<span class=\"MNR2007\">&#484;</span>",
+                  "longName": "Sz 9068",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2947_106::rt#775"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 82620,
+              "realtimeDeparture": 82620,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792706400,
+              "headsign": "Dunaújváros",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_6",
+                "platformCode": "6"
+              },
+              "trip": {
+                "gtfsId": "1:36016614",
+                "tripShortName": "4238 személyvonat",
+                "tripHeadsign": "Dunaújváros",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2947_106::rt#775"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2947_106",
+                  "shortName": "<span class=\"MNR2007\">&#359;</span>",
+                  "longName": "S42",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2959_106::rt#2085"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 82920,
+              "realtimeDeparture": 82920,
+              "realtime": true,
+              "realtimeState": "MODIFIED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Déli",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_2",
+                "platformCode": "2"
+              },
+              "trip": {
+                "gtfsId": "1:36017987",
+                "tripShortName": "8021 személyvonat",
+                "tripHeadsign": "Budapest-Déli",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2959_106::rt#2085"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2959_106",
+                  "shortName": "<span class=\"MNR2007\">&#358;</span>",
+                  "longName": "S40",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36016657::rt#368"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 83820,
+              "realtimeDeparture": 83820,
+              "realtime": true,
+              "realtimeState": "MODIFIED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Déli",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_5",
+                "platformCode": "5"
+              },
+              "trip": {
+                "gtfsId": "1:36242256",
+                "tripShortName": "871 BALATON InterCity",
+                "tripHeadsign": "Budapest-Déli",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36016657::rt#368"
+                },
+                "wheelchairAccessible": "NO_INFORMATION",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:E36016657",
+                  "shortName": "<span class=\"MNR2007\">&#474;</span>",
+                  "longName": "IC BALATON",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36019990::rt#369"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 83820,
+              "realtimeDeparture": 83820,
+              "realtime": true,
+              "realtimeState": "UPDATED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Déli",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_5",
+                "platformCode": "5"
+              },
+              "trip": {
+                "gtfsId": "1:36244345",
+                "tripShortName": "871 BALATON gyorsvonat",
+                "tripHeadsign": "Budapest-Déli",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36019990::rt#369"
+                },
+                "wheelchairAccessible": "NO_INFORMATION",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:E36019990",
+                  "shortName": "<span class=\"MNR2007\">&#473;</span>",
+                  "longName": "Gy BALATON",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36226212::rt#166"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 83880,
+              "realtimeDeparture": 83880,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Keleti",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_15",
+                "platformCode": "15"
+              },
+              "trip": {
+                "gtfsId": "1:36226331",
+                "tripShortName": "343 BARTÓK BÉLA EuroCity",
+                "tripHeadsign": "Budapest-Keleti",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36226212::rt#166"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "NO_INFORMATION",
+                "route": {
+                  "gtfsId": "1:E36226212",
+                  "shortName": "<span class=\"MNR2007\">&#467;</span>",
+                  "longName": "EC BARTÓK BÉLA/CSÁRDÁS/LEHÁR FERENC/LISZT FERENC/SEMMELWEIS IGNÁC",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36103351::rt#396"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 82320,
+              "realtimeDeparture": 84000,
+              "realtime": true,
+              "realtimeState": "MODIFIED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Déli",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_2",
+                "platformCode": "2"
+              },
+              "trip": {
+                "gtfsId": "1:36103358",
+                "tripShortName": "951 GÖCSEJ InterCity",
+                "tripHeadsign": "Budapest-Déli",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36103351::rt#396"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:E36103351",
+                  "shortName": "<span class=\"MNR2007\">&#474;</span>",
+                  "longName": "IC GÖCSEJ",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36103629::rt#397"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 82320,
+              "realtimeDeparture": 84000,
+              "realtime": true,
+              "realtimeState": "UPDATED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Déli",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_2",
+                "platformCode": "2"
+              },
+              "trip": {
+                "gtfsId": "1:36103667",
+                "tripShortName": "951 GÖCSEJ gyorsvonat",
+                "tripHeadsign": "Budapest-Déli",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36103629::rt#397"
+                },
+                "wheelchairAccessible": "NO_INFORMATION",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:E36103629",
+                  "shortName": "<span class=\"MNR2007\">&#473;</span>",
+                  "longName": "Gy GÖCSEJ",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36018642::rt#1447"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 84420,
+              "realtimeDeparture": 84420,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792706400,
+              "headsign": "Siófok",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_5",
+                "platformCode": "5"
+              },
+              "trip": {
+                "gtfsId": "1:36018642",
+                "tripShortName": "18748 személyvonat",
+                "tripHeadsign": "Siófok",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36018642::rt#1447"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:E36018642",
+                  "shortName": "<span class=\"MNR2007\">&#484;</span>",
+                  "longName": "Sz 18748",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2986_106::rt#834"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 84420,
+              "realtimeDeparture": 84420,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Déli",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_6",
+                "platformCode": "6"
+              },
+              "trip": {
+                "gtfsId": "1:36226473",
+                "tripShortName": "4941 személyvonat",
+                "tripHeadsign": "Budapest-Déli",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2986_106::rt#834"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2986_106",
+                  "shortName": "<span class=\"MNR2007\">&#335;</span>",
+                  "longName": "S10",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2986_106::rt#846"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 84720,
+              "realtimeDeparture": 84720,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792706400,
+              "headsign": "Győr",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_10",
+                "platformCode": "10"
+              },
+              "trip": {
+                "gtfsId": "1:36020185",
+                "tripShortName": "4968 személyvonat",
+                "tripHeadsign": "Győr",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2986_106::rt#846"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2986_106",
+                  "shortName": "<span class=\"MNR2007\">&#335;</span>",
+                  "longName": "S10",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36017994::rt#1998"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 85620,
+              "realtimeDeparture": 85620,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Déli",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_5",
+                "platformCode": "5"
+              },
+              "trip": {
+                "gtfsId": "1:36017994",
+                "tripShortName": "8511 DÉLI <- PARTI InterRégió",
+                "tripHeadsign": "Budapest-Déli",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36017994::rt#1998"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:E36017994",
+                  "shortName": "<span class=\"MNR2007\">&#477;</span>",
+                  "longName": "IR DÉLI <- PARTI",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2959_106::rt#766"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 86220,
+              "realtimeDeparture": 86220,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792706400,
+              "headsign": "Pusztaszabolcs",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_5",
+                "platformCode": "5"
+              },
+              "trip": {
+                "gtfsId": "1:36017980",
+                "tripShortName": "4148 személyvonat",
+                "tripHeadsign": "Pusztaszabolcs",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2959_106::rt#766"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2959_106",
+                  "shortName": "<span class=\"MNR2007\">&#358;</span>",
+                  "longName": "S40",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2947_106::rt#776"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 86520,
+              "realtimeDeparture": 86520,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Déli",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_1",
+                "platformCode": "1"
+              },
+              "trip": {
+                "gtfsId": "1:36017983",
+                "tripShortName": "4241 személyvonat",
+                "tripHeadsign": "Budapest-Déli",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2947_106::rt#776"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2947_106",
+                  "shortName": "<span class=\"MNR2007\">&#359;</span>",
+                  "longName": "S42",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:E36390403::rt#149"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 87060,
+              "realtimeDeparture": 87060,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Keleti",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_14",
+                "platformCode": "14"
+              },
+              "trip": {
+                "gtfsId": "1:36390403",
+                "tripShortName": "261 railjet xpress",
+                "tripHeadsign": "Budapest-Keleti",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:E36390403::rt#149"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:E36390403",
+                  "shortName": "<span class=\"MNR2007\">&#481;</span>",
+                  "longName": "rjx 261",
+                  "mode": "RAIL",
+                  "color": "FEFEFE"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2986_106::rt#848"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 88020,
+              "realtimeDeparture": 88020,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792706400,
+              "headsign": "Budapest-Déli",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_6",
+                "platformCode": "6"
+              },
+              "trip": {
+                "gtfsId": "1:36226481",
+                "tripShortName": "4951 személyvonat",
+                "tripHeadsign": "Budapest-Déli",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2986_106::rt#848"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2986_106",
+                  "shortName": "<span class=\"MNR2007\">&#335;</span>",
+                  "longName": "S10",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2986_106::07"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 1920,
+              "realtimeDeparture": 1920,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792792800,
+              "headsign": "Komárom",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_0",
+                "platformCode": null
+              },
+              "trip": {
+                "gtfsId": "1:36017868",
+                "tripShortName": "4810 személyvonat",
+                "tripHeadsign": "Komárom",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2986_106::07"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2986_106",
+                  "shortName": "<span class=\"MNR2007\">&#335;</span>",
+                  "longName": "S10",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2947_106::01"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 3420,
+              "realtimeDeparture": 3420,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792792800,
+              "headsign": "Dunaújváros",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_0",
+                "platformCode": null
+              },
+              "trip": {
+                "gtfsId": "1:36017638",
+                "tripShortName": "4220 személyvonat",
+                "tripHeadsign": "Dunaújváros",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2947_106::01"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2947_106",
+                  "shortName": "<span class=\"MNR2007\">&#359;</span>",
+                  "longName": "S42",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V3601_106::02"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 5220,
+              "realtimeDeparture": 5220,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792792800,
+              "headsign": "Székesfehérvár",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_0",
+                "platformCode": null
+              },
+              "trip": {
+                "gtfsId": "1:36017939",
+                "tripShortName": "4780 személyvonat",
+                "tripHeadsign": "Székesfehérvár",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V3601_106::02"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V3601_106",
+                  "shortName": "<span class=\"MNR2007\">&#401;</span>",
+                  "longName": "G44",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            },
+            {
+              "scheduledDeparture": 1620,
+              "realtimeDeparture": 1620,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792792800,
+              "headsign": "Székesfehérvár",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_0",
+                "platformCode": null
+              },
+              "trip": {
+                "gtfsId": "1:36017936",
+                "tripShortName": "4770 személyvonat",
+                "tripHeadsign": "Székesfehérvár",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V3601_106::02"
+                },
+                "wheelchairAccessible": "NO_INFORMATION",
+                "bikesAllowed": "NO_INFORMATION",
+                "route": {
+                  "gtfsId": "1:V3601_106",
+                  "shortName": "<span class=\"MNR2007\">&#401;</span>",
+                  "longName": "G44",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "pattern": {
+            "code": "1:V2986_106::01"
+          },
+          "stoptimes": [
+            {
+              "scheduledDeparture": 5520,
+              "realtimeDeparture": 5520,
+              "realtime": false,
+              "realtimeState": "SCHEDULED",
+              "serviceDay": 1792792800,
+              "headsign": "Győr",
+              "pickupType": "SCHEDULED",
+              "stop": {
+                "gtfsId": "1:005501024_0",
+                "platformCode": null
+              },
+              "trip": {
+                "gtfsId": "1:36016895",
+                "tripShortName": "4980 személyvonat",
+                "tripHeadsign": "Győr",
+                "directionId": null,
+                "pattern": {
+                  "code": "1:V2986_106::01"
+                },
+                "wheelchairAccessible": "POSSIBLE",
+                "bikesAllowed": "ALLOWED",
+                "route": {
+                  "gtfsId": "1:V2986_106",
+                  "shortName": "<span class=\"MNR2007\">&#335;</span>",
+                  "longName": "S10",
+                  "mode": "RAIL",
+                  "color": "FFFFFF"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "_fixtureNow": 1792780658
+}

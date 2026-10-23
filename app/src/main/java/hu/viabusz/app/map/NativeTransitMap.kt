@@ -57,8 +57,6 @@ import org.maplibre.android.style.layers.PropertyFactory
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-private const val STOP_MIN_ZOOM = 12.0
-private const val VEHICLE_MIN_ZOOM = 9.0
 private const val VEHICLE_ICON_MIN_ZOOM = 12.0
 
 /** Keyless OpenFreeMap basemap, with a bundled custom night style. */
@@ -430,8 +428,8 @@ fun NativeTransitMap(
             }
         }
         val detailFeatures = mutableListOf<Feature>()
-        if (focused || zoom >= STOP_MIN_ZOOM) {
-            val groups = StopMapClustering.groups(displayStops, viewport, zoom)
+        if (focused || zoom >= 9.0) {
+            val groups = StopMapClustering.groups(displayStops.filter { TransitMapVisibility.stop(it.transportMode, zoom, focused) }, viewport, zoom)
             val grouped = zoom < StopMapClustering.PLATFORM_ZOOM
             val representatives = groups.map { members ->
                 val first = members.firstOrNull { it.id == selectedStopId } ?: members.first()
@@ -485,14 +483,14 @@ fun NativeTransitMap(
         style.getLayerAs<CircleLayer>("detail-stop-halo")?.setProperties(
             PropertyFactory.circleRadius(Expression.sum(Expression.get("radius"), Expression.literal(if (focused) 2.5 else 1.0))))
         val visibleVehicles = vehicles.filter { vehicle ->
-            (lineFocus?.includes(vehicle) ?: true) && (focused || zoom >= VEHICLE_MIN_ZOOM) && viewport?.let { vehicle.position.lat in it.south..it.north && vehicle.position.lon in it.west..it.east } == true
+            (lineFocus?.includes(vehicle) ?: true) && TransitMapVisibility.vehicle(vehicle.transportMode, zoom, focused) && viewport?.let { vehicle.position.lat in it.south..it.north && vehicle.position.lon in it.west..it.east } == true
         }
         visibleVehicles.forEach { vehicle ->
-            val number = vehicle.routeNumber ?: network?.routes?.find { it.id == vehicle.routeId }?.number ?: context.getString(if (vehicle.providerId == "bkk") R.string.emma_vehicle else R.string.engine_vehicle_bus)
+            val number = if (vehicle.providerId == "mav") vehicle.displayNumber else vehicle.routeNumber ?: network?.routes?.find { it.id == vehicle.routeId }?.number ?: context.getString(if (vehicle.providerId == "bkk") R.string.emma_vehicle else R.string.engine_vehicle_bus)
             val options = MarkerOptions()
                 .position(LatLng(vehicle.position.lat, vehicle.position.lon))
-                .title("${when (vehicle.providerId) { "hev" -> "HÉV"; "kanyargo" -> "KanyarGO"; "homm" -> "HOMM"; "volan" -> "Volán"; "bkk" -> "BKK"; else -> "ViaBusz" }} · $number · ${vehicle.registration ?: vehicle.id.substringAfter(":")}")
-                .snippet(listOfNotNull(vehicle.destination?.takeIf(String::isNotBlank), vehicle.nextStopName?.takeIf(String::isNotBlank), context.getString(if (vehicle.providerId in setOf("volan", "bkk", "hev")) R.string.volan_observation_time else R.string.engine_gps_time, formatter.format(vehicle.observedAt)), if (vehicle.providerId in setOf("volan", "bkk", "hev")) context.getString(R.string.volan_position_source) else null,
+                .title("${when (vehicle.providerId) { "mav" -> "MÁV / GYSEV"; "hev" -> "HÉV"; "kanyargo" -> "KanyarGO"; "homm" -> "HOMM"; "volan" -> "Volán"; "bkk" -> "BKK"; else -> "ViaBusz" }} · $number · ${vehicle.registration ?: vehicle.id.substringAfter(":")}")
+                .snippet(listOfNotNull(vehicle.destination?.takeIf(String::isNotBlank), vehicle.nextStopName?.takeIf(String::isNotBlank), context.getString(if (vehicle.providerId in setOf("volan", "bkk", "hev", "mav")) R.string.volan_observation_time else R.string.engine_gps_time, formatter.format(vehicle.observedAt)), if (vehicle.providerId in setOf("volan", "bkk", "hev", "mav")) context.getString(R.string.volan_position_source) else null,
                     vehicle.speedKmh?.let { context.getString(R.string.emma_speed, it.toInt()) }, if (vehicle.routeId == null) context.getString(R.string.engine_no_vehicle_route) else null).joinToString("\n"))
                 .icon(vehicleIcon(vehicle))
             val marker = vehicleMarkers.getOrPut(vehicle.id) { nativeMap.addMarker(options) }

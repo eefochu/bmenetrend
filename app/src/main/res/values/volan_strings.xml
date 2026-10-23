@@ -3,7 +3,7 @@
     <string name="volan_settings">Settings</string>
     <string name="volan_nationwide">Nationwide network</string>
     <string name="volan_local_scope">EMMA/MÁVPlusz supplies Volán buses nationwide, BKK vehicles in Budapest and HÉV trains. Volán markers are yellow; BKK buses are blue, trolleybuses red and trams yellow.</string>
-    <string name="volan_nationwide_hint">On by default. Turn off to show Volán routes serving Biatorbágy, Páty and Budaörs, plus BKK within Budapest and all supported HÉV lines. Tracking depends on the source; missing positions do not mean a service is cancelled.</string>
+    <string name="volan_nationwide_hint">On by default. Turn off to show Volán routes serving Biatorbágy, Páty and Budaörs, plus BKK within Budapest. Trains and supported HÉV lines stay nationwide. Tracking depends on the source; missing positions do not mean a service is cancelled.</string>
     <string name="volan_unavailable">EMMA/MÁVPlusz live data is unavailable. Retrying automatically.</string>
     <string name="volan_no_positions">EMMA · No fresh tracked vehicles in the selected network.</string>
     <string name="volan_observation_time">Source observation: %1$s</string>
@@ -13,7 +13,7 @@
     <string name="volan_route_hint">Tracked vehicles on this route are listed below. Live map positions do not provide stop departure predictions.</string>
     <string name="volan_timetable_link">Official route timetable</string>
     <string name="volan_no_route_positions">No fresh tracked vehicles for this route in the selected network.</string>
-    <string name="volan_loading">EMMA · Loading nationwide Volán and BKK vehicles…</string>
+    <string name="volan_loading">EMMA · Loading nationwide trains, Volán, BKK and HÉV vehicles…</string>
     <plurals name="volan_positions">
         <item quantity="one">EMMA · %1$d tracked vehicle · MÁVPlusz</item>
         <item quantity="other">EMMA · %1$d tracked vehicles · MÁVPlusz</item>

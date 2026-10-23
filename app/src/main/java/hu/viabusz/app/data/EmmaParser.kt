@@ -10,9 +10,9 @@ object EmmaParser {
     val QUERY = """
         query LiveVehicles {
           vehicles: vehiclePositions(swLat:45.7, swLon:16.1, neLat:48.6, neLon:22.9,
-            modes:[BUS,COACH,TRAM,TROLLEYBUS,SUBWAY,SUBURBAN_RAILWAY]) {
+            modes:[BUS,COACH,TRAM,TROLLEYBUS,SUBWAY,SUBURBAN_RAILWAY,RAIL,TRAMTRAIN]) {
             vehicleId lat lon heading label lastUpdated speed
-            nextStop { stopPosition stop { gtfsId name lat lon } }
+            nextStop { stopPosition stop { gtfsId name lat lon parentStation { gtfsId } } }
             trip { gtfsId tripShortName tripHeadsign
               route { gtfsId shortName longName mode color textColor }
             }
@@ -50,6 +50,7 @@ object EmmaParser {
                 sourceId.startsWith("hkir:") && sourceId.length > 5 && (mode == null || mode in setOf("BUS", "COACH")) -> "volan"
                 sourceId.startsWith("BKK:") && sourceId.length > 4 && mode in bkkModes -> "bkk"
                 sourceId.startsWith("1:") && HevSupport.accepts(mode, route?.text("shortName"), route?.text("longName")) -> "hev"
+                sourceId.startsWith("1:") && RailSupport.isTrain(mode) -> "mav"
                 else -> continue
             }
             val lat = row.number("lat") ?: continue
@@ -60,8 +61,12 @@ object EmmaParser {
             val observed = runCatching { Instant.ofEpochSecond(seconds.toLong()) }.getOrNull() ?: continue
             if (Duration.between(observed, now).seconds !in -30..180) continue
             val sourceRouteId = route?.text("gtfsId")
-            if (sourceRouteId != null && !sourceRouteId.startsWith(when (provider) { "volan" -> "hkir:"; "hev" -> "1:"; else -> "BKK:" })) continue
-            val routeNumber = if (provider == "hev") HevSupport.number(route?.text("shortName"), route?.text("longName")) else route?.text("shortName")
+            if (sourceRouteId != null && !sourceRouteId.startsWith(when (provider) { "volan" -> "hkir:"; "hev", "mav" -> "1:"; else -> "BKK:" })) continue
+            val routeNumber = when (provider) {
+                "hev" -> HevSupport.number(route?.text("shortName"), route?.text("longName"))
+                "mav" -> RailSupport.number(route?.text("shortName"), route?.text("longName"))
+                else -> route?.text("shortName")
+            }
             val color = route?.text("color")?.takeIf { it.matches(Regex("[a-fA-F0-9]{6}")) }
             val nextTime = row.optJSONObject("nextStop")
             val nextStop = nextTime?.optJSONObject("stop")
@@ -75,11 +80,14 @@ object EmmaParser {
                 speedKmh = row.number("speed")?.takeIf { it >= 0 }?.times(3.6),
                 markerColor = if (provider == "hev") routeNumber?.let(HevSupport::color) else if (provider == "bkk") color else null,
                 nextStopId = nextStop?.text("gtfsId")?.let { "emma:$it" },
+                nextStopParentId = nextStop?.optJSONObject("parentStation")?.text("gtfsId")?.let { "emma:$it" },
                 nextStopName = nextStop?.text("name"),
                 nextStopPosition = nextTime?.number("stopPosition")?.toInt()?.takeIf { it >= 0 },
                 nextStopPoint = nextStop?.number("lat")?.let { latitude -> nextStop.number("lon")?.let { longitude ->
                     if (latitude in 45.7..48.6 && longitude in 16.1..22.9) GeoPoint(latitude, longitude) else null
                 } },
+                trainNumber = if (provider == "mav") RailSupport.serviceNumber(trip?.text("tripShortName")) else null,
+                serviceName = if (provider == "mav") RailSupport.clean(trip?.text("tripShortName")) else null,
             )
             if (vehicles[vehicle.id]?.observedAt?.let { it >= observed } != true) vehicles[vehicle.id] = vehicle
         }
@@ -90,7 +98,7 @@ object EmmaParser {
         val localIds = routes.map { "volan:${it.sourceId}" }.toSet()
         return vehicles.filter { vehicle ->
             if (vehicle.providerId == "volan") vehicle.routeId in localIds
-            else vehicle.providerId == "hev" || vehicle.providerId == "bkk" && vehicle.position.lon in 18.85..19.4 && vehicle.position.lat in 47.3..47.7
+            else vehicle.providerId in setOf("hev", "mav") || vehicle.providerId == "bkk" && vehicle.position.lon in 18.85..19.4 && vehicle.position.lat in 47.3..47.7
         }
     }
 

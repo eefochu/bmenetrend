@@ -42,7 +42,7 @@ fun VehiclePanel(state: UiState, onClose: () -> Unit, onRefresh: () -> Unit, onS
     val listState = rememberLazyListState()
     val color = lineColor(vehicle.providerId, vehicle.transportMode, vehicle.markerColor)
     val progress = VehicleStopProgress.resolve(vehicle, journey, state.now)
-    val provider = when (vehicle.providerId) { "hev" -> stringResource(R.string.emma_provider_hev); "volan" -> "Volán"; "bkk" -> "BKK"; "homm" -> "HOMM"; "kanyargo" -> "KanyarGO"; else -> "ViaBusz" }
+    val provider = when (vehicle.providerId) { "mav" -> stringResource(R.string.rail_provider); "hev" -> stringResource(R.string.emma_provider_hev); "volan" -> "Volán"; "bkk" -> "BKK"; "homm" -> "HOMM"; "kanyargo" -> "KanyarGO"; else -> "ViaBusz" }
     val style = VehicleMarkerStyle.forVehicle(vehicle)
     val mode = stringResource(when (style) {
         VehicleMarkerStyle.TROLLEY -> R.string.emma_mode_trolley
@@ -67,7 +67,7 @@ fun VehiclePanel(state: UiState, onClose: () -> Unit, onRefresh: () -> Unit, onS
     Column(modifier) {
         Row(Modifier.fillMaxWidth().padding(start = 22.dp, end = 8.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onClose) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.ui_back)) }
-            LineBadge(number ?: "?", vehicle.providerId, vehicle.transportMode, vehicle.markerColor)
+            ServiceBadge(number ?: "?", vehicle.providerId, vehicle.transportMode, vehicle.markerColor, vehicle.trainNumber)
             Column(Modifier.weight(1f).padding(start = 12.dp)) {
                 Text(provider, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Text(mode, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -86,7 +86,7 @@ fun VehiclePanel(state: UiState, onClose: () -> Unit, onRefresh: () -> Unit, onS
             }, Modifier.padding(start = 22.dp, end = 22.dp, bottom = 12.dp), style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary)
         }
-        Text(listOfNotNull(vehicle.registration, vehicle.speedKmh?.let { stringResource(R.string.emma_speed, it.toInt()) }).joinToString(" · "),
+        Text(listOfNotNull(vehicle.serviceName, vehicle.registration, vehicle.speedKmh?.let { stringResource(R.string.emma_speed, it.toInt()) }).joinToString(" · "),
             Modifier.padding(horizontal = 22.dp, vertical = 6.dp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(stringResource(R.string.volan_observation_time, observationFormat.format(vehicle.observedAt)),
             Modifier.padding(start = 22.dp, end = 22.dp, bottom = 12.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

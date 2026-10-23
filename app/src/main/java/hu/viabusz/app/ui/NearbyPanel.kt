@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import hu.viabusz.app.R
 import hu.viabusz.app.data.ArrivalKind
 import hu.viabusz.app.data.Departure
+import hu.viabusz.app.data.DepartureTime
 import hu.viabusz.app.data.NearbyStation
 import java.time.Instant
 import hu.viabusz.app.data.TransitRoute
@@ -62,13 +63,13 @@ fun NearbyPanel(
                     Text(stringResource(R.string.nearby_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     Box {
                         Row(Modifier.clickable { windowMenu = true }.padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(stringResource(if (atUser) R.string.nearby_you else R.string.nearby_map) + " · " + stringResource(R.string.ui_minutes_short, windowMinutes),
+                            Text(stringResource(if (atUser) R.string.nearby_you else R.string.nearby_map) + " · " + compactDuration(windowMinutes),
                                 Modifier.weight(1f, fill = false), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Icon(Icons.Rounded.ArrowDropDown, null, Modifier.size(16.dp))
                         }
                         DropdownMenu(expanded = windowMenu, onDismissRequest = { windowMenu = false }) {
-                            listOf(30, 60, 120).forEach { minutes -> DropdownMenuItem(
-                                text = { Text(stringResource(R.string.ui_minutes_short, minutes)) },
+                            DepartureTime.windows.forEach { minutes -> DropdownMenuItem(
+                                text = { Text(countdown(minutes)) },
                                 onClick = { onWindow(minutes); windowMenu = false },
                                 trailingIcon = { if (minutes == windowMinutes) Icon(Icons.Rounded.Check, null) }) }
                         }
@@ -128,7 +129,7 @@ fun NearbyPanel(
 }
 
 @Composable
-private fun NearbyDepartureCard(
+internal fun NearbyDepartureCard(
     departure: Departure,
     route: TransitRoute?,
     platform: TransitStop?,
@@ -146,16 +147,18 @@ private fun NearbyDepartureCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            LineBadge(departure.routeNumber, route?.providerId ?: platform?.providerId ?: "bkk", route?.transportMode ?: platform?.transportMode, route?.color)
+            ServiceBadge(departure.routeNumber, route?.providerId ?: platform?.providerId ?: "bkk", route?.transportMode ?: platform?.transportMode, route?.color, departure.trainNumber)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(departure.destination, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                departure.serviceName?.let { Text(it, style = MaterialTheme.typography.bodySmall, maxLines = 1,
+                    overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(nearbyClock.format(departure.expectedAt), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    platform?.platformCode?.let { Text(stringResource(R.string.emma_platform, it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    (departure.platformCode ?: platform?.platformCode)?.let { Text(stringResource(if (route?.providerId == "mav") R.string.rail_platform else R.string.emma_platform, it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 }
             }
             if (live) Icon(Icons.Rounded.Sensors, stringResource(R.string.ui_live_arrival), Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
-            Text(stringResource(R.string.ui_minutes_short, minutes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            Text(countdown(minutes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
         }
     }
 }

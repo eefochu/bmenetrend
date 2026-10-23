@@ -31,7 +31,7 @@ object NearbyDepartures {
         val groups = mutableListOf<NearbyStation>()
         for ((stop, distance) in candidates) {
             if (stop.id in used) continue
-            val platforms = StopClusters.clusterFor(stop, candidates.map { it.first }).filterNot { it.station }
+            val platforms = EmmaBoardTargets.select(StopClusters.clusterFor(stop, candidates.map { it.first }))
                 .sortedBy { StopClusters.distanceMeters(anchor, it.position) }.take(4)
             used.addAll(StopClusters.clusterFor(stop, candidates.map { it.first }).map { it.id })
             groups += NearbyStation(stop, platforms.ifEmpty { listOf(stop) }, distance)

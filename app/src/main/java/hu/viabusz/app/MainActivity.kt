@@ -17,6 +17,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import hu.viabusz.app.ui.FavoritesScreen
 import hu.viabusz.app.ui.MainTab
 import hu.viabusz.app.ui.MainNavigation
 import hu.viabusz.app.ui.PlannerScreen
@@ -75,7 +76,7 @@ class MainActivity : ComponentActivity() {
                     try { awaitCancellation() } finally { close() }
                 }
             }
-            LaunchedEffect(tab) { model.setMapVisible(tab == MainTab.MAP) }
+            LaunchedEffect(tab) { model.setMapVisible(tab == MainTab.MAP); model.setFavoritesVisible(tab == MainTab.FAVORITES) }
             LaunchedEffect(state.userLocation) { planner.updateLocation(state.userLocation) }
             LaunchedEffect(tab, state.network?.stops, state.emmaStops) {
                 if (tab == MainTab.PLANNER) planner.updateStops(state.stops)
@@ -87,7 +88,10 @@ class MainActivity : ComponentActivity() {
                     startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
             }
             ViaBuszTheme(accent = state.accentColor, customArgb = state.customAccentArgb) {
-                MainNavigation(tab, { tab = it }, planner = { PlannerScreen(planner, requestLocation) }, map = {
+                MainNavigation(tab, { tab = it }, planner = { PlannerScreen(planner, requestLocation) }, favorites = {
+                    FavoritesScreen(state, onStop = { model.selectStop(it); tab = MainTab.MAP }, onRemove = model::toggleFavorite,
+                        onRefresh = model::refreshFavorites, onWindow = model::setWindow, onVisible = model::setVisibleFavorites)
+                }, map = {
                 ViaBuszScreen(
                     state = state,
                     onStopSelected = model::selectStop,

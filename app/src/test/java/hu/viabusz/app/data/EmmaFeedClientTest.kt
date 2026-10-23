@@ -89,4 +89,17 @@ class EmmaFeedClientTest {
         } finally { release.countDown(); job.cancel() }
     }
 
+    @Test fun deniedPollDoesNotRetryImmediatelyOrBypassCooldownOnManualRefresh() = runBlocking {
+        val calls = AtomicInteger()
+        val http = OkHttpClient.Builder().addInterceptor { chain ->
+            calls.incrementAndGet()
+            Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(403).message("Forbidden")
+                .body("denied".toResponseBody()).build()
+        }.build()
+        val feed = EmmaFeedClient(http, backoff = EmmaRequestBackoff())
+        try { feed.get(); fail("Denied source must fail") } catch (_: IOException) { }
+        try { feed.get(force = true); fail("Manual refresh must respect source cooldown") } catch (_: IOException) { }
+        assertEquals(1, calls.get())
+    }
+
 }

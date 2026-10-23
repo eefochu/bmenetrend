@@ -24,18 +24,18 @@ class HevIntegrationTest {
         assertTrue(parsed.routeId!!.startsWith("hev:1:"))
         assertFalse(parsed.routeNumber!!.contains('<'))
     }
-    @Test fun nationalAndForeignRailDoNotLeakThroughTheSharedNamespace() {
+    @Test fun nationalRailAndHevUseDifferentProvidersInTheSharedNamespace() {
         val row = JSONObject(live.getJSONObject("data").getJSONArray("vehicles").getJSONObject(0).toString())
         val route = row.getJSONObject("trip").getJSONObject("route")
         route.put("mode","RAIL").put("shortName","S40").put("longName","National train")
-        assertTrue(EmmaParser.parse(JSONObject().put("data",JSONObject().put("vehicles",org.json.JSONArray().put(row))).toString(),now).isEmpty())
+        assertEquals("mav", EmmaParser.parse(JSONObject().put("data",JSONObject().put("vehicles",org.json.JSONArray().put(row))).toString(),now).single().providerId)
         route.put("mode","SUBURBAN_RAILWAY").put("longName","S-Bahn")
         assertTrue(EmmaParser.parse(JSONObject().put("data",JSONObject().put("vehicles",org.json.JSONArray().put(row))).toString(),now).isEmpty())
     }
     @Test fun catalogueRecognizesAllFiveLinesWithoutFontMarkup() {
         val routes = EmmaRouteParser.catalogue(fixture("routes"))
         assertTrue(routes.map { it.number }.containsAll(listOf("H5","H6","H7","H8","H9")))
-        assertTrue(routes.all { it.providerId == "hev" })
+        assertTrue(routes.filter { it.transportMode == "SUBURBAN_RAILWAY" }.all { it.providerId == "hev" })
         assertEquals("7B116B",routes.first { it.number == "H5" }.color)
     }
     @Test fun linePatternsIncludeBothDirectionsAndActualGeometry() {
@@ -59,9 +59,11 @@ class HevIntegrationTest {
         assertEquals("SUBURBAN_RAILWAY",board.catalogue.stops.single().transportMode)
         assertFalse(board.catalogue.routes.any { it.number.contains('<') })
     }
-    @Test fun hevIndexRetainsNullModePlatformsByStationNameButExcludesGenericRail() {
+    @Test fun indexPreservesHevAndRailSeparatelyButExcludesUnidentifiedForeignSuburban() {
         val text = """{"data":{"stops":[{"gtfsId":"1:h","name":"Aquincum H","lat":47.5,"lon":19.0,"vehicleMode":null},{"gtfsId":"1:rail","name":"Kelenföld","lat":47.5,"lon":19.0,"vehicleMode":"RAIL"},{"gtfsId":"1:008100","name":"Wien Mitte","lat":48.2,"lon":16.4,"vehicleMode":"SUBURBAN_RAILWAY"}]}}"""
-        assertEquals(listOf("emma:1:h"),EmmaStopsParser.index(text).stops.map { it.id })
+        val stops = EmmaStopsParser.index(text).stops
+        assertEquals(listOf("emma:1:h", "emma:1:rail"),stops.map { it.id })
+        assertEquals(listOf("hev", "mav"),stops.map { it.providerId })
     }
     @Test fun hevAliasesAndLocalScopeKeepAllFiveLines() {
         val routes = EmmaRouteParser.catalogue(fixture("routes"))
