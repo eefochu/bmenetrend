@@ -161,9 +161,9 @@ internal fun CategorizedSearch(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(14.dp),
                     ) {
-                        LineBadge(vehicle.routeNumber ?: "?", vehicle.providerId, vehicle.transportMode, vehicle.markerColor)
+                        ServiceBadge(vehicle.routeNumber ?: "?", vehicle.providerId, vehicle.transportMode, vehicle.markerColor, vehicle.trainNumber)
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(vehicle.registration ?: vehicle.id.substringAfterLast(":"), style = MaterialTheme.typography.titleMedium)
+                            Text(vehicle.serviceName ?: vehicle.registration ?: vehicle.id.substringAfterLast(":"), style = MaterialTheme.typography.titleMedium)
                             vehicle.destination?.let { Text(it, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis) }
                             Text(stringResource(R.string.search_live_vehicle), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                         }

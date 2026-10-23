@@ -46,7 +46,7 @@ internal fun ItineraryCard(trip: TripItinerary, fastest: Boolean, now: Instant, 
                             Icon(Icons.AutoMirrored.Rounded.DirectionsWalk, stringResource(R.string.planner_walk), Modifier.size(22.dp))
                             Text(stringResource(R.string.ui_minutes_short, minutes(Duration.between(leg.start, leg.end).seconds)),
                                 style = MaterialTheme.typography.labelLarge)
-                        } else leg.route?.let { LineBadge(it) }
+                        } else leg.route?.let { ServiceBadge(it.number, it.providerId, it.transportMode, it.color, leg.trainNumber) }
                     }
                 }
             }
@@ -218,7 +218,7 @@ private fun LegDescription(leg: PlanLeg) {
             Text(stringResource(R.string.planner_walk_detail, minutes(Duration.between(leg.start, leg.end).seconds), leg.distance.roundToInt()),
                 style = MaterialTheme.typography.titleSmall)
         } else {
-            leg.route?.let { LineBadge(it) }
+            leg.route?.let { ServiceBadge(it.number, it.providerId, it.transportMode, it.color, leg.trainNumber) }
             Text(leg.headsign ?: leg.to.name, style = MaterialTheme.typography.titleMedium)
             Text("${stringResource(R.string.ui_minutes_short, minutes(Duration.between(leg.start, leg.end).seconds))} · ${stringResource(if (leg.realtime) R.string.ui_live_arrival else R.string.ui_scheduled)}",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

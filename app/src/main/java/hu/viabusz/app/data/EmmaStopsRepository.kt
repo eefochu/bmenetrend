@@ -54,9 +54,20 @@ class EmmaStopsRepository(context: Context) {
     suspend fun board(stopId: String, windowMinutes: Int): EmmaStopsParser.Board {
         val now = Instant.now()
         val variables = org.json.JSONObject().put("id", EmmaStopsParser.sourceId(stopId))
-            .put("start", now.epochSecond).put("range", windowMinutes.coerceIn(30, 120) * 60)
+            .put("start", now.epochSecond).put("range", windowMinutes.coerceIn(30, 300) * 60)
         val text = graphql.execute(EmmaStopsParser.BOARD_QUERY, variables)
         return withContext(Dispatchers.Default) { EmmaStopsParser.board(text, stopId, now, windowMinutes) }
+    }
+
+    suspend fun boards(stopIds: List<String>, windowMinutes: Int): Map<String, EmmaStopsParser.Board?> {
+        val ids = stopIds.distinct()
+        require(ids.size in 1..6)
+        val now = Instant.now()
+        val query = EmmaStopsParser.batchQuery(ids.size)
+        val variables = org.json.JSONObject().put("start", now.epochSecond).put("range", windowMinutes.coerceIn(30,300) * 60)
+        ids.forEachIndexed { index, id -> variables.put("id$index", EmmaStopsParser.sourceId(id)) }
+        val text = graphql.execute(query, variables)
+        return withContext(Dispatchers.Default) { EmmaStopsParser.batch(text, ids, now, windowMinutes) }
     }
 
 }

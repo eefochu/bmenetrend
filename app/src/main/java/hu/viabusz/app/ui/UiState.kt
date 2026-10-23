@@ -49,6 +49,8 @@ data class UiState(
     val lastUpdated: Instant? = null,
     val locationMessage: String? = null,
     val favorites: Set<String> = emptySet(),
+    val favoriteStations: List<hu.viabusz.app.data.NearbyStation> = emptyList(),
+    val favoritesLoading: Boolean = false,
     val liveStopMinutes: List<Int> = emptyList(),
     val emmaStops: List<TransitStop> = emptyList(),
     val stopIndexLoaded: Boolean = false,

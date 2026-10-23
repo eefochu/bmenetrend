@@ -87,7 +87,7 @@ class EmmaTest {
         val request = JSONObject(EmmaParser.request())
         val query = request.getString("query")
         assertTrue(EmmaParser.ENDPOINT.startsWith("https://mavplusz.hu/"))
-        assertTrue(query.contains("modes:[BUS,COACH,TRAM,TROLLEYBUS,SUBWAY,SUBURBAN_RAILWAY]"))
+        assertTrue(query.contains("modes:[BUS,COACH,TRAM,TROLLEYBUS,SUBWAY,SUBURBAN_RAILWAY,RAIL,TRAMTRAIN]"))
         assertTrue(query.contains("swLat:45.7, swLon:16.1, neLat:48.6, neLon:22.9"))
         assertTrue(request.getJSONObject("variables").length() == 0)
         assertTrue(EmmaParser.parse(response(), now).isEmpty())

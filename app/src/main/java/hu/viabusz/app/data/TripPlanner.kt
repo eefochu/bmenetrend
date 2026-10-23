@@ -18,6 +18,7 @@ data class PlanLeg(
     val mode: String, val start: Instant, val end: Instant, val distance: Double,
     val from: PlanPoint, val to: PlanPoint, val route: TransitRoute?, val headsign: String?,
     val realtime: Boolean, val stayOnBoard: Boolean, val stops: List<PlanPoint>,
+    val trainNumber: String? = null,
 ) { val walking: Boolean get() = mode == "WALK" }
 @Immutable
 data class TripItinerary(val id: String, val start: Instant, val end: Instant, val legs: List<PlanLeg>) {
@@ -62,7 +63,7 @@ object TripPlanner {
                 from { name lat lon stop { gtfsId name platformCode } }
                 to { name lat lon stop { gtfsId name platformCode } }
                 route { gtfsId shortName longName mode color }
-                trip { gtfsId tripHeadsign }
+                trip { gtfsId tripShortName tripHeadsign }
                 intermediateStops { name lat lon }
             } }
             routingErrors { code description }
@@ -101,7 +102,9 @@ object TripPlanner {
                         val source = route.getString("gtfsId")
                         val provider = if (mode == "SUBURBAN_RAILWAY" && HevSupport.number(route.text("shortName"), route.text("longName")) != null) "hev"
                             else EmmaStopsParser.provider(source)?.takeUnless { it == "hev" } ?: "mav"
-                        val number = if (provider == "hev") HevSupport.number(route.text("shortName"), route.text("longName"))!! else route.text("shortName")?.takeUnless { name -> '<' in name || name.any { Character.getType(it) == Character.PRIVATE_USE.toInt() } } ?: route.text("longName") ?: mode
+                        val number = if (provider == "hev") HevSupport.number(route.text("shortName"), route.text("longName"))!!
+                            else if (RailSupport.isTrain(mode)) RailSupport.number(route.text("shortName"), route.text("longName"))
+                            else route.text("shortName")?.takeUnless { name -> '<' in name || name.any { Character.getType(it) == Character.PRIVATE_USE.toInt() } } ?: route.text("longName") ?: mode
                         TransitRoute("$provider:$source", number, route.text("longName") ?: number, emptyList(), provider,
                             transportMode = mode, color = if (provider == "hev") HevSupport.color(number) else route.text("color"))
                     }
@@ -109,7 +112,8 @@ object TripPlanner {
                     val stops = leg.optJSONArray("intermediateStops")
                     PlanLeg(mode, start, end, distance, point(leg.getJSONObject("from")), point(leg.getJSONObject("to")), route,
                         leg.optJSONObject("trip")?.text("tripHeadsign"), leg.optBoolean("realTime"), leg.optBoolean("interlineWithPreviousLeg"),
-                        (0 until (stops?.length() ?: 0)).map { point(stops!!.getJSONObject(it)) })
+                        (0 until (stops?.length() ?: 0)).map { point(stops!!.getJSONObject(it)) },
+                        if (RailSupport.isTrain(mode)) RailSupport.serviceNumber(leg.optJSONObject("trip")?.text("tripShortName")) else null)
                 }
                 require(feasible(legs, ready))
                 val start = Instant.ofEpochMilli(row.getLong("startTime")); val end = Instant.ofEpochMilli(row.getLong("endTime"))

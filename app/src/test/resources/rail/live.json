@@ -1,0 +1,415 @@
+{
+  "data": {
+    "vehicles": [
+      {
+        "vehicleId": "1:945514150594",
+        "lat": 47.450901,
+        "lon": 19.0104504,
+        "heading": 254.0,
+        "label": "",
+        "lastUpdated": 1792780639,
+        "speed": 21.0,
+        "nextStop": {
+          "stopPosition": 3,
+          "stop": {
+            "gtfsId": "1:005501032_3",
+            "name": "Budaörs",
+            "lat": 47.4475,
+            "lon": 18.965,
+            "parentStation": {
+              "gtfsId": "1:005501032"
+            }
+          }
+        },
+        "trip": {
+          "gtfsId": "1:36017898",
+          "tripShortName": "4938 személyvonat",
+          "tripHeadsign": "Győr",
+          "route": {
+            "gtfsId": "1:V2986_106",
+            "shortName": "<span class=\"MNR2007\">&#335;</span>",
+            "longName": "S10",
+            "mode": "RAIL",
+            "color": "FFFFFF",
+            "textColor": "00A0E3"
+          }
+        }
+      },
+      {
+        "vehicleId": "1:945514150503",
+        "lat": 46.8057899,
+        "lon": 18.5996609,
+        "heading": 197.0,
+        "label": "",
+        "lastUpdated": 1792780627,
+        "speed": 24.0,
+        "nextStop": {
+          "stopPosition": 22,
+          "stop": {
+            "gtfsId": "1:005505959_0",
+            "name": "Sáregres",
+            "lat": 46.7825,
+            "lon": 18.588889,
+            "parentStation": {
+              "gtfsId": "1:005505959"
+            }
+          }
+        },
+        "trip": {
+          "gtfsId": "1:36017985",
+          "tripShortName": "8018 személyvonat",
+          "tripHeadsign": "Dombóvár",
+          "route": {
+            "gtfsId": "1:V2959_106",
+            "shortName": "<span class=\"MNR2007\">&#358;</span>",
+            "longName": "S40",
+            "mode": "RAIL",
+            "color": "FFFFFF",
+            "textColor": "00A0E3"
+          }
+        }
+      },
+      {
+        "vehicleId": "1:915504710012",
+        "lat": 47.4878998,
+        "lon": 18.8263092,
+        "heading": 318.0,
+        "label": "",
+        "lastUpdated": 1792780644,
+        "speed": 34.0,
+        "nextStop": {
+          "stopPosition": 13,
+          "stop": {
+            "gtfsId": "1:005501131_3",
+            "name": "Tatabánya",
+            "lat": 47.585556,
+            "lon": 18.393056,
+            "parentStation": {
+              "gtfsId": "1:005501131"
+            }
+          }
+        },
+        "trip": {
+          "gtfsId": "1:36226804",
+          "tripShortName": "938 SAVARIA InterCity",
+          "tripHeadsign": "Szombathely",
+          "route": {
+            "gtfsId": "1:E36226343",
+            "shortName": "<span class=\"MNR2007\">&#474;</span>",
+            "longName": "IC SAVARIA",
+            "mode": "RAIL",
+            "color": "FEFEFE",
+            "textColor": "274F96"
+          }
+        }
+      },
+      {
+        "vehicleId": "1:955514260251",
+        "lat": 45.9865608,
+        "lon": 17.3776207,
+        "heading": 156.0,
+        "label": "",
+        "lastUpdated": 1792780616,
+        "speed": 16.0,
+        "nextStop": {
+          "stopPosition": 43,
+          "stop": {
+            "gtfsId": "1:005505660_3",
+            "name": "Barcs",
+            "lat": 45.951944,
+            "lon": 17.446944,
+            "parentStation": {
+              "gtfsId": "1:005505660"
+            }
+          }
+        },
+        "trip": {
+          "gtfsId": "1:35895894",
+          "tripShortName": "8996 PANNÓNIA InterRégió",
+          "tripHeadsign": "Pécs",
+          "route": {
+            "gtfsId": "1:E35636221",
+            "shortName": "<span class=\"MNR2007\">&#477;</span>",
+            "longName": "IR PANNÓNIA",
+            "mode": "RAIL",
+            "color": "FEFEFE",
+            "textColor": "29803C"
+          }
+        }
+      },
+      {
+        "vehicleId": "1:905514060110",
+        "lat": 46.414669,
+        "lon": 20.3189392,
+        "heading": 268.0,
+        "label": "",
+        "lastUpdated": 1792780631,
+        "speed": 4.0,
+        "nextStop": {
+          "stopPosition": 4,
+          "stop": {
+            "gtfsId": "1:005518804_0",
+            "name": "Hódmezővásárhely, Hősök tere",
+            "lat": 46.412183,
+            "lon": 20.31759,
+            "parentStation": {
+              "gtfsId": "1:005518804"
+            }
+          }
+        },
+        "trip": {
+          "gtfsId": "1:28519122",
+          "tripShortName": "33095 TramTrain",
+          "tripHeadsign": "Szeged vasútállomás",
+          "route": {
+            "gtfsId": "1:V3005_403",
+            "shortName": "<span class=\"MNR2007\">&#449;</span>",
+            "longName": "1",
+            "mode": "TRAMTRAIN",
+            "color": "FFFFFF",
+            "textColor": "F5AD0E"
+          }
+        }
+      },
+      {
+        "vehicleId": "1:905514060045",
+        "lat": 46.4146881,
+        "lon": 20.3197098,
+        "heading": 89.0,
+        "label": "",
+        "lastUpdated": 1792780645,
+        "speed": 4.0,
+        "nextStop": {
+          "stopPosition": 24,
+          "stop": {
+            "gtfsId": "1:005518808_0",
+            "name": "Hódmezővásárhely, Kálvin János tér",
+            "lat": 46.416677,
+            "lon": 20.328532,
+            "parentStation": {
+              "gtfsId": "1:005518808"
+            }
+          }
+        },
+        "trip": {
+          "gtfsId": "1:28519081",
+          "tripShortName": "33090 TramTrain",
+          "tripHeadsign": "Hódmezővásárhely vasútállomás",
+          "route": {
+            "gtfsId": "1:V3005_403",
+            "shortName": "<span class=\"MNR2007\">&#449;</span>",
+            "longName": "1",
+            "mode": "TRAMTRAIN",
+            "color": "FFFFFF",
+            "textColor": "F5AD0E"
+          }
+        }
+      },
+      {
+        "vehicleId": "1:905514060128",
+        "lat": 46.23983,
+        "lon": 20.1425495,
+        "heading": 21.0,
+        "label": "",
+        "lastUpdated": 1792780636,
+        "speed": 0.0,
+        "nextStop": {
+          "stopPosition": 2,
+          "stop": {
+            "gtfsId": "1:005500701_0",
+            "name": "Szeged, Galamb utca",
+            "lat": 46.24153,
+            "lon": 20.142297,
+            "parentStation": {
+              "gtfsId": "1:005500701"
+            }
+          }
+        },
+        "trip": {
+          "gtfsId": "1:28519082",
+          "tripShortName": "33094 TramTrain",
+          "tripHeadsign": "Hódmezővásárhely vasútállomás",
+          "route": {
+            "gtfsId": "1:V3005_403",
+            "shortName": "<span class=\"MNR2007\">&#449;</span>",
+            "longName": "1",
+            "mode": "TRAMTRAIN",
+            "color": "FFFFFF",
+            "textColor": "F5AD0E"
+          }
+        }
+      },
+      {
+        "vehicleId": "1:905514060060",
+        "lat": 46.2647095,
+        "lon": 20.1254101,
+        "heading": 300.0,
+        "label": "",
+        "lastUpdated": 1792780644,
+        "speed": 4.0,
+        "nextStop": {
+          "stopPosition": 13,
+          "stop": {
+            "gtfsId": "1:005500712_0",
+            "name": "Szeged, Rókus vasútállomás",
+            "lat": 46.266107,
+            "lon": 20.125686,
+            "parentStation": {
+              "gtfsId": "1:005500712"
+            }
+          }
+        },
+        "trip": {
+          "gtfsId": "1:28521045",
+          "tripShortName": "33092 TramTrain",
+          "tripHeadsign": "Hódmezővásárhely vasútállomás",
+          "route": {
+            "gtfsId": "1:V3005_403",
+            "shortName": "<span class=\"MNR2007\">&#449;</span>",
+            "longName": "1",
+            "mode": "TRAMTRAIN",
+            "color": "FFFFFF",
+            "textColor": "F5AD0E"
+          }
+        }
+      },
+      {
+        "vehicleId": "1:905514060078",
+        "lat": 46.2662315,
+        "lon": 20.1258392,
+        "heading": 215.0,
+        "label": "",
+        "lastUpdated": 1792780625,
+        "speed": 0.0,
+        "nextStop": {
+          "stopPosition": 14,
+          "stop": {
+            "gtfsId": "1:005500711_0",
+            "name": "Szeged, Pulz utca",
+            "lat": 46.264452,
+            "lon": 20.126061,
+            "parentStation": {
+              "gtfsId": "1:005500711"
+            }
+          }
+        },
+        "trip": {
+          "gtfsId": "1:28521056",
+          "tripShortName": "33093 TramTrain",
+          "tripHeadsign": "Szeged vasútállomás",
+          "route": {
+            "gtfsId": "1:V3005_403",
+            "shortName": "<span class=\"MNR2007\">&#449;</span>",
+            "longName": "1",
+            "mode": "TRAMTRAIN",
+            "color": "FFFFFF",
+            "textColor": "F5AD0E"
+          }
+        }
+      },
+      {
+        "vehicleId": "1:918061939354",
+        "lat": 47.7245102,
+        "lon": 20.1095905,
+        "heading": 86.0,
+        "label": "",
+        "lastUpdated": 1792780606,
+        "speed": 25.0,
+        "nextStop": {
+          "stopPosition": 29,
+          "stop": {
+            "gtfsId": "1:005511296_3",
+            "name": "Füzesabony",
+            "lat": 47.751389,
+            "lon": 20.415278,
+            "parentStation": {
+              "gtfsId": "1:005511296"
+            }
+          }
+        },
+        "trip": {
+          "gtfsId": "1:35051203",
+          "tripShortName": "508 TOKAJ InterCity",
+          "tripHeadsign": "Nyíregyháza",
+          "route": {
+            "gtfsId": "1:E35051199",
+            "shortName": "<span class=\"MNR2007\">&#474;</span>",
+            "longName": "IC TOKAJ",
+            "mode": "RAIL",
+            "color": "FEFEFE",
+            "textColor": "274F96"
+          }
+        }
+      },
+      {
+        "vehicleId": "1:945514151196",
+        "lat": 47.6658096,
+        "lon": 19.6708508,
+        "heading": 173.0,
+        "label": "",
+        "lastUpdated": 1792780642,
+        "speed": 7.0,
+        "nextStop": {
+          "stopPosition": 9,
+          "stop": {
+            "gtfsId": "1:005511205_3a",
+            "name": "Hatvan",
+            "lat": 47.663611,
+            "lon": 19.671389,
+            "parentStation": {
+              "gtfsId": "1:005511205"
+            }
+          }
+        },
+        "trip": {
+          "gtfsId": "1:29649269",
+          "tripShortName": "5091 személyvonat",
+          "tripHeadsign": "Hatvan",
+          "route": {
+            "gtfsId": "1:E29649269",
+            "shortName": "<span class=\"MNR2007\">&#484;</span>",
+            "longName": "Sz 5091",
+            "mode": "RAIL",
+            "color": "FEFEFE",
+            "textColor": "00A0E3"
+          }
+        }
+      },
+      {
+        "vehicleId": "1:945514150693",
+        "lat": 47.4889603,
+        "lon": 19.1729908,
+        "heading": 105.0,
+        "label": "",
+        "lastUpdated": 1792780643,
+        "speed": 0.0,
+        "nextStop": {
+          "stopPosition": 4,
+          "stop": {
+            "gtfsId": "1:005510233_2",
+            "name": "Újpalota",
+            "lat": 47.5316,
+            "lon": 19.126206,
+            "parentStation": {
+              "gtfsId": "1:005510233"
+            }
+          }
+        },
+        "trip": {
+          "gtfsId": "1:31961694",
+          "tripShortName": "3248 személyvonat",
+          "tripHeadsign": "Pilisvörösvár",
+          "route": {
+            "gtfsId": "1:V3000_106",
+            "shortName": "<span class=\"MNR2007\">&#446;</span>",
+            "longName": "S76",
+            "mode": "RAIL",
+            "color": "FFFFFF",
+            "textColor": "00A0E3"
+          }
+        }
+      }
+    ]
+  },
+  "_fixtureNow": 1792780658
+}

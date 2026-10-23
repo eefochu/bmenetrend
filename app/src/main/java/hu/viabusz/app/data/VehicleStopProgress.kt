@@ -11,7 +11,11 @@ object VehicleStopProgress {
         if (Duration.between(vehicle.observedAt, now).seconds !in -30..180) return null
         val id = vehicle.nextStopId ?: return null
         val stops = journey?.takeIf { it.tripId == vehicle.tripId }?.stops.orEmpty()
-        val matches = stops.indices.filter { stops[it].id == id }
+        val matches = stops.indices.filter { index ->
+            val stop = stops[index]
+            stop.id == id || vehicle.providerId == "mav" && vehicle.nextStopParentId != null &&
+                (stop.parentStationId == vehicle.nextStopParentId || stop.id == vehicle.nextStopParentId)
+        }
         val index = vehicle.nextStopPosition?.let { position ->
             listOf(position, position - 1).distinct().filter { it in matches }.singleOrNull()
         } ?: matches.singleOrNull()

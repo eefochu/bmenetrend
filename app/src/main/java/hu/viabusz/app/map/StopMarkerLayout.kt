@@ -11,6 +11,7 @@ object StopMarkerLayout {
     fun color(provider: String, mode: String?): Int = when {
         mode == "TRAM" -> 0xFFFFD800.toInt()
         mode == "TROLLEYBUS" -> 0xFFE31B23.toInt()
+        mode == "RAIL" || mode == "TRAMTRAIN" -> 0xFF0066AA.toInt()
         provider == "hev" || mode == "SUBURBAN_RAILWAY" -> 0xFF267D44.toInt()
         provider == "volan" -> 0xFFF9B900.toInt()
         provider == "bkk" -> 0xFF199DCF.toInt()

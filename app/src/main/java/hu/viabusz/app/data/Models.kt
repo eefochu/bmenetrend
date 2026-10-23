@@ -72,7 +72,12 @@ data class Vehicle(
     val nextStopId: String? = null,
     val nextStopPosition: Int? = null,
     val nextStopPoint: GeoPoint? = null,
-)
+    val trainNumber: String? = null,
+    val serviceName: String? = null,
+    val nextStopParentId: String? = null,
+) {
+    val displayNumber: String get() = if (RailSupport.isTrain(transportMode)) RailSupport.label(routeNumber, trainNumber) else routeNumber ?: "?"
+}
 
 enum class ArrivalKind { SCHEDULED, LIVE }
 
@@ -93,6 +98,9 @@ data class Departure(
     val wheelchairAccessible: String? = null,
     val bikesAllowed: String? = null,
     val realtimeState: String? = null,
+    val trainNumber: String? = null,
+    val serviceName: String? = null,
+    val platformCode: String? = null,
 )
 
 @Immutable

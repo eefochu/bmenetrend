@@ -569,11 +569,11 @@ private fun StopPanel(
             modifier = Modifier.padding(top = 6.dp, bottom = 3.dp),
         ) {
             item(contentType = "label") { Text(stringResource(R.string.ui_departures), Modifier.padding(end = 5.dp), style = MaterialTheme.typography.labelLarge) }
-            items(listOf(30, 60, 120), key = { it }, contentType = { "chip" }) { minutes ->
+            items(hu.viabusz.app.data.DepartureTime.windows, key = { it }, contentType = { "chip" }) { minutes ->
                 FilterChip(
                     selected = state.windowMinutes == minutes,
                     onClick = { onWindowChanged(minutes) },
-                    label = { Text(if (minutes == 120) stringResource(R.string.ui_two_hours) else stringResource(R.string.ui_minutes_value, minutes)) },
+                    label = { Text(compactDuration(minutes)) },
                 )
             }
         }
@@ -616,7 +616,7 @@ private fun StopPanel(
                     minutes = minutes,
                     providerId = routeById[departure.routeId]?.providerId ?: "viabusz",
                     route = routeById[departure.routeId],
-                    boardingInfo = boardingInfo,
+                    boardingInfo = departure.platformCode?.let { stringResource(if (routeById[departure.routeId]?.providerId == "mav") R.string.rail_platform else R.string.emma_platform, it) } ?: boardingInfo,
                     onClick = { openDeparture(departure) },
                 )
                 if (index < state.departures.lastIndex) HorizontalDivider(Modifier.padding(horizontal = 22.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
@@ -654,7 +654,7 @@ private fun LiveStopSignal(minutes: List<Int>) {
                 Icon(Icons.Rounded.Sensors, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onTertiaryContainer)
                 Text(stringResource(R.string.ui_live_stop_signal), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onTertiaryContainer)
                 Spacer(Modifier.weight(1f))
-                Text(minutes.map { if (it == 0) stringResource(R.string.ui_now) else stringResource(R.string.ui_minutes_short, it) }.joinToString(" / "), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                Text(minutes.map { countdown(it) }.joinToString(" / "), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onTertiaryContainer)
             }
             Text(stringResource(R.string.ui_live_stop_explanation), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onTertiaryContainer)
         }
@@ -670,16 +670,16 @@ private fun DepartureRow(departure: Departure, minutes: Int, providerId: String,
         horizontalArrangement = Arrangement.spacedBy(13.dp),
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            LineBadge(departure.routeNumber, providerId, route?.transportMode, route?.color)
+            ServiceBadge(departure.routeNumber, providerId, route?.transportMode, route?.color, departure.trainNumber)
             Text(providerName(providerId), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text(departure.destination, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            departure.serviceName?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             boardingInfo?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                 Icon(if (live) Icons.Rounded.Sensors else Icons.Rounded.AccessTime, null, Modifier.size(13.dp), tint = if (live) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(stringResource(if (live) R.string.ui_live_arrival else R.string.ui_scheduled), style = MaterialTheme.typography.labelMedium, color = if (live) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("· ${clockFormat.format(departure.expectedAt)}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             if (live && departure.scheduledAt != null && kotlin.math.abs(Duration.between(departure.scheduledAt, departure.expectedAt).seconds) >= 60) {
                 val delay = Duration.between(departure.scheduledAt, departure.expectedAt).toMinutes().toInt()
@@ -693,8 +693,8 @@ private fun DepartureRow(departure: Departure, minutes: Int, providerId: String,
             if (departure.restrictedService) Text(stringResource(R.string.ui_registration_required), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
         }
         Column(horizontalAlignment = Alignment.End) {
-            Text(clockFormat.format(departure.expectedAt), style = MaterialTheme.typography.titleLarge, color = if (live) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
-            Text(if (minutes == 0) stringResource(R.string.ui_now) else stringResource(R.string.ui_minutes_short, minutes), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(countdown(minutes), style = MaterialTheme.typography.titleLarge, color = if (live) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+            Text(clockFormat.format(departure.expectedAt), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -745,7 +745,7 @@ private fun SearchAndRoutes(
             }
             when {
                 route == null -> CategorizedSearch(state, query, category, { category = it }, onRoute, onStop, onVehicle, onPlace, onSearchPlaces)
-                route.providerId in setOf("volan", "bkk", "hev") -> EmmaLineBrowser(state, route, patternId, onDirection, onBoard) { onRetryLine(route.id) }
+                route.providerId in setOf("volan", "bkk", "hev", "mav") -> EmmaLineBrowser(state, route, patternId, onDirection, onBoard) { onRetryLine(route.id) }
                 direction == null -> DirectionList(route, onDirection)
                 else -> RouteStops(state, route, direction) { onBoard(route.id, direction.id, it) }
             }
@@ -901,6 +901,7 @@ private fun SourceDialog(onDismiss: () -> Unit) {
 @Composable
 internal fun providerName(providerId: String): String = stringResource(
     when (providerId) {
+        "mav" -> R.string.rail_provider
         "hev" -> R.string.emma_provider_hev
         "kanyargo" -> R.string.ui_provider_kanyargo
         "homm" -> R.string.ui_provider_homm

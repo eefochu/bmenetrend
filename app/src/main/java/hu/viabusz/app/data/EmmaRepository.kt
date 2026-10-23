@@ -20,5 +20,8 @@ class EmmaRepository(context: Context) {
         }
         Result(result.vehicles, message, result.fetchedAt)
     } catch (cancelled: CancellationException) { throw cancelled
-    } catch (_: Exception) { Result(emptyList(), R.string.volan_unavailable, Instant.now()) }
+    } catch (error: Exception) {
+        if (hu.viabusz.app.BuildConfig.DEBUG) android.util.Log.w("Emma", "Vehicle refresh failed", error)
+        Result(emptyList(), R.string.volan_unavailable, Instant.now())
+    }
 }

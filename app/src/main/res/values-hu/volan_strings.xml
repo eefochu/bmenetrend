@@ -3,7 +3,7 @@
     <string name="volan_settings">Beállítások</string>
     <string name="volan_nationwide">Országos hálózat</string>
     <string name="volan_local_scope">Az EMMA/MÁVPlusz országosan szolgáltat Volán-buszokat, Budapesten pedig BKK-járműveket is. A Volán jelölői sárgák; a BKK-buszok világoskék, a trolik piros, a villamosok sárga ikont kapnak.</string>
-    <string name="volan_nationwide_hint">Alapból bekapcsolva. Kikapcsolva a Biatorbágyot, Pátyot és Budaörsöt érintő Volán-vonalak, valamint a Budapesten belüli BKK-járművek jelennek meg. A követés a forrástól függ; a hiányzó pozíció nem jelent járatkimaradást.</string>
+    <string name="volan_nationwide_hint">Alapból bekapcsolva. Kikapcsolva a Biatorbágyot, Pátyot és Budaörsöt érintő Volán-vonalak, valamint a Budapesten belüli BKK-járművek jelennek meg. A vonatok és a HÉV-ek országosan elérhetők maradnak. A követés a forrástól függ; a hiányzó pozíció nem jelent járatkimaradást.</string>
     <string name="volan_unavailable">Az EMMA/MÁVPlusz élő adatai nem érhetők el. Automatikusan újrapróbáljuk.</string>
     <string name="volan_no_positions">EMMA · Nincs friss követett jármű a kiválasztott hálózaton.</string>
     <string name="volan_observation_time">Forrásadat ideje: %1$s</string>
@@ -13,7 +13,7 @@
     <string name="volan_route_hint">Alább a vonal követett járművei láthatók. Az élő térképi pozíciók nem adnak megállóhelyi indulási előrejelzést.</string>
     <string name="volan_timetable_link">Hivatalos vonali menetrend</string>
     <string name="volan_no_route_positions">Nincs friss követett jármű ezen a vonalon a kiválasztott hálózaton.</string>
-    <string name="volan_loading">EMMA · Országos Volán-, BKK- és HÉV--járművek betöltése…</string>
+    <string name="volan_loading">EMMA · Országos vonat-, Volán-, BKK- és HÉV-adatok betöltése…</string>
     <plurals name="volan_positions">
         <item quantity="one">EMMA · %1$d követett jármű · MÁVPlusz</item>
         <item quantity="other">EMMA · %1$d követett jármű · MÁVPlusz</item>

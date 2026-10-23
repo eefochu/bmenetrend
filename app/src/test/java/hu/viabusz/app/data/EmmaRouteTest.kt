@@ -48,7 +48,7 @@ class EmmaRouteTest {
             .put(JSONObject().put("gtfsId", "1:rail").put("shortName", "S10").put("mode", "RAIL"))
             .put(JSONObject().put("gtfsId", "Other:1").put("shortName", "1").put("mode", "BUS"))
         val parsed = EmmaRouteParser.catalogue(JSONObject().put("data", JSONObject().put("routes", rows)).toString())
-        assertEquals(setOf("bkk:BKK:3010", "volan:hkir:760"), parsed.map { it.id }.toSet())
+        assertEquals(setOf("bkk:BKK:3010", "volan:hkir:760", "mav:1:rail"), parsed.map { it.id }.toSet())
         assertEquals("TRAM", parsed.first().transportMode)
         assertEquals("FFD800", parsed.first().color)
     }

@@ -1,0 +1,3234 @@
+{
+  "data": {
+    "stops": [
+      {
+        "gtfsId": "1:005501024_0",
+        "name": "Budapest-Kelenföld",
+        "lat": 47.464444,
+        "lon": 19.02,
+        "vehicleMode": "RAIL",
+        "platformCode": null,
+        "locationType": "STOP",
+        "parentStation": {
+          "gtfsId": "1:005501024",
+          "name": "Budapest-Kelenföld"
+        },
+        "routes": [
+          {
+            "gtfsId": "1:V2912_106",
+            "shortName": "<span class=\"MNR2007\">&#387;</span>",
+            "longName": "G10",
+            "mode": "RAIL",
+            "color": "FFFFFF"
+          },
+          {
+            "gtfsId": "1:V2986_106",
+            "shortName": "<span class=\"MNR2007\">&#335;</span>",
+            "longName": "S10",
+            "mode": "RAIL",
+            "color": "FFFFFF"
+          },
+          {
+            "gtfsId": "1:V2917_106",
+            "shortName": "<span class=\"MNR2007\">&#350;</span>",
+            "longName": "S12",
+            "mode": "RAIL",
+            "color": "FFFFFF"
+          },
+          {
+            "gtfsId": "1:V2931_106",
+            "shortName": "<span class=\"MNR2007\">&#354;</span>",
+            "longName": "S30",
+            "mode": "RAIL",
+            "color": "FFFFFF"
+          },
+          {
+            "gtfsId": "1:V2990_106",
+            "shortName": "<span class=\"MNR2007\">&#383;</span>",
+            "longName": "Z30",
+            "mode": "RAIL",
+            "color": "FECC00"
+          },
+          {
+            "gtfsId": "1:V2963_106",
+            "shortName": "<span class=\"MNR2007\">&#357;</span>",
+            "longName": "S36",
+            "mode": "RAIL",
+            "color": "FFFFFF"
+          },
+          {
+            "gtfsId": "1:V2997_106",
+            "shortName": "<span class=\"MNR2007\">&#399;</span>",
+            "longName": "G40",
+            "mode": "RAIL",
+            "color": "FFFFFF"
+          },
+          {
+            "gtfsId": "1:V2959_106",
+            "shortName": "<span class=\"MNR2007\">&#358;</span>",
+            "longName": "S40",
+            "mode": "RAIL",
+            "color": "FFFFFF"
+          },
+          {
+            "gtfsId": "1:V2947_106",
+            "shortName": "<span class=\"MNR2007\">&#359;</span>",
+            "longName": "S42",
+            "mode": "RAIL",
+            "color": "FFFFFF"
+          },
+          {
+            "gtfsId": "1:V3013_106",
+            "shortName": "<span class=\"MNR2007\">&#525;</span>",
+            "longName": "Z42",
+            "mode": "RAIL",
+            "color": "FECC00"
+          },
+          {
+            "gtfsId": "1:V2934_106",
+            "shortName": "<span class=\"MNR2007\">&#390;</span>",
+            "longName": "G43",
+            "mode": "RAIL",
+            "color": "FFFFFF"
+          },
+          {
+            "gtfsId": "1:V3601_106",
+            "shortName": "<span class=\"MNR2007\">&#401;</span>",
+            "longName": "G44",
+            "mode": "RAIL",
+            "color": "FFFFFF"
+          },
+          {
+            "gtfsId": "1:E36242192",
+            "shortName": "<span class=\"MNR2007\">&#473;</span>",
+            "longName": "Gy AGRAM - TÓPART",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36231459",
+            "shortName": "<span class=\"MNR2007\">&#474;</span>",
+            "longName": "IC AGRAM - TÓPART",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36225874",
+            "shortName": "<span class=\"MNR2007\">&#474;</span>",
+            "longName": "IC ARRABONA",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36437562",
+            "shortName": "<span class=\"MNR2007\">&#467;</span>",
+            "longName": "EC AVALA/IVO ANDRIĆ",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36019954",
+            "shortName": "<span class=\"MNR2007\">&#473;</span>",
+            "longName": "Gy BAKONY",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36016714",
+            "shortName": "<span class=\"MNR2007\">&#474;</span>",
+            "longName": "IC BAKONY",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36016657",
+            "shortName": "<span class=\"MNR2007\">&#474;</span>",
+            "longName": "IC BALATON",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36019990",
+            "shortName": "<span class=\"MNR2007\">&#473;</span>",
+            "longName": "Gy BALATON",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36226212",
+            "shortName": "<span class=\"MNR2007\">&#467;</span>",
+            "longName": "EC BARTÓK BÉLA/CSÁRDÁS/LEHÁR FERENC/LISZT FERENC/SEMMELWEIS IGNÁC",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36448194",
+            "shortName": "<span class=\"MNR2007\">&#473;</span>",
+            "longName": "Gy CITADELLA",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36103393",
+            "shortName": "<span class=\"MNR2007\">&#474;</span>",
+            "longName": "IC CITADELLA",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36226213",
+            "shortName": "<span class=\"MNR2007\">&#467;</span>",
+            "longName": "EC CSÁRDÁS/LISZT FERENC",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36322930",
+            "shortName": "<span class=\"MNR2007\">&#473;</span>",
+            "longName": "Gy DACIA - RUTHENIA",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36322664",
+            "shortName": "<span class=\"MNR2007\">&#467;</span>",
+            "longName": "EC DACIA/DACIA - RUTHENIA",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36437557",
+            "shortName": "<span class=\"MNR2007\">&#473;</span>",
+            "longName": "Gy DACIA/DACIA - RUTHENIA",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36018610",
+            "shortName": "<span class=\"MNR2007\">&#477;</span>",
+            "longName": "IR DÉLI -> PARTI",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36017994",
+            "shortName": "<span class=\"MNR2007\">&#477;</span>",
+            "longName": "IR DÉLI <- PARTI",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36016622",
+            "shortName": "<span class=\"MNR2007\">&#477;</span>",
+            "longName": "IR DÉLI -> PARTI/DÉLI <- PARTI",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36226271",
+            "shortName": "<span class=\"MNR2007\">&#474;</span>",
+            "longName": "IC DRÁVA",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36103629",
+            "shortName": "<span class=\"MNR2007\">&#473;</span>",
+            "longName": "Gy GÖCSEJ",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36103351",
+            "shortName": "<span class=\"MNR2007\">&#474;</span>",
+            "longName": "IC GÖCSEJ",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36225966",
+            "shortName": "<span class=\"MNR2007\">&#467;</span>",
+            "longName": "EC HORTOBÁGY",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36226304",
+            "shortName": "<span class=\"MNR2007\">&#470;</span>",
+            "longName": "EN KÁLMÁN IMRE",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E35636123",
+            "shortName": "<span class=\"MNR2007\">&#474;</span>",
+            "longName": "IC KRESZ GÉZA/RIPPL-RÓNAI",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E35764789",
+            "shortName": "<span class=\"MNR2007\">&#473;</span>",
+            "longName": "Gy KRESZ GÉZA/RIPPL-RÓNAI",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36016627",
+            "shortName": "<span class=\"MNR2007\">&#474;</span>",
+            "longName": "IC MECSEK",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36226697",
+            "shortName": "<span class=\"MNR2007\">&#474;</span>",
+            "longName": "IC MURA",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36020177",
+            "shortName": "<span class=\"MNR2007\">&#477;</span>",
+            "longName": "IR RÁBA",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36226343",
+            "shortName": "<span class=\"MNR2007\">&#474;</span>",
+            "longName": "IC SAVARIA",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E35803906",
+            "shortName": "<span class=\"MNR2007\">&#474;</span>",
+            "longName": "IC SCARBANTIA",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E35700551",
+            "shortName": "<span class=\"MNR2007\">&#474;</span>",
+            "longName": "IC SOMOGY",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E35764790",
+            "shortName": "<span class=\"MNR2007\">&#473;</span>",
+            "longName": "Gy SOMOGY",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36016619",
+            "shortName": "<span class=\"MNR2007\">&#472;</span>",
+            "longName": "Ex SUGOVICA",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E34710066",
+            "shortName": "<span class=\"MNR2007\">&#467;</span>",
+            "longName": "EC SZAMOS",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E35636142",
+            "shortName": "<span class=\"MNR2007\">&#472;</span>",
+            "longName": "Ex TENKES",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36226681",
+            "shortName": "<span class=\"MNR2007\">&#467;</span>",
+            "longName": "EC TISZA",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36438076",
+            "shortName": "<span class=\"MNR2007\">&#467;</span>",
+            "longName": "EC TISZA - SZAMOS",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36226673",
+            "shortName": "<span class=\"MNR2007\">&#467;</span>",
+            "longName": "EC TISZA/TISZA - SZAMOS",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36019982",
+            "shortName": "<span class=\"MNR2007\">&#473;</span>",
+            "longName": "Gy TÓPART",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36016624",
+            "shortName": "<span class=\"MNR2007\">&#474;</span>",
+            "longName": "IC TÓPART",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36226179",
+            "shortName": "<span class=\"MNR2007\">&#481;</span>",
+            "longName": "rjx 162",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36226136",
+            "shortName": "<span class=\"MNR2007\">&#481;</span>",
+            "longName": "rjx 165",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36018642",
+            "shortName": "<span class=\"MNR2007\">&#484;</span>",
+            "longName": "Sz 18748",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36226635",
+            "shortName": "<span class=\"MNR2007\">&#481;</span>",
+            "longName": "rjx 19949/264/269",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36390403",
+            "shortName": "<span class=\"MNR2007\">&#481;</span>",
+            "longName": "rjx 261",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36226603",
+            "shortName": "<span class=\"MNR2007\">&#481;</span>",
+            "longName": "rjx 261/67",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36226647",
+            "shortName": "<span class=\"MNR2007\">&#481;</span>",
+            "longName": "rjx 264",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36226123",
+            "shortName": "<span class=\"MNR2007\">&#481;</span>",
+            "longName": "rjx 266/267",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36226124",
+            "shortName": "<span class=\"MNR2007\">&#481;</span>",
+            "longName": "rjx 267",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36411904",
+            "shortName": "<span class=\"MNR2007\">&#481;</span>",
+            "longName": "rjx 269",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36019798",
+            "shortName": "<span class=\"MNR2007\">&#484;</span>",
+            "longName": "Sz 4219/8020",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36019794",
+            "shortName": "<span class=\"MNR2007\">&#484;</span>",
+            "longName": "Sz 4829",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36019795",
+            "shortName": "<span class=\"MNR2007\">&#484;</span>",
+            "longName": "Sz 4917/4929",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36226003",
+            "shortName": "<span class=\"MNR2007\">&#481;</span>",
+            "longName": "rjx 60/62/63/64/65/66",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36226082",
+            "shortName": "<span class=\"MNR2007\">&#481;</span>",
+            "longName": "rjx 61",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36226546",
+            "shortName": "<span class=\"MNR2007\">&#481;</span>",
+            "longName": "rjx 62",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36226015",
+            "shortName": "<span class=\"MNR2007\">&#481;</span>",
+            "longName": "rjx 63/64/65",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36226023",
+            "shortName": "<span class=\"MNR2007\">&#481;</span>",
+            "longName": "rjx 64",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36438090",
+            "shortName": "<span class=\"MNR2007\">&#481;</span>",
+            "longName": "rjx 67",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36226055",
+            "shortName": "<span class=\"MNR2007\">&#481;</span>",
+            "longName": "rjx 68",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36103527",
+            "shortName": "<span class=\"MNR2007\">&#482;</span>",
+            "longName": "S 8609",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36017989",
+            "shortName": "<span class=\"MNR2007\">&#484;</span>",
+            "longName": "Sz 8729",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36018606",
+            "shortName": "<span class=\"MNR2007\">&#484;</span>",
+            "longName": "Sz 8738",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E31960437",
+            "shortName": "<span class=\"MNR2007\">&#482;</span>",
+            "longName": "S 9006/9056/9066",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36018112",
+            "shortName": "<span class=\"MNR2007\">&#482;</span>",
+            "longName": "S 9009",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E28635770",
+            "shortName": "<span class=\"MNR2007\">&#482;</span>",
+            "longName": "S 9057",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E35373966",
+            "shortName": "<span class=\"MNR2007\">&#482;</span>",
+            "longName": "S 9059",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36016717",
+            "shortName": "<span class=\"MNR2007\">&#484;</span>",
+            "longName": "Sz 9068",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36196041",
+            "shortName": "<span class=\"MNR2007\">&#482;</span>",
+            "longName": "S 9307",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36196038",
+            "shortName": "<span class=\"MNR2007\">&#482;</span>",
+            "longName": "S 9309",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36018110",
+            "shortName": "<span class=\"MNR2007\">&#482;</span>",
+            "longName": "S 968",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36016722",
+            "shortName": "<span class=\"MNR2007\">&#482;</span>",
+            "longName": "S 969",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E35883139",
+            "shortName": "<span class=\"MNR2007\">&#482;</span>",
+            "longName": "S 9702/9703/9704/9705/9706/9707",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36016712",
+            "shortName": "<span class=\"MNR2007\">&#482;</span>",
+            "longName": "S 9708",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E35883138",
+            "shortName": "<span class=\"MNR2007\">&#482;</span>",
+            "longName": "S 9709",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E36103263",
+            "shortName": "<span class=\"MNR2007\">&#484;</span>",
+            "longName": "Sz 9749",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          },
+          {
+            "gtfsId": "1:E35883140",
+            "shortName": "<span class=\"MNR2007\">&#482;</span>",
+            "longName": "S 9792/9793/9794/9795/9796/9797",
+            "mode": "RAIL",
+            "color": "FEFEFE"
+          }
+        ]
+      },
+      {
+        "gtfsId": "hkir:hkir_773538_0",
+        "name": "Budapest, Kelenföld vasútállomás",
+        "lat": 47.463571,
+        "lon": 19.023212,
+        "vehicleMode": "COACH",
+        "platformCode": null,
+        "locationType": "STOP",
+        "parentStation": {
+          "gtfsId": "hkir:hkir_773538",
+          "name": "Budapest, Kelenföld vasútállomás"
+        },
+        "routes": [
+          {
+            "gtfsId": "hkir:hkir_V-R-200-686",
+            "shortName": "686",
+            "longName": "685, 686  Budapest, Kelenföld - Halásztelek - Szigethalom",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-689",
+            "shortName": "689",
+            "longName": "Budapest, Kelenföld - Szigetszentmiklós - Szigethalom",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-691",
+            "shortName": "691",
+            "longName": "Budapest, Kelenföld - Szigetszentmiklós - Szigethalom",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-710",
+            "shortName": "710",
+            "longName": "Budapest - Érd - Százhalombatta",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-712",
+            "shortName": "712",
+            "longName": "Budapest - Érd - Százhalombatta",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-715",
+            "shortName": "715",
+            "longName": "Budapest - Érd - Százhalombatta",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-720",
+            "shortName": "720",
+            "longName": "Budapest - Diósd - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-722",
+            "shortName": "722",
+            "longName": "Budapest - Érd - Sóskút - Pusztazámor",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-724",
+            "shortName": "724",
+            "longName": "Budapest - M7 - Sóskút - Pusztazámor",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-725",
+            "shortName": "725",
+            "longName": "Budapest - Diósdliget - Diósd - Budapest",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-727",
+            "shortName": "727",
+            "longName": "Budapest - Diósdliget - Diósd - Budapest",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-729",
+            "shortName": "729",
+            "longName": "Budapest, Móricz Zs. körtér - Diósd - Érd - Budapest, Móricz Zs. körtér",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-731",
+            "shortName": "731",
+            "longName": "Budapest - Bp., Sasadi út - M7 - Érd, Riminyáki u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-732",
+            "shortName": "732",
+            "longName": "Budapest / Érd, Bem tér - Érd, Iparos u. - Érd, Bem tér - Érd, aut. áll. / Budapest",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-734",
+            "shortName": "734",
+            "longName": "Budapest - M7 - Érd, Lőcsei u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-735",
+            "shortName": "735",
+            "longName": "Budapest - M7 - Érd, Riminyáki u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-736",
+            "shortName": "736",
+            "longName": "Budapest - M7 - Érd, Ürmös u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-739",
+            "shortName": "739",
+            "longName": "Budapest, Móricz Zsigmond körtér. - M7 - Érd, Riminyáki u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-760",
+            "shortName": "760",
+            "longName": "Budapest - Budaörs - Biatorbágy - Etyek - Bicske",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-762",
+            "shortName": "762",
+            "longName": "Budapest - Biatorbágy, Vasútállomás - Sóskút",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-763",
+            "shortName": "763",
+            "longName": "Budapest - Biatorbágy - Etyek",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-766",
+            "shortName": "766",
+            "longName": "Budapest - Biatorbágy - Etyek - Bicske",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-767",
+            "shortName": "767",
+            "longName": "Budapest - Biatorbágy - Etyek - Bicske",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-769",
+            "shortName": "769",
+            "longName": "Budapest - Biatorbágy - Etyek - Sóskút - Pusztazámor",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-770",
+            "shortName": "770",
+            "longName": "Budapest - M1 - Zsámbék - Tatabánya - Kisbér",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-773",
+            "shortName": "773",
+            "longName": "Budapest - M1 - Páty - Budajenő - Perbál - Zsámbék",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-774",
+            "shortName": "774",
+            "longName": "Budapest - M1 - Páty - Budajenő - Perbál - Zsámbék",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-775",
+            "shortName": "775",
+            "longName": "Budapest - M1 - Zsámbék - Gyermely",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-777",
+            "shortName": "777",
+            "longName": "Budapest - M1 - Zsámbék - Bajna - Nagysáp",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-779",
+            "shortName": "779",
+            "longName": "Budapest - M1 - Zsámbék - Gyermely - Bajna - Nyergesújfalu",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-798",
+            "shortName": "798",
+            "longName": "Budapest - M1 - Zsámbék - Perbál - Piliscsaba - Pilisvörösvár",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-799",
+            "shortName": "799",
+            "longName": "Budapest - M1 - Zsámbék - Perbál - Piliscsaba - Pilisvörösvár",
+            "mode": "COACH",
+            "color": "F6AC00"
+          }
+        ]
+      },
+      {
+        "gtfsId": "BKK:061277",
+        "name": "Budapest, Kelenföld vasútállomás M",
+        "lat": 47.464634,
+        "lon": 19.018494,
+        "vehicleMode": "BUS",
+        "platformCode": null,
+        "locationType": "STOP",
+        "parentStation": null,
+        "routes": [
+          {
+            "gtfsId": "BKK:0081",
+            "shortName": "8A",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:0085",
+            "shortName": "8E",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:0400",
+            "shortName": "40",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:0402",
+            "shortName": "40B",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:0405",
+            "shortName": "40E",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:0870",
+            "shortName": "87",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:0871",
+            "shortName": "87A",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:0880",
+            "shortName": "88",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:0881",
+            "shortName": "88A",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:1085",
+            "shortName": "108E",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:1530",
+            "shortName": "153",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:1540",
+            "shortName": "154",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:1720",
+            "shortName": "172",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:1730",
+            "shortName": "173",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:1870",
+            "shortName": "187",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:1880",
+            "shortName": "188",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:1885",
+            "shortName": "188E",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:2530",
+            "shortName": "253",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:2720",
+            "shortName": "272",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:9080",
+            "shortName": "908",
+            "longName": null,
+            "mode": "BUS",
+            "color": "000000"
+          },
+          {
+            "gtfsId": "BKK:9081",
+            "shortName": "908A",
+            "longName": null,
+            "mode": "BUS",
+            "color": "000000"
+          },
+          {
+            "gtfsId": "BKK:9870",
+            "shortName": "987",
+            "longName": null,
+            "mode": "BUS",
+            "color": "000000"
+          }
+        ]
+      },
+      {
+        "gtfsId": "BKK:061280",
+        "name": "Budapest, Kelenföld vasútállomás M",
+        "lat": 47.464436,
+        "lon": 19.018308,
+        "vehicleMode": "BUS",
+        "platformCode": null,
+        "locationType": "STOP",
+        "parentStation": null,
+        "routes": [
+          {
+            "gtfsId": "BKK:0530",
+            "shortName": "53",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:1012",
+            "shortName": "101B",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:1015",
+            "shortName": "101E",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:1410",
+            "shortName": "141",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:1500",
+            "shortName": "150",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:1502",
+            "shortName": "150B",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:1530",
+            "shortName": "153",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:1540",
+            "shortName": "154",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:2500",
+            "shortName": "250",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:2502",
+            "shortName": "250B",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:2510",
+            "shortName": "251",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:2511",
+            "shortName": "251A",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:2515",
+            "shortName": "251E",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          }
+        ]
+      },
+      {
+        "gtfsId": "BKK:007967",
+        "name": "Budapest, Kelenföld vasútállomás M",
+        "lat": 47.465755,
+        "lon": 19.021871,
+        "vehicleMode": "TRAM",
+        "platformCode": null,
+        "locationType": "STOP",
+        "parentStation": null,
+        "routes": [
+          {
+            "gtfsId": "BKK:3190",
+            "shortName": "19",
+            "longName": null,
+            "mode": "TRAM",
+            "color": "FFD800"
+          },
+          {
+            "gtfsId": "BKK:3490",
+            "shortName": "49",
+            "longName": null,
+            "mode": "TRAM",
+            "color": "FFD800"
+          }
+        ]
+      },
+      {
+        "gtfsId": "BKK:099634",
+        "name": "Budapest, Kelenföld vasútállomás M",
+        "lat": 47.464469,
+        "lon": 19.023384,
+        "vehicleMode": "TRAM",
+        "platformCode": null,
+        "locationType": "STOP",
+        "parentStation": null,
+        "routes": [
+          {
+            "gtfsId": "BKK:3010",
+            "shortName": "1",
+            "longName": null,
+            "mode": "TRAM",
+            "color": "FFD800"
+          }
+        ]
+      },
+      {
+        "gtfsId": "BKK:099633",
+        "name": "Budapest, Kelenföld vasútállomás M",
+        "lat": 47.46401,
+        "lon": 19.023106,
+        "vehicleMode": "TRAM",
+        "platformCode": null,
+        "locationType": "STOP",
+        "parentStation": null,
+        "routes": [
+          {
+            "gtfsId": "BKK:3010",
+            "shortName": "1",
+            "longName": null,
+            "mode": "TRAM",
+            "color": "FFD800"
+          }
+        ]
+      },
+      {
+        "gtfsId": "hkir:hkir_773537_2",
+        "name": "Budapest, Kelenföld vá. (Őrmező)",
+        "lat": 47.46483,
+        "lon": 19.018207,
+        "vehicleMode": "COACH",
+        "platformCode": null,
+        "locationType": "STOP",
+        "parentStation": null,
+        "routes": [
+          {
+            "gtfsId": "hkir:hkir_V-R-200-724",
+            "shortName": "724",
+            "longName": "Budapest - M7 - Sóskút - Pusztazámor",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-729",
+            "shortName": "729",
+            "longName": "Budapest, Móricz Zs. körtér - Diósd - Érd - Budapest, Móricz Zs. körtér",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-732",
+            "shortName": "732",
+            "longName": "Budapest / Érd, Bem tér - Érd, Iparos u. - Érd, Bem tér - Érd, aut. áll. / Budapest",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-734",
+            "shortName": "734",
+            "longName": "Budapest - M7 - Érd, Lőcsei u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-735",
+            "shortName": "735",
+            "longName": "Budapest - M7 - Érd, Riminyáki u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-736",
+            "shortName": "736",
+            "longName": "Budapest - M7 - Érd, Ürmös u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-760",
+            "shortName": "760",
+            "longName": "Budapest - Budaörs - Biatorbágy - Etyek - Bicske",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-762",
+            "shortName": "762",
+            "longName": "Budapest - Biatorbágy, Vasútállomás - Sóskút",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-763",
+            "shortName": "763",
+            "longName": "Budapest - Biatorbágy - Etyek",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-767",
+            "shortName": "767",
+            "longName": "Budapest - Biatorbágy - Etyek - Bicske",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-770",
+            "shortName": "770",
+            "longName": "Budapest - M1 - Zsámbék - Tatabánya - Kisbér",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-773",
+            "shortName": "773",
+            "longName": "Budapest - M1 - Páty - Budajenő - Perbál - Zsámbék",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-774",
+            "shortName": "774",
+            "longName": "Budapest - M1 - Páty - Budajenő - Perbál - Zsámbék",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-775",
+            "shortName": "775",
+            "longName": "Budapest - M1 - Zsámbék - Gyermely",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-777",
+            "shortName": "777",
+            "longName": "Budapest - M1 - Zsámbék - Bajna - Nagysáp",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-779",
+            "shortName": "779",
+            "longName": "Budapest - M1 - Zsámbék - Gyermely - Bajna - Nyergesújfalu",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-798",
+            "shortName": "798",
+            "longName": "Budapest - M1 - Zsámbék - Perbál - Piliscsaba - Pilisvörösvár",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-799",
+            "shortName": "799",
+            "longName": "Budapest - M1 - Zsámbék - Perbál - Piliscsaba - Pilisvörösvár",
+            "mode": "COACH",
+            "color": "F6AC00"
+          }
+        ]
+      },
+      {
+        "gtfsId": "BKK:061278",
+        "name": "Budapest, Kelenföld vasútállomás M",
+        "lat": 47.464751,
+        "lon": 19.017791,
+        "vehicleMode": "BUS",
+        "platformCode": null,
+        "locationType": "STOP",
+        "parentStation": null,
+        "routes": [
+          {
+            "gtfsId": "BKK:0081",
+            "shortName": "8A",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:0085",
+            "shortName": "8E",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:1085",
+            "shortName": "108E",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:9080",
+            "shortName": "908",
+            "longName": null,
+            "mode": "BUS",
+            "color": "000000"
+          },
+          {
+            "gtfsId": "BKK:9081",
+            "shortName": "908A",
+            "longName": null,
+            "mode": "BUS",
+            "color": "000000"
+          }
+        ]
+      },
+      {
+        "gtfsId": "BKK:056216",
+        "name": "Budapest, Kelenföld vasútállomás",
+        "lat": 47.464255,
+        "lon": 19.020587,
+        "vehicleMode": "SUBWAY",
+        "platformCode": null,
+        "locationType": "STOP",
+        "parentStation": {
+          "gtfsId": "BKK:CS056215",
+          "name": "Budapest, Kelenföld vasútállomás"
+        },
+        "routes": [
+          {
+            "gtfsId": "BKK:5400",
+            "shortName": "M4",
+            "longName": null,
+            "mode": "SUBWAY",
+            "color": "4CA22F"
+          }
+        ]
+      },
+      {
+        "gtfsId": "BKK:056215",
+        "name": "Budapest, Kelenföld vasútállomás",
+        "lat": 47.464515,
+        "lon": 19.019618,
+        "vehicleMode": "SUBWAY",
+        "platformCode": null,
+        "locationType": "STOP",
+        "parentStation": {
+          "gtfsId": "BKK:CS056215",
+          "name": "Budapest, Kelenföld vasútállomás"
+        },
+        "routes": [
+          {
+            "gtfsId": "BKK:5400",
+            "shortName": "M4",
+            "longName": null,
+            "mode": "SUBWAY",
+            "color": "4CA22F"
+          }
+        ]
+      },
+      {
+        "gtfsId": "BKK:061188",
+        "name": "Budapest, Kelenföld vasútállomás M",
+        "lat": 47.464005,
+        "lon": 19.018706,
+        "vehicleMode": "BUS",
+        "platformCode": null,
+        "locationType": "STOP",
+        "parentStation": null,
+        "routes": [
+          {
+            "gtfsId": "BKK:0870",
+            "shortName": "87",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:0871",
+            "shortName": "87A",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:1012",
+            "shortName": "101B",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:1015",
+            "shortName": "101E",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:1410",
+            "shortName": "141",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:1870",
+            "shortName": "187",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:9870",
+            "shortName": "987",
+            "longName": null,
+            "mode": "BUS",
+            "color": "000000"
+          }
+        ]
+      },
+      {
+        "gtfsId": "hkir:hkir_773538_5",
+        "name": "Budapest, Kelenföld vasútállomás",
+        "lat": 47.463407,
+        "lon": 19.022527,
+        "vehicleMode": "COACH",
+        "platformCode": "5",
+        "locationType": "STOP",
+        "parentStation": {
+          "gtfsId": "hkir:hkir_773538",
+          "name": "Budapest, Kelenföld vasútállomás"
+        },
+        "routes": [
+          {
+            "gtfsId": "hkir:hkir_V-R-200-686",
+            "shortName": "686",
+            "longName": "685, 686  Budapest, Kelenföld - Halásztelek - Szigethalom",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-689",
+            "shortName": "689",
+            "longName": "Budapest, Kelenföld - Szigetszentmiklós - Szigethalom",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-691",
+            "shortName": "691",
+            "longName": "Budapest, Kelenföld - Szigetszentmiklós - Szigethalom",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-710",
+            "shortName": "710",
+            "longName": "Budapest - Érd - Százhalombatta",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-712",
+            "shortName": "712",
+            "longName": "Budapest - Érd - Százhalombatta",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-715",
+            "shortName": "715",
+            "longName": "Budapest - Érd - Százhalombatta",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-720",
+            "shortName": "720",
+            "longName": "Budapest - Diósd - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-722",
+            "shortName": "722",
+            "longName": "Budapest - Érd - Sóskút - Pusztazámor",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-724",
+            "shortName": "724",
+            "longName": "Budapest - M7 - Sóskút - Pusztazámor",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-725",
+            "shortName": "725",
+            "longName": "Budapest - Diósdliget - Diósd - Budapest",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-727",
+            "shortName": "727",
+            "longName": "Budapest - Diósdliget - Diósd - Budapest",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-729",
+            "shortName": "729",
+            "longName": "Budapest, Móricz Zs. körtér - Diósd - Érd - Budapest, Móricz Zs. körtér",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-731",
+            "shortName": "731",
+            "longName": "Budapest - Bp., Sasadi út - M7 - Érd, Riminyáki u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-732",
+            "shortName": "732",
+            "longName": "Budapest / Érd, Bem tér - Érd, Iparos u. - Érd, Bem tér - Érd, aut. áll. / Budapest",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-734",
+            "shortName": "734",
+            "longName": "Budapest - M7 - Érd, Lőcsei u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-735",
+            "shortName": "735",
+            "longName": "Budapest - M7 - Érd, Riminyáki u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-736",
+            "shortName": "736",
+            "longName": "Budapest - M7 - Érd, Ürmös u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-739",
+            "shortName": "739",
+            "longName": "Budapest, Móricz Zsigmond körtér. - M7 - Érd, Riminyáki u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-760",
+            "shortName": "760",
+            "longName": "Budapest - Budaörs - Biatorbágy - Etyek - Bicske",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-762",
+            "shortName": "762",
+            "longName": "Budapest - Biatorbágy, Vasútállomás - Sóskút",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-763",
+            "shortName": "763",
+            "longName": "Budapest - Biatorbágy - Etyek",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-766",
+            "shortName": "766",
+            "longName": "Budapest - Biatorbágy - Etyek - Bicske",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-767",
+            "shortName": "767",
+            "longName": "Budapest - Biatorbágy - Etyek - Bicske",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-769",
+            "shortName": "769",
+            "longName": "Budapest - Biatorbágy - Etyek - Sóskút - Pusztazámor",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-770",
+            "shortName": "770",
+            "longName": "Budapest - M1 - Zsámbék - Tatabánya - Kisbér",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-773",
+            "shortName": "773",
+            "longName": "Budapest - M1 - Páty - Budajenő - Perbál - Zsámbék",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-774",
+            "shortName": "774",
+            "longName": "Budapest - M1 - Páty - Budajenő - Perbál - Zsámbék",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-775",
+            "shortName": "775",
+            "longName": "Budapest - M1 - Zsámbék - Gyermely",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-777",
+            "shortName": "777",
+            "longName": "Budapest - M1 - Zsámbék - Bajna - Nagysáp",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-779",
+            "shortName": "779",
+            "longName": "Budapest - M1 - Zsámbék - Gyermely - Bajna - Nyergesújfalu",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-798",
+            "shortName": "798",
+            "longName": "Budapest - M1 - Zsámbék - Perbál - Piliscsaba - Pilisvörösvár",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-799",
+            "shortName": "799",
+            "longName": "Budapest - M1 - Zsámbék - Perbál - Piliscsaba - Pilisvörösvár",
+            "mode": "COACH",
+            "color": "F6AC00"
+          }
+        ]
+      },
+      {
+        "gtfsId": "hkir:hkir_773538_4",
+        "name": "Budapest, Kelenföld vasútállomás",
+        "lat": 47.463608,
+        "lon": 19.022446,
+        "vehicleMode": "COACH",
+        "platformCode": "4",
+        "locationType": "STOP",
+        "parentStation": {
+          "gtfsId": "hkir:hkir_773538",
+          "name": "Budapest, Kelenföld vasútállomás"
+        },
+        "routes": [
+          {
+            "gtfsId": "hkir:hkir_V-R-200-686",
+            "shortName": "686",
+            "longName": "685, 686  Budapest, Kelenföld - Halásztelek - Szigethalom",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-689",
+            "shortName": "689",
+            "longName": "Budapest, Kelenföld - Szigetszentmiklós - Szigethalom",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-691",
+            "shortName": "691",
+            "longName": "Budapest, Kelenföld - Szigetszentmiklós - Szigethalom",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-710",
+            "shortName": "710",
+            "longName": "Budapest - Érd - Százhalombatta",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-712",
+            "shortName": "712",
+            "longName": "Budapest - Érd - Százhalombatta",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-715",
+            "shortName": "715",
+            "longName": "Budapest - Érd - Százhalombatta",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-720",
+            "shortName": "720",
+            "longName": "Budapest - Diósd - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-722",
+            "shortName": "722",
+            "longName": "Budapest - Érd - Sóskút - Pusztazámor",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-724",
+            "shortName": "724",
+            "longName": "Budapest - M7 - Sóskút - Pusztazámor",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-725",
+            "shortName": "725",
+            "longName": "Budapest - Diósdliget - Diósd - Budapest",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-727",
+            "shortName": "727",
+            "longName": "Budapest - Diósdliget - Diósd - Budapest",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-729",
+            "shortName": "729",
+            "longName": "Budapest, Móricz Zs. körtér - Diósd - Érd - Budapest, Móricz Zs. körtér",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-731",
+            "shortName": "731",
+            "longName": "Budapest - Bp., Sasadi út - M7 - Érd, Riminyáki u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-732",
+            "shortName": "732",
+            "longName": "Budapest / Érd, Bem tér - Érd, Iparos u. - Érd, Bem tér - Érd, aut. áll. / Budapest",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-734",
+            "shortName": "734",
+            "longName": "Budapest - M7 - Érd, Lőcsei u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-735",
+            "shortName": "735",
+            "longName": "Budapest - M7 - Érd, Riminyáki u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-736",
+            "shortName": "736",
+            "longName": "Budapest - M7 - Érd, Ürmös u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-739",
+            "shortName": "739",
+            "longName": "Budapest, Móricz Zsigmond körtér. - M7 - Érd, Riminyáki u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-760",
+            "shortName": "760",
+            "longName": "Budapest - Budaörs - Biatorbágy - Etyek - Bicske",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-762",
+            "shortName": "762",
+            "longName": "Budapest - Biatorbágy, Vasútállomás - Sóskút",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-763",
+            "shortName": "763",
+            "longName": "Budapest - Biatorbágy - Etyek",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-766",
+            "shortName": "766",
+            "longName": "Budapest - Biatorbágy - Etyek - Bicske",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-767",
+            "shortName": "767",
+            "longName": "Budapest - Biatorbágy - Etyek - Bicske",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-769",
+            "shortName": "769",
+            "longName": "Budapest - Biatorbágy - Etyek - Sóskút - Pusztazámor",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-770",
+            "shortName": "770",
+            "longName": "Budapest - M1 - Zsámbék - Tatabánya - Kisbér",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-773",
+            "shortName": "773",
+            "longName": "Budapest - M1 - Páty - Budajenő - Perbál - Zsámbék",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-774",
+            "shortName": "774",
+            "longName": "Budapest - M1 - Páty - Budajenő - Perbál - Zsámbék",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-775",
+            "shortName": "775",
+            "longName": "Budapest - M1 - Zsámbék - Gyermely",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-777",
+            "shortName": "777",
+            "longName": "Budapest - M1 - Zsámbék - Bajna - Nagysáp",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-779",
+            "shortName": "779",
+            "longName": "Budapest - M1 - Zsámbék - Gyermely - Bajna - Nyergesújfalu",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-798",
+            "shortName": "798",
+            "longName": "Budapest - M1 - Zsámbék - Perbál - Piliscsaba - Pilisvörösvár",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-799",
+            "shortName": "799",
+            "longName": "Budapest - M1 - Zsámbék - Perbál - Piliscsaba - Pilisvörösvár",
+            "mode": "COACH",
+            "color": "F6AC00"
+          }
+        ]
+      },
+      {
+        "gtfsId": "hkir:hkir_773538_7",
+        "name": "Budapest, Kelenföld vasútállomás",
+        "lat": 47.463341,
+        "lon": 19.022645,
+        "vehicleMode": "COACH",
+        "platformCode": "7",
+        "locationType": "STOP",
+        "parentStation": {
+          "gtfsId": "hkir:hkir_773538",
+          "name": "Budapest, Kelenföld vasútállomás"
+        },
+        "routes": [
+          {
+            "gtfsId": "hkir:hkir_V-R-200-686",
+            "shortName": "686",
+            "longName": "685, 686  Budapest, Kelenföld - Halásztelek - Szigethalom",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-689",
+            "shortName": "689",
+            "longName": "Budapest, Kelenföld - Szigetszentmiklós - Szigethalom",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-691",
+            "shortName": "691",
+            "longName": "Budapest, Kelenföld - Szigetszentmiklós - Szigethalom",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-710",
+            "shortName": "710",
+            "longName": "Budapest - Érd - Százhalombatta",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-712",
+            "shortName": "712",
+            "longName": "Budapest - Érd - Százhalombatta",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-715",
+            "shortName": "715",
+            "longName": "Budapest - Érd - Százhalombatta",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-720",
+            "shortName": "720",
+            "longName": "Budapest - Diósd - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-722",
+            "shortName": "722",
+            "longName": "Budapest - Érd - Sóskút - Pusztazámor",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-724",
+            "shortName": "724",
+            "longName": "Budapest - M7 - Sóskút - Pusztazámor",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-725",
+            "shortName": "725",
+            "longName": "Budapest - Diósdliget - Diósd - Budapest",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-727",
+            "shortName": "727",
+            "longName": "Budapest - Diósdliget - Diósd - Budapest",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-729",
+            "shortName": "729",
+            "longName": "Budapest, Móricz Zs. körtér - Diósd - Érd - Budapest, Móricz Zs. körtér",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-731",
+            "shortName": "731",
+            "longName": "Budapest - Bp., Sasadi út - M7 - Érd, Riminyáki u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-732",
+            "shortName": "732",
+            "longName": "Budapest / Érd, Bem tér - Érd, Iparos u. - Érd, Bem tér - Érd, aut. áll. / Budapest",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-734",
+            "shortName": "734",
+            "longName": "Budapest - M7 - Érd, Lőcsei u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-735",
+            "shortName": "735",
+            "longName": "Budapest - M7 - Érd, Riminyáki u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-736",
+            "shortName": "736",
+            "longName": "Budapest - M7 - Érd, Ürmös u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-739",
+            "shortName": "739",
+            "longName": "Budapest, Móricz Zsigmond körtér. - M7 - Érd, Riminyáki u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-760",
+            "shortName": "760",
+            "longName": "Budapest - Budaörs - Biatorbágy - Etyek - Bicske",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-762",
+            "shortName": "762",
+            "longName": "Budapest - Biatorbágy, Vasútállomás - Sóskút",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-763",
+            "shortName": "763",
+            "longName": "Budapest - Biatorbágy - Etyek",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-766",
+            "shortName": "766",
+            "longName": "Budapest - Biatorbágy - Etyek - Bicske",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-767",
+            "shortName": "767",
+            "longName": "Budapest - Biatorbágy - Etyek - Bicske",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-769",
+            "shortName": "769",
+            "longName": "Budapest - Biatorbágy - Etyek - Sóskút - Pusztazámor",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-770",
+            "shortName": "770",
+            "longName": "Budapest - M1 - Zsámbék - Tatabánya - Kisbér",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-773",
+            "shortName": "773",
+            "longName": "Budapest - M1 - Páty - Budajenő - Perbál - Zsámbék",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-774",
+            "shortName": "774",
+            "longName": "Budapest - M1 - Páty - Budajenő - Perbál - Zsámbék",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-775",
+            "shortName": "775",
+            "longName": "Budapest - M1 - Zsámbék - Gyermely",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-777",
+            "shortName": "777",
+            "longName": "Budapest - M1 - Zsámbék - Bajna - Nagysáp",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-779",
+            "shortName": "779",
+            "longName": "Budapest - M1 - Zsámbék - Gyermely - Bajna - Nyergesújfalu",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-798",
+            "shortName": "798",
+            "longName": "Budapest - M1 - Zsámbék - Perbál - Piliscsaba - Pilisvörösvár",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-799",
+            "shortName": "799",
+            "longName": "Budapest - M1 - Zsámbék - Perbál - Piliscsaba - Pilisvörösvár",
+            "mode": "COACH",
+            "color": "F6AC00"
+          }
+        ]
+      },
+      {
+        "gtfsId": "hkir:hkir_773538_8",
+        "name": "Budapest, Kelenföld vasútállomás",
+        "lat": 47.463581,
+        "lon": 19.022696,
+        "vehicleMode": "COACH",
+        "platformCode": "8",
+        "locationType": "STOP",
+        "parentStation": {
+          "gtfsId": "hkir:hkir_773538",
+          "name": "Budapest, Kelenföld vasútállomás"
+        },
+        "routes": [
+          {
+            "gtfsId": "hkir:hkir_V-R-200-686",
+            "shortName": "686",
+            "longName": "685, 686  Budapest, Kelenföld - Halásztelek - Szigethalom",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-689",
+            "shortName": "689",
+            "longName": "Budapest, Kelenföld - Szigetszentmiklós - Szigethalom",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-691",
+            "shortName": "691",
+            "longName": "Budapest, Kelenföld - Szigetszentmiklós - Szigethalom",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-710",
+            "shortName": "710",
+            "longName": "Budapest - Érd - Százhalombatta",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-712",
+            "shortName": "712",
+            "longName": "Budapest - Érd - Százhalombatta",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-715",
+            "shortName": "715",
+            "longName": "Budapest - Érd - Százhalombatta",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-720",
+            "shortName": "720",
+            "longName": "Budapest - Diósd - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-722",
+            "shortName": "722",
+            "longName": "Budapest - Érd - Sóskút - Pusztazámor",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-724",
+            "shortName": "724",
+            "longName": "Budapest - M7 - Sóskút - Pusztazámor",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-725",
+            "shortName": "725",
+            "longName": "Budapest - Diósdliget - Diósd - Budapest",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-727",
+            "shortName": "727",
+            "longName": "Budapest - Diósdliget - Diósd - Budapest",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-729",
+            "shortName": "729",
+            "longName": "Budapest, Móricz Zs. körtér - Diósd - Érd - Budapest, Móricz Zs. körtér",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-731",
+            "shortName": "731",
+            "longName": "Budapest - Bp., Sasadi út - M7 - Érd, Riminyáki u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-732",
+            "shortName": "732",
+            "longName": "Budapest / Érd, Bem tér - Érd, Iparos u. - Érd, Bem tér - Érd, aut. áll. / Budapest",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-734",
+            "shortName": "734",
+            "longName": "Budapest - M7 - Érd, Lőcsei u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-735",
+            "shortName": "735",
+            "longName": "Budapest - M7 - Érd, Riminyáki u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-736",
+            "shortName": "736",
+            "longName": "Budapest - M7 - Érd, Ürmös u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-739",
+            "shortName": "739",
+            "longName": "Budapest, Móricz Zsigmond körtér. - M7 - Érd, Riminyáki u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-760",
+            "shortName": "760",
+            "longName": "Budapest - Budaörs - Biatorbágy - Etyek - Bicske",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-762",
+            "shortName": "762",
+            "longName": "Budapest - Biatorbágy, Vasútállomás - Sóskút",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-763",
+            "shortName": "763",
+            "longName": "Budapest - Biatorbágy - Etyek",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-766",
+            "shortName": "766",
+            "longName": "Budapest - Biatorbágy - Etyek - Bicske",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-767",
+            "shortName": "767",
+            "longName": "Budapest - Biatorbágy - Etyek - Bicske",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-769",
+            "shortName": "769",
+            "longName": "Budapest - Biatorbágy - Etyek - Sóskút - Pusztazámor",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-770",
+            "shortName": "770",
+            "longName": "Budapest - M1 - Zsámbék - Tatabánya - Kisbér",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-773",
+            "shortName": "773",
+            "longName": "Budapest - M1 - Páty - Budajenő - Perbál - Zsámbék",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-774",
+            "shortName": "774",
+            "longName": "Budapest - M1 - Páty - Budajenő - Perbál - Zsámbék",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-775",
+            "shortName": "775",
+            "longName": "Budapest - M1 - Zsámbék - Gyermely",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-777",
+            "shortName": "777",
+            "longName": "Budapest - M1 - Zsámbék - Bajna - Nagysáp",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-779",
+            "shortName": "779",
+            "longName": "Budapest - M1 - Zsámbék - Gyermely - Bajna - Nyergesújfalu",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-798",
+            "shortName": "798",
+            "longName": "Budapest - M1 - Zsámbék - Perbál - Piliscsaba - Pilisvörösvár",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-799",
+            "shortName": "799",
+            "longName": "Budapest - M1 - Zsámbék - Perbál - Piliscsaba - Pilisvörösvár",
+            "mode": "COACH",
+            "color": "F6AC00"
+          }
+        ]
+      },
+      {
+        "gtfsId": "BKK:061222",
+        "name": "Budapest, Kelenföld vasútállomás M",
+        "lat": 47.464364,
+        "lon": 19.018786,
+        "vehicleMode": "BUS",
+        "platformCode": null,
+        "locationType": "STOP",
+        "parentStation": null,
+        "routes": [
+          {
+            "gtfsId": "BKK:1500",
+            "shortName": "150",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:1502",
+            "shortName": "150B",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:2500",
+            "shortName": "250",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:2502",
+            "shortName": "250B",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:2510",
+            "shortName": "251",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:2511",
+            "shortName": "251A",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:2515",
+            "shortName": "251E",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          }
+        ]
+      },
+      {
+        "gtfsId": "BKK:061275",
+        "name": "Budapest, Kelenföld vasútállomás M",
+        "lat": 47.464337,
+        "lon": 19.018507,
+        "vehicleMode": "BUS",
+        "platformCode": null,
+        "locationType": "STOP",
+        "parentStation": null,
+        "routes": [
+          {
+            "gtfsId": "BKK:0400",
+            "shortName": "40",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:0402",
+            "shortName": "40B",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:0405",
+            "shortName": "40E",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:0880",
+            "shortName": "88",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:0881",
+            "shortName": "88A",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:1880",
+            "shortName": "188",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:1885",
+            "shortName": "188E",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          }
+        ]
+      },
+      {
+        "gtfsId": "hkir:hkir_773538_3",
+        "name": "Budapest, Kelenföld vasútállomás",
+        "lat": 47.463472,
+        "lon": 19.022414,
+        "vehicleMode": "COACH",
+        "platformCode": "3",
+        "locationType": "STOP",
+        "parentStation": {
+          "gtfsId": "hkir:hkir_773538",
+          "name": "Budapest, Kelenföld vasútállomás"
+        },
+        "routes": [
+          {
+            "gtfsId": "hkir:hkir_V-R-200-686",
+            "shortName": "686",
+            "longName": "685, 686  Budapest, Kelenföld - Halásztelek - Szigethalom",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-689",
+            "shortName": "689",
+            "longName": "Budapest, Kelenföld - Szigetszentmiklós - Szigethalom",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-691",
+            "shortName": "691",
+            "longName": "Budapest, Kelenföld - Szigetszentmiklós - Szigethalom",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-710",
+            "shortName": "710",
+            "longName": "Budapest - Érd - Százhalombatta",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-712",
+            "shortName": "712",
+            "longName": "Budapest - Érd - Százhalombatta",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-715",
+            "shortName": "715",
+            "longName": "Budapest - Érd - Százhalombatta",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-720",
+            "shortName": "720",
+            "longName": "Budapest - Diósd - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-722",
+            "shortName": "722",
+            "longName": "Budapest - Érd - Sóskút - Pusztazámor",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-724",
+            "shortName": "724",
+            "longName": "Budapest - M7 - Sóskút - Pusztazámor",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-725",
+            "shortName": "725",
+            "longName": "Budapest - Diósdliget - Diósd - Budapest",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-727",
+            "shortName": "727",
+            "longName": "Budapest - Diósdliget - Diósd - Budapest",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-729",
+            "shortName": "729",
+            "longName": "Budapest, Móricz Zs. körtér - Diósd - Érd - Budapest, Móricz Zs. körtér",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-731",
+            "shortName": "731",
+            "longName": "Budapest - Bp., Sasadi út - M7 - Érd, Riminyáki u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-732",
+            "shortName": "732",
+            "longName": "Budapest / Érd, Bem tér - Érd, Iparos u. - Érd, Bem tér - Érd, aut. áll. / Budapest",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-734",
+            "shortName": "734",
+            "longName": "Budapest - M7 - Érd, Lőcsei u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-735",
+            "shortName": "735",
+            "longName": "Budapest - M7 - Érd, Riminyáki u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-736",
+            "shortName": "736",
+            "longName": "Budapest - M7 - Érd, Ürmös u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-739",
+            "shortName": "739",
+            "longName": "Budapest, Móricz Zsigmond körtér. - M7 - Érd, Riminyáki u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-760",
+            "shortName": "760",
+            "longName": "Budapest - Budaörs - Biatorbágy - Etyek - Bicske",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-762",
+            "shortName": "762",
+            "longName": "Budapest - Biatorbágy, Vasútállomás - Sóskút",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-763",
+            "shortName": "763",
+            "longName": "Budapest - Biatorbágy - Etyek",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-766",
+            "shortName": "766",
+            "longName": "Budapest - Biatorbágy - Etyek - Bicske",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-767",
+            "shortName": "767",
+            "longName": "Budapest - Biatorbágy - Etyek - Bicske",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-769",
+            "shortName": "769",
+            "longName": "Budapest - Biatorbágy - Etyek - Sóskút - Pusztazámor",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-770",
+            "shortName": "770",
+            "longName": "Budapest - M1 - Zsámbék - Tatabánya - Kisbér",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-773",
+            "shortName": "773",
+            "longName": "Budapest - M1 - Páty - Budajenő - Perbál - Zsámbék",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-774",
+            "shortName": "774",
+            "longName": "Budapest - M1 - Páty - Budajenő - Perbál - Zsámbék",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-775",
+            "shortName": "775",
+            "longName": "Budapest - M1 - Zsámbék - Gyermely",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-777",
+            "shortName": "777",
+            "longName": "Budapest - M1 - Zsámbék - Bajna - Nagysáp",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-779",
+            "shortName": "779",
+            "longName": "Budapest - M1 - Zsámbék - Gyermely - Bajna - Nyergesújfalu",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-798",
+            "shortName": "798",
+            "longName": "Budapest - M1 - Zsámbék - Perbál - Piliscsaba - Pilisvörösvár",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-799",
+            "shortName": "799",
+            "longName": "Budapest - M1 - Zsámbék - Perbál - Piliscsaba - Pilisvörösvár",
+            "mode": "COACH",
+            "color": "F6AC00"
+          }
+        ]
+      },
+      {
+        "gtfsId": "hkir:hkir_773537_1",
+        "name": "Budapest, Kelenföld vá. (Őrmező)",
+        "lat": 47.464093,
+        "lon": 19.01849,
+        "vehicleMode": "COACH",
+        "platformCode": null,
+        "locationType": "STOP",
+        "parentStation": null,
+        "routes": [
+          {
+            "gtfsId": "hkir:hkir_V-R-200-764",
+            "shortName": "764",
+            "longName": "Budapest, Őrmező - Biatorbágy, Tópark",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-775",
+            "shortName": "775",
+            "longName": "Budapest - M1 - Zsámbék - Gyermely",
+            "mode": "COACH",
+            "color": "F6AC00"
+          }
+        ]
+      },
+      {
+        "gtfsId": "hkir:hkir_773538_1",
+        "name": "Budapest, Kelenföld vasútállomás",
+        "lat": 47.463644,
+        "lon": 19.022197,
+        "vehicleMode": "COACH",
+        "platformCode": "1",
+        "locationType": "STOP",
+        "parentStation": {
+          "gtfsId": "hkir:hkir_773538",
+          "name": "Budapest, Kelenföld vasútállomás"
+        },
+        "routes": [
+          {
+            "gtfsId": "hkir:hkir_V-R-200-686",
+            "shortName": "686",
+            "longName": "685, 686  Budapest, Kelenföld - Halásztelek - Szigethalom",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-689",
+            "shortName": "689",
+            "longName": "Budapest, Kelenföld - Szigetszentmiklós - Szigethalom",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-691",
+            "shortName": "691",
+            "longName": "Budapest, Kelenföld - Szigetszentmiklós - Szigethalom",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-710",
+            "shortName": "710",
+            "longName": "Budapest - Érd - Százhalombatta",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-712",
+            "shortName": "712",
+            "longName": "Budapest - Érd - Százhalombatta",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-715",
+            "shortName": "715",
+            "longName": "Budapest - Érd - Százhalombatta",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-720",
+            "shortName": "720",
+            "longName": "Budapest - Diósd - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-722",
+            "shortName": "722",
+            "longName": "Budapest - Érd - Sóskút - Pusztazámor",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-724",
+            "shortName": "724",
+            "longName": "Budapest - M7 - Sóskút - Pusztazámor",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-725",
+            "shortName": "725",
+            "longName": "Budapest - Diósdliget - Diósd - Budapest",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-727",
+            "shortName": "727",
+            "longName": "Budapest - Diósdliget - Diósd - Budapest",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-729",
+            "shortName": "729",
+            "longName": "Budapest, Móricz Zs. körtér - Diósd - Érd - Budapest, Móricz Zs. körtér",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-731",
+            "shortName": "731",
+            "longName": "Budapest - Bp., Sasadi út - M7 - Érd, Riminyáki u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-732",
+            "shortName": "732",
+            "longName": "Budapest / Érd, Bem tér - Érd, Iparos u. - Érd, Bem tér - Érd, aut. áll. / Budapest",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-734",
+            "shortName": "734",
+            "longName": "Budapest - M7 - Érd, Lőcsei u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-735",
+            "shortName": "735",
+            "longName": "Budapest - M7 - Érd, Riminyáki u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-736",
+            "shortName": "736",
+            "longName": "Budapest - M7 - Érd, Ürmös u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-739",
+            "shortName": "739",
+            "longName": "Budapest, Móricz Zsigmond körtér. - M7 - Érd, Riminyáki u. - Érd",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-760",
+            "shortName": "760",
+            "longName": "Budapest - Budaörs - Biatorbágy - Etyek - Bicske",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-762",
+            "shortName": "762",
+            "longName": "Budapest - Biatorbágy, Vasútállomás - Sóskút",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-763",
+            "shortName": "763",
+            "longName": "Budapest - Biatorbágy - Etyek",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-766",
+            "shortName": "766",
+            "longName": "Budapest - Biatorbágy - Etyek - Bicske",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-767",
+            "shortName": "767",
+            "longName": "Budapest - Biatorbágy - Etyek - Bicske",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-769",
+            "shortName": "769",
+            "longName": "Budapest - Biatorbágy - Etyek - Sóskút - Pusztazámor",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-770",
+            "shortName": "770",
+            "longName": "Budapest - M1 - Zsámbék - Tatabánya - Kisbér",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-773",
+            "shortName": "773",
+            "longName": "Budapest - M1 - Páty - Budajenő - Perbál - Zsámbék",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-774",
+            "shortName": "774",
+            "longName": "Budapest - M1 - Páty - Budajenő - Perbál - Zsámbék",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-775",
+            "shortName": "775",
+            "longName": "Budapest - M1 - Zsámbék - Gyermely",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-777",
+            "shortName": "777",
+            "longName": "Budapest - M1 - Zsámbék - Bajna - Nagysáp",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-779",
+            "shortName": "779",
+            "longName": "Budapest - M1 - Zsámbék - Gyermely - Bajna - Nyergesújfalu",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-798",
+            "shortName": "798",
+            "longName": "Budapest - M1 - Zsámbék - Perbál - Piliscsaba - Pilisvörösvár",
+            "mode": "COACH",
+            "color": "F6AC00"
+          },
+          {
+            "gtfsId": "hkir:hkir_V-R-200-799",
+            "shortName": "799",
+            "longName": "Budapest - M1 - Zsámbék - Perbál - Piliscsaba - Pilisvörösvár",
+            "mode": "COACH",
+            "color": "F6AC00"
+          }
+        ]
+      },
+      {
+        "gtfsId": "BKK:F02210",
+        "name": "Budapest, Kelenföld vasútállomás M",
+        "lat": 47.465166,
+        "lon": 19.022619,
+        "vehicleMode": "BUS",
+        "platformCode": null,
+        "locationType": "STOP",
+        "parentStation": null,
+        "routes": [
+          {
+            "gtfsId": "BKK:VP19",
+            "shortName": "19",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:9010",
+            "shortName": "901",
+            "longName": null,
+            "mode": "BUS",
+            "color": "000000"
+          },
+          {
+            "gtfsId": "BKK:9070",
+            "shortName": "907",
+            "longName": null,
+            "mode": "BUS",
+            "color": "000000"
+          }
+        ]
+      },
+      {
+        "gtfsId": "BKK:061274",
+        "name": "Budapest, Kelenföld vasútállomás M",
+        "lat": 47.464094,
+        "lon": 19.018481,
+        "vehicleMode": "BUS",
+        "platformCode": null,
+        "locationType": "STOP",
+        "parentStation": null,
+        "routes": [
+          {
+            "gtfsId": "BKK:1720",
+            "shortName": "172",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:1730",
+            "shortName": "173",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:2720",
+            "shortName": "272",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:9220",
+            "shortName": "922",
+            "longName": null,
+            "mode": "BUS",
+            "color": "000000"
+          },
+          {
+            "gtfsId": "BKK:9400",
+            "shortName": "940",
+            "longName": null,
+            "mode": "BUS",
+            "color": "000000"
+          },
+          {
+            "gtfsId": "BKK:9880",
+            "shortName": "988",
+            "longName": null,
+            "mode": "BUS",
+            "color": "000000"
+          }
+        ]
+      },
+      {
+        "gtfsId": "BKK:007897",
+        "name": "Budapest, Kelenföld vasútállomás M",
+        "lat": 47.464581,
+        "lon": 19.022964,
+        "vehicleMode": "BUS",
+        "platformCode": null,
+        "locationType": "STOP",
+        "parentStation": null,
+        "routes": [
+          {
+            "gtfsId": "BKK:0580",
+            "shortName": "58",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          },
+          {
+            "gtfsId": "BKK:9010",
+            "shortName": "901",
+            "longName": null,
+            "mode": "BUS",
+            "color": "000000"
+          },
+          {
+            "gtfsId": "BKK:9070",
+            "shortName": "907",
+            "longName": null,
+            "mode": "BUS",
+            "color": "000000"
+          },
+          {
+            "gtfsId": "BKK:9580",
+            "shortName": "958",
+            "longName": null,
+            "mode": "BUS",
+            "color": "000000"
+          }
+        ]
+      },
+      {
+        "gtfsId": "BKK:093021",
+        "name": "Budapest, Kelenföld vasútállomás M",
+        "lat": 47.464752,
+        "lon": 19.023003,
+        "vehicleMode": "BUS",
+        "platformCode": null,
+        "locationType": "STOP",
+        "parentStation": null,
+        "routes": [
+          {
+            "gtfsId": "BKK:VP19",
+            "shortName": "19",
+            "longName": null,
+            "mode": "BUS",
+            "color": "009EE3"
+          }
+        ]
+      }
+    ]
+  }
+}

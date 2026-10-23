@@ -76,7 +76,7 @@ object TransitSearch {
         val normalized = normalize(text).replace(numberSuffixRegex, "$1")
         val tokens = normalized.split(whitespaceRegex).filter(String::isNotBlank)
         val modes = tokens.flatMap { aliases[it].orEmpty() }.toSet()
-        val provider = tokens.firstOrNull { it in setOf("volan", "bkk", "viabusz", "kanyargo", "homm") }
+        val provider = tokens.firstOrNull { it in setOf("volan", "bkk", "viabusz", "kanyargo", "homm", "mav") }
         return Query(normalized, tokens.filter { it !in aliases && it != provider }, modes, provider)
     }
 
@@ -188,7 +188,7 @@ object TransitSearch {
         if (cached != null && vehicles === lastVehiclesRef) return cached
         val entries = vehicles.map { vehicle ->
             val mode = vehicle.transportMode ?: "BUS"
-            val text = normalize(listOfNotNull(vehicle.registration, vehicle.id, vehicle.routeNumber, vehicle.routeName, vehicle.destination, vehicle.providerId).joinToString(" "))
+            val text = normalize(listOfNotNull(vehicle.registration, vehicle.trainNumber, vehicle.serviceName, vehicle.id, vehicle.routeNumber, vehicle.routeName, vehicle.destination, vehicle.providerId).joinToString(" "))
             VehicleEntry(
                 vehicle = vehicle,
                 mode = mode,
@@ -225,7 +225,7 @@ object TransitSearch {
         return entries.asSequence().mapNotNull { entry ->
             if (query.modes.isNotEmpty() && entry.mode !in query.modes) return@mapNotNull null
             if (query.provider != null && query.provider != entry.providerId) return@mapNotNull null
-            if (numeric != null && query.modes.isNotEmpty() && numeric != entry.normalizedNumber) return@mapNotNull null
+            if (numeric != null && query.modes.isNotEmpty() && numeric != entry.normalizedNumber && numeric != entry.vehicle.trainNumber) return@mapNotNull null
 
             for ((term, compactTerm) in termCompacts) {
                 if (!entry.normalizedText.contains(term) && !entry.compactText.contains(compactTerm)) {

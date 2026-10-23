@@ -12,7 +12,7 @@ object DepartureCalculator {
         windowMinutes: Int = 90,
     ): List<Departure> {
         val today = now.atZone(ViabuszParser.zone).toLocalDate()
-        val until = now.plusSeconds(windowMinutes.coerceIn(1, 180) * 60L)
+        val until = now.plusSeconds(windowMinutes.coerceIn(1, 300) * 60L)
         val routes = network.routes.associateBy { it.id }
         val selectedId = SharedStops.resolve(network, stopId)
         val scheduled = network.trips.flatMap { trip ->
