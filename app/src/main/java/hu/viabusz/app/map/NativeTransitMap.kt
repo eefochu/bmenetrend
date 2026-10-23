@@ -29,6 +29,7 @@ import hu.viabusz.app.data.GeoPoint
 import hu.viabusz.app.data.TransitStop
 import hu.viabusz.app.data.TransitNetwork
 import hu.viabusz.app.data.Vehicle
+import hu.viabusz.app.data.PlaceResult
 import org.maplibre.android.MapLibre
 import org.maplibre.android.annotations.Icon
 import org.maplibre.android.annotations.IconFactory
@@ -55,6 +56,10 @@ import org.maplibre.android.style.layers.PropertyFactory
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
+private const val STOP_MIN_ZOOM = 12.0
+private const val VEHICLE_MIN_ZOOM = 9.0
+private const val VEHICLE_ICON_MIN_ZOOM = 12.0
+
 /** A native MapLibre map; no browser/WebView and no API key. */
 @Composable
 @SuppressLint("ClickableViewAccessibility") // Passive touch observation; MapView still handles every gesture and click.
@@ -76,6 +81,8 @@ fun NativeTransitMap(
     routeStops: List<TransitStop> = emptyList(),
     routeColor: Int = 0xFF199DCF.toInt(),
     fitRouteRequest: Int = 0,
+    selectedPlace: PlaceResult? = null,
+    placeCameraRequest: Int = 0,
 ) {
     val darkTheme = isSystemInDarkTheme()
     val styleUri = if (darkTheme) "https://tiles.openfreemap.org/styles/dark" else "https://tiles.openfreemap.org/styles/positron"
@@ -153,6 +160,7 @@ fun NativeTransitMap(
                     onVehicle(vehicle)
                     return@setOnMarkerClickListener true
                 }
+                if (marker.id !in markerStops) return@setOnMarkerClickListener false
                 val nearest = stopHitTargets.entries.mapNotNull { (id, target) ->
                     val point = ready.projection.toScreenLocation(target.first)
                     val distance = kotlin.math.hypot(point.x - touchPoint.x, point.y - touchPoint.y)
@@ -161,7 +169,7 @@ fun NativeTransitMap(
                 markerStops[nearest ?: marker.id]?.let { onSelect(it); true } ?: false
             }
             ready.addOnMapClickListener { location ->
-                if (ready.cameraPosition.zoom >= StopMapClustering.DETAIL_ZOOM) false else {
+                if (ready.cameraPosition.zoom < STOP_MIN_ZOOM || ready.cameraPosition.zoom >= StopMapClustering.DETAIL_ZOOM) false else {
                     val point = ready.projection.toScreenLocation(location)
                     val radius = 8 * context.resources.displayMetrics.density
                     val feature = ready.queryRenderedFeatures(RectF(point.x - radius, point.y - radius, point.x + radius, point.y + radius), "wide-stop-dots").firstOrNull()
@@ -254,7 +262,10 @@ fun NativeTransitMap(
             val layer = CircleLayer("wide-stop-dots", "all-stop-points").withProperties(
                 PropertyFactory.circleRadius(1.5f), PropertyFactory.circleColor(Expression.get("color")),
                 PropertyFactory.circleStrokeColor("#FFFFFF"), PropertyFactory.circleStrokeWidth(.4f)
-            ).apply { maxZoom = StopMapClustering.DETAIL_ZOOM.toFloat() }
+            ).apply {
+                minZoom = STOP_MIN_ZOOM.toFloat()
+                maxZoom = StopMapClustering.DETAIL_ZOOM.toFloat()
+            }
             val labels = style.layers.firstOrNull { it is SymbolLayer }?.id
             if (labels != null) style.addLayerBelow(layer, labels) else style.addLayer(layer)
         }
@@ -288,9 +299,19 @@ fun NativeTransitMap(
             ready.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, (40 * context.resources.displayMetrics.density).toInt()), 650)
         }
     }
+    LaunchedEffect(map, styleLoaded, selectedPlace, placeCameraRequest, bottomPaddingPx) {
+        val ready = map ?: return@LaunchedEffect
+        val place = selectedPlace ?: return@LaunchedEffect
+        if (!styleLoaded) return@LaunchedEffect
+        ready.setPadding(0, 0, 0, bottomPaddingPx)
+        val bounds = place.bounds
+        if (bounds != null) ready.animateCamera(CameraUpdateFactory.newLatLngBounds(
+            LatLngBounds.from(bounds.north, bounds.east, bounds.south, bounds.west), (48 * context.resources.displayMetrics.density).toInt()), 650)
+        else ready.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(place.position.lat, place.position.lon), 15.0), 650)
+    }
     AndroidView(factory = { mapView }, modifier = modifier)
 
-    LaunchedEffect(map, styleLoaded, viewport, network, additionalStops, vehicles, routeStops, routeColor, selectedVehicle?.id, selectedStopId, userLocation, cameraRequest, bottomPaddingPx) {
+    LaunchedEffect(map, styleLoaded, viewport, network, additionalStops, vehicles, routeStops, routeColor, selectedVehicle?.id, selectedStopId, selectedPlace, userLocation, cameraRequest, bottomPaddingPx) {
         val nativeMap = map ?: return@LaunchedEffect
         if (!styleLoaded) return@LaunchedEffect
         nativeMap.setPadding(0, 0, 0, bottomPaddingPx)
@@ -323,10 +344,21 @@ fun NativeTransitMap(
         }
         fun vehicleIcon(vehicle: Vehicle): Icon {
             val style = VehicleMarkerStyle.forVehicle(vehicle)
+            if (zoom < VEHICLE_ICON_MIN_ZOOM) {
+                val sizeDp = if (vehicle.id == selectedVehicle?.id) 10 else 6
+                return iconCache.getOrPut("transport-dot-$style-$sizeDp") {
+                    val size = (sizeDp * density).toInt().coerceAtLeast(1)
+                    val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+                    val canvas = Canvas(bitmap)
+                    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.WHITE }
+                    val radius = size / 2f
+                    canvas.drawCircle(radius, radius, radius, paint)
+                    paint.color = style.color
+                    canvas.drawCircle(radius, radius, (radius - .65f * density).coerceAtLeast(1f), paint)
+                    IconFactory.getInstance(context).fromBitmap(bitmap)
+                }
+            }
             val sizeDp = (when {
-                zoom < 8 -> 10
-                zoom < 10 -> 14
-                zoom < 12 -> 18
                 zoom < 13.5 -> 24
                 else -> 36
             }) + if (vehicle.id == selectedVehicle?.id) 6 else 0
@@ -372,7 +404,7 @@ fun NativeTransitMap(
             }
         }
         val visibleVehicles = vehicles.filter { vehicle ->
-            viewport?.let { vehicle.position.lat in it.south..it.north && vehicle.position.lon in it.west..it.east } ?: false
+            zoom >= VEHICLE_MIN_ZOOM && viewport?.let { vehicle.position.lat in it.south..it.north && vehicle.position.lon in it.west..it.east } == true
         }
         visibleVehicles.forEach { vehicle ->
             val number = vehicle.routeNumber ?: network?.routes?.find { it.id == vehicle.routeId }?.number ?: context.getString(if (vehicle.providerId == "bkk") R.string.emma_vehicle else R.string.engine_vehicle_bus)
@@ -387,6 +419,9 @@ fun NativeTransitMap(
         userLocation?.let {
             nativeMap.addMarker(MarkerOptions().position(LatLng(it.lat, it.lon)).title(context.getString(R.string.engine_you_are_here)).icon(dotIcon("location", location = true)))
         }
+        selectedPlace?.let { place ->
+            nativeMap.addMarker(MarkerOptions().position(LatLng(place.position.lat, place.position.lon)).title(place.name))
+        }
         if (selectedVehicle != null) {
             if (centeredVehicle != selectedVehicle.id || lastBottomPadding != bottomPaddingPx || centeredRequest != cameraRequest) {
                 nativeMap.animateCamera(CameraUpdateFactory.newLatLngZoom(
@@ -398,7 +433,7 @@ fun NativeTransitMap(
         } else {
             centeredVehicle = null
         }
-        if (selectedVehicle == null) stops.find { it.id == selectedStopId }?.let { stop ->
+        if (selectedVehicle == null && selectedPlace == null) stops.find { it.id == selectedStopId }?.let { stop ->
             if (centeredStop != stop.id || centeredRequest != cameraRequest || lastBottomPadding != bottomPaddingPx) {
                 val currentZoom = nativeMap.cameraPosition.zoom
                 val targetZoom = if (currentZoom < 15.0) 15.0 else currentZoom

@@ -6,6 +6,14 @@ import hu.viabusz.app.data.Vehicle
 /** Transport mode takes priority over route colours, which vary between individual lines. */
 enum class VehicleMarkerStyle {
     VOLAN_BUS, VIABUSZ_BUS, BKK_BUS, TROLLEY, TRAM, TRAIN;
+    val color: Int get() = when (this) {
+        VOLAN_BUS -> 0xFFF9B900.toInt()
+        VIABUSZ_BUS -> 0xFF205C48.toInt()
+        BKK_BUS -> 0xFF199DCF.toInt()
+        TROLLEY -> 0xFFE31B23.toInt()
+        TRAM -> 0xFFFFD800.toInt()
+        TRAIN -> 0xFF0066AA.toInt()
+    }
     val drawableRes: Int get() = when (this) {
         VOLAN_BUS -> R.drawable.vehicle_volan_bus
         VIABUSZ_BUS -> R.drawable.vehicle_viabusz_bus

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="search_all">Mind</string>
+    <string name="search_places">Helyek</string>
+    <string name="search_stations">Megállók</string>
+    <string name="search_vehicles">Járművek</string>
+    <string name="search_show_more">Továbbiak</string>
+    <string name="search_no_matches">Nincs találat ebben a kategóriában.</string>
+    <string name="search_start">Keress helyet, megállót vagy járatot. Például: 11. kerület, Széll Kálmán tér vagy 1 villamos.</string>
+    <string name="search_places_unavailable">A helykereső átmenetileg nem érhető el. A megállók és járművek továbbra is kereshetők.</string>
+    <string name="search_retry">Újra</string>
+    <string name="search_places_attribution">© OpenStreetMap közreműködők · Photon</string>
+    <string name="search_live_vehicles">Élő járművek</string>
+    <string name="search_live_vehicle">Élő jármű</string>
+    <string name="search_close_place">Kiválasztott hely bezárása</string>
+    <string name="search_places_privacy">A helykeresés a beírt keresést a Photon szolgáltatásnak küldi. A készülék helyzete nem kerül továbbításra.</string>
+    <string name="search_places_source">Helyek: Photon / OpenStreetMap</string>
+</resources>

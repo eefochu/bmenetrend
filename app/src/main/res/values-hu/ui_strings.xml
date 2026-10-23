@@ -23,7 +23,7 @@
     <string name="ui_now">Most</string>
     <string name="ui_back">Vissza</string>
     <string name="ui_close">Bezárás</string>
-    <string name="ui_search_field_hint">Megálló vagy járat</string>
+    <string name="ui_search_field_hint">Helyek, megállók vagy járművek</string>
     <string name="ui_clear_search">Keresés törlése</string>
     <string name="ui_choose_direction">Válassz irányt</string>
     <string name="ui_stops">Megállók</string>

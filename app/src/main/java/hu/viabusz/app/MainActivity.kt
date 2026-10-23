@@ -96,6 +96,9 @@ class MainActivity : ComponentActivity() {
                     onShowWholeRoute = model::showWholeRoute,
                     onJourneyBoardingStop = model::selectJourneyBoardingStop,
                     onVehicleOpened = model::selectVehicle,
+                    onSearchPlaces = model::searchPlaces,
+                    onPlaceSelected = model::selectPlace,
+                    onPlaceClosed = model::clearPlace,
                 ) { modifier, bottomPaddingPx ->
                     val vehicle = state.selectedVehicle
                     val pattern = state.boardingSelection?.pattern
@@ -108,7 +111,7 @@ class MainActivity : ComponentActivity() {
                         if (state.selectedVehicle != null && state.vehicleJourney?.stops?.any { it.id == id } == true) model.selectJourneyBoardingStop(id)
                         else model.selectStop(id)
                     }
-                    NativeTransitMap(state.network, state.vehicles, state.selectedStopId, state.userLocation, modifier, onMapStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, state.selectedVehicle, routeGeometry = geometry, routeStops = stops, routeColor = color.toArgb(), fitRouteRequest = state.fitRouteRequest)
+                    NativeTransitMap(state.network, state.vehicles, state.selectedStopId, state.userLocation, modifier, onMapStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, state.selectedVehicle, routeGeometry = geometry, routeStops = stops, routeColor = color.toArgb(), fitRouteRequest = state.fitRouteRequest, selectedPlace = state.selectedPlace, placeCameraRequest = state.placeCameraRequest)
                 }
             }
         }
