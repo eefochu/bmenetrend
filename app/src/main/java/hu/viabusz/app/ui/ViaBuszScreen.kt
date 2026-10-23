@@ -58,6 +58,7 @@ import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -151,6 +152,7 @@ fun ViaBuszScreen(
             skipHiddenState = false,
         ),
     )
+    var shownStopToken by remember { mutableStateOf<Pair<String?, Int>?>(null) }
     val selectedStop = state.stops.firstOrNull { it.id == state.selectedStopId }
     val selectedRoute = state.routes.firstOrNull { it.id == routeId }
     val selectedDirection = selectedRoute?.directions?.firstOrNull { it.id == directionId }
@@ -188,8 +190,23 @@ fun ViaBuszScreen(
             else -> searchOpen = false
         }
     }
-    BackHandler(enabled = state.selectedVehicle != null && !searchOpen, onBack = onVehicleClosed)
+    val exitRouteView: () -> Unit = {
+        onClearBoarding()
+        onVehicleClosed()
+        scope.launch { sheetState.bottomSheetState.hide() }
+    }
+    BackHandler(enabled = !searchOpen && state.selectedVehicle == null && state.boardingSelection == null && sheetState.bottomSheetState.targetValue != SheetValue.Hidden) {
+        scope.launch { sheetState.bottomSheetState.hide() }
+    }
+    BackHandler(enabled = state.boardingSelection != null && state.selectedVehicle == null && !searchOpen, onBack = exitRouteView)
+    BackHandler(enabled = state.selectedVehicle != null && !searchOpen, onBack = exitRouteView)
     BackHandler(enabled = searchOpen, onBack = navigateBack)
+    LaunchedEffect(sheetState.bottomSheetState.targetValue) {
+        if (sheetState.bottomSheetState.targetValue == SheetValue.Hidden) {
+            onClearBoarding()
+            onVehicleClosed()
+        }
+    }
     LaunchedEffect(state.selectedVehicle?.id) {
         if (state.selectedVehicle != null) {
             searchOpen = false
@@ -198,7 +215,10 @@ fun ViaBuszScreen(
     }
     LaunchedEffect(state.selectedStopId, state.cameraRequest, state.boardingSelection) {
         if (state.selectedVehicle == null && state.selectedStopId != null) {
-            if (state.boardingSelection != null) sheetState.bottomSheetState.expand() else sheetState.bottomSheetState.partialExpand()
+            val token = state.selectedStopId to state.cameraRequest
+            if (state.boardingSelection != null) sheetState.bottomSheetState.expand()
+            else if (token != shownStopToken) sheetState.bottomSheetState.partialExpand()
+            shownStopToken = token
         }
     }
 
@@ -225,8 +245,8 @@ fun ViaBuszScreen(
                 sheetContent = {
                     if (state.selectedVehicle != null) VehiclePanel(
                         state = state,
-                        onClose = onVehicleClosed,
-                        onShowRoute = onShowWholeRoute,
+                        onClose = exitRouteView,
+                        onShowRoute = { onShowWholeRoute(); scope.launch { sheetState.bottomSheetState.partialExpand() } },
                         onRefresh = onRefresh,
                         onStop = onJourneyBoardingStop,
                         modifier = Modifier.fillMaxWidth().fillMaxHeight(0.88f),
@@ -235,7 +255,7 @@ fun ViaBuszScreen(
                         stop = selectedStop,
                         onRefresh = onRefresh,
                         onWindowChanged = onWindowChanged,
-                        onClearBoarding = onClearBoarding,
+                        onClearBoarding = exitRouteView,
                         onChangeDirection = {
                             state.boardingSelection?.let { routeId = it.routeId; directionId = null; onLineOpened(it.routeId, false); searchOpen = true }
                         },
@@ -251,6 +271,16 @@ fun ViaBuszScreen(
                     // Full-screen map going under both the top search blob and the bottom sheet.
                     mapContent(Modifier.fillMaxSize(), bottomPaddingPx)
 
+                    if (state.selectedVehicle != null || state.boardingSelection != null) {
+                        FilledTonalButton(
+                            onClick = exitRouteView,
+                            modifier = Modifier.align(Alignment.TopStart).statusBarsPadding().padding(start = 16.dp, top = 86.dp),
+                        ) {
+                            Icon(Icons.Rounded.Close, null, Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.map_exit_route))
+                        }
+                    }
                     // A quiet search bar leaves map labels and route geometry unobstructed.
                     Column(
                         modifier = Modifier
@@ -460,7 +490,7 @@ private fun StopPanel(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         routeById[selection.routeId]?.let { LineBadge(it) }
                         Spacer(Modifier.weight(1f))
-                        IconButton(onClick = onClearBoarding) { Icon(Icons.Rounded.Close, stringResource(R.string.line_all_departures)) }
+                        IconButton(onClick = onClearBoarding) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.ui_back)) }
                     }
                     Text(stringResource(R.string.emma_vehicle_towards, selection.title), style = MaterialTheme.typography.bodyLarge)
                     TextButton(onClick = onChangeDirection, contentPadding = PaddingValues(0.dp)) { Text(stringResource(R.string.line_change_direction)) }
