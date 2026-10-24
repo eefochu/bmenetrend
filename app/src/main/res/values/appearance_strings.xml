@@ -1,10 +1,10 @@
 <resources>
-    <string name="accent_title">Accent colour</string>
-    <string name="accent_hint">Choose your app colours. System follows your wallpaper on Android 12 or newer.</string>
-    <string name="accent_system">System</string>
-    <string name="accent_green">Green</string>
-    <string name="accent_blue">Blue</string>
-    <string name="accent_purple">Purple</string>
-    <string name="accent_rose">Rose</string>
-    <string name="accent_orange">Orange</string>
+    <string name="accent_title">Kiemelőszín</string>
+    <string name="accent_hint">Válaszd ki az alkalmazás színeit. A Rendszer beállítás Android 12-től a háttérkép színeit követi.</string>
+    <string name="accent_system">Rendszer</string>
+    <string name="accent_green">Zöld</string>
+    <string name="accent_blue">Kék</string>
+    <string name="accent_purple">Lila</string>
+    <string name="accent_rose">Rózsaszín</string>
+    <string name="accent_orange">Narancssárga</string>
 </resources>

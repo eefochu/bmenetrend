@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="search_all">All</string>
-    <string name="search_places">Places</string>
-    <string name="search_stations">Stations</string>
-    <string name="search_vehicles">Vehicles</string>
-    <string name="search_show_more">Show more</string>
-    <string name="search_no_matches">No matches in this category.</string>
-    <string name="search_start">Search for a place, station or line. Try 11. kerület, Széll Kálmán tér or 1 villamos.</string>
-    <string name="search_places_unavailable">Place search is temporarily unavailable. Stations and vehicles still work.</string>
-    <string name="search_retry">Retry</string>
-    <string name="search_places_attribution">© OpenStreetMap contributors · Photon</string>
-    <string name="search_live_vehicles">Live vehicles</string>
-    <string name="search_live_vehicle">Live vehicle</string>
-    <string name="search_close_place">Close selected place</string>
-    <string name="search_places_privacy">Place searches send your typed query to Photon. Your device location is not sent.</string>
-    <string name="search_places_source">Places: Photon / OpenStreetMap</string>
+    <string name="search_all">Mind</string>
+    <string name="search_places">Helyek</string>
+    <string name="search_stations">Megállók</string>
+    <string name="search_vehicles">Járművek</string>
+    <string name="search_show_more">Továbbiak</string>
+    <string name="search_no_matches">Nincs találat ebben a kategóriában.</string>
+    <string name="search_start">Keress helyet, megállót vagy járatot. Például: 11. kerület, Széll Kálmán tér vagy 1 villamos.</string>
+    <string name="search_places_unavailable">A helykereső átmenetileg nem érhető el. A megállók és járművek továbbra is kereshetők.</string>
+    <string name="search_retry">Újra</string>
+    <string name="search_places_attribution">© OpenStreetMap közreműködők · Photon</string>
+    <string name="search_live_vehicles">Élő járművek</string>
+    <string name="search_live_vehicle">Élő jármű</string>
+    <string name="search_close_place">Kiválasztott hely bezárása</string>
+    <string name="search_places_privacy">A helykeresés a beírt keresést a Photon szolgáltatásnak küldi. A készülék helyzete nem kerül továbbításra.</string>
+    <string name="search_places_source">Helyek: Photon / OpenStreetMap</string>
 </resources>

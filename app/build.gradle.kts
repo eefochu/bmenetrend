@@ -4,10 +4,10 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 android {
-    namespace = "hu.viabusz.app"
+    namespace = "hu.app.bmenetrend"
     compileSdk = 36
     defaultConfig {
-        applicationId = "hu.viabusz.app"
+        applicationId = "hu.app.bmenetrend"
         minSdk = 26
         targetSdk = 36
         versionCode = 3
@@ -15,6 +15,8 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures { compose = true; buildConfig = true }
+    // Hungarian Material resources must also be delivered to non-Hungarian devices.
+    bundle { language { enableSplit = false } }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
     buildTypes {

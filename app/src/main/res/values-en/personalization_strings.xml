@@ -1,0 +1,13 @@
+<resources>
+    <string name="ui_search_short">Search</string>
+    <string name="vehicle_at_stop">At %1$s · GPS estimate</string>
+    <string name="vehicle_between_stops">Between %1$s → %2$s</string>
+    <string name="accent_custom">Custom</string>
+    <string name="custom_color_title">Custom colour picker</string>
+    <string name="custom_color_hex">Hex colour</string>
+    <string name="custom_color_red">Red</string>
+    <string name="custom_color_green">Green</string>
+    <string name="custom_color_blue">Blue</string>
+    <string name="custom_color_hint">Choose any colour with the sliders or enter a six-digit hex code. It is adapted for readable light and dark themes.</string>
+    <string name="search_refine">Showing the best 100 matches. Add a place, route number or transport type to narrow the search.</string>
+</resources>

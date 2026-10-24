@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nearby_title">Nearby departures</string>
+    <string name="nearby_you">At stops near you</string>
+    <string name="nearby_map">At stops in this map area</string>
+    <string name="nearby_locate">Show departures near me</string>
+    <string name="nearby_empty">No stops within 1.5 km here. Move the map or use your location.</string>
+    <string name="nearby_distance">%1$d m</string>
+    <string name="nearby_unavailable">Departures unavailable. Retrying automatically.</string>
+    <string name="nearby_no_departures">No departures in this time window.</string>
+    <string name="nearby_platform">Platform %1$s</string>
+    <string name="nearby_partial">Some platforms could not be refreshed. Retrying automatically.</string>
+    <string name="nearby_no_departures_2h">No departures in the selected time window at nearby stops. Try moving the map.</string>
+</resources>

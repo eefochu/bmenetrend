@@ -5,7 +5,7 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-feature android:name="android.hardware.location" android:required="false" />
-    <application android:allowBackup="false" android:label="@string/app_name" android:icon="@drawable/ic_launcher" android:supportsRtl="true" android:theme="@style/Theme.ViaBusz" android:usesCleartextTraffic="false">
+    <application android:name=".BMenetrendApplication" android:allowBackup="false" android:label="@string/app_name" android:icon="@drawable/ic_launcher" android:supportsRtl="true" android:theme="@style/Theme.BMenetrend" android:usesCleartextTraffic="false">
         <activity android:name=".MainActivity" android:exported="true" android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -1,13 +1,13 @@
 <resources>
-    <string name="ui_search_short">Search</string>
-    <string name="vehicle_at_stop">At %1$s · GPS estimate</string>
-    <string name="vehicle_between_stops">Between %1$s → %2$s</string>
-    <string name="accent_custom">Custom</string>
-    <string name="custom_color_title">Custom colour picker</string>
-    <string name="custom_color_hex">Hex colour</string>
-    <string name="custom_color_red">Red</string>
-    <string name="custom_color_green">Green</string>
-    <string name="custom_color_blue">Blue</string>
-    <string name="custom_color_hint">Choose any colour with the sliders or enter a six-digit hex code. It is adapted for readable light and dark themes.</string>
-    <string name="search_refine">Showing the best 100 matches. Add a place, route number or transport type to narrow the search.</string>
+    <string name="ui_search_short">Keresés</string>
+    <string name="vehicle_at_stop">Itt: %1$s · GPS-becslés</string>
+    <string name="vehicle_between_stops">Megállók között: %1$s → %2$s</string>
+    <string name="accent_custom">Egyéni</string>
+    <string name="custom_color_title">Egyéni színválasztó</string>
+    <string name="custom_color_hex">Hexadecimális szín</string>
+    <string name="custom_color_red">Piros</string>
+    <string name="custom_color_green">Zöld</string>
+    <string name="custom_color_blue">Kék</string>
+    <string name="custom_color_hint">Válassz színt a csúszkákkal, vagy adj meg hatjegyű hexadecimális kódot. A színt az app az olvasható világos és sötét témához igazítja.</string>
+    <string name="search_refine">A legjobb 100 találat látható. Pontosíts helynévvel, vonalszámmal vagy járműtípussal.</string>
 </resources>
