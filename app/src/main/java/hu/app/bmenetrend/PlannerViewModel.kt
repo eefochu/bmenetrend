@@ -22,11 +22,18 @@ data class PlannerState(
     val departure: Instant? = null,
 )
 
-class PlannerViewModel(application: Application) : AndroidViewModel(application) {
+class PlannerViewModel internal constructor(
+    application: Application,
+    backend: PlannerBackend,
+    private val loadNetwork: suspend () -> TransitNetwork,
+) : AndroidViewModel(application) {
+    constructor(application: Application) : this(application,
+        EmmaPlannerBackend(EmmaGraphqlClient(EmmaGraphqlClient.defaultHttpClient().newBuilder()
+            .readTimeout(25, TimeUnit.SECONDS).callTimeout(30, TimeUnit.SECONDS).build())),
+        TransitRepository(application)::planningNetwork)
+
     private val places = PlacesRepository(application)
-    private val client = EmmaGraphqlClient(EmmaGraphqlClient.defaultHttpClient().newBuilder().readTimeout(25, TimeUnit.SECONDS).callTimeout(30, TimeUnit.SECONDS).build())
-    private val planner = HybridTripPlanner(EmmaPlannerBackend(client))
-    private val timetables = TransitRepository(application)
+    private val planner = HybridTripPlanner(backend)
     private var stopCatalogue = emptyList<TransitStop>()
     private val mutable = MutableStateFlow(PlannerState())
     val state: StateFlow<PlannerState> = mutable
@@ -129,7 +136,7 @@ class PlannerViewModel(application: Application) : AndroidViewModel(application)
         mutable.update { it.copy(origin = origin, planning = true) }
         planJob = viewModelScope.launch {
             try {
-                val result = planner.plan(origin, destination, requested, ready, stopCatalogue, timetables::planningNetwork) { partial ->
+                val result = planner.plan(origin, destination, requested, ready, stopCatalogue, loadNetwork) { partial ->
                     if (generation == planGeneration) mutable.update { it.copy(result = partial) }
                 }
                 if (generation == planGeneration) mutable.update { it.copy(planning = false, result = result,

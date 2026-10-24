@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="ui_brand">BMenetrend</string>
+    <string name="crash_report_title">Az alkalmazás váratlanul leállt</string>
+    <string name="crash_report_description">Az előző leállás hibajelentése ezen a telefonon maradt. Másold ki, és küldd el a fejlesztőnek a javításhoz. Az alkalmazás semmit nem küld el automatikusan.</string>
+    <string name="crash_report_copy">Hibajelentés másolása</string>
     <string name="ui_area">Biatorbágy · Páty · Budaörs</string>
     <string name="ui_provider_viabusz">ViaBusz</string>
     <string name="ui_provider_kanyargo">KanyarGO</string>

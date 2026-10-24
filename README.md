@@ -69,8 +69,11 @@ Az alkalmazás csomagazonosítója és Kotlin-névtere `hu.app.bmenetrend`. A fe
 git clone https://github.com/micr0softstore/bmenetrend.git
 cd bmenetrend
 
-# Debug APK fordítása
+# Optimalizált debug csatornás APK fordítása (R8 + erőforrás-zsugorítás)
 ./gradlew :app:assembleDebug
+
+# Hagyományos fejlesztői változat: debugger, Compose-inspektor, gyors fordítás
+./gradlew :app:assembleDevelopment
 
 # Egységtesztek futtatása
 ./gradlew :app:testDebugUnitTest
@@ -78,6 +81,10 @@ cd bmenetrend
 # Telepítés csatlakoztatott eszközre
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
+
+A `debug` és a `release` ugyanazt az optimalizálást használja; a terjeszthető `debug` APK sem debuggolható. A `development` változat debuggolható, külön `hu.app.bmenetrend.dev` csomagnévvel települ. A nagy univerzális APK mind a négy CPU-architektúrához tartalmaz natív MapLibre-könyvtárakat.
+
+Váratlan Java/Kotlin-leállás után a következő indításkor a helyben mentett hibajelentés kimásolható. Android 11-től a natív összeomlás vagy memória miatti folyamatleállás rendszeradatai is megjelenhetnek. A jelentés nem kerül automatikusan elküldésre; másoláskor vagy bezáráskor a mentett példány törlődik.
 
 > [!TIP]
 > Android emulátorban a gördülékeny térképmegjelenítéshez ajánlott a hardveres gyorsítást (**Host GPU**) bekapcsolni.
