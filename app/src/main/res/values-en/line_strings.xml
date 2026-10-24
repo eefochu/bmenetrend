@@ -1,0 +1,16 @@
+<resources>
+    <string name="line_vehicle_here">Vehicle position</string>
+    <string name="line_on_the_way">On the way to the next stop</string>
+    <string name="line_choose_boarding">Where are you boarding?</string>
+    <string name="line_load_error">The directions could not be loaded. Try again.</string>
+    <string name="line_no_directions">No directions are currently supplied for this line.</string>
+    <string name="line_from">From %1$s</string>
+    <string name="line_all_departures">Show all lines at this stop</string>
+    <string name="line_change_direction">Change direction or boarding stop</string>
+    <string name="line_scheduled_delay">Scheduled %1$s · %2$s min</string>
+    <string name="line_accessible">Wheelchair accessible</string>
+    <string name="line_bikes">Bicycles allowed</string>
+    <string name="line_show_route">Show full route on the map</string>
+    <string name="line_direction_hint">Choose a destination, then select the stop where you will board.</string>
+    <string name="line_starting_point">Starting point variants</string>
+</resources>

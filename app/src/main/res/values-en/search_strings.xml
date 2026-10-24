@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="search_all">All</string>
+    <string name="search_places">Places</string>
+    <string name="search_stations">Stations</string>
+    <string name="search_vehicles">Vehicles</string>
+    <string name="search_show_more">Show more</string>
+    <string name="search_no_matches">No matches in this category.</string>
+    <string name="search_start">Search for a place, station or line. Try 11. kerület, Széll Kálmán tér or 1 villamos.</string>
+    <string name="search_places_unavailable">Place search is temporarily unavailable. Stations and vehicles still work.</string>
+    <string name="search_retry">Retry</string>
+    <string name="search_places_attribution">© OpenStreetMap contributors · Photon</string>
+    <string name="search_live_vehicles">Live vehicles</string>
+    <string name="search_live_vehicle">Live vehicle</string>
+    <string name="search_close_place">Close selected place</string>
+    <string name="search_places_privacy">Place searches send your typed query to Photon. Your device location is not sent.</string>
+    <string name="search_places_source">Places: Photon / OpenStreetMap</string>
+</resources>

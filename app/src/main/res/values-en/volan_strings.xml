@@ -1,0 +1,49 @@
+<resources>
+    <string name="volan_provider">Volán</string>
+    <string name="volan_settings">Settings</string>
+    <string name="volan_nationwide">Nationwide network</string>
+    <string name="volan_local_scope">EMMA/MÁVPlusz supplies Volán buses nationwide, BKK vehicles in Budapest and HÉV trains. Volán markers are yellow; BKK buses are blue, trolleybuses red and trams yellow.</string>
+    <string name="volan_nationwide_hint">On by default. Turn off to show Volán routes serving Biatorbágy, Páty and Budaörs, plus BKK within Budapest. Trains and supported HÉV lines stay nationwide. Tracking depends on the source; missing positions do not mean a service is cancelled.</string>
+    <string name="volan_unavailable">EMMA/MÁVPlusz live data is unavailable. Retrying automatically.</string>
+    <string name="volan_no_positions">EMMA · No fresh tracked vehicles in the selected network.</string>
+    <string name="volan_observation_time">Source observation: %1$s</string>
+    <string name="volan_position_source">EMMA / MÁVPlusz</string>
+    <string name="volan_about">Volán, BKK and HÉV vehicle positions come from EMMA/MÁVPlusz. No direct BKK API is used. Only recent source observations are shown; missing tracking does not mean cancellation. Stops and departure boards also come from EMMA. Only departures marked live have source realtime predictions. Vehicles stay visible when zoomed out. Stops appear as small dots; tap a vehicle for its trip details and stops.</string>
+    <string name="volan_source_link">MÁVPlusz map</string>
+    <string name="volan_route_hint">Tracked vehicles on this route are listed below. Live map positions do not provide stop departure predictions.</string>
+    <string name="volan_timetable_link">Official route timetable</string>
+    <string name="volan_no_route_positions">No fresh tracked vehicles for this route in the selected network.</string>
+    <string name="volan_loading">EMMA · Loading nationwide trains, Volán, BKK and HÉV vehicles…</string>
+    <plurals name="volan_positions">
+        <item quantity="one">EMMA · %1$d tracked vehicle · MÁVPlusz</item>
+        <item quantity="other">EMMA · %1$d tracked vehicles · MÁVPlusz</item>
+    </plurals>
+    <string name="volan_route_results">Route details</string>
+    <string name="volan_stale">EMMA is temporarily unavailable. Showing the last successful update; old positions disappear automatically.</string>
+    <string name="emma_bkk_provider">BKK</string>
+    <string name="emma_speed">Speed: %1$d km/h</string>
+    <string name="emma_vehicle">Vehicle</string>
+    <string name="emma_board_loading">Loading EMMA departures…</string>
+    <string name="emma_board_stale">EMMA departures could not be refreshed. Showing the recent update; retrying automatically.</string>
+    <string name="emma_board_unavailable">EMMA departures are unavailable for this stop. Retrying automatically.</string>
+    <string name="emma_board_limit">The source departure limit was reached. Some later departures may be omitted.</string>
+    <string name="emma_stops_saved">Using saved EMMA stops. The stop list will refresh automatically.</string>
+    <string name="emma_stops_unavailable">EMMA stops could not be loaded. Retrying automatically.</string>
+    <string name="emma_platform">Platform %1$s</string>
+    <string name="emma_stop_code">Stop %1$s</string>
+    <string name="emma_mode_bus">Bus</string>
+    <string name="emma_mode_tram">Tram</string>
+    <string name="emma_mode_trolley">Trolleybus</string>
+    <string name="emma_mode_train">Train</string>
+    <string name="emma_mode_metro">Metro</string>
+    <string name="emma_vehicle_refresh">Refresh vehicle details</string>
+    <string name="emma_vehicle_close">Close vehicle details</string>
+    <string name="emma_vehicle_towards">Towards %1$s</string>
+    <string name="emma_vehicle_no_direction">Direction is not supplied by the source.</string>
+    <string name="emma_vehicle_loading">Loading stops for this trip…</string>
+    <string name="emma_vehicle_unavailable">The stop list for this trip could not be loaded. Tap refresh to retry.</string>
+    <string name="emma_vehicle_no_stops">The source has no stop list for this vehicle.</string>
+    <string name="emma_vehicle_next_stop">Next stop: %1$s</string>
+    <string name="emma_vehicle_old_position">This position is no longer fresh. The last source observation is shown above.</string>
+    <plurals name="emma_journey_stops"><item quantity="one">%1$d stop on this trip</item><item quantity="other">%1$d stops on this trip · tap to view departures</item></plurals>
+</resources>

@@ -1,11 +1,11 @@
 <resources>
-    <string name="data_network_unavailable">%1$s: connection unavailable. Saved stops and routes are shown; departures require a timetable verified today.</string>
-    <string name="data_source_changed">%1$s: the official timetable changed. Stops and routes remain available; timetable departures await a verified update.</string>
-    <string name="data_live_unavailable">%1$s: live vehicle data is unavailable. Departures are scheduled.</string>
-    <string name="data_no_fresh_vehicles">%1$s: no fresh vehicle positions. Departures are scheduled.</string>
-    <string name="data_live_positions_only">%1$s: live vehicle positions. Departures are scheduled because the GPS feed does not identify routes.</string>
-    <string name="data_all_live_unavailable">Live vehicle data is currently unavailable from both operators. Departures are scheduled.</string>
-    <string name="data_calendar_unreviewed">%1$s: the %2$d service calendar has not been verified. Stops and routes remain available.</string>
-    <string name="data_no_verified_timetable">%1$s: no timetable verified for today. Stops and routes remain available.</string>
-    <string name="data_no_service_today">%1$s: no scheduled service today under the verified calendar. Stops and routes remain available.</string>
+    <string name="data_network_unavailable">%1$s: a hálózat nem érhető el. A mentett megállók és útvonalak láthatók; az indulásokhoz ma ellenőrzött menetrend szükséges.</string>
+    <string name="data_source_changed">%1$s: a hivatalos menetrend megváltozott. A megállók és útvonalak elérhetők; a menetrendi indulások ellenőrzött frissítésre várnak.</string>
+    <string name="data_live_unavailable">%1$s: az élő járműadatok nem érhetők el. Az indulások menetrendiek.</string>
+    <string name="data_no_fresh_vehicles">%1$s: nincs friss járműpozíció. Az indulások menetrendiek.</string>
+    <string name="data_live_positions_only">%1$s: élő járműpozíciók. Az indulások menetrendiek, mert a GPS-adatok nem azonosítják a járatot.</string>
+    <string name="data_all_live_unavailable">Jelenleg egyik szolgáltatótól sem érhetők el élő járműadatok. Az indulások menetrendiek.</string>
+    <string name="data_calendar_unreviewed">%1$s: a %2$d. évi közlekedési naptár még nincs ellenőrizve. A megállók és útvonalak elérhetők.</string>
+    <string name="data_no_verified_timetable">%1$s: mára nincs ellenőrzött menetrend. A megállók és útvonalak elérhetők.</string>
+    <string name="data_no_service_today">%1$s: az ellenőrzött naptár szerint ma nincs menetrendi közlekedés. A megállók és útvonalak elérhetők.</string>
 </resources>

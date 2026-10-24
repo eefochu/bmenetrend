@@ -1,0 +1,94 @@
+package hu.app.bmenetrend.data
+
+import androidx.compose.runtime.Immutable
+import org.json.JSONArray
+import org.json.JSONObject
+
+private val HEX_COLOR_REGEX = Regex("[a-fA-F0-9]{6}")
+
+@Immutable
+data class LinePattern(val id: String, val codes: Set<String>, val headsign: String, val stops: List<TransitStop>, val geometry: List<GeoPoint>, val serviceCount: Int = 0, val directionId: String? = null) {
+    val familyKey: List<String> get() = if (directionId == null) listOf(id) else listOf(directionId, headsign, stops.last().id)
+}
+
+@Immutable
+data class LineDetails(val route: TransitRoute, val patterns: List<LinePattern>) {
+    fun boardingPattern(patternId: String, stopId: String): LinePattern? {
+        val selected = patterns.find { it.id == patternId } ?: return null
+        val occurrence = selected.stops.indices.filter { selected.stops[it].id == stopId }.singleOrNull() ?: return selected.takeIf { it.stops.any { stop -> stop.id == stopId } }
+        val suffix = selected.stops.drop(occurrence).map { it.id }
+        val codes = patterns.filter { it.familyKey == selected.familyKey }.filter { variant ->
+            val index = variant.stops.indices.filter { variant.stops[it].id == stopId }.singleOrNull()
+            index != null && variant.stops.drop(index).map { it.id } == suffix
+        }.flatMap { it.codes }.toSet()
+        return selected.copy(codes = codes.ifEmpty { selected.codes })
+    }
+}
+
+@Immutable
+data class BoardingSelection(val routeId: String, val title: String, val pattern: LinePattern? = null, val localDirectionId: String? = null) {
+    fun matches(departure: Departure): Boolean = departure.routeId == routeId && when {
+        pattern != null -> departure.patternCode in pattern.codes
+        localDirectionId != null -> departure.directionId == localDirectionId
+        else -> true
+    }
+}
+
+object EmmaRouteParser {
+    const val CATALOGUE_QUERY = "{ routes { gtfsId shortName longName mode color } }"
+    fun catalogue(text: String): List<TransitRoute> {
+        val rows = EmmaGraphqlClient.data(text).getJSONArray("routes")
+        return (0 until rows.length()).mapNotNull { EmmaStopsParser.route(rows.getJSONObject(it)) }
+            .distinctBy { it.id }.also { require(it.isNotEmpty()) { "Missing line catalogue" } }
+    }
+
+    val QUERY = """query LineDetails(${'$'}id:String!, ${'$'}date:String!) {
+        route(id:${'$'}id) { gtfsId shortName longName mode color
+            patterns { code name directionId headsign tripsForDate(serviceDate:${'$'}date) { gtfsId } stops { gtfsId name lat lon vehicleMode platformCode parentStation { gtfsId } } geometry { lat lon } }
+        }
+    }""".trimIndent()
+    fun parse(text: String, expectedRouteId: String): LineDetails {
+        val row = EmmaGraphqlClient.data(text).getJSONObject("route")
+        val source = row.getString("gtfsId")
+        val route = EmmaStopsParser.route(row) ?: error("Unsupported route")
+        val provider = route.providerId
+        val mode = route.transportMode!!
+        require(route.id == expectedRouteId) { "Wrong route returned" }
+        val patterns = row.getJSONArray("patterns")
+        val parsed = (0 until patterns.length()).mapNotNull { i ->
+            val pattern = patterns.getJSONObject(i)
+            val code = pattern.text("code") ?: return@mapNotNull null
+            if (!code.startsWith(when (provider) { "volan" -> "hkir:"; "hev", "mav" -> "1:"; else -> "BKK:" })) return@mapNotNull null
+            val rows = pattern.getJSONArray("stops")
+            val stops = (0 until rows.length()).map { index ->
+                val stop = rows.getJSONObject(index)
+                val id = stop.getString("gtfsId")
+                require(EmmaStopsParser.provider(id) == if (provider == "hev") "mav" else provider)
+                val point = point(stop.getDouble("lat"), stop.getDouble("lon"))
+                TransitStop("emma:$id", stop.getString("name"), point, listOf(expectedRouteId), provider,
+                    sourceStopIds = listOf(id), platformCode = stop.text("platformCode"), transportMode = if (provider == "hev") "SUBURBAN_RAILWAY" else stop.text("vehicleMode") ?: mode,
+                    parentStationId = stop.optJSONObject("parentStation")?.text("gtfsId")?.let { "emma:$it" })
+            }
+            if (stops.size < 2) return@mapNotNull null
+            val geometry = pattern.optJSONArray("geometry")?.let { points -> (0 until points.length()).map { index ->
+                val p = points.getJSONObject(index); point(p.getDouble("lat"), p.getDouble("lon"))
+            }}.orEmpty()
+            LinePattern(code, setOf(code), pattern.text("headsign") ?: stops.last().name, stops, geometry, pattern.optJSONArray("tripsForDate")?.length() ?: 0, pattern.text("directionId"))
+        }
+        // Different service calendars can share one physical stop sequence; keep all their codes for board filtering.
+        val grouped = parsed.groupBy { it.headsign to it.stops.map(TransitStop::id) }.values.map { aliases ->
+            aliases.first().copy(codes = aliases.flatMap { it.codes }.toSet(), serviceCount = aliases.sumOf { it.serviceCount })
+        }.sortedWith(compareByDescending<LinePattern> { it.serviceCount }.thenBy { it.headsign }.thenByDescending { it.stops.size })
+        return LineDetails(route, grouped)
+    }
+    fun tripGeometry(rows: JSONArray?): List<GeoPoint> = rows?.let { array -> (0 until array.length()).map { i ->
+        val pair = array.getJSONArray(i)
+        // OTP trip.geometry is GeoJSON coordinate order [longitude, latitude].
+        point(pair.getDouble(1), pair.getDouble(0))
+    }}.orEmpty()
+    private fun point(lat: Double, lon: Double): GeoPoint {
+        require(lat.isFinite() && lon.isFinite() && lat in -90.0..90.0 && lon in -180.0..180.0 && !(lat == 0.0 && lon == 0.0))
+        return GeoPoint(lat, lon)
+    }
+    private fun JSONObject.text(key: String) = optString(key).takeUnless { it.isBlank() || it == "null" }
+}

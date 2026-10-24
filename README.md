@@ -51,6 +51,8 @@ A közös átszállópontok (pl. *Biatorbágy vasútállomás*) automatikusan eg
 - **Helykeresés**: Cím- és helymeghatározás a [Photon](https://photon.komoot.io/) / OpenStreetMap API segítségével
 - **Állapotkezelés**: MVVM minta Kotlin Coroutines és StateFlow architektúrával, helyi gyorsítótárral
 
+Az alkalmazás csomagazonosítója és Kotlin-névtere `hu.app.bmenetrend`. A felület, az állapotüzenetek és a dátumválasztó a telefon rendszernyelvétől függetlenül magyarul jelennek meg. Az alapértelmezett szövegek a `res/values/`, a megőrzött angol fordítások a `res/values-en/` könyvtárban találhatók.
+
 ---
 
 ## 🚀 Fordítás és futtatás

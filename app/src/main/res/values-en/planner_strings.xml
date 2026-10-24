@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="planner_nav_map">Map</string>
+    <string name="planner_nav_plan">Plan</string>
+    <string name="planner_title">Plan your journey</string>
+    <string name="planner_subtitle">Where would you like to go?</string>
+    <string name="planner_from">From</string>
+    <string name="planner_to">To</string>
+    <string name="planner_swap">Swap start and destination</string>
+    <string name="planner_current">Current location</string>
+    <string name="planner_choose">Choose a place or station</string>
+    <string name="planner_search_hint">Search for an address, place or station</string>
+    <string name="planner_find">Find the fastest journey</string>
+    <string name="planner_refresh">Plan again</string>
+    <string name="planner_loading">Finding a practical route…</string>
+    <string name="planner_timing">Leave after 2 minutes to get ready. Walking: about 4.1 km/h. Transfers allow an extra 3 minutes, plus the walk between stops.</string>
+    <string name="planner_location_error">Location is not available yet. Allow location access, or choose a starting place.</string>
+    <string name="planner_same_place">Choose a destination farther from your starting point.</string>
+    <string name="planner_no_route">No practical journey was found at the selected time. Try another time or starting point.</string>
+    <string name="planner_unavailable">Journey planning is temporarily unavailable. Check your connection and try again.</string>
+    <string name="planner_search_error">Place search is unavailable. Try a station name or check your connection.</string>
+    <string name="planner_no_places">No places found. Try a more specific name.</string>
+    <string name="planner_options">Your journey options</string>
+    <string name="planner_checked">Checked at %1$s · earliest arrival first</string>
+    <string name="planner_fastest">Fastest</string>
+    <string name="planner_duration">%1$d min journey</string>
+    <string name="planner_summary">%1$s · %2$d min walking</string>
+    <string name="planner_steps">Step by step</string>
+    <string name="planner_walk">Walk</string>
+    <string name="planner_walk_detail">Walk %1$d min · %2$d m</string>
+    <string name="planner_wait">Allow %1$d min for boarding or transfer</string>
+    <string name="planner_stay">Stay on the vehicle</string>
+    <string name="planner_stops">%1$d intermediate stops</string>
+    <string name="planner_stale">This journey has already started. Plan again before leaving.</string>
+    <string name="planner_refresh_needed">Departure time passed · refresh</string>
+    <string name="planner_source">Journey times and walking routes: EMMA/MÁVPlusz. Only source-marked predictions are labelled live.</string>
+    <string name="planner_direct">Direct</string>
+    <string name="planner_outside_area">Journey planning is available in Hungary. Choose a starting point and destination there.</string>
+    <plurals name="planner_transfers">
+        <item quantity="one">%d transfer</item>
+        <item quantity="other">%d transfers</item>
+    </plurals>
+    <plurals name="planner_intermediate">
+        <item quantity="one">%d intermediate stop</item>
+        <item quantity="other">%d intermediate stops</item>
+    </plurals>
+    <string name="planner_view_steps">View journey</string>
+    <string name="planner_departure">Departure</string>
+    <string name="planner_leave_now">Leave now</string>
+    <string name="planner_leave_later">Choose a date and time</string>
+    <string name="planner_departure_time">Departure time</string>
+    <string name="planner_departure_zone">Budapest time. Start your journey at the chosen time; walking and transfer allowances are included.</string>
+    <string name="planner_departure_invalid">Choose a future time. During a clock change, choose a time outside the repeated or skipped hour.</string>
+    <string name="planner_departure_passed">The chosen departure has passed. Choose a later time or leave now.</string>
+    <string name="planner_apply">Apply</string>
+    <string name="planner_cancel">Cancel</string>
+    <string name="planner_timing_later">Walking: about 4.1 km/h. Transfers allow an extra 3 minutes, plus the walk between stops. Advance journeys use available timetables.</string>
+    <string name="planner_bar_hint">Bars show walking, waiting and riding in each line’s color. Times include boarding and transfer allowances.</string>
+    <string name="planner_show_stops">Show intermediate stops</string>
+    <string name="planner_hide_stops">Hide intermediate stops</string>
+</resources>

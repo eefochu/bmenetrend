@@ -1,6 +1,8 @@
 # BMenetrend – handoff
 
-Utolsó frissítés: 2026-10-22. Ez a fájl a projekt jelenlegi állapotát írja le egy következő fejlesztőnek vagy modellnek. A cél az, hogy ne kelljen újra felderíteni az adatforrásokat, a naptárlogikát vagy a közös megállók kezelését.
+Utolsó frissítés: 2026-10-24. Ez a fájl a projekt jelenlegi állapotát írja le egy következő fejlesztőnek vagy modellnek. A cél az, hogy ne kelljen újra felderíteni az adatforrásokat, a naptárlogikát vagy a közös megállók kezelését.
+
+A jelenlegi csomagazonosító `hu.app.bmenetrend`; a felület, az állapotüzenetek és a dátumválasztók a rendszernyelvtől függetlenül magyarul jelennek meg. Az alábbi 0.3.0-s kiadási ellenőrzések és csomaglenyomatok a korábbi, 2026-10-22-i állapotot dokumentálják.
 
 ## Rövid állapot
 
@@ -35,7 +37,7 @@ A 0.3.0 kiadási csomagok az `artifacts/` gyökerében és az `artifacts/v0.3/` 
 
 - Projektgyökér: `viabusz/`
 - Android app: `viabusz/app/`
-- Csomagazonosító: `hu.viabusz.app`
+- Csomagazonosító: `hu.app.bmenetrend`
 - Verzió: `versionCode = 3`, `versionName = "0.3.0"`
 - Minimum Android: API 26 / Android 8
 - Nyelv: Kotlin + Jetpack Compose + Material 3 + MapLibre
@@ -55,7 +57,7 @@ Ez lokális környezeti segédlet, nem része a kiadható projektnek. Hordozhat�
 
 | Terület | Fő fájlok | Szerep |
 | --- | --- | --- |
-| App belépési pont | `app/src/main/java/hu/viabusz/app/MainActivity.kt` | engedélyek, helyzet, Compose gyökér |
+| App belépési pont | `app/src/main/java/hu/app/bmenetrend/MainActivity.kt` | engedélyek, helyzet, Compose gyökér |
 | Állapot és frissítés | `TransitViewModel.kt` | kijelölt megálló, kedvencek, 15 másodperces élő frissítés, státuszok |
 | Szolgáltatók / cache | `data/TransitRepository.kt` | ViaBusz, KanyarGO és HOMM külön betöltése, napi PDF-ellenőrzés, v3 cache |
 | Adatmodellek | `data/Models.kt`, `data/NetworkJson.kt` | schema v3, több szolgáltatós megálló-metaadat |
@@ -66,8 +68,8 @@ Ez lokális környezeti segédlet, nem része a kiadható projektnek. Hordozhat�
 | HOMM PDF-naptár | `data/HommParser.kt`, `data/HommCalendar.kt` | 288/289, csak menetrendi adat |
 | Compose felület | `ui/ViaBuszScreen.kt` | kereső, iránylista, megállólista, alsó panel, szolgáltatói címkék |
 | Térkép | `map/NativeTransitMap.kt` | zöld ViaBusz, lila KanyarGO, narancs HOMM, türkiz közös megálló |
-| Angol szövegek | `res/values/*.xml` | alapnyelv |
-| Magyar szövegek | `res/values-hu/*.xml` | automatikus magyar UI |
+| Magyar szövegek | `res/values/*.xml` | alapnyelv, a felület rendszernyelvtől függetlenül magyar |
+| Angol szövegek | `res/values-en/*.xml` | megőrzött fordítások |
 | Hálózati snapshotok | `app/src/main/assets/` | futáskor használt, ellenőrzött alapadatok |
 | Egységteszt-fixture-ök | `app/src/test/resources/` | assetek és hivatalos oldal/PDF-hivatkozás minták |
 | Importok | `scripts/` | reprodukálható Python-importok |

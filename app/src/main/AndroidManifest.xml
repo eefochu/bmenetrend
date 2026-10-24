@@ -7,11 +7,12 @@
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-feature android:name="android.hardware.location" android:required="false" />
     <application
+        android:name=".BMenetrendApplication"
         android:allowBackup="false"
         android:label="@string/app_name"
         android:icon="@drawable/ic_launcher"
         android:supportsRtl="true"
-        android:theme="@style/Theme.ViaBusz"
+        android:theme="@style/Theme.BMenetrend"
         android:usesCleartextTraffic="false">
         <provider
             android:name="androidx.core.content.FileProvider"
