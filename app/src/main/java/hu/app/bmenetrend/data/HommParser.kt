@@ -35,6 +35,6 @@ object HommParser {
         require(links.containsAll(setOf(SCHOOL_URL, BREAK_URL)) && links.all { it in knownDocuments }) { "HOMM active timetable changed" }
         val today = now.atZone(ViabuszParser.zone).toLocalDate()
         val serviceDate = today.takeIf { HommCalendar.activeCalendar(it) != null }
-        return base.copy(fetchedAt = now, serviceDate = serviceDate, providerServiceDates = mapOf("homm" to serviceDate), warning = null)
+        return base.copy(fetchedAt = now, serviceDate = serviceDate, providerServiceDates = mapOf("homm" to serviceDate), warning = null, verifiedProviderIds = setOf("homm"))
     }
 }

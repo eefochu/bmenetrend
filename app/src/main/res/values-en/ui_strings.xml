@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="ui_brand">BMenetrend</string>
+    <string name="crash_report_title">The app closed unexpectedly</string>
+    <string name="crash_report_description">The previous crash report stayed on this phone. Copy it and send it to the developer to help fix the problem. The app sends nothing automatically.</string>
+    <string name="crash_report_copy">Copy crash report</string>
     <string name="ui_area">Biatorbágy · Páty · Budaörs</string>
     <string name="ui_provider_viabusz">ViaBusz</string>
     <string name="ui_provider_kanyargo">KanyarGO</string>

@@ -49,6 +49,8 @@ data class TransitNetwork(
     val warning: String? = null,
     val providerServiceDates: Map<String, LocalDate?> = emptyMap(),
     val providerWarnings: Map<String, String> = emptyMap(),
+    /** Document verification is independent of whether an operator runs on the fetch date. */
+    val verifiedProviderIds: Set<String> = emptySet(),
 )
 
 @Immutable

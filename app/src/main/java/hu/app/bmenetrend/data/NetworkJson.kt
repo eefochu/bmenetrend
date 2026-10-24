@@ -45,12 +45,14 @@ object NetworkJson {
         }) { "Invalid trip sequence" }
         val dates = root.optJSONObject("providerServiceDates")?.let { obj -> obj.keys().asSequence().associateWith { obj.date(it) } }.orEmpty()
         return TransitNetwork(stops, routes, trips, Instant.parse(root.getString("fetchedAt")), root.getString("source"),
-            root.date("serviceDate"), root.optString("calendarLabel", "Munkanapokon"), providerServiceDates = dates)
+            root.date("serviceDate"), root.optString("calendarLabel", "Munkanapokon"), providerServiceDates = dates,
+            verifiedProviderIds = root.optJSONArray("verifiedProviderIds")?.strings()?.toSet().orEmpty())
     }
 
     fun encode(network: TransitNetwork): String = JSONObject().apply {
         put("schemaVersion", 3); put("fetchedAt", network.fetchedAt.toString()); put("source", network.source)
         put("serviceDate", network.serviceDate?.toString() ?: JSONObject.NULL); put("calendarLabel", network.calendarLabel)
+        put("verifiedProviderIds", JSONArray(network.verifiedProviderIds.toList()))
         put("providerServiceDates", JSONObject().apply { network.providerServiceDates.forEach { (provider, date) -> put(provider, date?.toString() ?: JSONObject.NULL) } })
         put("stops", JSONArray(network.stops.map { stop -> JSONObject().apply {
             put("id", stop.id); put("name", stop.name); put("lat", stop.position.lat); put("lon", stop.position.lon)

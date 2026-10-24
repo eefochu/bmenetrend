@@ -1,0 +1,39 @@
+package hu.app.bmenetrend.ui
+
+import android.app.Application
+import android.graphics.Bitmap
+import androidx.test.core.app.ApplicationProvider
+import hu.app.bmenetrend.R
+import org.junit.Assert.*
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [33])
+class TransitIconBitmapTest {
+    @Test fun largeBusArtworkIsSampledToBadgeSizeBeforeItCanReachTheGpu() {
+        val context=ApplicationProvider.getApplicationContext<Application>()
+        val bitmap=TransitIconBitmap.load(context,R.drawable.vehicle_bkk_bus,56)
+        assertEquals(56,bitmap.width)
+        assertEquals(56,bitmap.height)
+        assertEquals(56*56*4,bitmap.byteCount)
+        assertEquals(Bitmap.Config.ARGB_8888,bitmap.config)
+        assertFalse(bitmap.isRecycled)
+    }
+    @Test fun repeatedScrollingBadgesShareTheSmallBitmapRatherThanDecodingAnotherLargeTexture() {
+        val context=ApplicationProvider.getApplicationContext<Application>()
+        val first=TransitIconBitmap.load(context,R.drawable.vehicle_bkk_bus,56)
+        val repeated=TransitIconBitmap.load(context,R.drawable.vehicle_bkk_bus,56)
+        assertSame(first,repeated)
+        assertNotSame(first,TransitIconBitmap.load(context,R.drawable.vehicle_bkk_bus,84))
+        assertFalse(first.isRecycled)
+    }
+    @Test fun vectorLocalBusIconUsesTheSameBoundedSoftwareBitmapPath() {
+        val context=ApplicationProvider.getApplicationContext<Application>()
+        val bitmap=TransitIconBitmap.load(context,R.drawable.vehicle_viabusz_bus,56)
+        assertEquals(56*56*4,bitmap.byteCount)
+        assertFalse(bitmap.isRecycled)
+    }
+}

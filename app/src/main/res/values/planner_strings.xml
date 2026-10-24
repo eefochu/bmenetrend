@@ -33,7 +33,8 @@
     <string name="planner_stops">%1$d köztes megálló</string>
     <string name="planner_stale">Ez az út már elkezdődött. Indulás előtt tervezz újra.</string>
     <string name="planner_refresh_needed">Az indulási idő elmúlt · tervezz újra</string>
-    <string name="planner_source">Menetidők és gyalogos útvonalak: EMMA/MÁVPlusz. Csak a forrás által élőnek jelölt előrejelzések kapnak élő jelzést.</string>
+    <string name="planner_source">Országos járatok és gyalogos kapcsolatok: EMMA/MÁVPlusz. Helyi menetrendek: ViaBusz, KanyarGO és HOMM. Csak az élőként jelzett szakaszok használnak valós idejű előrejelzést.</string>
+    <string name="planner_partial">Egyes menetrendek vagy gyalogos kapcsolatok most nem érhetők el, ezért további útvonalak is lehetségesek. Próbálj újratervezni.</string>
     <string name="planner_direct">Átszállás nélkül</string>
     <string name="planner_outside_area">A tervezés Magyarországon érhető el. Válassz magyarországi kiindulópontot és célt.</string>
     <plurals name="planner_transfers">

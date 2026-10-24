@@ -37,6 +37,8 @@ import hu.app.bmenetrend.ui.ViaBuszTheme
 import hu.app.bmenetrend.ui.lineColor
 import androidx.compose.ui.graphics.toArgb
 import kotlinx.coroutines.awaitCancellation
+import java.io.File
+import hu.app.bmenetrend.ui.CrashReportDialog
 
 class MainActivity : ComponentActivity() {
     override fun attachBaseContext(newBase: Context) {
@@ -48,6 +50,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
+            val crashReports = remember { CrashReports(File(filesDir, "last-crash.txt")) }
+            var pendingCrash by remember { mutableStateOf(crashReports.read()) }
             val model: TransitViewModel = viewModel()
             val planner: PlannerViewModel = viewModel()
             var tab by rememberSaveable { mutableStateOf(MainTab.MAP) }
@@ -93,6 +97,10 @@ class MainActivity : ComponentActivity() {
                     startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
             }
             ViaBuszTheme(accent = state.accentColor, customArgb = state.customAccentArgb) {
+                pendingCrash?.let { report -> CrashReportDialog(report) {
+                    crashReports.clear()
+                    pendingCrash = null
+                } }
                 MainNavigation(tab, { tab = it }, planner = { PlannerScreen(planner, requestLocation) }, favorites = {
                     FavoritesScreen(state, onStop = { model.selectStop(it); tab = MainTab.MAP }, onRemove = model::toggleFavorite,
                         onRefresh = model::refreshFavorites, onWindow = model::setWindow, onVisible = model::setVisibleFavorites)

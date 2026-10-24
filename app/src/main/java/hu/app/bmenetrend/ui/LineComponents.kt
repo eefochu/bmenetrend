@@ -18,7 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -69,7 +68,7 @@ fun LineBadge(number: String, provider: String, mode: String? = null, sourceColo
     }
     val color = lineColor(provider, mode, sourceColor)
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        if (showIcon) Image(painterResource(VehicleMarkerStyle.forTransport(provider, mode).drawableRes),
+        if (showIcon) Image(rememberTransitIcon(VehicleMarkerStyle.forTransport(provider, mode).drawableRes, 28.dp),
             stringResource(when (mode) { "TRAM" -> R.string.emma_mode_tram; "TROLLEYBUS" -> R.string.emma_mode_trolley;
                 "SUBWAY" -> R.string.emma_mode_metro; "RAIL", "SUBURBAN_RAILWAY", "TRAMTRAIN" -> R.string.emma_mode_train; else -> R.string.emma_mode_bus }), Modifier.size(28.dp))
         Surface(shape = RoundedCornerShape(8.dp), color = color) {
@@ -116,7 +115,7 @@ fun LineStopRow(stop: TransitStop, first: Boolean, last: Boolean, color: Color, 
                     if (first || last) drawCircle(surface, 3.dp.toPx(), Offset(x, y))
                 }
                 if (vehicleBitmap != null) Image(vehicleBitmap, stringResource(R.string.line_vehicle_here), Modifier.width(44.dp).height(30.dp))
-                else vehicleIcon?.let { Image(painterResource(it), stringResource(R.string.line_vehicle_here), Modifier.size(30.dp)) }
+                else vehicleIcon?.let { Image(rememberTransitIcon(it, 30.dp), stringResource(R.string.line_vehicle_here), Modifier.size(30.dp)) }
             }
             Column(Modifier.weight(1f).padding(start = 12.dp, top = 16.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(stop.name, style = MaterialTheme.typography.bodyLarge, fontWeight = if (highlighted) FontWeight.SemiBold else FontWeight.Normal,
@@ -135,7 +134,7 @@ fun LineVehicleBetween(color: Color, icon: Int, bitmap: ImageBitmap? = null) {
         Box(Modifier.width(48.dp).fillMaxHeight(), contentAlignment = Alignment.Center) {
             Canvas(Modifier.matchParentSize()) { drawLine(color, Offset(size.width / 2, 0f), Offset(size.width / 2, size.height), 5.dp.toPx()) }
             if (bitmap != null) Image(bitmap, stringResource(R.string.line_vehicle_here), Modifier.width(44.dp).height(30.dp))
-            else Image(painterResource(icon), stringResource(R.string.line_vehicle_here), Modifier.size(30.dp))
+            else Image(rememberTransitIcon(icon, 30.dp), stringResource(R.string.line_vehicle_here), Modifier.size(30.dp))
         }
         Text(stringResource(R.string.line_on_the_way), Modifier.padding(start = 12.dp), style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant)

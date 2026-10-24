@@ -17,7 +17,7 @@
 - **Natív vektortérkép**: Teljes képernyős [MapLibre](https://maplibre.org/) motor [OpenFreeMap](https://openfreemap.org/) vektoros csempékkel, automatikus világos témával és saját, színes éjszakai térképstílussal. API-kulcs és számlázási fiók nélkül.
 - **Kategorizált villámkereső**: Gyors keresés három kategóriában: **Helyek** (Photon / OpenStreetMap), **Megállók** (peronelrendezéssel) és **Járművek** (járatszám, rendszám vagy célállomás alapján).
 - **Önálló peronok**: A megállók külön, saját forráskoordinátáikkal jelennek meg; az egymást fedő jelölők minimális eltolással külön kiválaszthatók.
-- **Utazástervezés**: Külön Tervezés fül cím- és megállókereséssel, EMMA-alapú útvonalakkal, legkorábbi érkezés szerinti sorrenddel, valódi gyalogos szakaszokkal és átszállási tartalékkal. Indulás most vagy kiválasztott napon és időpontban; színes menetidősávok és megnyitható, időpontokkal, peronokkal és köztes megállókkal ellátott útvonallánc.
+- **Utazástervezés**: Külön Tervezés fül cím- és megállókereséssel, EMMA-alapú országos útvonalakkal, ViaBusz-, KanyarGO- és HOMM-csatlakozásokkal, külön Volán- és buszos alternatívákkal, legkorábbi érkezés szerinti sorrenddel, valódi gyalogos szakaszokkal és átszállási tartalékkal. Indulás most vagy kiválasztott napon és időpontban; színes menetidősávok és megnyitható, időpontokkal, peronokkal és köztes megállókkal ellátott útvonallánc.
 - **Kedvenc megállók**: Saját fül a szívvel mentett állomások és megállók érkező járataival, valós idejű jelzésekkel és legfeljebb 5 órás indulási ablakkal. A visszaszámlálás tömör: `4p`, `1ó 3p`.
 - **Vasút**: Országos MÁVPlusz-vonatkövetés, vonalszám, vonatszám, vonatnév, vágányadatok és a tényleges útvonal megállói. A vasúti megállók és járművek tágabb nézetben is láthatók, azonos méretezéssel.
 - **Közeli járatok**: Alapértelmezett alsó kártya a helyzetedhez vagy a térkép közepéhez közeli megállók következő indulásaival, élő és menetrendi jelzéssel.
@@ -69,8 +69,11 @@ Az alkalmazás csomagazonosítója és Kotlin-névtere `hu.app.bmenetrend`. A fe
 git clone https://github.com/micr0softstore/bmenetrend.git
 cd bmenetrend
 
-# Debug APK fordítása
+# Optimalizált debug csatornás APK fordítása (R8 + erőforrás-zsugorítás)
 ./gradlew :app:assembleDebug
+
+# Hagyományos fejlesztői változat: debugger, Compose-inspektor, gyors fordítás
+./gradlew :app:assembleDevelopment
 
 # Egységtesztek futtatása
 ./gradlew :app:testDebugUnitTest
@@ -78,6 +81,10 @@ cd bmenetrend
 # Telepítés csatlakoztatott eszközre
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
+
+A `debug` és a `release` ugyanazt az optimalizálást használja; a terjeszthető `debug` APK sem debuggolható. A `development` változat debuggolható, külön `hu.app.bmenetrend.dev` csomagnévvel települ. A nagy univerzális APK mind a négy CPU-architektúrához tartalmaz natív MapLibre-könyvtárakat.
+
+Váratlan Java/Kotlin-leállás után a következő indításkor a helyben mentett hibajelentés kimásolható. Android 11-től a natív összeomlás vagy memória miatti folyamatleállás rendszeradatai is megjelenhetnek. A jelentés nem kerül automatikusan elküldésre; másoláskor vagy bezáráskor a mentett példány törlődik.
 
 > [!TIP]
 > Android emulátorban a gördülékeny térképmegjelenítéshez ajánlott a hardveres gyorsítást (**Host GPU**) bekapcsolni.

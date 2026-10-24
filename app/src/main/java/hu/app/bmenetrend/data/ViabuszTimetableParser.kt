@@ -35,6 +35,6 @@ object ViabuszTimetableParser {
         require(activeDocuments == knownDocuments) { "ViaBusz active timetable changed" }
         val today = now.atZone(ViabuszParser.zone).toLocalDate()
         val date = today.takeIf { activeCalendar(it) != null }
-        return base.copy(fetchedAt = now, serviceDate = date, providerServiceDates = mapOf("viabusz" to date), warning = null)
+        return base.copy(fetchedAt = now, serviceDate = date, providerServiceDates = mapOf("viabusz" to date), warning = null, verifiedProviderIds = setOf("viabusz"))
     }
 }

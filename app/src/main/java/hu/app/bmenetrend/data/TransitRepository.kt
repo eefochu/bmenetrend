@@ -39,12 +39,16 @@ class TransitRepository(context: Context) {
         coroutineScope { NetworkMerger.merge(providers.map { provider -> async { loadProvider(provider, force) } }.awaitAll()) }
     }
 
-    private suspend fun loadProvider(provider: Provider, force: Boolean): TransitNetwork {
+    suspend fun planningNetwork(): TransitNetwork = withContext(Dispatchers.IO) {
+        coroutineScope { NetworkMerger.merge(providers.map { provider -> async { loadProvider(provider, false, requireVerification = true) } }.awaitAll()) }
+    }
+
+    private suspend fun loadProvider(provider: Provider, force: Boolean, requireVerification: Boolean = false): TransitNetwork {
         val now = Instant.now()
         val today = now.atZone(ViabuszParser.zone).toLocalDate()
         val file = cache(provider)
         val saved = runCatching { if (file.isFile) NetworkJson.decode(file.readText()) else null }.getOrNull()
-        if (!force && saved != null && saved.fetchedAt.atZone(ViabuszParser.zone).toLocalDate() == today &&
+        if (!force && saved != null && (!requireVerification || provider.id in saved.verifiedProviderIds) && saved.fetchedAt.atZone(ViabuszParser.zone).toLocalDate() == today &&
             Duration.between(saved.fetchedAt, now).seconds in 0..86_400) return checkedDate(saved, provider, now)
         return try {
             val network = coroutineScope {
@@ -76,7 +80,7 @@ class TransitRepository(context: Context) {
             val error = if (failure is IOException) R.string.data_network_unavailable else R.string.data_source_changed
             // A source format/version change invalidates even a same-day cached countdown.
             if (failure !is IOException) {
-                val invalidated = fallback.copy(fetchedAt = now, serviceDate = null, providerServiceDates = mapOf(provider.id to null),
+                val invalidated = fallback.copy(fetchedAt = now, serviceDate = null, providerServiceDates = mapOf(provider.id to null), verifiedProviderIds = emptySet(),
                     warning = message(error, provider.name))
                 runCatching { file.writeText(NetworkJson.encode(invalidated)) }
                 invalidated
