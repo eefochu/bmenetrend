@@ -223,6 +223,8 @@ private fun LegDescription(leg: PlanLeg) {
             Text("${stringResource(R.string.ui_minutes_short, minutes(Duration.between(leg.start, leg.end).seconds))} · ${stringResource(if (leg.realtime) R.string.ui_live_arrival else R.string.ui_scheduled)}",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (leg.stayOnBoard) Text(stringResource(R.string.planner_stay), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            if (leg.restrictedService) Text(stringResource(R.string.ui_registration_required),
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (leg.stops.isNotEmpty()) {
                 TextButton(onClick = { expanded = !expanded }, contentPadding = PaddingValues(horizontal = 0.dp, vertical = 8.dp)) {
                     Text(pluralStringResource(R.plurals.planner_intermediate, leg.stops.size, leg.stops.size), Modifier.weight(1f))

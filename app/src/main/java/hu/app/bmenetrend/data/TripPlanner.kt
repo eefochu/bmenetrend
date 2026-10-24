@@ -19,6 +19,7 @@ data class PlanLeg(
     val from: PlanPoint, val to: PlanPoint, val route: TransitRoute?, val headsign: String?,
     val realtime: Boolean, val stayOnBoard: Boolean, val stops: List<PlanPoint>,
     val trainNumber: String? = null,
+    val restrictedService: Boolean = false,
 ) { val walking: Boolean get() = mode == "WALK" }
 @Immutable
 data class TripItinerary(val id: String, val start: Instant, val end: Instant, val legs: List<PlanLeg>) {
@@ -38,7 +39,7 @@ data class TripItinerary(val id: String, val start: Instant, val end: Instant, v
 @Immutable
 data class PlanSegment(val start: Instant, val end: Instant, val leg: PlanLeg?)
 @Immutable
-data class TripPlan(val origin: PlannerEndpoint, val destination: PlannerEndpoint, val requestedAt: Instant, val readyAt: Instant, val itineraries: List<TripItinerary>)
+data class TripPlan(val origin: PlannerEndpoint, val destination: PlannerEndpoint, val requestedAt: Instant, val readyAt: Instant, val itineraries: List<TripItinerary>, val partial: Boolean = false)
 
 object TripPlanner {
     const val WALK_SPEED = 1.15
@@ -54,10 +55,11 @@ object TripPlanner {
         if (offsets.size != 1) return null
         return local.toInstant(offsets.single()).takeUnless { it < now }
     }
-    val QUERY = """query TripPlan(${'$'}from:String!,${'$'}to:String!,${'$'}date:String!,${'$'}time:String!) {
+    val QUERY get() = query()
+    fun query(busesOnly: Boolean = false) = """query TripPlan(${'$'}from:String!,${'$'}to:String!,${'$'}date:String!,${'$'}time:String!) {
         plan(fromPlace:${'$'}from,toPlace:${'$'}to,date:${'$'}date,time:${'$'}time,arriveBy:false,
-            walkSpeed:1.15,minTransferTime:180,boardSlack:60,alightSlack:30,numItineraries:5,maxTransfers:4,omitCanceled:true,
-            transportModes:[{mode:WALK},{mode:TRANSIT}],ignoreRealtimeUpdates:false) {
+            walkSpeed:1.15,minTransferTime:180,boardSlack:60,alightSlack:30,numItineraries:12,maxTransfers:4,omitCanceled:true,
+            transportModes:[{mode:WALK},${if (busesOnly) "{mode:BUS},{mode:COACH}" else "{mode:TRANSIT}"}],ignoreRealtimeUpdates:false) {
             itineraries { startTime endTime legs {
                 mode startTime endTime distance realTime transitLeg interlineWithPreviousLeg
                 from { name lat lon stop { gtfsId name platformCode } }
@@ -120,13 +122,14 @@ object TripPlanner {
                 require(start == legs.first().start && end == legs.last().end)
                 TripItinerary(legs.joinToString("|") { "${it.route?.id ?: it.mode}:${it.start.toEpochMilli()}:${it.from.name}:${it.to.name}" }, start, end, legs)
             }.getOrNull()
-        }.distinctBy { it.id }.sortedWith(compareBy<TripItinerary> { it.end }.thenBy { it.transfers }.thenBy { it.walkMeters }).take(3)
+        }.distinctBy { it.id }.sortedWith(order).take(12)
         return TripPlan(origin, destination, requestedAt, ready, parsed)
     }
 
     /** Verify source times; never move a leg or invent a connection to make it fit. */
     internal fun feasible(legs: List<PlanLeg>, ready: Instant): Boolean {
         if (legs.isEmpty() || legs.first().start.isBefore(ready.minusSeconds(1))) return false
+        if (legs.count { !it.walking && !it.stayOnBoard } > 5) return false
         if (legs.zipWithNext().any { (a,b) -> b.start.isBefore(a.end) }) return false
         var previousTransit: PlanLeg? = null
         var walkingSinceTransit = 0L
@@ -148,6 +151,28 @@ object TripPlanner {
             }
         }
         return true
+    }
+
+    val order = compareBy<TripItinerary> { it.end }.thenBy { it.transfers }.thenBy { it.walkMeters }
+
+    fun itinerary(legs: List<PlanLeg>, ready: Instant): TripItinerary? {
+        if (!feasible(legs, ready)) return null
+        return TripItinerary(legs.joinToString("|") { "${it.route?.id ?: it.mode}:${it.start.toEpochMilli()}:${it.from.name}:${it.to.name}" },
+            legs.first().start, legs.last().end, legs)
+    }
+
+    /** Keep useful operator/mode alternatives even when several faster trains precede them. */
+    fun alternatives(journeys: List<TripItinerary>): List<TripItinerary> {
+        val sorted = journeys.distinctBy { it.id }.sortedWith(order).distinctBy { trip ->
+            trip.legs.filterNot { it.walking }.map { listOf(it.route?.id, it.from.name, it.to.name, it.restrictedService) }
+        }
+        val reserved = listOfNotNull(sorted.firstOrNull(), sorted.firstOrNull { trip ->
+            val rides = trip.legs.filterNot { it.walking }
+            rides.isNotEmpty() && rides.all { it.mode in setOf("BUS", "COACH") }
+        }) + listOf("volan", "viabusz", "kanyargo", "homm").mapNotNull { provider ->
+            sorted.firstOrNull { trip -> trip.legs.any { it.route?.providerId == provider } }
+        }
+        return (reserved + sorted).distinctBy { it.id }.take(8).sortedWith(order)
     }
     private fun point(row: JSONObject): PlanPoint {
         val point = GeoPoint(row.getDouble("lat"), row.getDouble("lon"))

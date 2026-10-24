@@ -1,0 +1,275 @@
+{
+  "data": {
+    "plan": {
+      "itineraries": [
+        {
+          "startTime": 1792839120000,
+          "endTime": 1792843853000,
+          "legs": [
+            {
+              "mode": "BUS",
+              "startTime": 1792839120000,
+              "endTime": 1792839900000,
+              "distance": 5987.83,
+              "realTime": false,
+              "transitLeg": true,
+              "interlineWithPreviousLeg": false,
+              "from": {
+                "name": "Budapest, Kamaraerdő",
+                "lat": 47.435952,
+                "lon": 18.978596,
+                "stop": {
+                  "gtfsId": "BKK:F01880",
+                  "name": "Budapest, Kamaraerdő",
+                  "platformCode": null
+                }
+              },
+              "to": {
+                "name": "Budapest, Kelenföld vasútállomás M",
+                "lat": 47.464634,
+                "lon": 19.018494,
+                "stop": {
+                  "gtfsId": "BKK:061277",
+                  "name": "Budapest, Kelenföld vasútállomás M",
+                  "platformCode": null
+                }
+              },
+              "route": {
+                "gtfsId": "BKK:0870",
+                "shortName": "87",
+                "longName": null,
+                "mode": "BUS",
+                "color": "009EE3"
+              },
+              "trip": {
+                "gtfsId": "BKK:D10693263",
+                "tripShortName": null,
+                "tripHeadsign": "Kelenföld vasútállomás M"
+              },
+              "intermediateStops": [
+                {
+                  "name": "Budapest, Idősek Otthona",
+                  "lat": 47.43758,
+                  "lon": 18.979164
+                },
+                {
+                  "name": "Budapest, Kamaraerdei Ifjúsági Park",
+                  "lat": 47.440603,
+                  "lon": 18.979345
+                },
+                {
+                  "name": "Budapest, Kamaraerdei út 11.",
+                  "lat": 47.442968,
+                  "lon": 18.978905
+                },
+                {
+                  "name": "Budaörs, Vasút utca",
+                  "lat": 47.446249,
+                  "lon": 18.975877
+                },
+                {
+                  "name": "Budapest, Repülőgépes Szolgálat",
+                  "lat": 47.447338,
+                  "lon": 18.978064
+                },
+                {
+                  "name": "Budapest, Budaörsi repülőtér",
+                  "lat": 47.447127,
+                  "lon": 18.985794
+                },
+                {
+                  "name": "Budapest, Vitorlázó út",
+                  "lat": 47.452427,
+                  "lon": 18.990774
+                },
+                {
+                  "name": "Budapest, Örsöddűlő",
+                  "lat": 47.45492,
+                  "lon": 18.993158
+                },
+                {
+                  "name": "Budapest, Keserűvíz-forrás",
+                  "lat": 47.458538,
+                  "lon": 18.997345
+                },
+                {
+                  "name": "Budapest, Poprádi út",
+                  "lat": 47.461183,
+                  "lon": 18.999464
+                },
+                {
+                  "name": "Budapest, Gazdagréti út",
+                  "lat": 47.462111,
+                  "lon": 19.004888
+                },
+                {
+                  "name": "Budapest, Jégvirág utca",
+                  "lat": 47.46223,
+                  "lon": 19.008853
+                },
+                {
+                  "name": "Budapest, Sasadi út",
+                  "lat": 47.465452,
+                  "lon": 19.015814
+                }
+              ]
+            },
+            {
+              "mode": "WALK",
+              "startTime": 1792839930000,
+              "endTime": 1792840214000,
+              "distance": 458.03,
+              "realTime": false,
+              "transitLeg": false,
+              "interlineWithPreviousLeg": false,
+              "from": {
+                "name": "Budapest, Kelenföld vasútállomás M",
+                "lat": 47.464634,
+                "lon": 19.018494,
+                "stop": {
+                  "gtfsId": "BKK:061277",
+                  "name": "Budapest, Kelenföld vasútállomás M",
+                  "platformCode": null
+                }
+              },
+              "to": {
+                "name": "Budapest, Kelenföld vasútállomás",
+                "lat": 47.463608,
+                "lon": 19.022446,
+                "stop": {
+                  "gtfsId": "hkir:hkir_773538_4",
+                  "name": "Budapest, Kelenföld vasútállomás",
+                  "platformCode": "4"
+                }
+              },
+              "route": null,
+              "trip": null,
+              "intermediateStops": null
+            },
+            {
+              "mode": "COACH",
+              "startTime": 1792840800000,
+              "endTime": 1792842960000,
+              "distance": 22368.68,
+              "realTime": false,
+              "transitLeg": true,
+              "interlineWithPreviousLeg": false,
+              "from": {
+                "name": "Budapest, Kelenföld vasútállomás",
+                "lat": 47.463608,
+                "lon": 19.022446,
+                "stop": {
+                  "gtfsId": "hkir:hkir_773538_4",
+                  "name": "Budapest, Kelenföld vasútállomás",
+                  "platformCode": "4"
+                }
+              },
+              "to": {
+                "name": "Biatorbágy, Tavasz utca",
+                "lat": 47.481672,
+                "lon": 18.818623,
+                "stop": {
+                  "gtfsId": "hkir:hkir_777136_1",
+                  "name": "Biatorbágy, Tavasz utca",
+                  "platformCode": null
+                }
+              },
+              "route": {
+                "gtfsId": "hkir:hkir_V-R-200-762",
+                "shortName": "762",
+                "longName": "Budapest - Biatorbágy, Vasútállomás - Sóskút",
+                "mode": "COACH",
+                "color": "F6AC00"
+              },
+              "trip": {
+                "gtfsId": "hkir:hkir_2811_11-5",
+                "tripShortName": "762/11",
+                "tripHeadsign": "Budapest-Premier Outlet-Biatorbágy Vasútállomás-Sóskút Iskola"
+              },
+              "intermediateStops": [
+                {
+                  "name": "Budapest, Péterhegyi út",
+                  "lat": 47.452421,
+                  "lon": 19.016089
+                },
+                {
+                  "name": "Budaörs, Benzinkút",
+                  "lat": 47.45318,
+                  "lon": 18.95842
+                },
+                {
+                  "name": "Budaörs, Tetra Pak",
+                  "lat": 47.457824,
+                  "lon": 18.903537
+                },
+                {
+                  "name": "Budaörs, Ipari és Technológiai Park",
+                  "lat": 47.463308,
+                  "lon": 18.894435
+                },
+                {
+                  "name": "Biatorbágy, Premier Outlet",
+                  "lat": 47.464198,
+                  "lon": 18.888442
+                },
+                {
+                  "name": "Biatorbágy, ALPINE",
+                  "lat": 47.468227,
+                  "lon": 18.874735
+                },
+                {
+                  "name": "Biatorbágy, Vendel Park",
+                  "lat": 47.472246,
+                  "lon": 18.866363
+                },
+                {
+                  "name": "Biatorbágy, vasútállomás",
+                  "lat": 47.479964,
+                  "lon": 18.83392
+                },
+                {
+                  "name": "Biatorbágy, Vendel tér",
+                  "lat": 47.478171,
+                  "lon": 18.829472
+                },
+                {
+                  "name": "Biatorbágy, Szent László utca",
+                  "lat": 47.483749,
+                  "lon": 18.825055
+                }
+              ]
+            },
+            {
+              "mode": "WALK",
+              "startTime": 1792842990000,
+              "endTime": 1792843853000,
+              "distance": 974.17,
+              "realTime": false,
+              "transitLeg": false,
+              "interlineWithPreviousLeg": false,
+              "from": {
+                "name": "Biatorbágy, Tavasz utca",
+                "lat": 47.481672,
+                "lon": 18.818623,
+                "stop": {
+                  "gtfsId": "hkir:hkir_777136_1",
+                  "name": "Biatorbágy, Tavasz utca",
+                  "platformCode": null
+                }
+              },
+              "to": {
+                "name": "Destination",
+                "lat": 47.47959,
+                "lon": 18.8091914,
+                "stop": null
+              },
+              "route": null,
+              "trip": null,
+              "intermediateStops": null
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

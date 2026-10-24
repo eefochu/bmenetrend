@@ -25,6 +25,9 @@ data class PlannerState(
 class PlannerViewModel(application: Application) : AndroidViewModel(application) {
     private val places = PlacesRepository(application)
     private val client = EmmaGraphqlClient(EmmaGraphqlClient.defaultHttpClient().newBuilder().readTimeout(25, TimeUnit.SECONDS).callTimeout(30, TimeUnit.SECONDS).build())
+    private val planner = HybridTripPlanner(EmmaPlannerBackend(client))
+    private val timetables = TransitRepository(application)
+    private var stopCatalogue = emptyList<TransitStop>()
     private val mutable = MutableStateFlow(PlannerState())
     val state: StateFlow<PlannerState> = mutable
     private var searchJob: Job? = null
@@ -36,6 +39,7 @@ class PlannerViewModel(application: Application) : AndroidViewModel(application)
     private var location: GeoPoint? = null
 
     fun updateStops(stops: List<TransitStop>) {
+        stopCatalogue = stops
         indexJob?.cancel()
         indexJob = viewModelScope.launch {
             index = withContext(Dispatchers.Default) { TransitSearch.indexStops(stops) }
@@ -125,12 +129,14 @@ class PlannerViewModel(application: Application) : AndroidViewModel(application)
         mutable.update { it.copy(origin = origin, planning = true) }
         planJob = viewModelScope.launch {
             try {
-                val variables = TripPlanner.variables(origin, destination, ready)
-                val text = client.execute(TripPlanner.QUERY, variables)
-                val result = withContext(Dispatchers.Default) { TripPlanner.parse(text, origin, destination, requested, ready) }
+                val result = planner.plan(origin, destination, requested, ready, stopCatalogue, timetables::planningNetwork) { partial ->
+                    if (generation == planGeneration) mutable.update { it.copy(result = partial) }
+                }
                 if (generation == planGeneration) mutable.update { it.copy(planning = false, result = result,
                     selectedId = null,
-                    error = if (result.itineraries.isEmpty()) PlannerError.NO_ROUTE else null) }
+                    error = if (result.itineraries.isEmpty()) {
+                        if (result.partial) PlannerError.UNAVAILABLE else PlannerError.NO_ROUTE
+                    } else null) }
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) { if (generation == planGeneration) mutable.update { it.copy(planning = false, error = PlannerError.UNAVAILABLE) } }
         }

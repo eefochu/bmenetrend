@@ -17,6 +17,6 @@ object NetworkMerger {
             "provider_calendars", networks.mapNotNull { it.warning }.distinct().takeIf { it.isNotEmpty() }?.joinToString("\n"), dates,
             networks.flatMap { network -> network.routes.map { it.providerId }.distinct().mapNotNull { id ->
                 (network.providerWarnings[id] ?: network.warning)?.let { id to it }
-            } }.toMap()))
+            } }.toMap(), networks.flatMap { it.verifiedProviderIds }.toSet()))
     }
 }

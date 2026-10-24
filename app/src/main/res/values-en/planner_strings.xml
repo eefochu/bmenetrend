@@ -33,7 +33,8 @@
     <string name="planner_stops">%1$d intermediate stops</string>
     <string name="planner_stale">This journey has already started. Plan again before leaving.</string>
     <string name="planner_refresh_needed">Departure time passed · refresh</string>
-    <string name="planner_source">Journey times and walking routes: EMMA/MÁVPlusz. Only source-marked predictions are labelled live.</string>
+    <string name="planner_source">National services and walking connections: EMMA/MÁVPlusz. Local timetables: ViaBusz, KanyarGO and HOMM. Only legs labelled live use realtime predictions.</string>
+    <string name="planner_partial">Some timetables or walking connections are currently unavailable, so other routes may exist. Try planning again.</string>
     <string name="planner_direct">Direct</string>
     <string name="planner_outside_area">Journey planning is available in Hungary. Choose a starting point and destination there.</string>
     <plurals name="planner_transfers">

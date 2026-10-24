@@ -37,7 +37,7 @@ object KanyargoParser {
         // The operator sometimes publishes only the PDF links, without its optional
         // HTML stop board. PDF source identity is independent of that presentation.
         val date = today.takeIf { calendar != null }
-        return base.copy(fetchedAt = now, serviceDate = date, providerServiceDates = mapOf("kanyargo" to date), warning = null)
+        return base.copy(fetchedAt = now, serviceDate = date, providerServiceDates = mapOf("kanyargo" to date), warning = null, verifiedProviderIds = setOf("kanyargo"))
     }
 
     fun parseVehicles(body: String, now: Instant): List<Vehicle> = ViabuszParser.parseVehicles(body, now).map {

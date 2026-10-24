@@ -112,6 +112,10 @@ fun PlannerScreen(model: PlannerViewModel, onRequestLocation: () -> Unit) {
             }
         } }
         if (result != null && result.itineraries.isNotEmpty()) {
+            if (!state.planning && result.partial) item(key = "partial", contentType = "notice") {
+                Text(stringResource(R.string.planner_partial), style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             item(key = "results-title", contentType = "title") {
                 Text(stringResource(R.string.planner_options), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Text(stringResource(R.string.planner_checked, planClock.format(result.requestedAt)), Modifier.padding(top = 5.dp),
