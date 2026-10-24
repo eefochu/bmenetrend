@@ -67,7 +67,7 @@ fun SettingsPage(state: UiState, onAccent: (AccentColor) -> Unit, onCustom: (Int
                 OutlinedButton(onClick = onAbout, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                     Icon(Icons.Rounded.Info, null, Modifier.size(20.dp))
                     Spacer(Modifier.width(12.dp))
-                    Text(stringResource(R.string.ui_about_action))
+                    Text(stringResource(R.string.ota_about_title))
                 }
                 Spacer(Modifier.height(24.dp))
             }

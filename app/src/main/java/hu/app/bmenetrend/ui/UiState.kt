@@ -11,6 +11,9 @@ import hu.app.bmenetrend.data.BoardingSelection
 import hu.app.bmenetrend.data.VehicleJourney
 import hu.app.bmenetrend.data.Vehicle
 import hu.app.bmenetrend.data.PlaceResult
+import hu.app.bmenetrend.data.UpdateChannel
+import hu.app.bmenetrend.data.OtaUpdateInfo
+import java.io.File
 import java.time.Instant
 
 @Immutable
@@ -67,6 +70,14 @@ data class UiState(
     val emmaStatus: String? = null,
     val cameraRequest: Int = 0,
     val locationCameraRequest: Int = 0,
+    val otaChannel: UpdateChannel = UpdateChannel.STABLE,
+    val otaUpdateAvailable: OtaUpdateInfo? = null,
+    val otaCheckLoading: Boolean = false,
+    val otaCheckError: String? = null,
+    val otaLastChecked: Instant? = null,
+    val otaDownloadProgress: Float? = null,
+    val otaDownloadedApk: File? = null,
+    val showOtaDialog: Boolean = false,
 ) {
     val stops: List<TransitStop> by lazy(LazyThreadSafetyMode.NONE) {
         val netStops = network?.stops

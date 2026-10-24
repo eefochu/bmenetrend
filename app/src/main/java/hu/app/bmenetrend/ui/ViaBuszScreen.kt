@@ -144,6 +144,9 @@ fun ViaBuszScreen(
     onSearchPlaces: (String, Boolean) -> Unit = { _, _ -> },
     onPlaceSelected: (hu.app.bmenetrend.data.PlaceResult) -> Unit = {},
     onPlaceClosed: () -> Unit = {},
+    onOtaChannelChanged: (hu.app.bmenetrend.data.UpdateChannel) -> Unit = {},
+    onCheckOtaUpdates: () -> Unit = {},
+    onDownloadAndInstallOta: (hu.app.bmenetrend.data.OtaUpdateInfo) -> Unit = {},
     mapContent: @Composable (Modifier, Int) -> Unit = { modifier, _ -> Box(modifier) },
 ) {
     var searchOpen by rememberSaveable { mutableStateOf(false) }
@@ -151,7 +154,8 @@ fun ViaBuszScreen(
     var routeId by rememberSaveable { mutableStateOf<String?>(null) }
     var directionId by rememberSaveable { mutableStateOf<String?>(null) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
-    var showInfo by rememberSaveable { mutableStateOf(false) }
+    var showAbout by rememberSaveable { mutableStateOf(false) }
+    var showUpdates by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val sheetState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
@@ -221,7 +225,7 @@ fun ViaBuszScreen(
             if (sheet.targetValue == SheetValue.Expanded) sheet.partialExpand() else sheet.expand()
         }
     }
-    BackHandler(enabled = !searchOpen && !showSettings && !isMinimized, onBack = {
+    BackHandler(enabled = !searchOpen && !showSettings && !showAbout && !showUpdates && !isMinimized, onBack = {
         if (state.selectedVehicle != null || state.boardingSelection != null || !state.showNearby) exitRouteView()
         else collapse()
     })
@@ -429,9 +433,29 @@ fun ViaBuszScreen(
             }
         }
     }
-    if (showSettings) SettingsPage(state, onAccentColorChanged, onCustomAccentChanged,
-        onNationwideNetworkChanged, onAbout = { showInfo = true }, onBack = { showSettings = false })
-    if (showInfo) SourceDialog(onDismiss = { showInfo = false })
+    if (showUpdates) {
+        UpdatesPage(
+            state = state,
+            onChannelChanged = onOtaChannelChanged,
+            onCheckUpdates = onCheckOtaUpdates,
+            onDownloadAndInstall = onDownloadAndInstallOta,
+            onBack = { showUpdates = false }
+        )
+    } else if (showAbout) {
+        AboutPage(
+            onOpenUpdates = { showUpdates = true },
+            onBack = { showAbout = false }
+        )
+    } else if (showSettings) {
+        SettingsPage(
+            state = state,
+            onAccent = onAccentColorChanged,
+            onCustom = onCustomAccentChanged,
+            onNationwide = onNationwideNetworkChanged,
+            onAbout = { showAbout = true },
+            onBack = { showSettings = false }
+        )
+    }
 }
 
 @Composable

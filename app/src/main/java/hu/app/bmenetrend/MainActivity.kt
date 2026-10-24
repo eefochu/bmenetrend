@@ -127,6 +127,9 @@ class MainActivity : ComponentActivity() {
                     onSearchPlaces = model::searchPlaces,
                     onPlaceSelected = model::selectPlace,
                     onPlaceClosed = model::clearPlace,
+                    onOtaChannelChanged = model::setOtaChannel,
+                    onCheckOtaUpdates = { model.checkForUpdates(false) },
+                    onDownloadAndInstallOta = { info -> model.startOtaDownloadAndInstall(this@MainActivity, info) },
                 ) { modifier, bottomPaddingPx ->
                     val vehicle = state.selectedVehicle
                     val pattern = state.boardingSelection?.pattern
@@ -149,6 +152,17 @@ class MainActivity : ComponentActivity() {
                     NativeTransitMap(state.network, state.vehicles, state.selectedStopId.takeUnless { state.showNearby }, state.userLocation, modifier, onMapStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, state.selectedVehicle, routeGeometry = geometry, routeStops = stops, routeColor = color.toArgb(), fitRouteRequest = state.fitRouteRequest, selectedPlace = state.selectedPlace, placeCameraRequest = state.placeCameraRequest, lineFocus = focus, browsingNearby = state.showNearby, locationCameraRequest = state.locationCameraRequest, onViewportChanged = model::updateMapArea)
                 }
                 })
+
+                if (state.showOtaDialog && state.otaUpdateAvailable != null) {
+                    hu.app.bmenetrend.ui.OtaUpdateDialog(
+                        update = state.otaUpdateAvailable!!,
+                        downloadProgress = state.otaDownloadProgress,
+                        error = state.otaCheckError,
+                        isDownloaded = state.otaDownloadedApk?.exists() == true,
+                        onDownloadAndInstall = { model.startOtaDownloadAndInstall(this@MainActivity, it) },
+                        onDismiss = model::dismissOtaDialog
+                    )
+                }
             }
         }
     }
