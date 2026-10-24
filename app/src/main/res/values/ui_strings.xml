@@ -81,4 +81,34 @@
     <string name="ui_homm_schedule_only">HOMM timetable · no live data</string>
     <string name="ui_multiple_stations">(multiple stations)</string>
     <string name="ui_collapse_departures">Collapse departures</string>
+
+    <!-- OTA and About strings -->
+    <string name="ota_about_title">About</string>
+    <string name="ota_about_app_description">BMenetrend is an open, modern public transit schedule and live vehicle tracker. Track MÁV rail trains, HÉV, Volánbusz, BKK lines (bus, tram, trolley, metro), as well as local ViaBusz, KanyarGO and HOMM departures and vehicle locations in real time.</string>
+    <string name="ota_about_version">Version: %1$s</string>
+    <string name="ota_about_updates_button">Updates</string>
+    <string name="ota_updates_title">Updates</string>
+    <string name="ota_installed_version">Installed version: %1$s</string>
+    <string name="ota_channel_title">Update channel</string>
+    <string name="ota_channel_stable">STABLE</string>
+    <string name="ota_channel_stable_desc">Official releases, tested and stable.</string>
+    <string name="ota_channel_debug">DEBUG</string>
+    <string name="ota_channel_debug_desc">Bleeding edge builds directly from development.</string>
+    <string name="ota_check_button">Check for updates</string>
+    <string name="ota_checking">Checking for updates…</string>
+    <string name="ota_up_to_date">The app is up to date!</string>
+    <string name="ota_up_to_date_desc">You are using the latest version (%1$s).</string>
+    <string name="ota_update_available_title">New update available!</string>
+    <string name="ota_new_version_label">New version: %1$s (%2$s)</string>
+    <string name="ota_changelog_label">Changelog:</string>
+    <string name="ota_last_commit_link">View last commit</string>
+    <string name="ota_download_and_install">Download and install</string>
+    <string name="ota_install_now">Install now</string>
+    <string name="ota_downloading">Downloading… %1$d%%</string>
+    <string name="ota_apk_not_available">APK download not available yet (N/A)</string>
+    <string name="ota_dismiss_later">Later</string>
+    <string name="ota_error_title">Error checking updates</string>
+    <string name="ota_retry">Retry</string>
+    <string name="ota_dialog_update_title">New update available!</string>
+    <string name="ota_dialog_update_now">Update now</string>
 </resources>

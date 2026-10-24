@@ -20,6 +20,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.io.File
+import android.content.Context
+import hu.viabusz.app.BuildConfig
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
@@ -27,6 +30,8 @@ import java.time.ZoneId
 import kotlin.math.*
 
 class TransitViewModel(application: Application) : AndroidViewModel(application) {
+    private val otaRepository = OtaRepository(application)
+    private var otaJob: Job? = null
     private val repository = TransitRepository(application)
     private val preferences = application.getSharedPreferences("viabusz", 0)
     private val emmaRepository = EmmaRepository(application)
@@ -62,6 +67,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         accentColor = AccentColor.fromKey(preferences.getString("accent_color", "system")),
         nationwideNetwork = preferences.getBoolean("emma_nationwide", true),
         windowMinutes = preferences.getInt("window", 120).takeIf { it in DepartureTime.windows } ?: 120,
+        otaChannel = UpdateChannel.fromKey(preferences.getString("ota_channel", "stable")),
     ))
     val state: StateFlow<UiState> = mutableState
     private val refreshMutex = Mutex()
@@ -102,6 +108,10 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private var favoriteFailures = emptySet<String>()
     private val favoriteBoards = linkedMapOf<String, EmmaStopsParser.Board>()
     private var liveError = false
+
+    init {
+        checkForUpdates(isAutoCheck = true)
+    }
 
     /** A departure card belongs to the selected source stop, never a nearby name/parent cluster. */
     private fun selectedStops(stopId: String?, stops: List<TransitStop>): List<TransitStop> =
@@ -818,7 +828,73 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         recalculate()
         ensureFavoriteRequest()
     }
+
+    fun setOtaChannel(channel: UpdateChannel) {
+        preferences.edit().putString("ota_channel", channel.key).apply()
+        mutableState.update { it.copy(otaChannel = channel, otaUpdateAvailable = null, otaCheckError = null) }
+        checkForUpdates(isAutoCheck = false)
+    }
+
+    fun checkForUpdates(isAutoCheck: Boolean = false) {
+        val channel = state.value.otaChannel
+        if (!isAutoCheck) {
+            mutableState.update { it.copy(otaCheckLoading = true, otaCheckError = null) }
+        }
+        otaJob?.cancel()
+        otaJob = viewModelScope.launch {
+            try {
+                val info = otaRepository.fetchUpdateInfo(channel)
+                val currentVersion = BuildConfig.VERSION_NAME
+                val isNew = VersionComparator.isNewer(info.version, currentVersion)
+                mutableState.update { current ->
+                    current.copy(
+                        otaCheckLoading = false,
+                        otaCheckError = null,
+                        otaLastChecked = Instant.now(),
+                        otaUpdateAvailable = if (isNew) info else null,
+                        showOtaDialog = if (isNew) true else current.showOtaDialog
+                    )
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (e: Exception) {
+                if (!isAutoCheck) {
+                    mutableState.update { it.copy(otaCheckLoading = false, otaCheckError = e.localizedMessage ?: "Hiba a frissítések lekérésekor") }
+                }
+            }
+        }
+    }
+
+    fun startOtaDownloadAndInstall(context: Context, info: OtaUpdateInfo) {
+        val apkUrl = info.apkUrl ?: return
+        val downloaded = state.value.otaDownloadedApk
+        if (downloaded != null && downloaded.exists()) {
+            try {
+                otaRepository.installApk(downloaded)
+                return
+            } catch (_: Exception) {}
+        }
+        mutableState.update { it.copy(otaDownloadProgress = 0f, otaCheckError = null) }
+        viewModelScope.launch {
+            try {
+                val otaDir = File(context.cacheDir, "ota_updates")
+                val target = File(otaDir, "bmenetrend-${info.version}-${info.tag}.apk")
+                val file = otaRepository.downloadApk(apkUrl, target) { progress ->
+                    mutableState.update { it.copy(otaDownloadProgress = progress) }
+                }
+                mutableState.update { it.copy(otaDownloadProgress = null, otaDownloadedApk = file) }
+                otaRepository.installApk(file)
+            } catch (e: Exception) {
+                mutableState.update { it.copy(otaDownloadProgress = null, otaCheckError = e.localizedMessage ?: "Letöltési hiba") }
+            }
+        }
+    }
+
+    fun dismissOtaDialog() {
+        mutableState.update { it.copy(showOtaDialog = false) }
+    }
 }
+
 
 internal fun nearestStop(network: TransitNetwork, location: GeoPoint): String? = nearestStop(network.stops, location)
 internal fun nearestStop(stops: Collection<TransitStop>, location: GeoPoint): String? =
