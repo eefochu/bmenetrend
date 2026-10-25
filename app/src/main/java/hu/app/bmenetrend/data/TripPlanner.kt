@@ -23,6 +23,7 @@ data class PlanLeg(
 ) { val walking: Boolean get() = mode == "WALK" }
 @Immutable
 data class TripItinerary(val id: String, val start: Instant, val end: Instant, val legs: List<PlanLeg>) {
+    val durationSeconds: Long get() = Duration.between(start, end).seconds
     val transfers: Int get() = (legs.count { !it.walking && !it.stayOnBoard } - 1).coerceAtLeast(0)
     val walkMeters: Double get() = legs.filter { it.walking }.sumOf { it.distance }
     val walkSeconds: Long get() = legs.filter { it.walking }.sumOf { Duration.between(it.start, it.end).seconds }
@@ -153,7 +154,7 @@ object TripPlanner {
         return true
     }
 
-    val order = compareBy<TripItinerary> { it.end }.thenBy { it.transfers }.thenBy { it.walkMeters }
+    val order = compareBy<TripItinerary> { it.durationSeconds }.thenBy { it.end }.thenBy { it.transfers }.thenBy { it.walkMeters }
 
     fun itinerary(legs: List<PlanLeg>, ready: Instant): TripItinerary? {
         if (!feasible(legs, ready)) return null
