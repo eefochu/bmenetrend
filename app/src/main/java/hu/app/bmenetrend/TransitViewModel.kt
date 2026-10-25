@@ -113,9 +113,24 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         checkForUpdates(isAutoCheck = true)
     }
 
-    /** A departure card belongs to the selected source stop, never a nearby name/parent cluster. */
+    private var cachedClusterStopId: String? = null
+    private var cachedClusterStopsCount = -1
+    private var cachedClusterResult: List<TransitStop> = emptyList()
+
+    private fun getCluster(stopId: String?, stops: List<TransitStop>): List<TransitStop> {
+        if (stopId == null) return emptyList()
+        if (cachedClusterStopId == stopId && cachedClusterStopsCount == stops.size) {
+            return cachedClusterResult
+        }
+        val result = StopClusters.clusterFor(stopId, stops)
+        cachedClusterStopId = stopId
+        cachedClusterStopsCount = stops.size
+        cachedClusterResult = result
+        return result
+    }
+
     private fun selectedStops(stopId: String?, stops: List<TransitStop>): List<TransitStop> =
-        stops.firstOrNull { it.id == stopId }?.let(::listOf).orEmpty()
+        getCluster(stopId, stops)
 
     /** Owned by the activity's STARTED lifecycle; all polling stops in the background. */
     suspend fun observe() = coroutineScope {
