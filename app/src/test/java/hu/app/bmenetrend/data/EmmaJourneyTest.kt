@@ -40,6 +40,30 @@ class EmmaJourneyTest {
         val missing = response().apply { getJSONObject("data").getJSONObject("trip").remove("stops") }
         assertTrue(runCatching { EmmaJourneyParser.parse(missing.toString(), "hkir:trip") }.isFailure)
     }
+    @Test fun parsesStopTimesWithArrivalAndDelay() {
+        val withTimes = response().apply {
+            getJSONObject("data").getJSONObject("trip").put("stoptimes", JSONArray()
+                .put(JSONObject().put("scheduledDeparture", 51600).put("realtimeDeparture", 51600).put("realtime", false).put("realtimeState", "SCHEDULED"))
+                .put(JSONObject().put("scheduledArrival", 52800).put("realtimeArrival", 53100).put("realtime", true).put("realtimeState", "UPDATED"))
+                .put(JSONObject().put("scheduledArrival", 54000).put("realtimeArrival", 54000).put("realtime", true).put("realtimeState", "UPDATED")))
+        }
+        val journey = EmmaJourneyParser.parse(withTimes.toString(), "hkir:trip")
+        assertEquals(3, journey.stopTimes.size)
+        // First stop departure: 51600s = 14:20
+        assertEquals("14:20", journey.stopTimes[0]?.arrivalTime)
+        assertNull(journey.stopTimes[0]?.scheduledTime)
+        assertFalse(journey.stopTimes[0]?.isLive == true)
+        // Second stop: scheduled 52800 (14:40), realtime 53100 (14:45), delay 5 min
+        assertEquals("14:45", journey.stopTimes[1]?.arrivalTime)
+        assertEquals("14:40", journey.stopTimes[1]?.scheduledTime)
+        assertTrue(journey.stopTimes[1]?.isLive == true)
+        assertEquals(5, journey.stopTimes[1]?.delayMinutes)
+        // Third stop: on time 54000 (15:00), live
+        assertEquals("15:00", journey.stopTimes[2]?.arrivalTime)
+        assertNull(journey.stopTimes[2]?.scheduledTime)
+        assertTrue(journey.stopTimes[2]?.isLive == true)
+        assertEquals(0, journey.stopTimes[2]?.delayMinutes)
+    }
     @Test fun iconUsesTransportModeBeforeRouteColourOrOperator() {
         fun vehicle(provider: String, mode: String?) = Vehicle("v", GeoPoint(47.46, 19.02), Instant.EPOCH, providerId = provider, transportMode = mode, markerColor = "000000")
         assertEquals(VehicleMarkerStyle.VOLAN_BUS, VehicleMarkerStyle.forVehicle(vehicle("volan", "COACH")))

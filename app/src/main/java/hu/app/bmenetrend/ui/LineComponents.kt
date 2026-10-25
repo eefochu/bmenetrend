@@ -5,6 +5,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Sensors
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -20,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import hu.app.bmenetrend.R
@@ -99,8 +102,21 @@ fun LineBadge(number: String, provider: String, mode: String? = null, sourceColo
 fun LineBadge(route: TransitRoute, showIcon: Boolean = true) = LineBadge(route.number, route.providerId, route.transportMode, route.color, showIcon)
 
 @Composable
-fun LineStopRow(stop: TransitStop, first: Boolean, last: Boolean, color: Color, onClick: () -> Unit,
-                past: Boolean = false, highlighted: Boolean = false, vehicleIcon: Int? = null, vehicleBitmap: ImageBitmap? = null) {
+fun LineStopRow(
+    stop: TransitStop,
+    first: Boolean,
+    last: Boolean,
+    color: Color,
+    onClick: () -> Unit,
+    past: Boolean = false,
+    highlighted: Boolean = false,
+    vehicleIcon: Int? = null,
+    vehicleBitmap: ImageBitmap? = null,
+    arrivalTime: String? = null,
+    scheduledTime: String? = null,
+    isLive: Boolean = false,
+    delayMinutes: Int = 0,
+) {
     val rail = if (past) color.copy(alpha = .45f) else color
     val surface = MaterialTheme.colorScheme.surface
     Surface(color = if (highlighted) color.copy(alpha = .10f) else Color.Transparent) {
@@ -123,6 +139,42 @@ fun LineStopRow(stop: TransitStop, first: Boolean, last: Boolean, color: Color, 
                 val subtitle = listOfNotNull(stop.platformCode?.let { stringResource(R.string.emma_platform, it) },
                     if (first) stringResource(R.string.ui_origin) else if (last) stringResource(R.string.ui_terminus) else null).joinToString(" · ")
                 if (subtitle.isNotBlank()) Text(subtitle, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            if (arrivalTime != null) {
+                Column(
+                    modifier = Modifier.padding(start = 8.dp, top = 16.dp, bottom = 16.dp),
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        if (isLive) {
+                            Icon(
+                                Icons.Rounded.Sensors,
+                                contentDescription = stringResource(R.string.ui_live_arrival),
+                                modifier = Modifier.size(13.dp),
+                                tint = if (past) MaterialTheme.colorScheme.onSurfaceVariant else if (delayMinutes > 2) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Text(
+                            text = arrivalTime,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = if (highlighted) FontWeight.Bold else FontWeight.SemiBold,
+                            color = when {
+                                past -> MaterialTheme.colorScheme.onSurfaceVariant
+                                isLive && delayMinutes > 2 -> MaterialTheme.colorScheme.error
+                                isLive -> MaterialTheme.colorScheme.primary
+                                else -> MaterialTheme.colorScheme.onSurface
+                            }
+                        )
+                    }
+                    if (scheduledTime != null) {
+                        Text(
+                            text = scheduledTime,
+                            style = MaterialTheme.typography.bodySmall.copy(textDecoration = TextDecoration.LineThrough),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
         }
     }
