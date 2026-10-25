@@ -28,11 +28,15 @@ fun EmmaLineBrowser(
     onRetry: () -> Unit,
 ) {
     val details = state.lineDetails[route.id]
-    val pattern = details?.patterns?.find { it.id == patternId } ?: details?.patterns?.firstOrNull()
-    val color = lineColor(route)
     val primaryVariants = remember(details?.patterns) {
         details?.patterns?.groupBy { it.familyKey }?.values?.map { it.first() }.orEmpty()
     }
+    val pattern = if (patternId != null) {
+        details?.patterns?.find { it.id == patternId } ?: details?.patterns?.firstOrNull()
+    } else {
+        null
+    }
+    val color = lineColor(route)
     LazyColumn(contentPadding = PaddingValues(bottom = 32.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())) {
         item {
             Column(Modifier.padding(horizontal = 22.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -46,7 +50,7 @@ fun EmmaLineBrowser(
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(variants, key = { it.id }, contentType = { "variant_chip" }) { variant ->
                             FilterChip(selected = variant.id == pattern.id, onClick = { onDirection(variant.id) }, label = {
-                                Text(variant.stops.first().name.removePrefix("Budapest, "), Modifier.widthIn(max = 220.dp), maxLines = 2)
+                                Text(variant.stops.firstOrNull()?.name?.removePrefix("Budapest, ").orEmpty(), Modifier.widthIn(max = 220.dp), maxLines = 2)
                             })
                         }
                     }
@@ -69,7 +73,9 @@ fun EmmaLineBrowser(
                         LineBadge(details.route, showIcon = false)
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(variant.headsign, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                            Text(stringResource(R.string.line_from, variant.stops.first().name), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            variant.stops.firstOrNull()?.name?.let {
+                                Text(stringResource(R.string.line_from, it), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                             Text(pluralStringResource(R.plurals.ui_stops_count, variant.stops.size, variant.stops.size), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
