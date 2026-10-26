@@ -80,6 +80,19 @@ class FavoritesScreenTest {
     )
 
     @Test
+    fun loadingAnotherPlatformDoesNotAddLinesToTheSavedStation() {
+        val saved=stationStop.copy(routeIds=listOf(trainRoute1.id))
+        val favorite=NearbyStation(saved,listOf(saved),0.0)
+        val before=UiState(network=TransitNetwork(listOf(saved),listOf(trainRoute1),emptyList(),Instant.now(),"test"))
+        // Loading nearby platform/board data enriches the global catalogue, not this favourite's scope.
+        val otherPlatform=saved.copy(id="other-platform",name="${saved.name} (Ellenirány)",
+            routeIds=listOf(trainRoute2.id,busRoute.id))
+        val after=before.copy(emmaStops=listOf(otherPlatform),emmaRoutes=listOf(trainRoute2,busRoute))
+        assertEquals(listOf("S10"),extractStationLines(favorite,before).trainBadges.map { it.label })
+        assertEquals(extractStationLines(favorite,before),extractStationLines(favorite,after))
+    }
+
+    @Test
     fun extractStationLinesDeduplicatesBadgesAndCategorizesCorrectly() {
         val lines = extractStationLines(nearbyStation, uiState)
 

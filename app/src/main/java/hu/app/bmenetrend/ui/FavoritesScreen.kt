@@ -73,9 +73,8 @@ internal fun isTrainRoute(route: TransitRoute): Boolean {
 internal fun extractStationLines(station: NearbyStation, state: UiState): StationLines {
     val allPlatformRouteIds = (station.platforms.flatMap { it.routeIds } + station.stop.routeIds).distinct()
     val departureRouteIds = station.departures.map { it.routeId }.distinct()
-    val cluster = StopClusters.clusterFor(station.stop, state.stops)
-    val clusterRouteIds = cluster.flatMap { it.routeIds }
-    val allRouteIds = (allPlatformRouteIds + departureRouteIds + clusterRouteIds).distinct()
+    // Only explicit station/platform membership; nearby same-name platforms have their own lines.
+    val allRouteIds = (allPlatformRouteIds + departureRouteIds).distinct()
 
     val rawTrainBadges = mutableListOf<StationBadgeItem>()
     val rawOtherBadges = mutableListOf<StationBadgeItem>()
