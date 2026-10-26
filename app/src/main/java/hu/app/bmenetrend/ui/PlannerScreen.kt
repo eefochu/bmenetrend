@@ -66,7 +66,7 @@ fun PlannerScreen(model: PlannerViewModel, onRequestLocation: () -> Unit) {
     LazyColumn(Modifier.fillMaxSize().statusBarsPadding(), state = listState, contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item(key = "title", contentType = "title") {
-            TransitPageIntro(stringResource(R.string.planner_title),stringResource(R.string.planner_subtitle),Icons.Rounded.Route)
+            TransitPageIntro(stringResource(R.string.planner_title),stringResource(R.string.planner_subtitle))
         }
         item(key = "form", contentType = "form") {
             val connectorColor=MaterialTheme.colorScheme.outlineVariant

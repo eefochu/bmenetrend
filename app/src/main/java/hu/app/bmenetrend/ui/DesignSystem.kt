@@ -61,10 +61,9 @@ internal fun TransitPageHeader(title: String, onBack: () -> Unit, actions: @Comp
 }
 
 @Composable
-internal fun TransitPageIntro(title: String, subtitle: String?, icon: ImageVector, actions: @Composable RowScope.() -> Unit = {}) {
+internal fun TransitPageIntro(title: String, subtitle: String?, actions: @Composable RowScope.() -> Unit = {}) {
     Column(verticalArrangement=Arrangement.spacedBy(12.dp)) {
         Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(14.dp)) {
-            TransitIconTile(icon,prominent=true)
             Text(title,Modifier.weight(1f),style=MaterialTheme.typography.headlineMedium)
             actions()
         }

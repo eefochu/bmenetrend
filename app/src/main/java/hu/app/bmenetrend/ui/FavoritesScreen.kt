@@ -205,7 +205,7 @@ fun FavoritesScreen(
     }
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         Box(Modifier.padding(horizontal=20.dp,vertical=20.dp)) {
-            TransitPageIntro(stringResource(R.string.favorites_title),null,Icons.Rounded.Favorite) {
+            TransitPageIntro(stringResource(R.string.favorites_title),null) {
                 FilledTonalIconButton(onClick=onRefresh,shape=TransitDesign.controlShape) {
                     Icon(Icons.Rounded.Refresh,stringResource(R.string.ui_refresh_departures))
                 }
