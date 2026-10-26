@@ -49,11 +49,12 @@ class LineMapFocusTest {
         assertTrue(wrongTrip.paths.isEmpty())
     }
 
-    @Test fun boardingSelectionStillShowsBothDirectionsWithoutLeakingUnrelatedStops() {
+    @Test fun selectedBoardingDirectionHighlightsOnlyItsOwnStopsAndPath() {
         val unrelated = stop("unrelated",47.7).copy(routeIds = listOf("other"))
         val focus = LineMapFocus.create(null, BoardingSelection(route.id,"North",outbound), listOf(route),
             mapOf(route.id to LineDetails(route,listOf(outbound,inbound))), null, listOf(unrelated))!!
-        assertEquals(2,focus.paths.size)
+        assertEquals(listOf(outbound.geometry),focus.paths)
+        assertEquals(outbound.stops,focus.stops)
         assertFalse(focus.stops.contains(unrelated))
     }
 
@@ -67,4 +68,11 @@ class LineMapFocusTest {
     @Test fun noSelectionMeansNoFocus() {
         assertNull(LineMapFocus.create(null,null,emptyList(),emptyMap(),null,emptyList()))
     }
+    @Test fun lineOverviewStillShowsBothDirectionsUntilOneIsChosen() {
+        val focus=LineMapFocus.create(null,BoardingSelection(route.id,"Line overview"),listOf(route),
+            mapOf(route.id to LineDetails(route,listOf(outbound,inbound))),null,listOf(a,b,c))!!
+        assertEquals(2,focus.paths.size)
+        assertEquals(setOf(a,b,c),focus.stops.toSet())
+    }
+
 }

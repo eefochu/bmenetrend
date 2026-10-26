@@ -115,4 +115,10 @@
     <string name="ota_dialog_update_title">New update available!</string>
     <string name="ota_dialog_update_now">Update now</string>
     <string name="vehicle_route_estimated">Estimated</string>
+    <string name="service_interurban_bus">Regional / interurban bus</string>
+    <string name="service_local_bus">Local bus</string>
+    <string name="service_city_bus">City bus</string>
+    <string name="service_ferry">Ferry</string>
+    <string name="map_choose_stop">Choose a stop</string>
+    <string name="route_close">Close line view</string>
 </resources>

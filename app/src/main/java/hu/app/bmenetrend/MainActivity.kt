@@ -138,12 +138,16 @@ class MainActivity : ComponentActivity() {
                     onOtaChannelChanged = model::setOtaChannel,
                     onCheckOtaUpdates = { model.checkForUpdates(false) },
                     onDownloadAndInstallOta = { info -> model.startOtaDownloadAndInstall(this@MainActivity, info) },
-                ) { modifier, bottomPaddingPx ->
+                ) { modifier, bottomPaddingPx, browsingRoute, browsingDirection ->
                     val vehicle = state.selectedVehicle
-                    val pattern = state.boardingSelection?.pattern
-                    val route = state.boardingSelection?.routeId?.let(state::findRoute)
-                    val focus = remember(vehicle?.id, vehicle?.routeId, state.boardingSelection, state.network, state.emmaRoutes, state.lineDetails, state.vehicleJourney, state.emmaStops) {
-                        LineMapFocus.create(vehicle, state.boardingSelection, state.routes, state.lineDetails, state.vehicleJourney, state.stops)
+                    val browsingPattern=browsingRoute?.let { line -> state.lineDetails[line.id]?.patterns?.find { it.id==browsingDirection } }
+                    val preview=browsingRoute?.let { hu.app.bmenetrend.data.BoardingSelection(it.id,it.name,browsingPattern,
+                        localDirectionId=browsingDirection.takeIf { _ -> it.providerId !in setOf("volan","bkk","hev","mav") }) }
+                    val boarding=preview ?: state.boardingSelection
+                    val pattern = boarding?.pattern
+                    val route = browsingRoute ?: state.boardingSelection?.routeId?.let(state::findRoute)
+                    val focus = remember(vehicle?.id, vehicle?.routeId, boarding, state.network, state.emmaRoutes, state.lineDetails, state.vehicleJourney, state.emmaStops) {
+                        LineMapFocus.create(vehicle, boarding, state.routes, state.lineDetails, state.vehicleJourney, state.stops)
                     }
                     val geometry = if (vehicle != null) state.vehicleJourney?.geometry.orEmpty().ifEmpty { focus?.paths?.firstOrNull().orEmpty() } else pattern?.geometry.orEmpty()
                     val stops = if (vehicle != null) state.vehicleJourney?.stops.orEmpty().ifEmpty { focus?.stops.orEmpty() } else pattern?.stops.orEmpty()
@@ -152,8 +156,10 @@ class MainActivity : ComponentActivity() {
                     val onMapStop: (String) -> Unit = { id ->
                         if (state.selectedVehicle != null && state.vehicleJourney?.stops?.any { it.id == id } == true) model.selectJourneyBoardingStop(id)
                         else {
-                            val linePattern = focus?.routeId?.let { state.lineDetails[it] }?.patterns?.firstOrNull { pattern -> pattern.stops.any { it.id == id } }
-                            if (focus?.routeId != null && linePattern != null) model.selectBoardingStop(focus.routeId, linePattern.id, id)
+                            val linePattern=boarding?.pattern?.takeIf { it.stops.any { stop -> stop.id==id } }
+                            val localDirection=boarding?.localDirectionId
+                            if(focus?.routeId!=null && linePattern!=null) model.selectBoardingStop(focus.routeId,linePattern.id,id)
+                            else if(focus?.routeId!=null && localDirection!=null) model.selectBoardingStop(focus.routeId,localDirection,id)
                             else model.selectStop(id)
                         }
                     }

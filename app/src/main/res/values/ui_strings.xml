@@ -115,4 +115,10 @@
     <string name="ota_dialog_update_title">Új verzió érhető el!</string>
     <string name="ota_dialog_update_now">Frissítés most</string>
     <string name="vehicle_route_estimated">Becsült</string>
+    <string name="service_interurban_bus">Regionális / helyközi busz</string>
+    <string name="service_local_bus">Helyi busz</string>
+    <string name="service_city_bus">Városi busz</string>
+    <string name="service_ferry">Hajó</string>
+    <string name="map_choose_stop">Válassz megállót</string>
+    <string name="route_close">Vonalnézet bezárása</string>
 </resources>

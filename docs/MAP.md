@@ -32,17 +32,19 @@ Tile services receive the requesting IP address and the requested map areas. Thi
 
 ## Selected line view
 
-Selecting a vehicle loads its line patterns as well as its actual trip. The map shows the current line's shapes as separate paths, including both directions, and its independent source platforms. Active service patterns are preferred; the selected vehicle's actual trip is retained even when its pattern is absent from that day's line catalogue. Local lines use their known stop sequences for the view bounds; the app does not fabricate road geometry when no shape is supplied.
+Selecting a vehicle loads its line patterns as well as its actual trip. A line overview shows its available patterns as separate paths and keeps source platforms independent. Selecting a direction uses that pattern's stops and geometry. A vehicle uses its actual trip or a matching direction when one can be verified; the actual trip is retained even when its pattern is absent from that day's line catalogue. Local lines use their known stop sequences for the view bounds; the app does not fabricate road geometry when no shape is supplied.
 
 Other lines' vehicles and stops are hidden during selection. Vehicles match the provider-scoped route ID, rather than colour or route number alone. The focused view automatically fits all available paths and platforms above the bottom card and below the search bar. The Back arrow in the vehicle card, or Android Back, exits focus and restores the previous camera. A boarding selection has the same Back action.
 
 The draw order is basemap → route casing/stroke → station halo/ring/centre → vehicle annotations. Stations use a separate GeoJSON circle layer, so vehicles stay above stations regardless of which arrived first in a live poll. Selected-line stops remain visible at the zoom needed for a complete line overview. Outside focus, the normal zoom visibility rules still apply.
 
 
-## Station overviews and exiting route view
+## Overlapping stops and compact route cards
 
-Below zoom 14.5, nearby platforms sharing a station parent or normalized name appear as one unnumbered station dot. Groups are limited to a 250-metre diameter to avoid combining distant same-name stops. The marker is centred on its members; it does not alter any source coordinate or departure-board identity. Groups whose platforms share one transport colour keep it; mixed-colour groups use a neutral dot. Groups apply to normal browsing and selected-line views. Tapping a grouped dot zooms in to reveal independently selectable platforms.
+Every platform stays at its source coordinate, including platforms that share the same point. Markers may overlap visually. Taps resolve all stops within a minimum 48-dp touch area; when several qualify, a compact bottom picker lists their provider and platform or source identifier. A vehicle covering those stops opens the same picker with an additional vehicle option. Zooming is not required to select a hidden platform.
 
-Overview dots have contrasting outlines; focused-line stations use 16-dp dots and individual focused platforms use 24-dp rings. Vehicle icons remain above them. The route fit leaves room for the search bar, the Exit route view button and the bottom card.
+Focused-line stops use hollow rings in the line colour with a contrasting centre; the selected stop is filled and drawn last. Vehicle icons stay above the stop layers.
 
-Hiding a station or vehicle card, including by dragging it down, clears route focus. Clearing boarding selection no longer reopens a dismissed sheet. Exit route view is also available directly below search, and Android Back exits route focus or hides an ordinary station card.
+Selecting a line from search closes the search overlay and opens a bottom card with its service type and direction choices. The map remains visible above it. Selecting a direction highlights only that pattern's stops and geometry; the overview shows the available directions together. Local stop sequences retain their actual coordinates without invented road geometry. Long direction names wrap beside a route badge and arrow. The same direction row is used by local and national line browsers, and vehicle cards show the service type as well.
+
+Hiding a station or vehicle card, including by dragging it down, clears route focus. Clearing boarding selection does not reopen a dismissed sheet. The line card has Back and Close actions; Android Back returns from a direction to its overview, then closes the line card. Exit route view remains available directly below search for vehicle and boarding selections.

@@ -69,12 +69,20 @@ data class LineMapFocus(
                     }
                 }
             } else {
-                // Line overview when browsing boarding selection (no vehicle selected)
-                val localStops = route?.directions.orEmpty().flatMap { it.stopIds }.toSet()
-                stops = (patterns.flatMap { it.stops } + boarding?.pattern?.stops.orEmpty()
-                    + allStops.filter { it.id in localStops || (routeId != null && routeId in it.routeIds) }).distinctBy { it.id }
-                paths = (patterns.map { it.geometry } + listOfNotNull(boarding?.pattern?.geometry))
-                    .filter { it.size >= 2 }.distinct()
+                val selectedPattern=boarding?.pattern
+                val selectedLocal=route?.directions?.find { it.id==boarding?.localDirectionId }
+                if(selectedPattern!=null) {
+                    stops=selectedPattern.stops
+                    paths=listOf(selectedPattern.geometry).filter { it.size>=2 }
+                } else if(selectedLocal!=null) {
+                    val byId=allStops.associateBy { it.id }
+                    stops=selectedLocal.stopIds.mapNotNull(byId::get)
+                    paths=emptyList()
+                } else {
+                    val localStops=route?.directions.orEmpty().flatMap { it.stopIds }.toSet()
+                    stops=(patterns.flatMap { it.stops }+allStops.filter { it.id in localStops || routeId!=null && routeId in it.routeIds }).distinctBy { it.id }
+                    paths=patterns.map { it.geometry }.filter { it.size>=2 }.distinct()
+                }
             }
 
             return LineMapFocus(

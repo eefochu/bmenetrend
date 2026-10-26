@@ -1,6 +1,5 @@
 package hu.app.bmenetrend.ui
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -13,7 +12,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import hu.app.bmenetrend.R
 import hu.app.bmenetrend.data.TransitRoute
@@ -26,6 +24,7 @@ fun EmmaLineBrowser(
     onDirection: (String) -> Unit,
     onBoard: (String, String, String) -> Unit,
     onRetry: () -> Unit,
+    showHeader: Boolean = true,
 ) {
     val details = state.lineDetails[route.id]
     val primaryVariants = remember(details?.patterns) {
@@ -38,24 +37,24 @@ fun EmmaLineBrowser(
     }
     val color = lineColor(route)
     LazyColumn(contentPadding = PaddingValues(bottom = 32.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())) {
-        item {
-            Column(Modifier.padding(horizontal = 22.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                LineBadge(route, showIcon = false)
-                Text(pattern?.let { hu.app.bmenetrend.data.JourneyDirection.endpoints(it.stops) } ?: route.name, style = MaterialTheme.typography.titleLarge)
-                Text(pattern?.headsign ?: stringResource(R.string.line_direction_hint), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                if (pattern != null) Text(pluralStringResource(R.plurals.emma_journey_stops, pattern.stops.size, pattern.stops.size), style = MaterialTheme.typography.labelMedium)
-                val variants = details?.patterns?.filter { it.familyKey == pattern?.familyKey }.orEmpty()
-                if (pattern != null && variants.size > 1) {
-                    Text(stringResource(R.string.line_starting_point), style = MaterialTheme.typography.labelMedium)
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(variants, key = { it.id }, contentType = { "variant_chip" }) { variant ->
-                            FilterChip(selected = variant.id == pattern.id, onClick = { onDirection(variant.id) }, label = {
-                                Text(variant.stops.firstOrNull()?.name?.removePrefix("Budapest, ").orEmpty(), Modifier.widthIn(max = 220.dp), maxLines = 2)
-                            })
-                        }
-                    }
+        if(showHeader) item {
+            Row(Modifier.padding(horizontal=20.dp,vertical=12.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(12.dp)) {
+                LineBadge(route)
+                Text(serviceTypeLabel(route.providerId,route.transportMode),style=MaterialTheme.typography.titleSmall)
+            }
+        }
+        if(pattern!=null) item {
+            RouteDirectionRow(route,pattern.headsign,pattern.stops.firstOrNull()?.name)
+            val variants=details?.patterns?.filter { it.familyKey==pattern.familyKey }.orEmpty()
+            if(variants.size>1) LazyRow(contentPadding=PaddingValues(horizontal=20.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                items(variants,key={it.id}) { variant ->
+                    FilterChip(selected=variant.id==pattern.id,onClick={onDirection(variant.id)},label={
+                        Text(variant.stops.firstOrNull()?.name.orEmpty(),Modifier.widthIn(max=220.dp),maxLines=2)
+                    })
                 }
             }
+            Text(pluralStringResource(R.plurals.emma_journey_stops,pattern.stops.size,pattern.stops.size),
+                Modifier.padding(horizontal=22.dp,vertical=8.dp),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
         }
         if (state.loadingLineId == route.id) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
         if (state.lineErrorId == route.id) item {
@@ -67,19 +66,8 @@ fun EmmaLineBrowser(
         if (details != null && details.patterns.isEmpty()) item { Text(stringResource(R.string.line_no_directions), Modifier.padding(22.dp)) }
         if (pattern == null && details != null) {
             items(primaryVariants, key = { it.id }, contentType = { "line_variant" }) { variant ->
-                Surface(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 6.dp), shape = MaterialTheme.shapes.large,
-                    color = MaterialTheme.colorScheme.surfaceContainerLow) {
-                    Row(Modifier.clickable { onDirection(variant.id) }.padding(18.dp), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        LineBadge(details.route, showIcon = false)
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text(variant.headsign, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                            variant.stops.firstOrNull()?.name?.let {
-                                Text(stringResource(R.string.line_from, it), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                            Text(pluralStringResource(R.plurals.ui_stops_count, variant.stops.size, variant.stops.size), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                }
+                RouteDirectionRow(details.route,variant.headsign,variant.stops.firstOrNull()?.name,onClick={onDirection(variant.id)})
+
             }
         } else if (pattern != null) {
             itemsIndexed(pattern.stops, key = { index, stop -> "$index-${stop.id}" }, contentType = { _, _ -> "pattern_stop" }) { index, stop ->

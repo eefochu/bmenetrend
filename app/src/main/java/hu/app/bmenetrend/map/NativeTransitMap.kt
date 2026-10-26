@@ -95,6 +95,9 @@ fun NativeTransitMap(
     val onArea by rememberUpdatedState(onViewportChanged)
     val onZoom by rememberUpdatedState(onMapZoomChanged)
     val onVehicle by rememberUpdatedState(onVehicleSelected)
+    val currentVehicles by rememberUpdatedState(vehicles)
+    var stopChoices by remember { mutableStateOf<List<TransitStop>>(emptyList()) }
+    var coveringVehicleId by remember { mutableStateOf<String?>(null) }
     val stops = remember(network?.stops, additionalStops, routeStops) { (network?.stops.orEmpty() + additionalStops + routeStops).distinctBy { it.id } }
     var savedLat by rememberSaveable { mutableDoubleStateOf(47.473) }
     var savedLon by rememberSaveable { mutableDoubleStateOf(18.825) }
@@ -171,30 +174,32 @@ fun NativeTransitMap(
                 onArea(viewport!!, GeoPoint(savedLat, savedLon))
             }
             ready.setMaxZoomPreference(19.0)
-            ready.setOnMarkerClickListener { marker ->
-                val vehicle = markerVehicles[marker.id]
-                if (vehicle != null) {
-                    onVehicle(vehicle)
-                    return@setOnMarkerClickListener true
+            fun stopsAt(location: LatLng): List<TransitStop> {
+                val hit=ready.projection.toScreenLocation(location)
+                val targets=stopHitTargets.flatMap { (id,target) ->
+                    val point=ready.projection.toScreenLocation(target.first)
+                    stopGroups[id].orEmpty().map { StopHitTesting.Target(it,point.x.toDouble(),point.y.toDouble(),target.second.toDouble()) }
                 }
-                false
+                return StopHitTesting.candidates(targets,hit.x.toDouble(),hit.y.toDouble(),context.resources.displayMetrics.density.toDouble())
+            }
+            ready.setOnMarkerClickListener { marker ->
+                val vehicle=markerVehicles[marker.id]
+                if(vehicle!=null) {
+                    val stops=stopsAt(marker.position)
+                    if(stops.isEmpty()) onVehicle(vehicle) else {
+                        stopChoices=stops
+                        coveringVehicleId=vehicle
+                    }
+                    true
+                } else false
             }
             ready.addOnMapClickListener { location ->
-                val hit = ready.projection.toScreenLocation(location)
-                val nearest = stopHitTargets.entries.mapNotNull { (id, target) ->
-                    val point = ready.projection.toScreenLocation(target.first)
-                    val distance = kotlin.math.hypot(point.x - hit.x, point.y - hit.y)
-                    id.takeIf { distance <= target.second + 2 * context.resources.displayMetrics.density }?.let { it to distance }
-                }.minByOrNull { it.second }?.first
-                if (nearest != null) {
-                    val members = stopGroups[nearest].orEmpty()
-                    if (members.size > 1) {
-                        val center = stopHitTargets[nearest]!!.first
-                        ready.animateCamera(CameraUpdateFactory.newLatLngZoom(center, maxOf(StopMapClustering.PLATFORM_ZOOM + .3, ready.cameraPosition.zoom + 1.0)), 500)
-                    } else onSelect(members.firstOrNull()?.id ?: nearest)
-                    return@addOnMapClickListener true
+                val candidates=stopsAt(location)
+                when(candidates.size) {
+                    0 -> false
+                    1 -> { onSelect(candidates.single().id); true }
+                    else -> { stopChoices=candidates; coveringVehicleId=null; true }
                 }
-                false
             }
         }
         onDispose {
@@ -329,6 +334,12 @@ fun NativeTransitMap(
         }
     }
     AndroidView(factory = { mapView }, modifier = modifier.onSizeChanged { size = it })
+    if(stopChoices.isNotEmpty()) hu.app.bmenetrend.ui.MapStopPicker(stopChoices,
+        currentVehicles.firstOrNull { it.id==coveringVehicleId },
+        onStop={ id -> stopChoices=emptyList(); coveringVehicleId=null; onSelect(id) },
+        onVehicle={ id -> stopChoices=emptyList(); coveringVehicleId=null; onVehicle(id) },
+        onDismiss={ stopChoices=emptyList(); coveringVehicleId=null })
+
 
     LaunchedEffect(map, styleLoaded, viewport, zoom, displayStops, vehicles, lineFocus, routeColor, selectedVehicle?.id, selectedStopId, selectedPlace, userLocation) {
         val nativeMap = map ?: return@LaunchedEffect
@@ -446,18 +457,18 @@ fun NativeTransitMap(
                 zoom >= StopMapClustering.DETAIL_ZOOM -> 12.0
                 else -> 8.0
             }
-            StopMarkerLayout.layout(nodes, density.toDouble(), diameter).forEach { placement ->
+            StopMarkerLayout.layout(nodes, density.toDouble(), diameter).sortedBy { it.stop.id==selectedStopId }.forEach { placement ->
                 val stop = placement.stop
                 val position = nativeMap.projection.fromScreenLocation(PointF(placement.x.toFloat(), placement.y.toFloat()))
                 val members = stopGroups[stop.id].orEmpty()
                 val selected = members.any { it.id == selectedStopId }
                 val colors = members.map { StopMarkerLayout.color(it.providerId, it.transportMode) }.distinct()
-                val dotColor = colors.singleOrNull() ?: StopMarkerLayout.color("shared", null)
+                val dotColor = if(focused) routeColor else colors.singleOrNull() ?: StopMarkerLayout.color("shared", null)
                 detailFeatures += Feature.fromGeometry(Point.fromLngLat(position.longitude, position.latitude)).apply {
                     addStringProperty("stopId", stop.id)
                     addStringProperty("color", "#%06X".format(dotColor and 0xFFFFFF))
                     addNumberProperty("radius", placement.sizePx / density / 2)
-                    addNumberProperty("inner", if (selected) 0 else placement.sizePx / density / 5)
+                    addNumberProperty("inner", if (selected) 0.0 else if(focused) (placement.sizePx / density / 2 - 3).coerceAtLeast(0.0) else placement.sizePx / density / 5)
                 }
                 stopHitTargets[stop.id] = position to (placement.sizePx / 2).toFloat()
             }
@@ -482,6 +493,8 @@ fun NativeTransitMap(
         }
         style.getLayerAs<CircleLayer>("detail-stop-halo")?.setProperties(
             PropertyFactory.circleRadius(Expression.sum(Expression.get("radius"), Expression.literal(if (focused) 2.5 else 1.0))))
+        style.getLayerAs<CircleLayer>("detail-stop-center")?.setProperties(
+            PropertyFactory.circleColor(if(focused && darkTheme) "#10160F" else "#FFFFFF"))
         val visibleVehicles = vehicles.filter { vehicle ->
             (lineFocus?.includes(vehicle) ?: true) && TransitMapVisibility.vehicle(vehicle.transportMode, zoom, focused) && viewport?.let { vehicle.position.lat in it.south..it.north && vehicle.position.lon in it.west..it.east } == true
         }
