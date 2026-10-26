@@ -3,10 +3,9 @@ package hu.app.bmenetrend.map
 import hu.app.bmenetrend.data.TransitStop
 import kotlin.math.*
 
-/** Compact at overview zoom; close platforms get a bounded four-dp nudge and readable overlapping rings. */
+/** Equal-size rings with small, deterministic map-aligned offsets; never rearranged by the viewport. */
 object StopMarkerLayout {
     data class Node(val stop: TransitStop, val x: Double, val y: Double)
-    data class Placement(val stop: TransitStop, val x: Double, val y: Double, val sizePx: Double)
 
     fun color(provider: String, mode: String?): Int = when {
         mode == "TRAM" -> 0xFFFFD800.toInt()
@@ -21,35 +20,61 @@ object StopMarkerLayout {
         else -> 0xFF40576A.toInt()
     }
 
-    fun layout(nodes: List<Node>,density: Double,maxSizeDp: Double=22.0,highlighted: Boolean=false,zoom: Double=0.0): List<Placement> {
-        require(density>0 && density.isFinite() && maxSizeDp>=6)
-        val ordered=nodes.distinctBy { it.stop.id }.sortedBy { it.stop.id }
-        val maximum=maxSizeDp*density
-        if(highlighted) return ordered.map { Placement(it.stop,it.x,it.y,maximum) }
-        val gap=3*density
-        // A spatial index limits comparisons to markers close enough to constrain the requested size.
-        val buckets=ordered.groupBy { floor(it.x/maximum).toInt() to floor(it.y/maximum).toInt() }
-        return ordered.map { node ->
-            val cx=floor(node.x/maximum).toInt(); val cy=floor(node.y/maximum).toInt()
-            var nearest=maximum+gap
-            var neighbour: Node?=null
-            for(dx in -2..2) for(dy in -2..2) {
-                buckets[cx+dx to cy+dy].orEmpty().forEach { other ->
-                    if(other.stop.id!=node.stop.id) {
-                        val distance=hypot(other.x-node.x,other.y-node.y)
-                        if(distance<nearest) { nearest=distance;neighbour=other }
-                    }
-                }
+    const val DIAMETER_DP=22.0
+    const val MAX_OFFSET_DP=24.0
+    private const val REFERENCE_WORLD=512.0*65536 // fixed zoom 16, independent of camera/density
+    data class Offset(val x: Double=0.0,val y: Double=0.0)
+
+    // Native icon-size uses this same continuous zoom curve; every ordinary stop has equal size.
+    val sizeStops=listOf(9.0 to 6.0,12.0 to 8.0,13.0 to 12.0,15.0 to DIAMETER_DP,19.0 to DIAMETER_DP)
+    fun diameterDp(zoom: Double,highlighted: Boolean=false): Double {
+        if(highlighted) return 16.0
+        val upper=sizeStops.indexOfFirst { zoom<=it.first }
+        if(upper<=0) return if(upper==0) sizeStops.first().second else sizeStops.last().second
+        val (a,small)=sizeStops[upper-1];val (b,large)=sizeStops[upper]
+        return small+(large-small)*(zoom-a)/(b-a)
+    }
+
+    /** Allocate once in world coordinates, before viewport/selection filtering. Never fit to visible gaps. */
+    fun offsets(stops: List<TransitStop>,previous: Map<String,Offset> = emptyMap()): Map<String,Offset> {
+        val nodes=stops.distinctBy { it.id }.sortedBy { it.id }.map { stop ->
+            val lat=Math.toRadians(stop.position.lat.coerceIn(-85.0,85.0))
+            Node(stop,(stop.position.lon+180)/360*REFERENCE_WORLD,
+                (1-ln(tan(lat)+1/cos(lat))/PI)/2*REFERENCE_WORLD)
+        }
+        val spacing=DIAMETER_DP+2
+        val buckets=mutableMapOf<Pair<Int,Int>,MutableList<Pair<Double,Double>>>()
+        fun cell(x: Double,y: Double)=floor(x/spacing).toInt() to floor(y/spacing).toInt()
+        val candidates=listOf(Offset())+(1..4).flatMap { ring -> (0 until 16).map { step ->
+            val angle=step*PI/8-PI/2
+            Offset(cos(angle)*ring*MAX_OFFSET_DP/4,sin(angle)*ring*MAX_OFFSET_DP/4)
+        } }
+        // Incoming provider records are placed around existing markers, never displacing them.
+        nodes.forEach { node -> previous[node.stop.id]?.let { offset ->
+            val x=node.x+offset.x;val y=node.y+offset.y
+            buckets.getOrPut(cell(x,y)) { mutableListOf() }.add(x to y)
+        } }
+        return nodes.associate { node ->
+            previous[node.stop.id]?.let { return@associate node.stop.id to it }
+            val centre=cell(node.x,node.y)
+            val neighbours=buildList {
+                for(dx in -3..3) for(dy in -3..3) addAll(buckets[centre.first+dx to centre.second+dy].orEmpty())
             }
-            if(zoom>=15 && neighbour!=null) {
-                val overlap=3*density
-                val size=floor((nearest+11*density).coerceIn(minOf(10*density,maximum),maximum)/density)*density
-                val nudge=((size-overlap-nearest)/2).coerceIn(0.0,4*density)
-                val other=neighbour!!
-                val ux=if(nearest>.001) (node.x-other.x)/nearest else 0.0
-                val uy=if(nearest>.001) (node.y-other.y)/nearest else if(node.stop.id<other.stop.id) -1.0 else 1.0
-                Placement(node.stop,node.x+ux*nudge,node.y+uy*nudge,size)
-            } else Placement(node.stop,node.x,node.y,floor((nearest-gap).coerceIn(6*density,maximum)/density)*density)
+            fun overlap(offset: Offset)=neighbours.sumOf { (x,y) ->
+                max(0.0,spacing-hypot(node.x+offset.x-x,node.y+offset.y-y)).pow(2)
+            }
+            var offset=Offset()
+            var penalty=overlap(offset)
+            if(penalty>.001) for(candidate in candidates.drop(1)) {
+                val score=overlap(candidate)
+                if(score<penalty-.001 || abs(score-penalty)<.001 && hypot(candidate.x,candidate.y)<hypot(offset.x,offset.y)) {
+                    offset=candidate;penalty=score
+                }
+                if(penalty<.001) break
+            }
+            val x=node.x+offset.x;val y=node.y+offset.y
+            buckets.getOrPut(cell(x,y)) { mutableListOf() }.add(x to y)
+            node.stop.id to offset
         }
     }
 }
