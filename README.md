@@ -58,7 +58,7 @@ Az alkalmazás csomagazonosítója és Kotlin-névtere `hu.app.bmenetrend`. A fe
 ## 🚀 Fordítás és futtatás
 
 ### Követelmények
-- **JDK 17**
+- **JDK 21**
 - **Android SDK Platform 36** (Build Tools 35.0.0+)
 - **Android 8.0+** (API level 26+) készülék vagy emulátor
 
@@ -72,6 +72,9 @@ cd bmenetrend
 # Optimalizált debug csatornás APK fordítása (R8 + erőforrás-zsugorítás)
 ./gradlew :app:assembleDebug
 
+# Release APK fordítása
+./gradlew :app:assembleRelease
+
 # Hagyományos fejlesztői változat: debugger, Compose-inspektor, gyors fordítás
 ./gradlew :app:assembleDevelopment
 
@@ -83,6 +86,12 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
 A `debug` és a `release` ugyanazt az optimalizálást használja; a terjeszthető `debug` APK sem debuggolható. A `development` változat debuggolható, külön `hu.app.bmenetrend.dev` csomagnévvel települ. A nagy univerzális APK mind a négy CPU-architektúrához tartalmaz natív MapLibre-könyvtárakat.
+
+### GitHub Actions CI
+
+Az [Android builds](.github/workflows/android-build.yml) workflow minden push és pull request esetén, valamint kézzel indítva is lefordítja a `debug` és `release` APK-kat, külön feladatokban, Java 21 használatával. Az Actions-futásból a `bmenetrend-debug` és `bmenetrend-release` artifactok tölthetők le; a hozzájuk tartozó R8 mapping fájlok külön artifactokban érhetők el. Az artifactok megőrzési ideje 14 nap.
+
+Mindkét változat a projekt jelenlegi debug aláírását használja; a CI a futtató által generált debug kulccsal írja alá az APK-kat. Meglévő, más kulccsal aláírt telepítésre ezek nem telepíthetők frissítésként. Állandó kiadási kulcsot és GitHub Release-publikálást ez a workflow nem állít be.
 
 Váratlan Java/Kotlin-leállás után a következő indításkor a helyben mentett hibajelentés kimásolható. Android 11-től a natív összeomlás vagy memória miatti folyamatleállás rendszeradatai is megjelenhetnek. A jelentés nem kerül automatikusan elküldésre; másoláskor vagy bezáráskor a mentett példány törlődik.
 
