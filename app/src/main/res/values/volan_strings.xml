@@ -46,4 +46,6 @@
     <string name="emma_vehicle_next_stop">Következő megálló: %1$s</string>
     <string name="emma_vehicle_old_position">Ez a pozíció már nem friss. A legutóbbi forrásadat ideje fent látható.</string>
     <plurals name="emma_journey_stops"><item quantity="one">%1$d megálló ezen a meneten</item><item quantity="other">%1$d megálló ezen a meneten · koppints az indulásokhoz</item></plurals>
+    <string name="emma_lines_saved">A mentett EMMA-járatlista látható. A lista automatikusan frissül.</string>
+    <string name="emma_lines_unavailable">Az EMMA-járatlista betöltése sikertelen. Automatikusan újrapróbáljuk.</string>
 </resources>

@@ -84,6 +84,21 @@
     <string name="ui_homm_schedule_only">HOMM-menetrend · élő adatok nélkül</string>
     <string name="ui_collapse_departures">Indulások részleges nézete</string>
 
+    <!-- Offline timetable strings -->
+    <string name="ui_download_timetable">Menetrend letöltése offline használatra</string>
+    <string name="ui_timetable_downloaded">Offline menetrend mentve</string>
+    <string name="ui_timetable_downloading">Menetrend letöltése…</string>
+    <string name="ui_offline_timetable_active">Offline mentett menetrend</string>
+    <string name="ui_offline_timetable_info">%1$s · %2$d járat · %3$s</string>
+    <string name="ui_delete_timetable">Offline menetrend törlése</string>
+    <string name="ui_update_timetable">Menetrend frissítése</string>
+    <string name="ui_timetable_download_success">Menetrend letöltve offline használatra (%1$s, %2$d járat)</string>
+    <string name="ui_timetable_download_failed">A menetrend letöltése sikertelen</string>
+    <string name="ui_downloaded_timetables">Letöltött menetrendek</string>
+    <string name="ui_clear_all_timetables">Összes letöltött menetrend törlése</string>
+    <string name="ui_no_downloaded_timetables">Nincsenek letöltött offline menetrendek</string>
+    <string name="ui_offline_dialog_details">Mentve: %1$s\nMéret: %2$s\nMenetrendi járatok (24 óra): %3$d db</string>
+
     <!-- OTA and About strings -->
     <string name="ota_about_title">Névjegy</string>
     <string name="ota_about_app_description">A BMenetrend egy modern, nyílt tömegközlekedési menetrend és valós idejű járműkövető alkalmazás. Segítségével valós időben követhetők a MÁV vasúti járatok, a HÉV, a Volánbusz, a BKK járatok (busz, villamos, troli, metró), valamint a helyi ViaBusz, KanyarGO és HOMM járatok menetrendjei és élő adatai.</string>

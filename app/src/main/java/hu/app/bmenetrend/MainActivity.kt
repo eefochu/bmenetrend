@@ -88,7 +88,7 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(tab) { model.setMapVisible(tab == MainTab.MAP); model.setFavoritesVisible(tab == MainTab.FAVORITES) }
             LaunchedEffect(state.userLocation) { planner.updateLocation(state.userLocation) }
             LaunchedEffect(tab, state.network?.stops, state.emmaStops) {
-                if (tab == MainTab.PLANNER) planner.updateStops(state.stops)
+                if (tab == MainTab.PLANNER) planner.updateStops(state.network?.stops.orEmpty(), state.emmaStops)
             }
             val requestLocation: () -> Unit = {
                 locationAllowed = hasLocationPermission()
@@ -143,6 +143,9 @@ class MainActivity : ComponentActivity() {
                     onSearchPlaces = model::searchPlaces,
                     onPlaceSelected = model::selectPlace,
                     onPlaceClosed = model::clearPlace,
+                    onDownloadTimetable = model::downloadStationTimetable,
+                    onDeleteTimetable = model::deleteStationTimetable,
+                    onClearAllTimetables = model::clearAllStationTimetables,
                     onOtaChannelChanged = model::setOtaChannel,
                     onCheckOtaUpdates = { model.checkForUpdates(false) },
                     onDownloadAndInstallOta = { info -> model.startOtaDownloadAndInstall(this@MainActivity, info) },

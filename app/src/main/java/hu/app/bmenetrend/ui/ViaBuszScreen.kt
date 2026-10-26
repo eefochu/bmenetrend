@@ -38,6 +38,8 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.AccessTime
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.CloudDone
+import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.material.icons.rounded.DirectionsBus
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
@@ -107,6 +109,7 @@ import androidx.compose.ui.unit.sp
 import hu.app.bmenetrend.R
 import hu.app.bmenetrend.data.ArrivalKind
 import hu.app.bmenetrend.data.Departure
+import hu.app.bmenetrend.data.StationTimetableRepository
 import hu.app.bmenetrend.data.StopClusters
 import hu.app.bmenetrend.data.TransitRoute
 import hu.app.bmenetrend.data.TransitStop
@@ -146,6 +149,9 @@ fun ViaBuszScreen(
     onSearchPlaces: (String, Boolean) -> Unit = { _, _ -> },
     onPlaceSelected: (hu.app.bmenetrend.data.PlaceResult) -> Unit = {},
     onPlaceClosed: () -> Unit = {},
+    onDownloadTimetable: (String) -> Unit = {},
+    onDeleteTimetable: (String) -> Unit = {},
+    onClearAllTimetables: () -> Unit = {},
     onOtaChannelChanged: (hu.app.bmenetrend.data.UpdateChannel) -> Unit = {},
     onCheckOtaUpdates: () -> Unit = {},
     onDownloadAndInstallOta: (hu.app.bmenetrend.data.OtaUpdateInfo) -> Unit = {},
@@ -396,6 +402,8 @@ fun ViaBuszScreen(
                         onDeparture = openDeparture,
                         onToggleExpand = toggleExpand,
                         onCollapse = collapse,
+                        onDownloadTimetable = onDownloadTimetable,
+                        onDeleteTimetable = onDeleteTimetable,
                         modifier = Modifier.fillMaxWidth().fillMaxHeight(0.88f),
                         isExpanded = isExpanded,
                     )
@@ -516,6 +524,7 @@ fun ViaBuszScreen(
             onCustom = onCustomAccentChanged,
             onNationwide = onNationwideNetworkChanged,
             onAbout = { showAbout = true },
+            onClearAllTimetables = onClearAllTimetables,
             onBack = { showSettings = false }
         )
     }
@@ -570,6 +579,8 @@ private fun StopPanel(
     onDeparture: (Departure) -> Unit,
     onToggleExpand: () -> Unit,
     onCollapse: () -> Unit,
+    onDownloadTimetable: (String) -> Unit = {},
+    onDeleteTimetable: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     isExpanded: Boolean = true,
 ) {
@@ -583,14 +594,89 @@ private fun StopPanel(
     val boardingInfo=if(platforms.size>1) null else (stop?.platformCode?.let { stringResource(R.string.emma_platform,it) }
         ?: stop?.takeIf { it.id.startsWith("emma:") }?.let { stringResource(R.string.emma_stop_code,it.id.substringAfterLast(":")) })
     val timetableOnly = clusterProviders.isNotEmpty() && clusterProviders.all { it == "homm" }
+    var showOfflineDialog by remember { mutableStateOf(false) }
+
+    if (showOfflineDialog && stop != null) {
+        val meta = state.offlineStationTimetables[stop.id]
+            ?: state.offlineStationTimetables.values.firstOrNull { stop.id in it.platformIds }
+        AlertDialog(
+            onDismissRequest = { showOfflineDialog = false },
+            icon = { Icon(Icons.Rounded.CloudDone, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+            title = { Text(stringResource(R.string.ui_timetable_downloaded)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stopTitle, style = MaterialTheme.typography.titleMedium)
+                    if (meta != null) {
+                        val formattedDate = DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm")
+                            .withZone(ZoneId.of("Europe/Budapest"))
+                            .format(meta.downloadedAt)
+                        val sizeStr = StationTimetableRepository.formatFileSize(meta.fileSizeBytes)
+                        Text(
+                            stringResource(
+                                R.string.ui_offline_dialog_details,
+                                formattedDate,
+                                sizeStr,
+                                meta.departureCount,
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showOfflineDialog = false
+                    onDownloadTimetable(stop.id)
+                }) {
+                    Text(stringResource(R.string.ui_update_timetable))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showOfflineDialog = false
+                    onDeleteTimetable(stop.id)
+                }) {
+                    Text(stringResource(R.string.ui_delete_timetable), color = MaterialTheme.colorScheme.error)
+                }
+            }
+        )
+    }
+
     Column(modifier) {
         Column(Modifier.fillMaxWidth().padding(horizontal=TransitDesign.gutter)) {
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
                 Text(stringResource(if(stop!=null && stop.id==state.nearestStopId) R.string.ui_nearest_stop else R.string.ui_selected_stop),
                     Modifier.weight(1f),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.primary)
-                if(stop!=null) IconButton(onClick={onToggleFavorite(stop.id)}) {
-                    Icon(if(stop.id in state.favorites) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
-                        stringResource(if(stop.id in state.favorites) R.string.ui_remove_favorite else R.string.ui_add_favorite),tint=MaterialTheme.colorScheme.primary)
+                if(stop!=null) {
+                    val isDownloaded = stop.id in state.downloadedStationIds
+                    val isDownloading = stop.id in state.downloadingStationIds
+                    IconButton(
+                        onClick = {
+                            if (isDownloaded) {
+                                showOfflineDialog = true
+                            } else if (!isDownloading) {
+                                onDownloadTimetable(stop.id)
+                            }
+                        },
+                        enabled = !isDownloading
+                    ) {
+                        when {
+                            isDownloading -> CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                            isDownloaded -> Icon(
+                                Icons.Rounded.CloudDone,
+                                stringResource(R.string.ui_timetable_downloaded),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            else -> Icon(
+                                Icons.Rounded.CloudDownload,
+                                stringResource(R.string.ui_download_timetable)
+                            )
+                        }
+                    }
+                    IconButton(onClick={onToggleFavorite(stop.id)}) {
+                        Icon(if(stop.id in state.favorites) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                            stringResource(if(stop.id in state.favorites) R.string.ui_remove_favorite else R.string.ui_add_favorite),tint=MaterialTheme.colorScheme.primary)
+                    }
                 }
                 IconButton(onClick=onRefresh,enabled=!state.refreshing) {
                     if(state.refreshing) CircularProgressIndicator(Modifier.size(20.dp),strokeWidth=2.dp)
@@ -642,11 +728,19 @@ private fun StopPanel(
             if (!state.error.isNullOrBlank()) {
                 item(contentType = "notice") { Notice(state.error, Icons.Rounded.WifiOff, isError = true) }
             }
+            if (state.isOfflineTimetableActive) {
+                item(contentType = "notice") {
+                    Notice(
+                        stringResource(R.string.ui_offline_timetable_active),
+                        Icons.Rounded.CloudDone,
+                    )
+                }
+            }
             if (!state.emmaStatus.isNullOrBlank()) {
                 item(contentType = "notice") { Notice(state.emmaStatus, Icons.Rounded.DirectionsBus) }
             }
             if (!state.stopStatus.isNullOrBlank()) item(contentType = "notice") { Notice(state.stopStatus, Icons.Rounded.LocationOn) }
-            if (!state.departureStatus.isNullOrBlank()) item(contentType = "notice") { Notice(state.departureStatus, Icons.Rounded.AccessTime) }
+            if (!state.departureStatus.isNullOrBlank() && !state.isOfflineTimetableActive) item(contentType = "notice") { Notice(state.departureStatus, Icons.Rounded.AccessTime) }
             if (stop == null && !state.loading) {
                 item(contentType = "empty") {
                     EmptyState(stringResource(R.string.ui_pick_stop_title), stringResource(R.string.ui_pick_stop_body), Icons.Rounded.LocationOn)
@@ -776,13 +870,23 @@ private fun stopLabel(stop: TransitStop): String? = stop.platformCode?.let { str
 internal fun StopSearchRow(stop: TransitStop, state: UiState, favorite: Boolean, onStop: (String) -> Unit) {
     val isMulti = stop.isMultiStop || remember(stop.id, state.stops) { StopClusters.isMultiStop(stop.id, state.stops) }
     val displayName = StopClusters.stopDisplayName(stop.name)
+    val isDownloaded = stop.id in state.downloadedStationIds
     Row(
         Modifier.fillMaxWidth().clickable { onStop(stop.id) }.padding(horizontal = 22.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
-            Icon(if (favorite) Icons.Rounded.Favorite else Icons.Rounded.LocationOn, null, Modifier.padding(11.dp).size(21.dp), tint = MaterialTheme.colorScheme.primary)
+            Icon(
+                when {
+                    favorite -> Icons.Rounded.Favorite
+                    isDownloaded -> Icons.Rounded.CloudDone
+                    else -> Icons.Rounded.LocationOn
+                },
+                null,
+                Modifier.padding(11.dp).size(21.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(displayName, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)

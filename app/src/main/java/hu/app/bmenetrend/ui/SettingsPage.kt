@@ -26,11 +26,19 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import hu.app.bmenetrend.R
+import hu.app.bmenetrend.data.StationTimetableRepository
 import java.util.Locale
 
 @Composable
-fun SettingsPage(state: UiState, onAccent: (AccentColor) -> Unit, onCustom: (Int) -> Unit,
-                 onNationwide: (Boolean) -> Unit, onAbout: () -> Unit, onBack: () -> Unit) {
+fun SettingsPage(
+    state: UiState,
+    onAccent: (AccentColor) -> Unit,
+    onCustom: (Int) -> Unit,
+    onNationwide: (Boolean) -> Unit,
+    onAbout: () -> Unit,
+    onBack: () -> Unit,
+    onClearAllTimetables: () -> Unit = {},
+) {
     BackHandler(onBack=onBack)
     Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
@@ -77,6 +85,28 @@ fun SettingsPage(state: UiState, onAccent: (AccentColor) -> Unit, onCustom: (Int
                         }
                         Text(stringResource(R.string.volan_local_scope),style=MaterialTheme.typography.bodyMedium)
                         Text(stringResource(R.string.volan_nationwide_hint),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                Surface(shape=TransitDesign.groupShape,color=MaterialTheme.colorScheme.surfaceContainerLowest) {
+                    Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+                        val count = state.offlineStationTimetables.size
+                        val totalBytes = state.offlineStationTimetables.values.sumOf { it.fileSizeBytes }
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(stringResource(R.string.ui_downloaded_timetables), style = MaterialTheme.typography.titleMedium)
+                                Text(
+                                    if (count == 0) stringResource(R.string.ui_no_downloaded_timetables)
+                                    else "$count · ${StationTimetableRepository.formatFileSize(totalBytes)}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            if (count > 0) {
+                                TextButton(onClick = onClearAllTimetables) {
+                                    Text(stringResource(R.string.ui_clear_all_timetables), color = MaterialTheme.colorScheme.error)
+                                }
+                            }
+                        }
                     }
                 }
                 OutlinedButton(onClick=onAbout,shape=TransitDesign.controlShape,modifier=Modifier.fillMaxWidth().heightIn(min=56.dp)) {

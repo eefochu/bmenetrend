@@ -11,14 +11,13 @@ import java.time.Duration
 import java.time.Instant
 
 /** Static national stop index cached on disk; departure boards always query the selected platform. */
-class EmmaStopsRepository(context: Context) {
-    private val graphql = EmmaGraphqlClient()
+class EmmaStopsRepository(context: Context, private val graphql: EmmaGraphqlClient = EmmaGraphqlClient()) {
     private val file = File(context.filesDir, "emma-stop-index-v2.json")
     private var memory: Index? = null
     private val indexMutex = Mutex()
     data class Index(val catalogue: EmmaStopsParser.Catalogue, val fetchedAt: Instant, val stale: Boolean = false)
 
-    suspend fun index(): Index = indexMutex.withLock {
+    suspend fun index(onCached: (Index) -> Unit = {}): Index = indexMutex.withLock {
         val now = Instant.now()
         var saved = memory ?: withContext(Dispatchers.IO) {
             runCatching {
@@ -27,9 +26,12 @@ class EmmaStopsRepository(context: Context) {
                     if (cached == file) Instant.ofEpochMilli(cached.lastModified()) else Instant.EPOCH)
             }.getOrNull()
         }
-        if (saved != null && Duration.between(saved.fetchedAt, now).seconds in 0..86_399) {
-            memory = saved
-            return@withLock saved
+        if (saved != null) {
+            val fresh = Duration.between(saved.fetchedAt, now).seconds in 0..86_399
+            val available = saved.copy(stale = !fresh)
+            memory = available
+            onCached(available)
+            if (fresh) return@withLock available
         }
         try {
             val text = graphql.execute(EmmaStopsParser.INDEX_QUERY)

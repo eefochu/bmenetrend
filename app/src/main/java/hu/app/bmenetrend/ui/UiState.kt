@@ -13,6 +13,7 @@ import hu.app.bmenetrend.data.Vehicle
 import hu.app.bmenetrend.data.PlaceResult
 import hu.app.bmenetrend.data.UpdateChannel
 import hu.app.bmenetrend.data.OtaUpdateInfo
+import hu.app.bmenetrend.data.OfflineStationMetadata
 import java.io.File
 import java.time.Instant
 
@@ -66,6 +67,8 @@ data class UiState(
     val mapZoom: Double = 13.2,
     val boardUpdatedAt: Instant? = null,
     val emmaRoutes: List<TransitRoute> = emptyList(),
+    val lineCatalogueLoading: Boolean = false,
+    val lineCatalogueStatus: String? = null,
     val nationwideNetwork: Boolean = true,
     val accentColor: AccentColor = AccentColor.SYSTEM,
     val customAccentArgb: Int = 0xFF6750A4.toInt(),
@@ -80,6 +83,10 @@ data class UiState(
     val otaDownloadProgress: Float? = null,
     val otaDownloadedApk: File? = null,
     val showOtaDialog: Boolean = false,
+    val downloadedStationIds: Set<String> = emptySet(),
+    val downloadingStationIds: Set<String> = emptySet(),
+    val offlineStationTimetables: Map<String, OfflineStationMetadata> = emptyMap(),
+    val isOfflineTimetableActive: Boolean = false,
 ) {
     val stops: List<TransitStop> by lazy(LazyThreadSafetyMode.NONE) {
         val netStops = network?.stops

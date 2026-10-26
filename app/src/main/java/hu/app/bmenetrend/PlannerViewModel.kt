@@ -45,11 +45,11 @@ class PlannerViewModel internal constructor(
     private var indexJob: Job? = null
     private var location: GeoPoint? = null
 
-    fun updateStops(stops: List<TransitStop>) {
-        stopCatalogue = stops
+    fun updateStops(stops: List<TransitStop>, national: List<TransitStop> = emptyList()) {
+        stopCatalogue = if (national.isEmpty()) stops else stops + national
         indexJob?.cancel()
         indexJob = viewModelScope.launch {
-            index = withContext(Dispatchers.Default) { TransitSearch.indexStops(stops) }
+            index = withContext(Dispatchers.Default) { TransitSearch.indexStops(stops, national) }
             if (state.value.editing != null) search(state.value.query)
         }
     }

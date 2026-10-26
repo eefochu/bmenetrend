@@ -19,7 +19,6 @@ import androidx.compose.ui.unit.dp
 import hu.app.bmenetrend.R
 import hu.app.bmenetrend.data.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 internal enum class SearchCategory(val title: Int) {
@@ -27,13 +26,10 @@ internal enum class SearchCategory(val title: Int) {
 }
 
 @Immutable
-private data class SearchMatches(
-    val query: String = "",
-    val category: SearchCategory = SearchCategory.ALL,
-    val routes: List<TransitRoute> = emptyList(),
-    val stops: List<TransitStop> = emptyList(),
-    val vehicles: List<Vehicle> = emptyList(),
-)
+private data class SearchMatches<T>(val query: String = "", val items: List<T> = emptyList())
+
+private suspend fun buildSearchStopIndex(local: List<TransitStop>, national: List<TransitStop>): List<TransitSearch.StopEntry> =
+    withContext(Dispatchers.Default) { TransitSearch.indexStops(local, national) }
 
 @Composable
 internal fun CategorizedSearch(
@@ -46,26 +42,31 @@ internal fun CategorizedSearch(
     onVehicle: (String) -> Unit,
     onPlace: (PlaceResult) -> Unit,
     onSearchPlaces: (String, Boolean) -> Unit,
+    buildStopIndex: suspend (List<TransitStop>, List<TransitStop>) -> List<TransitSearch.StopEntry> = ::buildSearchStopIndex,
 ) {
     val parsed = remember(query) { TransitSearch.query(query) }
     val searchPlaces = category == SearchCategory.ALL || category == SearchCategory.PLACES
-    val stopIndex by produceState(TransitSearch.getCachedStopIndex(state.stops), state.network?.stops, state.emmaStops) {
-        value = withContext(Dispatchers.Default) { TransitSearch.indexStops(state.stops) }
+    val localStops = state.network?.stops.orEmpty()
+    val nationalStops = state.emmaStops
+    val routes = remember(state.network?.routes, state.emmaRoutes) { state.routes }
+    val stopIndex by produceState(TransitSearch.getCachedStopIndex(localStops, nationalStops), localStops, nationalStops) {
+        value = buildStopIndex(localStops, nationalStops)
     }
-    val matches by produceState(SearchMatches(), query, category, stopIndex, state.network?.routes, state.emmaRoutes, state.vehicles, state.favorites) {
-        if (query.isBlank()) {
-            value = SearchMatches(query, category)
-            return@produceState
+    // Query results belong to their data source, not to the selected tab. Stop
+    // indexing and live vehicle updates must not hold up or restart line matching.
+    val routeMatches by produceState(SearchMatches<TransitRoute>(), parsed, routes) {
+        value = if (parsed.text.isBlank()) SearchMatches(parsed.text) else withContext(Dispatchers.Default) {
+            SearchMatches(parsed.text, TransitSearch.routes(routes, parsed))
         }
-        delay(80)
-        value = withContext(Dispatchers.Default) {
-            SearchMatches(
-                query,
-                category,
-                if (category == SearchCategory.ALL || category == SearchCategory.VEHICLES) TransitSearch.routes(state.routes, parsed) else emptyList(),
-                if (category == SearchCategory.ALL || category == SearchCategory.STATIONS) TransitSearch.stops(stopIndex.orEmpty(), parsed, state.userLocation, state.favorites) else emptyList(),
-                if (category == SearchCategory.ALL || category == SearchCategory.VEHICLES) TransitSearch.vehicles(state.vehicles, parsed) else emptyList(),
-            )
+    }
+    val vehicleMatches by produceState(SearchMatches<Vehicle>(), parsed, state.vehicles) {
+        value = if (parsed.text.isBlank()) SearchMatches(parsed.text) else withContext(Dispatchers.Default) {
+            SearchMatches(parsed.text, TransitSearch.vehicles(state.vehicles, parsed))
+        }
+    }
+    val stopMatches by produceState(SearchMatches<TransitStop>(), parsed, stopIndex, state.userLocation, state.favorites) {
+        value = if (parsed.text.isBlank() || stopIndex == null) SearchMatches(parsed.text) else withContext(Dispatchers.Default) {
+            SearchMatches(parsed.text, TransitSearch.stops(stopIndex.orEmpty(), parsed, state.userLocation, state.favorites))
         }
     }
     LaunchedEffect(query, searchPlaces) { onSearchPlaces(query, searchPlaces) }
@@ -74,8 +75,12 @@ internal fun CategorizedSearch(
     val listState = rememberLazyListState()
     LaunchedEffect(query, category) { listState.scrollToItem(0) }
     val places = if (state.placeQuery == query) state.placeResults else emptyList()
-    val local = if (matches.query == query && matches.category == category) matches else SearchMatches()
-    val localLoading = matches.query != query || matches.category != category || stopIndex == null
+    val matchingRoutes = if (routeMatches.query == parsed.text) routeMatches.items else emptyList()
+    val matchingVehicles = if (vehicleMatches.query == parsed.text) vehicleMatches.items else emptyList()
+    val matchingStops = if (stopMatches.query == parsed.text) stopMatches.items else emptyList()
+    val stopsLoading = stopMatches.query != parsed.text || stopIndex == null
+    val routesLoading = routeMatches.query != parsed.text
+    val vehiclesLoading = vehicleMatches.query != parsed.text
     val placeLoading = searchPlaces && query.trim().length >= 2 && (state.placeQuery != query || state.placesLoading)
     val limit = if (category == SearchCategory.ALL) 3 else 100
     val uri = LocalUriHandler.current
@@ -124,16 +129,19 @@ internal fun CategorizedSearch(
                 }
             }
             if (category == SearchCategory.ALL || category == SearchCategory.STATIONS) {
-                item(contentType = "section_header") { SearchSectionHeader(SearchCategory.STATIONS, local.stops.size > 3 && category == SearchCategory.ALL) { onCategoryChanged(SearchCategory.STATIONS) } }
-                if (localLoading || !state.stopIndexLoaded && state.stopStatus == null) item(contentType = "progress") { LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = 22.dp)) }
+                item(contentType = "section_header") { SearchSectionHeader(SearchCategory.STATIONS, matchingStops.size > 3 && category == SearchCategory.ALL) { onCategoryChanged(SearchCategory.STATIONS) } }
+                if (stopsLoading || matchingStops.isEmpty() && !state.stopIndexLoaded && state.stopStatus == null) item(contentType = "progress") { LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = 22.dp)) }
                 state.stopStatus?.let { status -> item(contentType = "status") { Text(status, Modifier.padding(horizontal = 22.dp, vertical = 8.dp), style = MaterialTheme.typography.bodyMedium) } }
-                items(local.stops.take(limit), key = { "station-${it.id}" }, contentType = { "station" }) { stop -> StopSearchRow(stop, state, stop.id in state.favorites, onStop) }
-                if (!localLoading && state.stopIndexLoaded && local.stops.isEmpty()) item(contentType = "empty") { SearchEmpty() }
+                items(matchingStops.take(limit), key = { "station-${it.id}" }, contentType = { "station" }) { stop -> StopSearchRow(stop, state, stop.id in state.favorites, onStop) }
+                if (!stopsLoading && state.stopIndexLoaded && matchingStops.isEmpty()) item(contentType = "empty") { SearchEmpty() }
             }
             if (category == SearchCategory.ALL || category == SearchCategory.VEHICLES) {
-                item(contentType = "section_header") { SearchSectionHeader(SearchCategory.VEHICLES, local.routes.size + local.vehicles.size > 3 && category == SearchCategory.ALL) { onCategoryChanged(SearchCategory.VEHICLES) } }
-                if (localLoading) item(contentType = "progress") { LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = 22.dp)) }
-                items(local.routes.take(limit), key = { "line-${it.id}" }, contentType = { "route" }) { route ->
+                item(contentType = "section_header") { SearchSectionHeader(SearchCategory.VEHICLES, matchingRoutes.size + matchingVehicles.size > 3 && category == SearchCategory.ALL) { onCategoryChanged(SearchCategory.VEHICLES) } }
+                if (routesLoading || vehiclesLoading || matchingRoutes.isEmpty() && matchingVehicles.isEmpty() && state.lineCatalogueLoading) item(contentType = "progress") { LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = 22.dp)) }
+                state.lineCatalogueStatus?.let { status -> item(contentType = "status") {
+                    Text(status, Modifier.padding(horizontal = 22.dp, vertical = 8.dp), style = MaterialTheme.typography.bodyMedium)
+                } }
+                items(matchingRoutes.take(limit), key = { "line-${it.id}" }, contentType = { "route" }) { route ->
                     Row(
                         Modifier.fillMaxWidth().clickable { onRoute(route.id) }.padding(horizontal = 22.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -153,11 +161,11 @@ internal fun CategorizedSearch(
                         SearchArrow()
                     }
                 }
-                val vehicleLimit = if (category == SearchCategory.ALL) (3 - local.routes.size).coerceAtLeast(0) else 100
-                if (category == SearchCategory.VEHICLES && local.vehicles.isNotEmpty()) item(contentType = "header") {
+                val vehicleLimit = if (category == SearchCategory.ALL) (3 - matchingRoutes.size).coerceAtLeast(0) else 100
+                if (category == SearchCategory.VEHICLES && matchingVehicles.isNotEmpty()) item(contentType = "header") {
                     Text(stringResource(R.string.search_live_vehicles), Modifier.padding(horizontal = 22.dp, vertical = 12.dp), style = MaterialTheme.typography.titleSmall)
                 }
-                items(local.vehicles.take(vehicleLimit), key = { "vehicle-${it.id}" }, contentType = { "vehicle" }) { vehicle ->
+                items(matchingVehicles.take(vehicleLimit), key = { "vehicle-${it.id}" }, contentType = { "vehicle" }) { vehicle ->
                     Row(
                         Modifier.fillMaxWidth().clickable { onVehicle(vehicle.id) }.padding(horizontal = 22.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -172,9 +180,9 @@ internal fun CategorizedSearch(
                         SearchArrow()
                     }
                 }
-                if (!localLoading && local.routes.isEmpty() && local.vehicles.isEmpty()) item(contentType = "empty") { SearchEmpty() }
+                if (!routesLoading && !vehiclesLoading && !state.lineCatalogueLoading && matchingRoutes.isEmpty() && matchingVehicles.isEmpty()) item(contentType = "empty") { SearchEmpty() }
             }
-            if (category != SearchCategory.ALL && (local.routes.size >= 100 || local.stops.size >= 100 || local.vehicles.size >= 100)) item(contentType = "refine") {
+            if (category != SearchCategory.ALL && (matchingRoutes.size >= 100 || matchingStops.size >= 100 || matchingVehicles.size >= 100)) item(contentType = "refine") {
                 Text(stringResource(R.string.search_refine), Modifier.padding(22.dp), style = MaterialTheme.typography.bodySmall)
             }
         }

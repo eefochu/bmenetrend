@@ -148,22 +148,18 @@ object TransitSearch {
             .toList()
     }
 
-    @Volatile
-    private var lastStopsRef: List<TransitStop>? = null
-    @Volatile
-    private var cachedStopIndex: List<StopEntry>? = null
+    private data class StopIndex(
+        val local: List<TransitStop>, val national: List<TransitStop>, val entries: List<StopEntry>,
+    )
+    @Volatile private var cachedStops: StopIndex? = null
 
-    fun getCachedStopIndex(stops: List<TransitStop>): List<StopEntry>? {
-        val cached = cachedStopIndex
-        return if (cached != null && stops === lastStopsRef) cached else null
-    }
+    fun getCachedStopIndex(stops: List<TransitStop>, national: List<TransitStop> = emptyList()): List<StopEntry>? =
+        cachedStops?.takeIf { it.local === stops && it.national === national }?.entries
 
-    fun indexStops(stops: List<TransitStop>): List<StopEntry> {
-        val cached = cachedStopIndex
-        if (cached != null && stops === lastStopsRef) {
-            return cached
-        }
-        val consolidated = StopClusters.consolidateForSearch(stops)
+    fun indexStops(stops: List<TransitStop>, national: List<TransitStop> = emptyList()): List<StopEntry> {
+        getCachedStopIndex(stops, national)?.let { return it }
+        val combined = if (national.isEmpty()) stops else if (stops.isEmpty()) national else stops + national
+        val consolidated = StopClusters.consolidateForSearch(combined)
         val indexed = consolidated.map { stop ->
             val multiTokens = if (stop.isMultiStop) "tobbmegallo tobb megallo multiple stations multiplestations" else ""
             StopEntry(
@@ -173,8 +169,7 @@ object TransitSearch {
                 isMultiStop = stop.isMultiStop,
             )
         }
-        lastStopsRef = stops
-        cachedStopIndex = indexed
+        cachedStops = StopIndex(stops, national, indexed)
         return indexed
     }
 

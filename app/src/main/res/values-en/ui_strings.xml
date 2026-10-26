@@ -84,6 +84,21 @@
     <string name="ui_homm_schedule_only">HOMM timetable · no live data</string>
     <string name="ui_collapse_departures">Collapse departures</string>
 
+    <!-- Offline timetable strings -->
+    <string name="ui_download_timetable">Download timetable for offline use</string>
+    <string name="ui_timetable_downloaded">Offline timetable saved</string>
+    <string name="ui_timetable_downloading">Downloading timetable…</string>
+    <string name="ui_offline_timetable_active">Offline saved timetable</string>
+    <string name="ui_offline_timetable_info">%1$s · %2$d departures · %3$s</string>
+    <string name="ui_delete_timetable">Delete offline timetable</string>
+    <string name="ui_update_timetable">Update timetable</string>
+    <string name="ui_timetable_download_success">Timetable downloaded (%1$s, %2$d departures)</string>
+    <string name="ui_timetable_download_failed">Failed to download timetable</string>
+    <string name="ui_downloaded_timetables">Downloaded timetables</string>
+    <string name="ui_clear_all_timetables">Clear all downloaded timetables</string>
+    <string name="ui_no_downloaded_timetables">No downloaded timetables</string>
+    <string name="ui_offline_dialog_details">Saved: %1$s\nSize: %2$s\nScheduled departures (24h): %3$d</string>
+
     <!-- OTA and About strings -->
     <string name="ota_about_title">About</string>
     <string name="ota_about_app_description">BMenetrend is an open, modern public transit schedule and live vehicle tracker. Track MÁV rail trains, HÉV, Volánbusz, BKK lines (bus, tram, trolley, metro), as well as local ViaBusz, KanyarGO and HOMM departures and vehicle locations in real time.</string>

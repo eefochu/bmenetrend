@@ -11,18 +11,23 @@ import java.time.Instant
 import java.time.Duration
 
 /** The static catalogue makes lines searchable even when no vehicle is currently tracked. */
-class EmmaLinesRepository(context: Context) {
-    private val graphql = EmmaGraphqlClient()
+class EmmaLinesRepository(context: Context, private val graphql: EmmaGraphqlClient = EmmaGraphqlClient()) {
     private val file = File(context.filesDir, "emma-lines-v1.json")
     private val mutex = Mutex()
     data class Catalogue(val routes: List<TransitRoute>, val fetchedAt: Instant, val stale: Boolean = false)
     private var memory: Catalogue? = null
-    suspend fun get(): Catalogue = mutex.withLock {
+    suspend fun get(onCached: (Catalogue) -> Unit = {}): Catalogue = mutex.withLock {
         val now = Instant.now()
         val saved = memory ?: withContext(Dispatchers.IO) { runCatching {
             if (file.isFile) Catalogue(EmmaRouteParser.catalogue(file.readText()), Instant.ofEpochMilli(file.lastModified())) else null
         }.getOrNull() }
-        if (saved != null && Duration.between(saved.fetchedAt, now).seconds in 0..86_399) return@withLock saved.also { memory = it }
+        if (saved != null) {
+            val fresh = Duration.between(saved.fetchedAt, now).seconds in 0..86_399
+            val available = saved.copy(stale = !fresh)
+            memory = available
+            onCached(available)
+            if (fresh) return@withLock available
+        }
         try {
             val text = graphql.execute(EmmaRouteParser.CATALOGUE_QUERY)
             val routes = withContext(Dispatchers.Default) { EmmaRouteParser.catalogue(text) }
