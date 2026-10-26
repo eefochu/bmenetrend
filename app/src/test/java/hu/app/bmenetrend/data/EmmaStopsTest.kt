@@ -22,6 +22,18 @@ class EmmaStopsTest {
         .put("routes", JSONArray().put(route())).put("stoptimesWithoutPatterns", JSONArray(times.toList())))).toString()
     private fun index(vararg rows: JSONObject) = JSONObject().put("data", JSONObject().put("stops", JSONArray(rows.toList()))).toString()
 
+    @Test fun servingLinesIncludesEveryCatalogueRouteWithoutDepartureOrDateFields() {
+        val weekend=route().put("gtfsId","hkir:weekend").put("shortName","761")
+        val row=stop().put("routes",JSONArray().put(route()).put(weekend))
+        val text=JSONObject().put("data",JSONObject().put("stop",row)).toString()
+        val catalogue=EmmaStopsParser.servingLines(text,id)
+        assertEquals(listOf("760","761"),catalogue.routes.map { it.number })
+        assertEquals(catalogue.routes.map { it.id },catalogue.stops.single().routeIds)
+        assertFalse(EmmaStopsParser.LINES_QUERY.contains("stoptimes"))
+        assertFalse(EmmaStopsParser.LINES_QUERY.contains("date"))
+        assertTrue(runCatching { EmmaStopsParser.servingLines(text,"emma:hkir:other") }.isFailure)
+    }
+
     @Test fun streamsNationalIndexWithDistinctPlatformsAndSourceNamespaces() {
         val parsed = EmmaStopsParser.index(index(stop(), stop("hkir:platform2"), stop("BKK:platform1"), stop("1:rail"), stop("hkir:invalid").put("lat", 0)))
         assertEquals(listOf(id, "emma:hkir:platform2", "emma:BKK:platform1"), parsed.stops.map { it.id })

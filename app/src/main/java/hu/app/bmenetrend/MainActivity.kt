@@ -108,7 +108,6 @@ class MainActivity : ComponentActivity() {
                         onStopRoute = { stopId, routeId -> model.selectStopRoute(stopId, routeId); tab = MainTab.MAP },
                         onRemove = model::toggleFavorite,
                         onRefresh = model::refreshFavorites,
-                        onWindow = model::setWindow,
                         onVisible = model::setVisibleFavorites
                     )
                 }, map = {

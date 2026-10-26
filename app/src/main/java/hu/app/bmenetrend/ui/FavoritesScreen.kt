@@ -72,9 +72,8 @@ internal fun isTrainRoute(route: TransitRoute): Boolean {
 
 internal fun extractStationLines(station: NearbyStation, state: UiState): StationLines {
     val allPlatformRouteIds = (station.platforms.flatMap { it.routeIds } + station.stop.routeIds).distinct()
-    val departureRouteIds = station.departures.map { it.routeId }.distinct()
-    // Only explicit station/platform membership; nearby same-name platforms have their own lines.
-    val allRouteIds = (allPlatformRouteIds + departureRouteIds).distinct()
+    // The complete station catalogue is independent of today's departures and time window.
+    val allRouteIds = allPlatformRouteIds
 
     val rawTrainBadges = mutableListOf<StationBadgeItem>()
     val rawOtherBadges = mutableListOf<StationBadgeItem>()
@@ -95,18 +94,7 @@ internal fun extractStationLines(station: NearbyStation, state: UiState): Statio
         }
     }
 
-    // 2. From departures (covers ad-hoc trips, EMMA train departures, etc.)
-    for (dep in station.departures) {
-        val route = state.findRoute(dep.routeId)
-        val isTrain = if (route != null) isTrainRoute(route) else RailSupport.isTrainDeparture(dep.routeNumber, dep.serviceName)
-        val label = if (isTrain) RailSupport.canonicalBadge(route?.number ?: dep.routeNumber, dep.serviceName)
-                    else route?.number ?: dep.routeNumber.ifBlank { dep.routeId.substringAfter(":") }
-        val provider = route?.providerId ?: if (isTrain) "mav" else "volan"
-        val mode = route?.transportMode ?: if (isTrain) "RAIL" else "BUS"
-        addBadge(dep.routeId, label, isTrain, provider, mode, route?.color)
-    }
-
-    // 3. Deduplicate by label (so there is only one Gy, one S, one Sz, one IC, one IR, one S10, etc.)
+    // Deduplicate by label (so there is only one Gy, one S, one Sz, one IC, one IR, one S10, etc.)
     // and sort naturally (EC, EN, Ex, G10, G40, G43, G44, IC, IR, S, S10, S12, S30, S36, S40, S42, Sz, Z30, rjx)
     val trainBadges = rawTrainBadges
         .distinctBy { it.label }
@@ -192,12 +180,10 @@ fun FavoritesScreen(
     onStopRoute: (String, String) -> Unit = { _, _ -> },
     onRemove: (String) -> Unit,
     onRefresh: () -> Unit,
-    onWindow: (Int) -> Unit,
     onVisible: (Set<String>) -> Unit
 ) {
     val listState = rememberLazyListState()
     val visibleAction by rememberUpdatedState(onVisible)
-    var windowMenu by remember { mutableStateOf(false) }
     LaunchedEffect(listState) {
         snapshotFlow { listState.layoutInfo.visibleItemsInfo.mapNotNull { (it.key as? String)?.takeIf { key -> key.startsWith("favorite:") }?.removePrefix("favorite:") }.toSet() }
             .distinctUntilChanged().collect { visibleAction(it) }
@@ -206,20 +192,8 @@ fun FavoritesScreen(
         Box(Modifier.padding(horizontal=20.dp,vertical=20.dp)) {
             TransitPageIntro(stringResource(R.string.favorites_title),null) {
                 FilledTonalIconButton(onClick=onRefresh,shape=TransitDesign.controlShape) {
-                    Icon(Icons.Rounded.Refresh,stringResource(R.string.ui_refresh_departures))
+                    Icon(Icons.Rounded.Refresh,stringResource(R.string.favorites_refresh_lines))
                 }
-            }
-        }
-        Box(Modifier.padding(horizontal = 20.dp)) {
-            OutlinedButton(onClick = { windowMenu = true }) {
-                Icon(Icons.Rounded.Schedule, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.favorites_window, compactDuration(state.windowMinutes)))
-                Icon(Icons.Rounded.ExpandMore, null)
-            }
-            DropdownMenu(windowMenu, onDismissRequest = { windowMenu = false }) {
-                DepartureTime.windows.forEach { minutes -> DropdownMenuItem(text = { Text(compactDuration(minutes)) },
-                    onClick = { onWindow(minutes); windowMenu = false },
-                    trailingIcon = { if (state.windowMinutes == minutes) Icon(Icons.Rounded.Check, null) }) }
             }
         }
         Box(Modifier.fillMaxWidth().height(8.dp).padding(horizontal = 20.dp)) {
@@ -238,7 +212,7 @@ fun FavoritesScreen(
                 }
             }
             items(state.favoriteStations, key = { "favorite:${it.stop.id}" }, contentType = { "station" }) { station ->
-                val lines = remember(station.stop.id, station.platforms, station.departures, state.stops, state.routes) {
+                val lines = remember(station.stop, station.platforms, state.routes) {
                     extractStationLines(station, state)
                 }
                 Surface(shape = TransitDesign.panelShape, color = MaterialTheme.colorScheme.surfaceContainerLowest,
@@ -283,7 +257,7 @@ fun FavoritesScreen(
 
                         if (lines.trainBadges.isEmpty() && lines.otherBadges.isEmpty() && !station.loading) {
                             Text(
-                                stringResource(if (station.unavailable) R.string.nearby_unavailable else R.string.favorites_no_lines),
+                                stringResource(if (station.unavailable) R.string.favorites_lines_unavailable else R.string.favorites_no_lines),
                                 Modifier.padding(16.dp),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -291,7 +265,7 @@ fun FavoritesScreen(
                         }
                         if (station.unavailable && (lines.trainBadges.isNotEmpty() || lines.otherBadges.isNotEmpty())) {
                             Text(
-                                stringResource(R.string.nearby_partial),
+                                stringResource(R.string.favorites_lines_stale),
                                 Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant

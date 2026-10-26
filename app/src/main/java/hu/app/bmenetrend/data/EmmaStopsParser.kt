@@ -15,6 +15,7 @@ object EmmaStopsParser {
         stopsByBbox(minLat:${'$'}south,minLon:${'$'}west,maxLat:${'$'}north,maxLon:${'$'}east) { $STOP_FIELDS }
     }""".trimIndent()
     val SEARCH_QUERY = """query FindStops(${'$'}name: String!) { stops(name:${'$'}name) { $STOP_FIELDS } }"""
+    val LINES_QUERY = """query StopLines(${'$'}id:String!) { stop(id:${'$'}id) { $STOP_FIELDS } }"""
     val BOARD_FIELDS = """$STOP_FIELDS
         stoptimesForPatterns(startTime:${'$'}start,timeRange:${'$'}range,numberOfDepartures:$BOARD_LIMIT,omitNonPickups:true) {
             pattern { code headsign }
@@ -129,6 +130,15 @@ object EmmaStopsParser {
     }
     fun area(text: String) = stops(EmmaGraphqlClient.data(text).getJSONArray("stopsByBbox"))
     fun search(text: String) = stops(EmmaGraphqlClient.data(text).getJSONArray("stops"))
+    /** All routes attached to the exact source stop, without a date or departure-time filter. */
+    fun servingLines(text: String,expectedId: String): Catalogue {
+        val row=EmmaGraphqlClient.data(text).getJSONObject("stop")
+        require(row.getString("gtfsId")==sourceId(expectedId)) { "Wrong stop returned" }
+        val parsed=stops(JSONArray().put(row))
+        val stop=parsed.stops.singleOrNull()?.takeIf { it.id==expectedId } ?: error("Unsupported stop")
+        val routes=parsed.routes.filter { it.providerId==stop.providerId && StopBoardScope.acceptsMode(stop.transportMode,it.transportMode) }
+        return Catalogue(listOf(stop.copy(routeIds=routes.map { it.id })),routes)
+    }
     fun board(text: String, expectedId: String, now: Instant, windowMinutes: Int): Board {
         val row = EmmaGraphqlClient.data(text).getJSONObject("stop")
         return boardRow(row, expectedId, now, windowMinutes)

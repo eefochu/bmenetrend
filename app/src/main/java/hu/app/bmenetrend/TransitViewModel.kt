@@ -108,10 +108,9 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private var favoriteJob: Job? = null
     private var favoriteGeneration = 0
     private var favoriteKey = emptyList<String>()
-    private var favoriteWindow = 0
     private var favoriteLoading = false
     private var favoriteFailures = emptySet<String>()
-    private val favoriteBoards = linkedMapOf<String, EmmaStopsParser.Board>()
+    private val favoriteLines = linkedMapOf<String, EmmaStopsRepository.Lines>()
     private var liveError = false
 
     init {
@@ -121,13 +120,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     /** Owned by the activity's STARTED lifecycle; all polling stops in the background. */
     suspend fun observe() = coroutineScope {
         nearbyActive = true
-        if (favoritesVisible) ensureFavoriteRequest(force = true)
-        launch {
-            while (isActive) {
-                if (favoritesVisible) ensureFavoriteRequest(force = true)
-                delay(20_000)
-            }
-        }
+        if (favoritesVisible) ensureFavoriteRequest()
         launch {
             while (isActive) {
                 if (mapVisible) ensureNearbyRequest(force = true)
@@ -208,7 +201,10 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             favoriteSelectionIds = current.favorites
             favoriteSelection = FavoriteDepartures.stations(current.favorites, current.stops)
         }
-        return favoriteSelection
+        return favoriteSelection.map { station ->
+            val catalogued=favoriteLines[station.stop.id]?.catalogue?.stops?.singleOrNull()
+            if(catalogued==null) station else station.copy(stop=catalogued,platforms=listOf(catalogued))
+        }
     }
 
     private suspend fun fetchBoards(stops: List<TransitStop>, window: Int, cache: Map<String, EmmaStopsParser.Board>, force: Boolean,
@@ -233,13 +229,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         val stations = favoriteStations(current).let { all ->
             all.filter { it.stop.id in visibleFavorites }.ifEmpty { all.take(3) }.take(8)
         }
-        val window = current.windowMinutes
-        val key = stations.flatMap { it.platforms }.map { it.id }.sorted() + window.toString()
+        val key = stations.map { it.stop.id }.sorted()+LocalDate.now(budapest).toString()
         if (!force && key == favoriteKey && favoriteJob?.isCancelled != true) return
-        if (favoriteWindow != window) { favoriteBoards.clear(); favoriteWindow = window }
-        if (nearbyWindow == window) nearbyBoards.forEach { (id, board) ->
-            if (Duration.between(board.fetchedAt, Instant.now()).seconds in 0..29) favoriteBoards[id] = board
-        }
         favoriteKey = key
         val generation = ++favoriteGeneration
         favoriteJob?.cancel()
@@ -251,12 +242,21 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             try {
                 coroutineScope {
                     stations.map { station -> async {
-                        val results = fetchBoards(station.platforms, window, favoriteBoards, force, semaphore)
-                        if (generation == favoriteGeneration) {
-                            results.forEach { (id, result) -> if (result == null) favoriteFailures += id else favoriteBoards[id] = result }
-                            while (favoriteBoards.size > 64) favoriteBoards.remove(favoriteBoards.keys.first())
-                            stopRoutes = (results.flatMap { it.second?.catalogue?.routes.orEmpty() } + stopRoutes).distinctBy { it.id }
-                            recalculate()
+                        val id=station.stop.id
+                        if(id.startsWith("emma:")) {
+                            semaphore.acquire()
+                            try {
+                                val result=stopsRepository.servingLines(id,force)
+                                if(generation==favoriteGeneration) {
+                                    favoriteLines[id]=result
+                                    while(favoriteLines.size>64) favoriteLines.remove(favoriteLines.keys.first())
+                                    if(result.stale) favoriteFailures+=id
+                                    stopRoutes=(result.catalogue.routes+stopRoutes).distinctBy { it.id }
+                                    recalculate()
+                                }
+                            } catch(cancelled: CancellationException) { throw cancelled
+                            } catch(_: Exception) { if(generation==favoriteGeneration) { favoriteFailures+=id;recalculate() } }
+                            finally { semaphore.release() }
                         }
                     } }.awaitAll()
                 }
@@ -390,14 +390,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             current.copy(
                 now = now,
                 favoriteStations = if (!favoritesVisible) current.favoriteStations else favoriteStations(current).map { station ->
-                    val rows = station.platforms.flatMap { platform ->
-                        if (platform.id.startsWith("emma:")) EmmaStopsParser.freshDepartures(favoriteBoards[platform.id], platform.id, now, current.windowMinutes)
-                        else current.network?.let { repository.departures(it, snapshot, platform.id, now, current.windowMinutes) }.orEmpty()
-                    }.distinctBy { listOf(it.routeId, it.directionId, it.expectedAt) }.sortedBy { it.expectedAt }
-                    station.copy(departures = rows,
-                        loading = favoriteLoading && (station.stop.id in visibleFavorites || visibleFavorites.isEmpty()),
-                        unavailable = !favoriteLoading && station.platforms.any { it.id in favoriteFailures ||
-                            it.id.startsWith("emma:") && favoriteBoards[it.id]?.let { board -> Duration.between(board.fetchedAt, now).seconds !in 0..60 } != false })
+                    station.copy(loading=favoriteLoading && (station.stop.id in visibleFavorites || visibleFavorites.isEmpty()),
+                        unavailable=station.stop.id in favoriteFailures || !favoriteLoading && station.stop.id.startsWith("emma:") && station.stop.id !in favoriteLines)
                 },
                 favoritesLoading = favoriteLoading || !current.stopIndexLoaded && !stopIndexFailed && current.favorites.any { it.startsWith("emma:") },
                 nearbyStations = nearbySelection.mapNotNull { station ->
@@ -895,7 +889,6 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         recalculate()
         ensureBoardRequest()
         ensureNearbyRequest(force = true)
-        ensureFavoriteRequest(force = true)
     }
     fun toggleFavorite(id: String) {
         val canonicalId = SharedStops.canonicalId(id)

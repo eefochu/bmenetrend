@@ -44,3 +44,11 @@ A shared timetable row is used by stop and nearby boards only. Times occupy a di
 - Animator duration scale zero was used during the large-text navigation check; no animation is needed to complete an action. Settings were restored afterward. This was emulator verification, not a physical-device accessibility certification or a new performance benchmark.
 
 Material 3 Expressive describes the visual direction here. The implementation uses the Compose and Material 3 1.3.2 APIs already configured by the project, with custom theme tokens and composables; the dependency versions remain unchanged.
+
+## Favourites serving-line catalogue
+
+Favourites is a station directory, not a list of upcoming departures. EMMA stations now fetch their exact source stop's `routes` catalogue without date, departure time or pickup-window arguments. Local stations use their complete network route membership. Badges come only from those catalogues; current departures, nearby same-name stations and opening other station boards cannot add or remove badges. Category deduplication, service colours and badge → departure-board navigation remain intact.
+
+The favourites time selector and its callback have been removed. Favourites no longer polls departure boards or refreshes when the map's departure window changes. Static catalogues use a daily memory/disk cache, support explicit refresh and retain the last known list if refresh fails. Time controls remain on actual departure boards.
+
+Verification: all 304 tests pass, lint has zero errors (90 warnings), and optimized release/debug APKs build. The live API returned G10, S10, S12 and two Sz routes for Biatorbágy; these appear as four deduplicated badges without opening the station first. An emulator check confirmed the same four badges remain after changing the separate departure board to 30 minutes, with no favourites time selector present.

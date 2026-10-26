@@ -51,6 +51,36 @@ class EmmaStopsRepository(context: Context) {
         }
     }
 
+    data class Lines(val catalogue: EmmaStopsParser.Catalogue,val fetchedAt: Instant,val stale: Boolean=false)
+    private val lineMemory=linkedMapOf<String,Lines>()
+    private val linesMutex=Mutex()
+    private val linesDirectory=File(context.filesDir,"emma-station-lines-v1")
+
+    /** Static serving routes have a daily cache and never depend on the selected departure window. */
+    suspend fun servingLines(stopId: String,force: Boolean=false): Lines = linesMutex.withLock {
+        val now=Instant.now()
+        val key=java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(stopId.toByteArray(Charsets.UTF_8))
+        val cache=File(linesDirectory,"$key.json")
+        val saved=lineMemory[stopId] ?: withContext(Dispatchers.IO) {
+            runCatching { if(cache.isFile) Lines(EmmaStopsParser.servingLines(cache.readText(),stopId),Instant.ofEpochMilli(cache.lastModified())) else null }.getOrNull()
+        }
+        if(!force && saved!=null && Duration.between(saved.fetchedAt,now).seconds in 0..86_399) return@withLock saved
+        try {
+            val text=graphql.execute(EmmaStopsParser.LINES_QUERY,org.json.JSONObject().put("id",EmmaStopsParser.sourceId(stopId)))
+            val result=withContext(Dispatchers.Default) { Lines(EmmaStopsParser.servingLines(text,stopId),now) }
+            lineMemory[stopId]=result
+            while(lineMemory.size>64) lineMemory.remove(lineMemory.keys.first())
+            withContext(Dispatchers.IO) { runCatching {
+                linesDirectory.mkdirs()
+                val temporary=File(linesDirectory,"$key.tmp")
+                temporary.writeText(text)
+                if(!temporary.renameTo(cache)) temporary.delete()
+            } }
+            result
+        } catch(cancelled: CancellationException) { throw cancelled
+        } catch(error: Exception) { saved?.copy(stale=true) ?: throw error }
+    }
+
     suspend fun board(stopId: String, windowMinutes: Int): EmmaStopsParser.Board {
         val now = Instant.now()
         val variables = org.json.JSONObject().put("id", EmmaStopsParser.sourceId(stopId))

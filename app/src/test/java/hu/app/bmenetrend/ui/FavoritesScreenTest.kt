@@ -93,6 +93,18 @@ class FavoritesScreenTest {
     }
 
     @Test
+    fun allStationLinesRemainVisibleWithoutDeparturesAndAcrossTimeWindows() {
+        val noServicesToday=nearbyStation.copy(departures=emptyList())
+        val small=extractStationLines(noServicesToday,uiState.copy(windowMinutes=30))
+        val large=extractStationLines(noServicesToday,uiState.copy(windowMinutes=300))
+        assertEquals(listOf("IC","S10"),small.trainBadges.map { it.label })
+        assertEquals(listOf("762"),small.otherBadges.map { it.label })
+        assertEquals(small,large)
+        val incidental=dep1.copy(routeId="mav:incidental",routeNumber="IR",serviceName="InterRégió")
+        assertEquals(small,extractStationLines(noServicesToday.copy(departures=listOf(incidental)),uiState))
+    }
+
+    @Test
     fun extractStationLinesDeduplicatesBadgesAndCategorizesCorrectly() {
         val lines = extractStationLines(nearbyStation, uiState)
 
@@ -151,11 +163,12 @@ class FavoritesScreenTest {
                     },
                     onRemove = {},
                     onRefresh = {},
-                    onWindow = {},
                     onVisible = {}
                 )
             }
         }
+
+        compose.onNodeWithText(app.getString(R.string.favorites_window,DepartureTime.compact(uiState.windowMinutes,true))).assertDoesNotExist()
 
         // Check station name header is displayed
         compose.onNodeWithText("Budapest-Kelenföld").assertIsDisplayed()
