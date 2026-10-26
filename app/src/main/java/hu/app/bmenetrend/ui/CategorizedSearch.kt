@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.LocationOn
@@ -81,11 +82,12 @@ internal fun CategorizedSearch(
     Column(Modifier.fillMaxSize()) {
         LazyRow(contentPadding = PaddingValues(horizontal = 18.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(SearchCategory.entries, key = { it.name }, contentType = { "category_chip" }) { section ->
-                FilterChip(selected = category == section, onClick = { onCategoryChanged(section) }, label = { Text(stringResource(section.title)) })
+                FilterChip(selected = category == section, onClick = { onCategoryChanged(section) },shape=TransitDesign.controlShape,
+                    modifier=Modifier.heightIn(min=48.dp),label = { Text(stringResource(section.title)) })
             }
         }
         if (query.isBlank()) {
-            Text(stringResource(R.string.search_start), Modifier.padding(24.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            EmptyState(stringResource(R.string.ui_search_short),stringResource(R.string.search_start),Icons.Rounded.Search)
             return@Column
         }
         LazyColumn(state = listState, contentPadding = PaddingValues(bottom = 32.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())) {

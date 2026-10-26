@@ -133,7 +133,8 @@ private fun StationBadgeGrid(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        badges.chunked(4).forEach { rowBadges ->
+        val columns=if(androidx.compose.ui.platform.LocalDensity.current.fontScale>1.3f) 3 else 4
+        badges.chunked(columns).forEach { rowBadges ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -145,22 +146,21 @@ private fun StationBadgeGrid(
                         railLineColor(badge.label) to railLineTextColor(badge.label)
                     } else {
                         val base = lineColor(badge.provider, badge.mode, badge.sourceColor, badge.label)
-                        val text = if (base.luminance() > .35f) Color(0xFF171B20) else Color.White
+                        val text = badgeTextColor(base)
                         base to text
                     }
 
+                    Box(Modifier.weight(1f).heightIn(min=48.dp).clickable { onBadgeClick(badge.id) },contentAlignment=Alignment.Center) {
                     Surface(
                         shape = RoundedCornerShape(6.dp),
                         color = bgColor,
                         modifier = Modifier
-                            .weight(1f)
-                            .height(28.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .clickable { onBadgeClick(badge.id) }
+                            .fillMaxWidth()
+                            .heightIn(min=28.dp)
                     ) {
                         Box(
                             contentAlignment = Alignment.Center,
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier.padding(vertical=3.dp)
                         ) {
                             Text(
                                 text = badge.label,
@@ -176,8 +176,9 @@ private fun StationBadgeGrid(
                             )
                         }
                     }
+                    }
                 }
-                repeat(4 - rowBadges.size) {
+                repeat(columns - rowBadges.size) {
                     Spacer(modifier = Modifier.weight(1f))
                 }
             }
@@ -203,9 +204,12 @@ fun FavoritesScreen(
             .distinctUntilChanged().collect { visibleAction(it) }
     }
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
-        Row(Modifier.fillMaxWidth().padding(start = 20.dp, top = 16.dp, end = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(stringResource(R.string.favorites_title), Modifier.weight(1f), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            IconButton(onClick = onRefresh) { Icon(Icons.Rounded.Refresh, stringResource(R.string.ui_refresh_departures)) }
+        Box(Modifier.padding(horizontal=20.dp,vertical=20.dp)) {
+            TransitPageIntro(stringResource(R.string.favorites_title),null,Icons.Rounded.Favorite) {
+                FilledTonalIconButton(onClick=onRefresh,shape=TransitDesign.controlShape) {
+                    Icon(Icons.Rounded.Refresh,stringResource(R.string.ui_refresh_departures))
+                }
+            }
         }
         Box(Modifier.padding(horizontal = 20.dp)) {
             OutlinedButton(onClick = { windowMenu = true }) {
@@ -225,7 +229,8 @@ fun FavoritesScreen(
         LazyColumn(Modifier.weight(1f), state = listState, contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
             if (state.favoriteStations.isEmpty()) item(key = "empty", contentType = "notice") {
-                Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceContainerLow) {
+                Surface(shape = TransitDesign.panelShape, color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                    border=androidx.compose.foundation.BorderStroke(1.dp,MaterialTheme.colorScheme.outlineVariant.copy(alpha=.55f))) {
                     Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         Icon(Icons.Rounded.FavoriteBorder, null, Modifier.size(36.dp), tint = MaterialTheme.colorScheme.primary)
                         Text(stringResource(if (state.favorites.isEmpty()) R.string.favorites_empty else if (state.favoritesLoading) R.string.favorites_loading else R.string.favorites_index_unavailable),
@@ -237,7 +242,8 @@ fun FavoritesScreen(
                 val lines = remember(station.stop.id, station.platforms, station.departures, state.stops, state.routes) {
                     extractStationLines(station, state)
                 }
-                Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceContainerLow) {
+                Surface(shape = TransitDesign.panelShape, color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                    border=androidx.compose.foundation.BorderStroke(1.dp,MaterialTheme.colorScheme.outlineVariant.copy(alpha=.55f))) {
                     Column(Modifier.padding(bottom = 12.dp)) {
                         Row(Modifier.padding(start = 16.dp, end = 4.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                             TextButton(onClick = { onStop(station.stop.id) }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(vertical = 8.dp)) {

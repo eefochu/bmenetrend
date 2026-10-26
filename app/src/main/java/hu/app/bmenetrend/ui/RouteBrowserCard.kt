@@ -26,12 +26,12 @@ internal fun RouteBrowserCard(state: UiState,route: TransitRoute,directionId: St
             IconButton(onClick=onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack,stringResource(R.string.ui_back)) }
             LineBadge(route)
             Column(Modifier.weight(1f).padding(start=12.dp)) {
-                Text(serviceTypeLabel(route.providerId,route.transportMode),style=MaterialTheme.typography.titleSmall)
+                Text(serviceTypeLabel(route.providerId,route.transportMode),style=MaterialTheme.typography.titleMedium)
                 Text(providerName(route.providerId),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
             }
             IconButton(onClick=onClose) { Icon(Icons.Rounded.Close,stringResource(R.string.route_close)) }
         }
-        HorizontalDivider()
+        HorizontalDivider(color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=.6f))
         if(route.providerId in setOf("volan","bkk","hev","mav")) {
             EmmaLineBrowser(state,route,directionId,onDirection,onBoard,onRetry,showHeader=false)
         } else {

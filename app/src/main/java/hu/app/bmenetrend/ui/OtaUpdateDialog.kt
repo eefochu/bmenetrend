@@ -31,6 +31,7 @@ fun OtaUpdateDialog(
     val uriHandler = LocalUriHandler.current
 
     AlertDialog(
+        shape=TransitDesign.panelShape,containerColor=MaterialTheme.colorScheme.surfaceContainerLow,
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Rounded.SystemUpdate, null, tint = MaterialTheme.colorScheme.primary) },
         title = {

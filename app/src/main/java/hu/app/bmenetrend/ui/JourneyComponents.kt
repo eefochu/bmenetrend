@@ -36,7 +36,10 @@ import kotlin.math.roundToInt
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun ItineraryCard(trip: TripItinerary, fastest: Boolean, now: Instant, onClick: () -> Unit) {
-    Surface(onClick = onClick, shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceContainerLow) {
+    Surface(onClick=onClick,shape=TransitDesign.panelShape,
+        color=if(fastest) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLowest,
+        contentColor=if(fastest) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+        border=if(fastest) null else androidx.compose.foundation.BorderStroke(1.dp,MaterialTheme.colorScheme.outlineVariant.copy(alpha=.6f))) {
         Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             JourneyBar(trip)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -92,7 +95,7 @@ internal fun JourneyBar(trip: TripItinerary) {
             ClockWithDate(trip.start, trip.start)
             ClockWithDate(trip.end, trip.start)
         }
-        Canvas(Modifier.fillMaxWidth().height(8.dp)) {
+        Canvas(Modifier.fillMaxWidth().height(10.dp)) {
             segments.forEachIndexed { index, segment ->
                 val left = (Duration.between(trip.start, segment.start).toMillis() / duration * size.width).toFloat()
                 val right = (Duration.between(trip.start, segment.end).toMillis() / duration * size.width).toFloat()
@@ -122,13 +125,10 @@ internal fun JourneyDetail(plan: TripPlan, trip: TripItinerary, now: Instant, on
     val waitColor = MaterialTheme.colorScheme.outlineVariant
     val colors = remember(trip, walkColor) { trip.legs.map { if (it.walking) walkColor else it.route?.let(::lineColor) ?: walkColor } }
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.ui_back)) }
-            Text(stringResource(R.string.planner_steps), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        }
+        TransitPageHeader(stringResource(R.string.planner_steps),onBack)
         LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(start = 16.dp, end = 20.dp, bottom = 24.dp)) {
             item(key = "summary", contentType = "summary") {
-                Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.padding(bottom = 24.dp)) {
+                Surface(shape = TransitDesign.panelShape, color = MaterialTheme.colorScheme.surfaceContainerLowest, modifier = Modifier.padding(bottom = 24.dp)) {
                     Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text(departureLabel(trip.start), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                         Text("${endpointName(plan.origin)} → ${endpointName(plan.destination)}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
@@ -236,13 +236,14 @@ private fun LegDescription(leg: PlanLeg) {
                     Text(pluralStringResource(R.plurals.planner_intermediate, leg.stops.size, leg.stops.size), Modifier.weight(1f))
                     Icon(if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, stringResource(if (expanded) R.string.planner_hide_stops else R.string.planner_show_stops))
                 }
-                if (expanded) leg.stops.forEach { stop ->
+                androidx.compose.animation.AnimatedVisibility(visible=expanded,enter=androidx.compose.animation.expandVertically()+androidx.compose.animation.fadeIn(),
+                    exit=androidx.compose.animation.shrinkVertically()+androidx.compose.animation.fadeOut()) { Column(verticalArrangement=Arrangement.spacedBy(12.dp)) { leg.stops.forEach { stop ->
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         val color = leg.route?.let(::lineColor) ?: MaterialTheme.colorScheme.primary
                         Canvas(Modifier.size(8.dp)) { drawCircle(color) }
                         Text(stop.name, style = MaterialTheme.typography.bodyMedium)
                     }
-                }
+                } } }
             }
         }
     }

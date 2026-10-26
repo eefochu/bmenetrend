@@ -55,32 +55,28 @@ fun NearbyPanel(
     val openDeparture = remember { { departure: Departure -> latestDepartureAction(departure) } }
     LazyColumn(modifier.navigationBarsPadding(), contentPadding = PaddingValues(bottom = 24.dp)) {
         item(key = "nearby-header", contentType = "nearby_header") {
-            Row(Modifier.fillMaxWidth().padding(start = 22.dp, end = 8.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                Column(
-                    Modifier
-                        .weight(1f)
-                        .clickable(enabled = !isExpanded, onClick = onToggleExpand)
-                ) {
-                    Text(stringResource(R.string.nearby_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Column(Modifier.fillMaxWidth().padding(horizontal=TransitDesign.gutter),verticalArrangement=Arrangement.spacedBy(6.dp)) {
+                Text(stringResource(R.string.nearby_title),Modifier.fillMaxWidth().clickable(enabled=!isExpanded,onClick=onToggleExpand),
+                    style=MaterialTheme.typography.headlineSmall)
+                Text(stringResource(if(atUser) R.string.nearby_you else R.string.nearby_map),
+                    style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
                     Box {
-                        Row(Modifier.clickable { windowMenu = true }.padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(stringResource(if (atUser) R.string.nearby_you else R.string.nearby_map) + " · " + compactDuration(windowMinutes),
-                                Modifier.weight(1f, fill = false), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Icon(Icons.Rounded.ArrowDropDown, null, Modifier.size(16.dp))
+                        FilledTonalButton(onClick={windowMenu=true},shape=TransitDesign.controlShape,contentPadding=PaddingValues(horizontal=12.dp)) {
+                            Icon(Icons.Rounded.Schedule,null,Modifier.size(18.dp));Spacer(Modifier.width(6.dp))
+                            Text(compactDuration(windowMinutes));Icon(Icons.Rounded.ExpandMore,null,Modifier.size(18.dp))
                         }
-                        DropdownMenu(expanded = windowMenu, onDismissRequest = { windowMenu = false }) {
+                        DropdownMenu(expanded=windowMenu,onDismissRequest={windowMenu=false}) {
                             DepartureTime.windows.forEach { minutes -> DropdownMenuItem(
-                                text = { Text(countdown(minutes)) },
-                                onClick = { onWindow(minutes); windowMenu = false },
-                                trailingIcon = { if (minutes == windowMinutes) Icon(Icons.Rounded.Check, null) }) }
+                                text={Text(countdown(minutes))},onClick={onWindow(minutes);windowMenu=false},
+                                trailingIcon={if(minutes==windowMinutes) Icon(Icons.Rounded.Check,null)}) }
                         }
                     }
-                }
-                IconButton(onClick = onLocate) { Icon(Icons.Rounded.MyLocation, stringResource(R.string.nearby_locate)) }
-                IconButton(onClick = onRefresh) { Icon(Icons.Rounded.Refresh, stringResource(R.string.ui_refresh_departures)) }
-                IconButton(onClick = onCollapse) {
-                    Icon(Icons.Rounded.KeyboardArrowDown,
-                        stringResource(if (isExpanded) R.string.ui_collapse_departures else R.string.ui_hide_departures))
+                    Spacer(Modifier.weight(1f))
+                    IconButton(onClick=onLocate) { Icon(Icons.Rounded.MyLocation,stringResource(R.string.nearby_locate)) }
+                    IconButton(onClick=onRefresh) { Icon(Icons.Rounded.Refresh,stringResource(R.string.ui_refresh_departures)) }
+                    IconButton(onClick=onCollapse) { Icon(Icons.Rounded.KeyboardArrowDown,
+                        stringResource(if(isExpanded) R.string.ui_collapse_departures else R.string.ui_hide_departures)) }
                 }
             }
             Box(Modifier.fillMaxWidth().height(10.dp).padding(horizontal = 22.dp), contentAlignment = Alignment.Center) {
@@ -88,8 +84,7 @@ fun NearbyPanel(
             }
         }
         if (stations.isEmpty() && !loading) item(key = "nearby-empty", contentType = "nearby_empty") {
-            Text(stopStatus ?: stringResource(R.string.nearby_no_departures_2h), Modifier.padding(horizontal = 22.dp, vertical = 20.dp),
-                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            EmptyState(stringResource(R.string.nearby_title),stopStatus ?: stringResource(R.string.nearby_no_departures_2h),Icons.Rounded.NearMe)
         }
         stations.forEach { station ->
             item(key = "station-${station.stop.id}", contentType = "station_header") {
@@ -137,32 +132,10 @@ internal fun NearbyDepartureCard(
     minutes: Int,
     onClick: () -> Unit,
 ) {
-    val live = departure.kind == ArrivalKind.LIVE
-    Surface(
-        Modifier.padding(horizontal = 16.dp, vertical = 3.dp).fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-    ) {
-        Row(
-            Modifier.clickable(onClick = onClick).padding(horizontal = 12.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            ServiceBadge(departure.routeNumber, route?.providerId ?: platform?.providerId ?: "bkk", route?.transportMode ?: platform?.transportMode, route?.color, departure.trainNumber)
-            Icon(Icons.AutoMirrored.Rounded.ArrowForward,null,Modifier.size(16.dp),tint=MaterialTheme.colorScheme.onSurfaceVariant)
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(departure.destination.ifBlank { stringResource(R.string.emma_vehicle_no_direction) }, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Text(serviceTypeLabel(route?.providerId ?: platform?.providerId ?: "bkk",route?.transportMode ?: platform?.transportMode),
-                    style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                departure.serviceName?.let { Text(it, style = MaterialTheme.typography.bodySmall, maxLines = 1,
-                    overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(nearbyClock.format(departure.expectedAt), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    (departure.platformCode ?: platform?.platformCode)?.let { Text(stringResource(if (route?.providerId == "mav") R.string.rail_platform else R.string.emma_platform, it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                }
-            }
-            if (live) Icon(Icons.Rounded.Sensors, stringResource(R.string.ui_live_arrival), Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
-            Text(countdown(minutes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-        }
+    val provider=route?.providerId ?: platform?.providerId ?: "bkk"
+    val boarding=(departure.platformCode ?: platform?.platformCode)?.let {
+        stringResource(if(provider=="mav") R.string.rail_platform else R.string.emma_platform,it)
     }
+    DepartureBoardRow(departure,provider,route?.transportMode ?: platform?.transportMode,route?.color,minutes,boarding,onClick)
+    HorizontalDivider(Modifier.padding(start=20.dp,end=20.dp),color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=.45f))
 }

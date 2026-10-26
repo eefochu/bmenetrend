@@ -12,6 +12,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,45 +31,56 @@ import java.util.Locale
 @Composable
 fun SettingsPage(state: UiState, onAccent: (AccentColor) -> Unit, onCustom: (Int) -> Unit,
                  onNationwide: (Boolean) -> Unit, onAbout: () -> Unit, onBack: () -> Unit) {
-    BackHandler(onBack = onBack)
-    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    BackHandler(onBack=onBack)
+    Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
-            Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.ui_back)) }
-                Text(stringResource(R.string.volan_settings), style = MaterialTheme.typography.headlineSmall)
-            }
-            Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text(stringResource(R.string.accent_title), style = MaterialTheme.typography.titleLarge)
-                Text(stringResource(R.string.accent_hint))
-                Column(Modifier.selectableGroup()) {
-                    AccentColor.entries.forEach { choice ->
-                        Row(Modifier.fillMaxWidth().heightIn(min = 48.dp)
-                            .selectable(state.accentColor == choice, role = Role.RadioButton, onClick = { onAccent(choice) }),
-                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            RadioButton(state.accentColor == choice, onClick = null)
-                            val color = if (choice == AccentColor.CUSTOM) Color(state.customAccentArgb) else choice.hue?.let { Color.hsl(it, .65f, .4f) } ?: MaterialTheme.colorScheme.primary
-                            Box(Modifier.size(20.dp).clip(CircleShape).background(color))
-                            Text(stringResource(choice.labelRes))
+            TransitPageHeader(stringResource(R.string.volan_settings),onBack)
+            Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal=adaptivePageGutter()),
+                verticalArrangement=Arrangement.spacedBy(16.dp)) {
+                TransitSectionTitle(stringResource(R.string.accent_title))
+                Text(stringResource(R.string.accent_hint),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                Column(Modifier.selectableGroup(),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+                    val columns=if(androidx.compose.ui.platform.LocalDensity.current.fontScale>1.4f) 2 else 3
+                    AccentColor.entries.chunked(columns).forEach { row ->
+                        Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                            row.forEach { choice ->
+                                val selected=state.accentColor==choice
+                                val color=if(choice==AccentColor.GREEN) accentColorScheme(choice,false).primary else if(choice==AccentColor.CUSTOM) Color(state.customAccentArgb) else choice.hue?.let { Color.hsl(it,.65f,.35f) } ?: MaterialTheme.colorScheme.primary
+                                Surface(Modifier.weight(1f),shape=TransitDesign.controlShape,
+                                    color=if(selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLowest,
+                                    border=androidx.compose.foundation.BorderStroke(if(selected) 2.dp else 1.dp,
+                                        if(selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)) {
+                                    Column(Modifier.fillMaxWidth().heightIn(min=80.dp).selectable(selected,role=Role.RadioButton,onClick={onAccent(choice)})
+                                        .padding(12.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+                                        Surface(Modifier.size(26.dp),shape=CircleShape,color=color) {
+                                            if(selected) Box(contentAlignment=Alignment.Center) {
+                                                Icon(androidx.compose.material.icons.Icons.Rounded.Check,null,Modifier.size(18.dp),
+                                                    tint=if(color.luminance()>.35f) Color.Black else Color.White)
+                                            }
+                                        }
+                                        Text(stringResource(choice.labelRes),style=MaterialTheme.typography.labelLarge)
+                                    }
+                                }
+                            }
+                            repeat(columns-row.size) { Spacer(Modifier.weight(1f)) }
                         }
                     }
                 }
-                CustomColorPicker(state.customAccentArgb, onCustom)
-                HorizontalDivider()
-                Text(stringResource(R.string.volan_nationwide), style = MaterialTheme.typography.titleLarge)
-                Text(stringResource(R.string.volan_local_scope))
-                Row(Modifier.fillMaxWidth().heightIn(min = 64.dp)
-                    .toggleable(state.nationwideNetwork, role = Role.Switch, onValueChange = onNationwide),
-                    verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.volan_nationwide), Modifier.weight(1f))
-                    Switch(state.nationwideNetwork, onCheckedChange = null)
+                androidx.compose.animation.AnimatedVisibility(state.accentColor==AccentColor.CUSTOM) { CustomColorPicker(state.customAccentArgb,onCustom) }
+                TransitSectionTitle(stringResource(R.string.design_transit_data))
+                Surface(shape=TransitDesign.groupShape,color=MaterialTheme.colorScheme.surfaceContainerLowest) {
+                    Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
+                        Row(Modifier.fillMaxWidth().heightIn(min=56.dp).toggleable(state.nationwideNetwork,role=Role.Switch,onValueChange=onNationwide),
+                            verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(12.dp)) {
+                            Text(stringResource(R.string.volan_nationwide),Modifier.weight(1f),style=MaterialTheme.typography.titleMedium)
+                            Switch(state.nationwideNetwork,onCheckedChange=null)
+                        }
+                        Text(stringResource(R.string.volan_local_scope),style=MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.volan_nationwide_hint),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
-                Text(stringResource(R.string.volan_nationwide_hint))
-                HorizontalDivider()
-                OutlinedButton(onClick = onAbout, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                    Icon(Icons.Rounded.Info, null, Modifier.size(20.dp))
-                    Spacer(Modifier.width(12.dp))
-                    Text(stringResource(R.string.ota_about_title))
+                OutlinedButton(onClick=onAbout,shape=TransitDesign.controlShape,modifier=Modifier.fillMaxWidth().heightIn(min=56.dp)) {
+                    Icon(Icons.Rounded.Info,null,Modifier.size(20.dp));Spacer(Modifier.width(12.dp));Text(stringResource(R.string.ota_about_title))
                 }
                 Spacer(Modifier.height(24.dp))
             }

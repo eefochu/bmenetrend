@@ -20,7 +20,7 @@ import hu.app.bmenetrend.R
 @Composable
 internal fun CrashReportDialog(report: String, onDismiss: () -> Unit) {
     val context = LocalContext.current
-    AlertDialog(onDismissRequest = onDismiss,
+    AlertDialog(shape=TransitDesign.panelShape,containerColor=MaterialTheme.colorScheme.surfaceContainerLow,onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.crash_report_title)) },
         text = {
             androidx.compose.foundation.layout.Column {

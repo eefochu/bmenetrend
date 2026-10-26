@@ -66,17 +66,22 @@ fun PlannerScreen(model: PlannerViewModel, onRequestLocation: () -> Unit) {
     LazyColumn(Modifier.fillMaxSize().statusBarsPadding(), state = listState, contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item(key = "title", contentType = "title") {
-            Text(stringResource(R.string.planner_title), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-            Text(stringResource(R.string.planner_subtitle), Modifier.padding(top = 8.dp), style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            TransitPageIntro(stringResource(R.string.planner_title),stringResource(R.string.planner_subtitle),Icons.Rounded.Route)
         }
         item(key = "form", contentType = "form") {
-            Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceContainerLow) {
+            val connectorColor=MaterialTheme.colorScheme.outlineVariant
+            Surface(shape = TransitDesign.panelShape, color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                border=androidx.compose.foundation.BorderStroke(1.dp,MaterialTheme.colorScheme.outlineVariant.copy(alpha=.6f))) {
                 Column(Modifier.padding(8.dp)) {
                     EndpointField(R.string.planner_from, state.origin, state.useLocation) { model.edit(PlannerField.ORIGIN) }
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        HorizontalDivider(Modifier.padding(start = 50.dp).weight(1f))
-                        IconButton(onClick = model::swap, enabled = state.origin != null || state.destination != null) {
+                        androidx.compose.foundation.Canvas(Modifier.padding(start=16.dp).width(24.dp).height(36.dp)) {
+                            drawLine(connectorColor,
+                                androidx.compose.ui.geometry.Offset(size.width/2,0f),androidx.compose.ui.geometry.Offset(size.width/2,size.height),
+                                strokeWidth=2.dp.toPx(),cap=androidx.compose.ui.graphics.StrokeCap.Round)
+                        }
+                        Spacer(Modifier.weight(1f))
+                        FilledTonalIconButton(onClick = model::swap, shape=TransitDesign.controlShape, enabled = state.origin != null || state.destination != null) {
                             Icon(Icons.Rounded.SwapVert, stringResource(R.string.planner_swap))
                         }
                     }
@@ -89,7 +94,7 @@ fun PlannerScreen(model: PlannerViewModel, onRequestLocation: () -> Unit) {
         }
         item(key = "action", contentType = "action") {
             Button(onClick = model::plan, enabled = state.origin != null && state.destination != null && !state.planning,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp), shape = RoundedCornerShape(20.dp)) {
+                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp), shape = TransitDesign.controlShape) {
                 if (state.planning) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
                 else Icon(Icons.Rounded.Route, null, Modifier.size(20.dp))
                 Spacer(Modifier.width(10.dp))
@@ -134,7 +139,7 @@ fun PlannerScreen(model: PlannerViewModel, onRequestLocation: () -> Unit) {
 
 @Composable
 private fun EndpointField(label: Int, endpoint: PlannerEndpoint?, current: Boolean, onClick: () -> Unit) {
-    Surface(onClick = onClick, color = MaterialTheme.colorScheme.surfaceContainerLow, shape = RoundedCornerShape(20.dp)) {
+    Surface(onClick = onClick, color = MaterialTheme.colorScheme.surfaceContainerLowest, shape = TransitDesign.controlShape) {
         Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             Icon(if (current) Icons.Rounded.MyLocation else if (label == R.string.planner_from) Icons.Rounded.TripOrigin else Icons.Rounded.LocationOn,
                 null, tint = MaterialTheme.colorScheme.primary)
@@ -161,7 +166,7 @@ private fun PlannerSearch(state: PlannerState, onQuery: (String)->Unit, onChoose
             IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.ui_back)) }
             OutlinedTextField(state.query, onQuery, modifier = Modifier.weight(1f).focusRequester(focus), singleLine = true,
                 label = { Text(stringResource(if (state.editing == PlannerField.ORIGIN) R.string.planner_from else R.string.planner_to)) },
-                placeholder = { Text(stringResource(R.string.planner_search_hint)) }, shape = RoundedCornerShape(24.dp),
+                placeholder = { Text(stringResource(R.string.planner_search_hint)) }, shape = TransitDesign.controlShape,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { keyboard?.hide() }),
                 trailingIcon = { if (state.query.isNotEmpty()) IconButton(onClick = { onQuery("") }) { Icon(Icons.Rounded.Close, stringResource(R.string.ui_clear_search)) } })
@@ -176,7 +181,7 @@ private fun PlannerSearch(state: PlannerState, onQuery: (String)->Unit, onChoose
             }
             items(state.suggestions, key = { it.id }, contentType = { "suggestion" }) { endpoint ->
                 ListItem(headlineContent = { Text(endpoint.name) }, supportingContent = { if (endpoint.detail.isNotBlank()) Text(endpoint.detail) },
-                    leadingContent = { Icon(if (endpoint.id.startsWith("emma:") || endpoint.id.startsWith("homm:")) Icons.Rounded.DirectionsBus else Icons.Rounded.LocationOn, null) },
+                    leadingContent = { TransitIconTile(if (endpoint.id.startsWith("emma:") || endpoint.id.startsWith("homm:")) Icons.Rounded.DirectionsBus else Icons.Rounded.LocationOn) },
                     modifier = Modifier.clickable { onChoose(endpoint) })
             }
             if (!state.searching && state.query.trim().length >= 2 && state.suggestions.isEmpty()) item(key = "empty", contentType = "notice") {

@@ -13,8 +13,8 @@
     <string name="ui_nearest_stop_action">Find the nearest stop to my location</string>
     <string name="ui_about_action">About the app and its data</string>
     <string name="ui_search_hint">Search stops or routes</string>
-    <string name="ui_nearest_stop">NEAREST STOP</string>
-    <string name="ui_selected_stop">SELECTED STOP</string>
+    <string name="ui_nearest_stop">Nearest stop</string>
+    <string name="ui_selected_stop">Selected stop</string>
     <string name="ui_loading_stops">Loading stops…</string>
     <string name="ui_select_stop">Select a stop</string>
     <string name="ui_remove_favorite">Remove from favourites</string>

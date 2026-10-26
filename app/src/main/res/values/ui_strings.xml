@@ -13,8 +13,8 @@
     <string name="ui_nearest_stop_action">Legközelebbi megálló a helyzetem alapján</string>
     <string name="ui_about_action">Az alkalmazásról és az adatokról</string>
     <string name="ui_search_hint">Megálló vagy járat keresése</string>
-    <string name="ui_nearest_stop">LEGKÖZELEBBI MEGÁLLÓ</string>
-    <string name="ui_selected_stop">KIVÁLASZTOTT MEGÁLLÓ</string>
+    <string name="ui_nearest_stop">Legközelebbi megálló</string>
+    <string name="ui_selected_stop">Kiválasztott megálló</string>
     <string name="ui_loading_stops">Megállók betöltése…</string>
     <string name="ui_select_stop">Válassz egy megállót</string>
     <string name="ui_remove_favorite">Eltávolítás a kedvencek közül</string>

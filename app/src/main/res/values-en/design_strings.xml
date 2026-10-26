@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="board_cancelled">Cancelled</string>
+    <plurals name="board_delay"><item quantity="one">+%1$d min</item><item quantity="other">+%1$d min</item></plurals>
+    <string name="design_transit_data">Transit data</string>
+</resources>
