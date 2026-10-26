@@ -461,7 +461,7 @@ fun NativeTransitMap(
                 StopMarkerLayout.Node(stop, point.x.toDouble(), point.y.toDouble())
             }
             val diameter = when {
-                focused -> 24.0
+                focused -> 16.0
                 !grouped -> 22.0
                 zoom >= StopMapClustering.DETAIL_ZOOM -> 12.0
                 else -> 8.0
