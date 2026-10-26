@@ -10,23 +10,6 @@
 
 ---
 
-## ✨ Főbb funkciók
-
-- **Több hálózat egy helyen**: A biatorbágyi, pátyi és budaörsi helyi járatok, valamint az országos Volánbusz és budapesti BKK vonalak egyetlen letisztult felületen.
-- **Élő járműradar**: Valós idejű GPS-pozíciók, útvonal-geometria, megállók közötti haladás, késési adatok és 15 másodpercenként frissülő járműkártyák.
-- **Natív vektortérkép**: Teljes képernyős [MapLibre](https://maplibre.org/) motor [OpenFreeMap](https://openfreemap.org/) vektoros csempékkel, automatikus világos témával és saját, színes éjszakai térképstílussal. API-kulcs és számlázási fiók nélkül.
-- **Kategorizált villámkereső**: Gyors keresés három kategóriában: **Helyek** (Photon / OpenStreetMap), **Megállók** (peronelrendezéssel) és **Járművek** (járatszám, rendszám vagy célállomás alapján).
-- **Önálló peronok**: A megállók külön, saját forráskoordinátáikkal jelennek meg; az egymást fedő jelölők minimális eltolással külön kiválaszthatók.
-- **Utazástervezés**: Külön Tervezés fül cím- és megállókereséssel, EMMA-alapú országos útvonalakkal, ViaBusz-, KanyarGO- és HOMM-csatlakozásokkal, külön Volán- és buszos alternatívákkal, legkorábbi érkezés szerinti sorrenddel, valódi gyalogos szakaszokkal és átszállási tartalékkal. Indulás most vagy kiválasztott napon és időpontban; színes menetidősávok és megnyitható, időpontokkal, peronokkal és köztes megállókkal ellátott útvonallánc.
-- **Kedvenc megállók**: Saját fül a szívvel mentett állomások és megállók érkező járataival, valós idejű jelzésekkel és legfeljebb 5 órás indulási ablakkal. A visszaszámlálás tömör: `4p`, `1ó 3p`.
-- **Vasút**: Országos MÁVPlusz-vonatkövetés, vonalszám, vonatszám, vonatnév, vágányadatok és a tényleges útvonal megállói. A vasúti megállók és járművek tágabb nézetben is láthatók, azonos méretezéssel.
-- **Közeli járatok**: Alapértelmezett alsó kártya a helyzetedhez vagy a térkép közepéhez közeli megállók következő indulásaival, élő és menetrendi jelzéssel.
-- **Open Sans**: Beépített betűkészlet, 700-as vastagságú járatszámokkal; a metrók és HÉV-ek csak a számozott emblémakört használják.
-- **Material You & egyéni színek**: Finom animációk, edge-to-edge felület, rendszerhez igazodó dinamikus Monet színek (Android 12+) vagy egyéni RGB/HEX színválasztó.
-- **Fiókmentes használat**: Nincs beépített analitika. A térkép- és keresőszolgáltatók a kérések kiszolgálásához megkapják az IP-címet és a kért adatokat.
-
----
-
 ## 🚌 Támogatott közlekedési hálózatok
 
 | Szolgáltató | Terület | Lefedettség és jellemzők |
@@ -50,8 +33,6 @@ A közös átszállópontok (pl. *Biatorbágy vasútállomás*) automatikusan eg
 - **Hálózat és adatfolyam**: OkHttp, Kotlinx Serialization, közvetlen GraphQL kliens a MÁV EMMA / MÁVPlusz végpontokhoz
 - **Helykeresés**: Cím- és helymeghatározás a [Photon](https://photon.komoot.io/) / OpenStreetMap API segítségével
 - **Állapotkezelés**: MVVM minta Kotlin Coroutines és StateFlow architektúrával, helyi gyorsítótárral
-
-Az alkalmazás csomagazonosítója és Kotlin-névtere `hu.app.bmenetrend`. A felület, az állapotüzenetek és a dátumválasztó a telefon rendszernyelvétől függetlenül magyarul jelennek meg. Az alapértelmezett szövegek a `res/values/`, a megőrzött angol fordítások a `res/values-en/` könyvtárban találhatók.
 
 ---
 
@@ -89,11 +70,7 @@ A `debug` és a `release` ugyanazt az optimalizálást használja; a terjeszthet
 
 ### GitHub Actions CI
 
-Az [Android builds](.github/workflows/android-build.yml) workflow minden push és pull request esetén, valamint kézzel indítva is lefordítja a `debug` és `release` APK-kat, külön feladatokban, Java 21 használatával. Az Actions-futásból a `bmenetrend-debug` és `bmenetrend-release` artifactok tölthetők le; a hozzájuk tartozó R8 mapping fájlok külön artifactokban érhetők el. Az artifactok megőrzési ideje 14 nap.
-
-Mindkét változat a projekt jelenlegi debug aláírását használja; a CI a futtató által generált debug kulccsal írja alá az APK-kat. Meglévő, más kulccsal aláírt telepítésre ezek nem telepíthetők frissítésként. Állandó kiadási kulcsot és GitHub Release-publikálást ez a workflow nem állít be.
-
-Váratlan Java/Kotlin-leállás után a következő indításkor a helyben mentett hibajelentés kimásolható. Android 11-től a natív összeomlás vagy memória miatti folyamatleállás rendszeradatai is megjelenhetnek. A jelentés nem kerül automatikusan elküldésre; másoláskor vagy bezáráskor a mentett példány törlődik.
+Az [Android builds](.github/workflows/android-build.yml) workflow minden push és pull request esetén, valamint kézzel indítva is lefordítja a `debug` és `release` APK-kat, külön feladatokban, Java 21 használatával.
 
 > [!TIP]
 > Android emulátorban a gördülékeny térképmegjelenítéshez ajánlott a hardveres gyorsítást (**Host GPU**) bekapcsolni.
