@@ -19,4 +19,35 @@ object RailSupport {
     }
     fun serviceNumber(tripName: String?): String? = clean(tripName)?.let { trainNumber.find(it)?.value }
     fun label(line: String?, number: String?): String = listOfNotNull(line, number?.takeUnless { it == line }).joinToString(" ")
+
+    fun isTrainDeparture(routeNumber: String, serviceName: String?): Boolean {
+        val cleanService = serviceName?.trim()?.uppercase(java.util.Locale.ROOT).orEmpty()
+        val cleanNum = routeNumber.trim().uppercase(java.util.Locale.ROOT)
+        return cleanNum.matches(Regex("^[GSZgsz]\\d+.*")) ||
+               cleanNum in setOf("S", "SZ", "G", "GY", "Z", "IC", "IR", "RJ", "RJX", "EC", "EN", "EX") ||
+               listOf("INTERCITY", "RAILJET", "EUROCITY", "EURONIGHT", "EXPRESSZ", "GYORS", "SZEMÉLY", "ZÓNÁZÓ", "GYORSÍTOTT", "INTERRÉGIÓ", "INTERREGIO", "VONAT").any { cleanService.contains(it) }
+    }
+
+    fun canonicalBadge(number: String, serviceName: String? = null): String {
+        val cleanNum = number.trim()
+        val cleanService = serviceName?.trim()?.uppercase(java.util.Locale.ROOT).orEmpty()
+        val numUpper = cleanNum.uppercase(java.util.Locale.ROOT)
+        return when {
+            cleanNum.matches(Regex("^[GSZgsz]\\d+.*")) -> cleanNum.uppercase(java.util.Locale.ROOT)
+            numUpper.startsWith("IR") && cleanNum.any { it.isDigit() } -> cleanNum.uppercase(java.util.Locale.ROOT)
+            cleanService.contains("INTERCITY") || numUpper == "IC" -> "IC"
+            cleanService.contains("INTERRÉGIÓ") || cleanService.contains("INTERREGIO") || numUpper == "IR" -> "IR"
+            cleanService.contains("RAILJET") || numUpper.startsWith("RJ") -> "rjx"
+            cleanService.contains("EUROCITY") || numUpper == "EC" -> "EC"
+            cleanService.contains("EURONIGHT") || numUpper == "EN" -> "EN"
+            cleanService.contains("EXPRESSZ") || numUpper == "EX" -> "Ex"
+            cleanService.contains("GYORSÍTOTT") && (cleanNum.isBlank() || !cleanNum.any { it.isDigit() }) -> "G"
+            cleanService.contains("GYORS") || numUpper == "GY" -> "Gy"
+            (cleanService.contains("ZÓNÁZÓ") || cleanService.contains("ZONAZO")) && (cleanNum.isBlank() || !cleanNum.any { it.isDigit() }) -> "Z"
+            numUpper == "SZ" || (cleanService.contains("SZEMÉLY") && numUpper.startsWith("SZ")) -> "Sz"
+            numUpper == "S" || cleanService.contains("SZEMÉLY") -> "S"
+            cleanNum.isNotBlank() && cleanNum != "?" -> cleanNum
+            else -> "S"
+        }
+    }
 }

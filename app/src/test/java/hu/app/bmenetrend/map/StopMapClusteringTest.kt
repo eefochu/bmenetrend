@@ -106,4 +106,33 @@ class StopMapClusteringTest {
         assertEquals(1,StopMapClustering.groups(listOf(a,b),bounds,16.0).size)
     }
 
+
+    @Test fun vasutUtcaViabuszAndVolanPlatformsMergeByCorridorDirection() {
+        fun via(id: String,name: String,lat: Double,lon: Double)=TransitStop(id,name,GeoPoint(lat,lon),emptyList(),"viabusz",providerIds=listOf("viabusz"))
+        fun volan(id: String,name: String,lat: Double,lon: Double)=TransitStop(id,name,GeoPoint(lat,lon),emptyList(),"volan",providerIds=listOf("volan"),transportMode="COACH")
+
+        val via5 = via("5","Vasút utca",47.471394,18.824603)
+        val via81 = via("81","Vasút utca (Ellenirány)",47.47140816,18.82467514)
+        val volan1 = volan("emma:hkir:hkir_777139_1","Biatorbágy, Vasút utca",47.471243,18.825238)
+        val volan2 = volan("emma:hkir:hkir_777139_2","Biatorbágy, Vasút utca",47.471223,18.825772)
+
+        val bearings = mapOf(
+            "5" to listOf(232.0),
+            "81" to listOf(358.0),
+            "emma:hkir:hkir_777139_1" to listOf(230.0),
+            "emma:hkir:hkir_777139_2" to listOf(355.0),
+        )
+
+        assertTrue(StopMapClustering.samePlatform(via5, volan1, bearings))
+        assertTrue(StopMapClustering.samePlatform(via81, volan2, bearings))
+        assertFalse(StopMapClustering.samePlatform(via5, volan2, bearings))
+        assertFalse(StopMapClustering.samePlatform(via81, volan1, bearings))
+
+        val groups = StopMapClustering.groups(listOf(via5, via81, volan1, volan2), bounds, 16.0, bearings)
+        assertEquals(2, groups.size)
+        val g1 = groups.first { via5 in it }
+        val g2 = groups.first { via81 in it }
+        assertEquals(setOf(via5, volan1), g1.toSet())
+        assertEquals(setOf(via81, volan2), g2.toSet())
+    }
 }

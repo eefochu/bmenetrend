@@ -427,6 +427,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 departures = departures,
                 vehicles = vehicles,
                 selectedVehicle = current.selectedVehicle?.let { selected -> vehicles.find { it.id == selected.id } ?: selected.copy(routeEstimate = null) },
+                trackedVehicle = current.trackedVehicle?.let { tracked -> vehicles.find { it.id == tracked.id } ?: tracked.copy(routeEstimate = null) },
                 emmaRoutes = EmmaParser.routeCatalogue(vehicles.filter { it.providerId in setOf("volan", "bkk", "hev", "mav") }, (stopRoutes + lineCatalogue + emmaRepository.catalogue).distinctBy { it.id }),
                 emmaStatus = emmaMessage,
                 liveStopMinutes = snapshot?.arrivals.orEmpty()
@@ -450,7 +451,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
 
     fun selectVehicle(id: String) {
         val vehicle = state.value.vehicles.find { it.id == id } ?: return
-        mutableState.update { it.copy(showNearby = false, selectedVehicle = vehicle, selectedPlace = null, boardingSelection = null) }
+        manualStop = false
+        mutableState.update { it.copy(showNearby = false, selectedVehicle = vehicle, trackedVehicle = null, selectedStopId = null, selectedPlatformIds = emptySet(), selectedPlace = null, boardingSelection = null) }
         vehicle.routeId?.let { loadLine(it) }
         ensureVehicleJourney()
     }
@@ -459,7 +461,24 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         journeyGeneration++
         journeyJob?.cancel()
         journeyKey = null
-        mutableState.update { it.copy(selectedVehicle = null, vehicleJourney = null, vehicleJourneyLoading = false, vehicleJourneyError = false) }
+        mutableState.update { it.copy(selectedVehicle = null, trackedVehicle = null, vehicleJourney = null, vehicleJourneyLoading = false, vehicleJourneyError = false) }
+    }
+
+    fun returnToTrackedVehicle() {
+        val vehicle = state.value.trackedVehicle ?: return
+        manualStop = false
+        mutableState.update {
+            it.copy(
+                showNearby = false,
+                selectedVehicle = vehicle,
+                trackedVehicle = null,
+                selectedStopId = null,
+                selectedPlatformIds = emptySet(),
+                boardingSelection = null,
+                fitRouteRequest = it.fitRouteRequest + 1
+            )
+        }
+        recalculate()
     }
 
     fun returnToNearby() {
@@ -532,7 +551,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun ensureVehicleJourney(force: Boolean = false) {
-        val vehicle = state.value.selectedVehicle ?: return
+        val vehicle = state.value.selectedVehicle ?: state.value.trackedVehicle ?: return
         val key = vehicle.id to vehicle.tripId
         if (!force && key == journeyKey) return
         journeyKey = key
@@ -544,7 +563,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         journeyJob = viewModelScope.launch {
             try {
                 val text = journeyClient.execute(EmmaJourneyParser.QUERY, org.json.JSONObject().put("id", tripId))
-                val journey = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { EmmaJourneyParser.parse(text, tripId) }
+                val journey = kotlinx.coroutines.withContext(Dispatchers.Default) { EmmaJourneyParser.parse(text, tripId) }
                 if (journeyGeneration == generation && journeyKey == key) mutableState.update { current ->
                     val stops = current.emmaStops.associateBy { it.id }.toMutableMap()
                     journey.stops.forEach { stop -> if (stop.id !in stops) stops[stop.id] = stop }
@@ -688,21 +707,36 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun selectJourneyBoardingStop(id: String) {
-        val vehicle = state.value.selectedVehicle
+        val vehicle = state.value.selectedVehicle ?: state.value.trackedVehicle
         val journey = state.value.vehicleJourney
         if (vehicle?.routeId == null || journey == null || journey.patternCode == null || journey.tripId != vehicle.tripId || journey.stops.none { it.id == id }) {
             selectStop(id); return
         }
         val pattern = LinePattern(journey.patternCode, setOf(journey.patternCode), journey.destination ?: vehicle.destination.orEmpty(), journey.stops, journey.geometry)
-        selectStop(id)
-        mutableState.update { it.copy(boardingSelection = BoardingSelection(vehicle.routeId, pattern.headsign, pattern)) }
+        manualStop = true
+        val network = state.value.network
+        val selectedIds = setOf(network?.let { SharedStops.resolve(it, id) } ?: SharedStops.canonicalId(id))
+        mutableState.update {
+            it.copy(
+                showNearby = false,
+                selectedStopId = selectedIds.first(),
+                selectedPlatformIds = selectedIds,
+                selectedPlace = null,
+                cameraRequest = it.cameraRequest + 1,
+                trackedVehicle = vehicle,
+                selectedVehicle = null,
+                boardingSelection = BoardingSelection(vehicle.routeId, pattern.headsign, pattern)
+            )
+        }
         recalculate()
+        ensureBoardRequest()
     }
 
     fun loadLine(id: String, force: Boolean = false) {
         if (!force && (state.value.loadingLineId == id || lineLoadedAt[id]?.let { Duration.between(it, Instant.now()).seconds in 0..599 } == true)) return
-        val route = state.value.findRoute(id) ?: return
-        if (route.providerId !in setOf("volan", "bkk", "hev", "mav")) return
+        val route = state.value.findRoute(id)
+        val provider = route?.providerId ?: if (id.startsWith("emma:")) "mav" else null ?: return
+        if (provider !in setOf("volan", "bkk", "hev", "mav")) return
         val generation = ++lineGeneration
         lineJob?.cancel()
         mutableState.update { it.copy(loadingLineId = id, lineErrorId = null) }
@@ -710,10 +744,10 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             try {
                 val text = journeyClient.execute(EmmaRouteParser.QUERY, org.json.JSONObject().put("id", id.substringAfter(":"))
                     .put("date", LocalDate.now(budapest).format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE)))
-                val details = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { EmmaRouteParser.parse(text, id) }
+                val details = kotlinx.coroutines.withContext(Dispatchers.Default) { EmmaRouteParser.parse(text, id) }
                 if (lineGeneration == generation) {
                     lineLoadedAt[id] = Instant.now()
-                    stopRoutes = (listOf(details.route.copy(name = if (details.route.name == details.route.number) route.name else details.route.name)) + stopRoutes.filterNot { it.id == id })
+                    stopRoutes = (listOf(details.route.copy(name = if (details.route.name == details.route.number) (route?.name ?: details.route.name) else details.route.name)) + stopRoutes.filterNot { it.id == id })
                     mutableState.update { current ->
                         val stops = current.emmaStops.associateBy { it.id }.toMutableMap()
                         details.patterns.flatMap { it.stops }.forEach { stop -> if (stop.id !in stops) stops[stop.id] = stop }
@@ -793,6 +827,31 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         val selectedIds=ids.map { id -> network?.let { SharedStops.resolve(it,id) } ?: SharedStops.canonicalId(id) }.toSet()
         mutableState.update { it.copy(showNearby=false,selectedStopId=selectedIds.first(),selectedPlatformIds=selectedIds,
             selectedPlace=null,cameraRequest=it.cameraRequest+1,boardingSelection=null) }
+        recalculate()
+        ensureBoardRequest()
+    }
+
+    fun selectStopRoute(stopId: String, routeId: String) {
+        closeVehicle()
+        manualStop = true
+        val current = state.value
+        val network = current.network
+        val canonicalId = network?.let { SharedStops.resolve(it, stopId) } ?: SharedStops.canonicalId(stopId)
+        val selectedIds = setOf(canonicalId)
+        val route = current.findRoute(routeId)
+        val badge = route?.let { RailSupport.canonicalBadge(it.number, it.name) }
+        val title = route?.name?.ifBlank { null } ?: badge ?: route?.number ?: routeId
+        loadLine(routeId)
+        mutableState.update { it.copy(
+            showNearby = false,
+            selectedStopId = canonicalId,
+            selectedPlatformIds = selectedIds,
+            selectedPlace = null,
+            cameraRequest = it.cameraRequest + 1,
+            boardingSelection = BoardingSelection(routeId, title, routeNumber = badge ?: route?.number),
+            trackedVehicle = null,
+            selectedVehicle = null,
+        ) }
         recalculate()
         ensureBoardRequest()
     }

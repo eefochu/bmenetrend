@@ -32,12 +32,31 @@ import hu.app.bmenetrend.data.Vehicle
 import hu.app.bmenetrend.map.VehicleMarkerStyle
 import hu.app.bmenetrend.map.MetroLineStyle
 
-fun lineColor(provider: String, mode: String?, source: String? = null): Color {
+fun railLineColor(number: String): Color {
+    val clean = number.trim().uppercase(java.util.Locale.ROOT)
+    return when {
+        clean.startsWith("IR") -> Color(0xFF008001) // InterRegio: #008001
+        clean.matches(Regex("^G\\d.*")) || clean == "G" -> Color(0xFFA9CD45) // G-s: #A9CD45
+        clean.matches(Regex("^S\\d.*")) -> Color(0xFF00AFEF) // sXX: #00AFEF
+        clean.matches(Regex("^Z\\d.*")) || clean == "Z" -> Color(0xFFFECD28) // Z-s: #FECD28
+        else -> Color(0xFF2E5EA7) // EC, EN, Ex, IC, S, Sz, Gy, rjx, etc.: #2E5EA7
+    }
+}
+
+fun railLineTextColor(number: String): Color {
+    val clean = number.trim().uppercase(java.util.Locale.ROOT)
+    return if (clean.matches(Regex("^Z\\d.*")) || clean == "Z") Color(0xFF171B20) else Color.White
+}
+
+fun lineColor(provider: String, mode: String?, source: String? = null, number: String? = null): Color {
+    if (number != null && (provider in setOf("mav", "gysev") || mode in setOf("RAIL", "TRAMTRAIN"))) {
+        return railLineColor(number)
+    }
     if (mode in setOf("SUBWAY", "SUBURBAN_RAILWAY") && source?.matches(Regex("[a-fA-F0-9]{6}")) == true) return Color((0xFF000000L or source.toLong(16)).toInt())
     return when (mode) {
         "TRAM" -> Color(0xFFFFD800)
         "TROLLEYBUS" -> Color(0xFFE31B23)
-        "SUBWAY", "RAIL", "SUBURBAN_RAILWAY", "TRAMTRAIN" -> Color(0xFF0066AA)
+        "SUBWAY", "RAIL", "SUBURBAN_RAILWAY", "TRAMTRAIN" -> if (number != null && mode != "SUBWAY") railLineColor(number) else Color(0xFF0066AA)
         else -> when (provider) {
             "volan" -> Color(0xFFF9B900)
             "viabusz" -> Color(0xFF205C48)
@@ -47,7 +66,7 @@ fun lineColor(provider: String, mode: String?, source: String? = null): Color {
         }
     }
 }
-fun lineColor(route: TransitRoute) = lineColor(route.providerId, route.transportMode, route.color)
+fun lineColor(route: TransitRoute) = lineColor(route.providerId, route.transportMode, route.color, route.number)
 
 @Composable
 fun LineBadge(number: String, provider: String, mode: String? = null, sourceColor: String? = null, showIcon: Boolean = true) {
@@ -70,27 +89,29 @@ fun LineBadge(number: String, provider: String, mode: String? = null, sourceColo
         }
         return
     }
-    val color = lineColor(provider, mode, sourceColor)
+    val isRail = provider in setOf("mav", "gysev") || mode in setOf("RAIL", "TRAMTRAIN") || (mode == "SUBURBAN_RAILWAY" && number.matches(Regex("^[GSZgsz]\\d.*")))
+    val color = if (isRail) railLineColor(number) else lineColor(provider, mode, sourceColor, number)
+    val textColor = if (isRail) railLineTextColor(number) else if (color.luminance() > .35f) Color(0xFF171B20) else Color.White
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         if (showIcon) Image(rememberTransitIcon(VehicleMarkerStyle.forTransport(provider, mode).drawableRes, 28.dp),
             stringResource(when (mode) { "TRAM" -> R.string.emma_mode_tram; "TROLLEYBUS" -> R.string.emma_mode_trolley;
                 "SUBWAY" -> R.string.emma_mode_metro; "RAIL", "SUBURBAN_RAILWAY", "TRAMTRAIN" -> R.string.emma_mode_train; else -> R.string.emma_mode_bus }), Modifier.size(28.dp))
-        Surface(shape = RoundedCornerShape(8.dp), color = color) {
+        Surface(shape = RoundedCornerShape(6.dp), color = color) {
             Box(
                 Modifier
-                    .heightIn(min = 32.dp)
-                    .widthIn(min = 38.dp)
-                    .padding(horizontal = 9.dp, vertical = 2.dp),
+                    .heightIn(min = 28.dp)
+                    .widthIn(min = 44.dp)
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = number,
-                    color = if (color.luminance() > .179) Color(0xFF171B20) else Color.White,
+                    color = textColor,
                     style = MaterialTheme.typography.titleMedium.copy(
-                        fontSize = 17.sp,
+                        fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
-                        letterSpacing = (-0.5).sp,
-                        lineHeight = 20.sp,
+                        letterSpacing = (-0.3).sp,
+                        lineHeight = 18.sp,
                     ),
                     fontFamily = OpenSans,
                     maxLines = 1,

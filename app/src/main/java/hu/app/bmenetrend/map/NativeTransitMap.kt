@@ -92,6 +92,7 @@ fun NativeTransitMap(
     onViewportChanged: (MapBounds, GeoPoint) -> Unit = { _, _ -> },
     stopBearings: Map<String,List<Double>> = emptyMap(),
     onSharedStopSelected: (List<String>)->Unit = { ids -> ids.firstOrNull()?.let(onStopSelected) },
+    onMapClick: () -> Unit = {},
 ) {
     val darkTheme = isSystemInDarkTheme()
     val styleUri = if (darkTheme) "asset://map/night.json" else "https://tiles.openfreemap.org/styles/positron"
@@ -99,6 +100,7 @@ fun NativeTransitMap(
     val owner = LocalLifecycleOwner.current
     val onSelect by rememberUpdatedState(onStopSelected)
     val onSharedSelect by rememberUpdatedState(onSharedStopSelected)
+    val onMapClicked by rememberUpdatedState(onMapClick)
     val onError by rememberUpdatedState(onMapError)
     val onArea by rememberUpdatedState(onViewportChanged)
     val onZoom by rememberUpdatedState(onMapZoomChanged)
@@ -220,7 +222,10 @@ fun NativeTransitMap(
                 val hits=targets()
                 val density=context.resources.displayMetrics.density.toDouble()
                 val candidate=StopHitTesting.candidates(hits,point.x.toDouble(),point.y.toDouble(),density).firstOrNull()
-                if(candidate==null) false else {
+                if(candidate==null) {
+                    onMapClicked()
+                    true
+                } else {
                     if(StopHitTesting.needsZoom(hits,point.x.toDouble(),point.y.toDouble(),density,ready.cameraPosition.zoom)) reveal(location)
                     else if(stopGroups[candidate.id].orEmpty().flatMap { it.providerIds }.distinct().size>1) onSharedSelect(listOf(candidate.id)+stopGroups[candidate.id].orEmpty().map { it.id }.filterNot { it==candidate.id })
                     else onSelect(candidate.id)
@@ -307,26 +312,33 @@ fun NativeTransitMap(
         ready.setPadding(0, topInset, 0, bottomInset)
         if (focused) {
             previousFocusKey = lineFocus!!.key
-            // Keep directions as separate paths: never invent links between their termini.
-            val points = (paths.flatten() + focusStops.map { it.position }).distinct()
-            val signature = listOf(lineFocus.key, points.toSet(), fitRouteRequest, bottomPaddingPx, size)
-            if (signature != fittedSignature) {
-                fittedSignature = signature
-                if (points.size >= 2) {
-                    val bounds = LatLngBounds.Builder().includes(points.map { LatLng(it.lat, it.lon) }).build()
-                    val margin = (36 * context.resources.displayMetrics.density).toInt()
-                    ready.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 0.0, 0.0,
-                        margin, topInset + margin, margin, bottomInset + margin), 650)
-                } else selectedVehicle?.let { ready.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(it.position.lat, it.position.lon), 13.5), 650) }
+            val stop = displayStops.find { it.id == selectedStopId }
+            if (stop != null && (centeredStop != stop.id || centeredRequest != cameraRequest)) {
+                centeredStop = stop.id
+                centeredRequest = cameraRequest
+                ready.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(stop.position.lat, stop.position.lon), maxOf(15.0, ready.cameraPosition.zoom)), 650)
+            } else {
+                if (stop == null) centeredStop = null
+                // Keep directions as separate paths: never invent links between their termini.
+                val points = (paths.flatten() + focusStops.map { it.position }).distinct()
+                val signature = listOf(lineFocus.key, points.toSet(), fitRouteRequest, bottomPaddingPx, size)
+                if (signature != fittedSignature) {
+                    fittedSignature = signature
+                    if (points.size >= 2) {
+                        val bounds = LatLngBounds.Builder().includes(points.map { LatLng(it.lat, it.lon) }).build()
+                        val margin = (36 * context.resources.displayMetrics.density).toInt()
+                        ready.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 0.0, 0.0,
+                            margin, topInset + margin, margin, bottomInset + margin), 650)
+                    } else selectedVehicle?.let { ready.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(it.position.lat, it.position.lon), 13.5), 650) }
+                }
             }
         } else if (previousFocusKey != null) {
             previousFocusKey = null
             fittedSignature = null
-            previousCamera?.let { ready.animateCamera(CameraUpdateFactory.newCameraPosition(it), 650) }
+            if (selectedStopId == null) {
+                previousCamera?.let { ready.animateCamera(CameraUpdateFactory.newCameraPosition(it), 650) }
+            }
             previousCamera = null
-            centeredStop = selectedStopId
-            centeredRequest = cameraRequest
-            lastBottomPadding = bottomPaddingPx
         } else if (selectedPlace != null) {
             val bounds = selectedPlace.bounds
             var boundsAnimated = false

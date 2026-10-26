@@ -102,8 +102,15 @@ class MainActivity : ComponentActivity() {
                     pendingCrash = null
                 } }
                 MainNavigation(tab, { tab = it }, planner = { PlannerScreen(planner, requestLocation) }, favorites = {
-                    FavoritesScreen(state, onStop = { model.selectStop(it); tab = MainTab.MAP }, onRemove = model::toggleFavorite,
-                        onRefresh = model::refreshFavorites, onWindow = model::setWindow, onVisible = model::setVisibleFavorites)
+                    FavoritesScreen(
+                        state = state,
+                        onStop = { model.selectStop(it); tab = MainTab.MAP },
+                        onStopRoute = { stopId, routeId -> model.selectStopRoute(stopId, routeId); tab = MainTab.MAP },
+                        onRemove = model::toggleFavorite,
+                        onRefresh = model::refreshFavorites,
+                        onWindow = model::setWindow,
+                        onVisible = model::setVisibleFavorites
+                    )
                 }, map = {
                 ViaBuszScreen(
                     state = state,
@@ -125,6 +132,7 @@ class MainActivity : ComponentActivity() {
                     onNationwideNetworkChanged = model::setNationwideNetwork,
                     onVehicleClosed = model::closeVehicle,
                     onReturnToNearby = model::returnToNearby,
+                    onReturnToTrackedVehicle = model::returnToTrackedVehicle,
                     onAccentColorChanged = model::setAccentColor,
                     onCustomAccentChanged = model::setCustomAccentColor,
                     onLineOpened = model::loadLine,
@@ -139,8 +147,8 @@ class MainActivity : ComponentActivity() {
                     onOtaChannelChanged = model::setOtaChannel,
                     onCheckOtaUpdates = { model.checkForUpdates(false) },
                     onDownloadAndInstallOta = { info -> model.startOtaDownloadAndInstall(this@MainActivity, info) },
-                ) { modifier, bottomPaddingPx, browsingRoute, browsingDirection ->
-                    val vehicle = state.selectedVehicle
+                ) { modifier, bottomPaddingPx, browsingRoute, browsingDirection, onDismissHighlight ->
+                    val vehicle = state.selectedVehicle ?: state.trackedVehicle
                     val browsingPattern=browsingRoute?.let { line -> state.lineDetails[line.id]?.patterns?.find { it.id==browsingDirection } }
                     val preview=browsingRoute?.let { hu.app.bmenetrend.data.BoardingSelection(it.id,it.name,browsingPattern,
                         localDirectionId=browsingDirection.takeIf { _ -> it.providerId !in setOf("volan","bkk","hev","mav") }) }
@@ -158,7 +166,7 @@ class MainActivity : ComponentActivity() {
                     val color = if (vehicle != null) lineColor(vehicle.providerId, vehicle.transportMode, vehicle.markerColor)
                         else route?.let(::lineColor) ?: androidx.compose.ui.graphics.Color(0xFF199DCF)
                     val onMapStop: (String) -> Unit = { id ->
-                        if (state.selectedVehicle != null && state.vehicleJourney?.stops?.any { it.id == id } == true) model.selectJourneyBoardingStop(id)
+                        if ((state.selectedVehicle != null || state.trackedVehicle != null) && state.vehicleJourney?.stops?.any { it.id == id } == true) model.selectJourneyBoardingStop(id)
                         else {
                             val linePattern=boarding?.pattern?.takeIf { it.stops.any { stop -> stop.id==id } }
                             val localDirection=boarding?.localDirectionId?.takeIf { direction ->
@@ -169,13 +177,31 @@ class MainActivity : ComponentActivity() {
                             else model.selectStop(id)
                         }
                     }
+                    val onMapSharedStop: (List<String>) -> Unit = { ids ->
+                        val matchedStopId = if (state.selectedVehicle != null || state.trackedVehicle != null) {
+                            ids.find { id -> state.vehicleJourney?.stops?.any { it.id == id } == true }
+                        } else if (focus?.routeId != null) {
+                            ids.find { id ->
+                                val rId = focus.routeId
+                                boarding?.pattern?.stops?.any { it.id == id } == true ||
+                                    state.lineDetails[rId]?.patterns?.any { p -> p.stops.any { it.id == id } } == true ||
+                                    route?.directions?.any { d -> id in d.stopIds } == true
+                            }
+                        } else null
+
+                        if (matchedStopId != null) {
+                            onMapStop(matchedStopId)
+                        } else {
+                            model.selectStopGroup(ids)
+                        }
+                    }
                     val stopBearings=remember(state.network,state.emmaStops,state.lineDetails,state.vehicleJourney) {
                         val routes=state.routes; val allStops=state.stops
                         hu.app.bmenetrend.map.traceMapWork("BMenetrend.StopDirections") {
                             hu.app.bmenetrend.map.StopDirections.collect(routes,allStops,state.lineDetails.values,state.vehicleJourney)
                         }
                     }
-                    NativeTransitMap(state.network, state.vehicles, state.selectedStopId.takeUnless { state.showNearby || browsingRoute!=null || state.selectedVehicle!=null }, state.userLocation, modifier, onMapStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, state.selectedVehicle, routeGeometry = geometry, routeStops = stops, routeColor = color.toArgb(), fitRouteRequest = state.fitRouteRequest, selectedPlace = state.selectedPlace, placeCameraRequest = state.placeCameraRequest, lineFocus = focus, browsingNearby = state.showNearby, locationCameraRequest = state.locationCameraRequest, onViewportChanged = model::updateMapArea,stopBearings=stopBearings,onSharedStopSelected=model::selectStopGroup)
+                    NativeTransitMap(state.network, state.vehicles, state.selectedStopId.takeUnless { state.showNearby || browsingRoute!=null || state.selectedVehicle!=null }, state.userLocation, modifier, onMapStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, vehicle, routeGeometry = geometry, routeStops = stops, routeColor = color.toArgb(), fitRouteRequest = state.fitRouteRequest, selectedPlace = state.selectedPlace, placeCameraRequest = state.placeCameraRequest, lineFocus = focus, browsingNearby = state.showNearby, locationCameraRequest = state.locationCameraRequest, onViewportChanged = model::updateMapArea,stopBearings=stopBearings,onSharedStopSelected=onMapSharedStop,onMapClick=onDismissHighlight)
                 }
                 })
 
@@ -219,10 +245,11 @@ class MainActivity : ComponentActivity() {
             providers.mapNotNull { runCatching { manager.getLastKnownLocation(it) }.getOrNull() }
                 .filter { System.currentTimeMillis() - it.time in 0..120_000 }
                 .minByOrNull { it.accuracy }?.let(listener::onLocationChanged)
-            providers.forEach { provider -> runCatching { manager.requestLocationUpdates(provider, 15_000L, 25f, listener, mainLooper) } }
+            manager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000L, 5f, listener)
+            manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 2000L, 10f, listener)
+            return { manager.removeUpdates(listener) }
         } catch (_: SecurityException) {
-            model.locationMessage(getString(R.string.engine_location_required))
+            return {}
         }
-        return { manager.removeUpdates(listener) }
     }
 }

@@ -9,5 +9,10 @@
     <string name="favorites_loading">A kedvenc megállók betöltése…</string>
     <string name="favorites_index_unavailable">A mentett megállók átmenetileg nem érhetők el. Próbálj frissíteni.</string>
     <string name="favorites_all_departures">Összes indulás</string>
+    <string name="favorites_train_types">Vonattípusok</string>
+    <string name="favorites_train_lines">Vonatok</string>
+    <string name="favorites_other_lines">Autóbuszok és egyéb járatok</string>
+    <string name="favorites_lines">Járatok</string>
+    <string name="favorites_no_lines">Nincsenek elérhető vonalak ehhez a megállóhoz</string>
     <string name="rail_platform">%1$s. vágány</string>
 </resources>

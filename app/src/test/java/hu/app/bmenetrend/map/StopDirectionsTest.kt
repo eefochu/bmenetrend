@@ -22,7 +22,8 @@ class StopDirectionsTest {
         val pattern=LinePattern("p",setOf("p"),"North",listOf(a,b),listOf(a.position,GeoPoint(47.5,19.001),b.position))
         val headings=StopDirections.collect(emptyList(),listOf(a,b),listOf(LineDetails(route,listOf(pattern))))
         assertEquals(90.0,headings[a.id]!!.single(),.01)
-        assertNull(headings[b.id]) // Arrival-only endpoint is not a departing direction.
+        // Arrival-only endpoint shows the general way vehicles arrive into the station
+        assertEquals(356.1,headings[b.id]!!.single(),.5)
     }
     @Test fun sameSourceUsedByBothDirectionsGetsTwoArrowsAndUnknownStopsGetNone() {
         val a=stop("a",47.5); val b=stop("b",47.51); val c=stop("c",47.49)
@@ -35,6 +36,18 @@ class StopDirectionsTest {
         assertEquals(31.0,north.first().y,.001)
         val east=StopDirections.triangle(50.0,50.0,12.0,1.0,0.0,1.0)
         assertEquals(69.0,east.first().x,.001)
+    }
+    @Test fun multiDirectionStopsReduceToRepresentativeCorridorHeadings() {
+        val northGroup = listOf(325.0, 2.0, 52.0)
+        val northGeneral = StopDirections.generalDirections(northGroup)
+        assertEquals(1, northGeneral.size)
+        assertTrue(northGeneral.single() in 0.0..10.0 || northGeneral.single() > 350.0)
+
+        val corridor = listOf(28.0, 35.0, 210.0, 225.0)
+        val corridorGeneral = StopDirections.generalDirections(corridor)
+        assertEquals(2, corridorGeneral.size)
+        assertTrue(StopDirections.difference(corridorGeneral[0], 31.5) < 5.0)
+        assertTrue(StopDirections.difference(corridorGeneral[1], 217.5) < 5.0)
     }
     @Test fun sharedOperatorColoursAppearTogetherInEqualSplitRingSectors() {
         val shared=stop("shared",47.5).copy(providerIds=listOf("viabusz","kanyargo","homm","volan"))
