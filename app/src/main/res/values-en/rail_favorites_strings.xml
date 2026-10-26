@@ -9,5 +9,10 @@
     <string name="favorites_loading">Loading your saved stations…</string>
     <string name="favorites_index_unavailable">Saved stations are temporarily unavailable. Refresh to try again.</string>
     <string name="favorites_all_departures">All departures</string>
+    <string name="favorites_train_types">Train types</string>
+    <string name="favorites_train_lines">Trains</string>
+    <string name="favorites_other_lines">Buses and other services</string>
+    <string name="favorites_lines">Lines</string>
+    <string name="favorites_no_lines">No lines available for this stop</string>
     <string name="rail_platform">Platform %1$s</string>
 </resources>

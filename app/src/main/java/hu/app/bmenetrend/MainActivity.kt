@@ -102,8 +102,15 @@ class MainActivity : ComponentActivity() {
                     pendingCrash = null
                 } }
                 MainNavigation(tab, { tab = it }, planner = { PlannerScreen(planner, requestLocation) }, favorites = {
-                    FavoritesScreen(state, onStop = { model.selectStop(it); tab = MainTab.MAP }, onRemove = model::toggleFavorite,
-                        onRefresh = model::refreshFavorites, onWindow = model::setWindow, onVisible = model::setVisibleFavorites)
+                    FavoritesScreen(
+                        state = state,
+                        onStop = { model.selectStop(it); tab = MainTab.MAP },
+                        onStopRoute = { stopId, routeId -> model.selectStopRoute(stopId, routeId); tab = MainTab.MAP },
+                        onRemove = model::toggleFavorite,
+                        onRefresh = model::refreshFavorites,
+                        onWindow = model::setWindow,
+                        onVisible = model::setVisibleFavorites
+                    )
                 }, map = {
                 ViaBuszScreen(
                     state = state,
@@ -238,10 +245,11 @@ class MainActivity : ComponentActivity() {
             providers.mapNotNull { runCatching { manager.getLastKnownLocation(it) }.getOrNull() }
                 .filter { System.currentTimeMillis() - it.time in 0..120_000 }
                 .minByOrNull { it.accuracy }?.let(listener::onLocationChanged)
-            providers.forEach { provider -> runCatching { manager.requestLocationUpdates(provider, 15_000L, 25f, listener, mainLooper) } }
+            manager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000L, 5f, listener)
+            manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 2000L, 10f, listener)
+            return { manager.removeUpdates(listener) }
         } catch (_: SecurityException) {
-            model.locationMessage(getString(R.string.engine_location_required))
+            return {}
         }
-        return { manager.removeUpdates(listener) }
     }
 }
