@@ -119,10 +119,15 @@ fun VehiclePanel(state: UiState, onClose: () -> Unit, onRefresh: () -> Unit, onS
                 itemsIndexed(journey!!.stops, key = { index, stop -> "$index-${stop.id}" }, contentType = { _, _ -> "journey_stop" }) { index, stop ->
                     val atIndex = if (progress?.at == null) null else if (progress.at.id == progress.next?.id) progress.nextIndex else progress.nextIndex?.minus(1)
                     if (index == progress?.nextIndex && progress.at == null && progress.previous != null) LineVehicleBetween(color, vehicleIcon, hevBitmap)
+                    val stopTime = journey.stopTimes.getOrNull(index)
                     LineStopRow(stop, index == 0, index == journey.stops.lastIndex, color,
                         onClick = { onStop(stop.id) }, past = progress?.nextIndex?.let { index < it && index != atIndex } == true,
                         highlighted = index == progress?.nextIndex || index == atIndex,
-                        vehicleIcon = if (index == atIndex) vehicleIcon else null, vehicleBitmap = if (index == atIndex) hevBitmap else null)
+                        vehicleIcon = if (index == atIndex) vehicleIcon else null, vehicleBitmap = if (index == atIndex) hevBitmap else null,
+                        arrivalTime = stopTime?.arrivalTime,
+                        scheduledTime = stopTime?.scheduledTime,
+                        isLive = stopTime?.isLive == true,
+                        delayMinutes = stopTime?.delayMinutes ?: 0)
                 }
             }
         }

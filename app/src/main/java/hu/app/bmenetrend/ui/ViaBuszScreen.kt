@@ -513,10 +513,19 @@ private fun StopPanel(
     val latestDepartureAction by rememberUpdatedState(onDeparture)
     val openDeparture = remember { { departure: Departure -> latestDepartureAction(departure) } }
     val routeById = remember(state.network?.routes, state.emmaRoutes) { state.routesById }
-    val stopTitle = stop?.name ?: stringResource(if (state.loading) R.string.ui_loading_stops else R.string.ui_select_stop)
-    val clusterProviders = stop?.providerIds.orEmpty()
-    val boardingInfo = stop?.platformCode?.let { stringResource(R.string.emma_platform, it) }
-        ?: stop?.takeIf { it.id.startsWith("emma:") }?.let { stringResource(R.string.emma_stop_code, it.id.substringAfterLast(":")) }
+    val isMulti = stop != null && (stop.isMultiStop || remember(stop.id, state.stops) { StopClusters.isMultiStop(stop.id, state.stops) })
+    val stopTitle = if (stop != null) {
+        StopClusters.stopDisplayName(stop.name, isMulti, stringResource(R.string.ui_multiple_stations))
+    } else stringResource(if (state.loading) R.string.ui_loading_stops else R.string.ui_select_stop)
+    val clusterProviders = remember(stop?.id, state.stops) {
+        if (stop == null) emptyList()
+        else {
+            val cluster = StopClusters.clusterFor(stop.id, state.stops)
+            cluster.flatMap { it.providerIds }.distinct().ifEmpty { stop.providerIds }
+        }
+    }
+    val boardingInfo = if (isMulti) null else (stop?.platformCode?.let { stringResource(R.string.emma_platform, it) }
+        ?: stop?.takeIf { it.id.startsWith("emma:") }?.let { stringResource(R.string.emma_stop_code, it.id.substringAfterLast(":")) })
     val timetableOnly = clusterProviders.isNotEmpty() && clusterProviders.all { it == "homm" }
     Column(modifier) {
         Row(Modifier.fillMaxWidth().padding(start = 22.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -541,7 +550,7 @@ private fun StopPanel(
                 }
                 Text(stopTitle, style = MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 5.dp))
                 if (stop != null) {
-                    Text(listOfNotNull(providerNames(clusterProviders), transportLabel(stop?.transportMode), boardingInfo).joinToString(" · "), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 3.dp))
+                    Text(listOfNotNull(providerNames(clusterProviders), if (isMulti) null else transportLabel(stop.transportMode), boardingInfo).joinToString(" · "), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 3.dp))
                 }
             }
             if (stop != null) {
@@ -784,7 +793,8 @@ private fun stopLabel(stop: TransitStop): String? = stop.platformCode?.let { str
 
 @Composable
 internal fun StopSearchRow(stop: TransitStop, state: UiState, favorite: Boolean, onStop: (String) -> Unit) {
-    val displayName = stop.name
+    val isMulti = stop.isMultiStop || remember(stop.id, state.stops) { StopClusters.isMultiStop(stop.id, state.stops) }
+    val displayName = StopClusters.stopDisplayName(stop.name, isMulti, stringResource(R.string.ui_multiple_stations))
     Row(
         Modifier.fillMaxWidth().clickable { onStop(stop.id) }.padding(horizontal = 22.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -796,8 +806,8 @@ internal fun StopSearchRow(stop: TransitStop, state: UiState, favorite: Boolean,
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(displayName, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
             val numbers = stop.routeIds.map { id -> state.findRoute(id)?.number ?: id }.distinct()
-            val boarding = stopLabel(stop)
-            Text(listOfNotNull(providerNames(stop.providerIds), transportLabel(stop.transportMode), boarding, numbers.joinToString(" · ").takeIf { it.isNotBlank() }).joinToString(" · "), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            val boarding = if (isMulti) null else stopLabel(stop)
+            Text(listOfNotNull(providerNames(stop.providerIds), if (isMulti) null else transportLabel(stop.transportMode), boarding, numbers.joinToString(" · ").takeIf { it.isNotBlank() }).joinToString(" · "), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Icon(Icons.AutoMirrored.Rounded.ArrowForward, null, Modifier.size(19.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }

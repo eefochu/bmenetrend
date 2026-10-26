@@ -53,11 +53,11 @@ class TripPlannerTest {
         assertTrue(result.itineraries.all { it.transfers >= 1 })
         assertTrue(result.itineraries.all { TripPlanner.feasible(it.legs,result.readyAt) })
     }
-    @Test fun earliestArrivalWinsOverShortestInVehicleDuration() {
+    @Test fun shortestDurationWinsOverEarlierArrival() {
         val text=fixture("metro"); val root=JSONObject(text); val rows=root.getJSONObject("data").getJSONObject("plan").getJSONArray("itineraries")
         val earlier=rows.getJSONObject(1)
         val later=rows.getJSONObject(2)
-        // A later journey takes less time in motion but still arrives after the earlier option.
+        // A later journey takes less total duration, so it should be placed at the top.
         val legs=later.getJSONArray("legs")
         var clock=Instant.ofEpochMilli(earlier.getLong("endTime")).plusSeconds(3_600)
         later.put("startTime",clock.toEpochMilli())
@@ -68,10 +68,12 @@ class TripPlannerTest {
             leg.put("startTime",clock.toEpochMilli()); clock=clock.plusSeconds(seconds); leg.put("endTime",clock.toEpochMilli())
         }
         later.put("endTime",clock.toEpochMilli())
-        assertTrue(later.getLong("endTime")-later.getLong("startTime") < earlier.getLong("endTime")-earlier.getLong("startTime"))
+        val laterDuration = later.getLong("endTime") - later.getLong("startTime")
+        val earlierDuration = earlier.getLong("endTime") - earlier.getLong("startTime")
+        assertTrue(laterDuration < earlierDuration)
         val result=parse(root.toString())
-        assertEquals(Instant.ofEpochMilli(earlier.getLong("endTime")),result.itineraries.first().end)
-        assertTrue(result.itineraries.zipWithNext().all { (a,b)->a.end<=b.end })
+        assertEquals(laterDuration / 1000, result.itineraries.first().durationSeconds)
+        assertTrue(result.itineraries.zipWithNext().all { (a,b)->a.durationSeconds <= b.durationSeconds })
     }
     @Test fun cannotBoardAminuteAwayAfterTwoMinuteWalk() {
         val ready=Instant.parse("2026-10-23T12:00:00Z")

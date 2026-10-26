@@ -145,8 +145,8 @@ class MainActivity : ComponentActivity() {
                     val focus = remember(vehicle?.id, vehicle?.routeId, state.boardingSelection, state.network, state.emmaRoutes, state.lineDetails, state.vehicleJourney, state.emmaStops) {
                         LineMapFocus.create(vehicle, state.boardingSelection, state.routes, state.lineDetails, state.vehicleJourney, state.stops)
                     }
-                    val geometry = if (vehicle != null) state.vehicleJourney?.geometry.orEmpty() else pattern?.geometry.orEmpty()
-                    val stops = if (vehicle != null) state.vehicleJourney?.stops.orEmpty() else pattern?.stops.orEmpty()
+                    val geometry = if (vehicle != null) state.vehicleJourney?.geometry.orEmpty().ifEmpty { focus?.paths?.firstOrNull().orEmpty() } else pattern?.geometry.orEmpty()
+                    val stops = if (vehicle != null) state.vehicleJourney?.stops.orEmpty().ifEmpty { focus?.stops.orEmpty() } else pattern?.stops.orEmpty()
                     val color = if (vehicle != null) lineColor(vehicle.providerId, vehicle.transportMode, vehicle.markerColor)
                         else route?.let(::lineColor) ?: androidx.compose.ui.graphics.Color(0xFF199DCF)
                     val onMapStop: (String) -> Unit = { id ->

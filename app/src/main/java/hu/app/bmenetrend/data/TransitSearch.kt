@@ -163,8 +163,7 @@ object TransitSearch {
         if (cached != null && stops === lastStopsRef) {
             return cached
         }
-        val parents = stops.mapNotNull { it.parentStationId }.toHashSet()
-        val consolidated = stops.distinctBy { it.id }.filterNot { it.station && it.id in parents }
+        val consolidated = StopClusters.consolidateForSearch(stops)
         val indexed = consolidated.map { stop ->
             val multiTokens = if (stop.isMultiStop) "tobbmegallo tobb megallo multiple stations multiplestations" else ""
             StopEntry(
