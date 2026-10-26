@@ -149,7 +149,7 @@ internal fun NearbyDepartureCard(
         ) {
             ServiceBadge(departure.routeNumber, route?.providerId ?: platform?.providerId ?: "bkk", route?.transportMode ?: platform?.transportMode, route?.color, departure.trainNumber)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(departure.destination, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(departure.destination.ifBlank { stringResource(R.string.emma_vehicle_no_direction) }, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 departure.serviceName?.let { Text(it, style = MaterialTheme.typography.bodySmall, maxLines = 1,
                     overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {

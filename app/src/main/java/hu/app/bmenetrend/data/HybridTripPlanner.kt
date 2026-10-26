@@ -25,7 +25,7 @@ internal class HybridTripPlanner(private val backend: PlannerBackend) {
         val journeys = mutableListOf<TripItinerary>()
         var partial = false
         var nationalSucceeded = false
-        fun result() = TripPlan(origin, destination, requested, ready, TripPlanner.alternatives(journeys), partial)
+        fun result() = TripPlan(origin, destination, requested, ready, TripPlanner.alternatives(journeys, ready), partial)
         suspend fun remote(from: PlannerEndpoint, to: PlannerEndpoint, time: Instant, bus: Boolean = false): List<TripItinerary> = try {
             backend.routes(from, to, time, bus).also { nationalSucceeded = true }
         } catch (cancelled: CancellationException) { throw cancelled }

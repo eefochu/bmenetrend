@@ -154,7 +154,7 @@ object TripPlanner {
         return true
     }
 
-    val order = compareBy<TripItinerary> { it.durationSeconds }.thenBy { it.end }.thenBy { it.transfers }.thenBy { it.walkMeters }
+    val order = compareBy<TripItinerary> { it.end }.thenBy { it.transfers }.thenBy { it.walkSeconds }.thenBy { it.walkMeters }.thenBy { it.durationSeconds }.thenBy { it.id }
 
     fun itinerary(legs: List<PlanLeg>, ready: Instant): TripItinerary? {
         if (!feasible(legs, ready)) return null
@@ -162,19 +162,9 @@ object TripPlanner {
             legs.first().start, legs.last().end, legs)
     }
 
-    /** Keep useful operator/mode alternatives even when several faster trains precede them. */
-    fun alternatives(journeys: List<TripItinerary>): List<TripItinerary> {
-        val sorted = journeys.distinctBy { it.id }.sortedWith(order).distinctBy { trip ->
-            trip.legs.filterNot { it.walking }.map { listOf(it.route?.id, it.from.name, it.to.name, it.restrictedService) }
-        }
-        val reserved = listOfNotNull(sorted.firstOrNull(), sorted.firstOrNull { trip ->
-            val rides = trip.legs.filterNot { it.walking }
-            rides.isNotEmpty() && rides.all { it.mode in setOf("BUS", "COACH") }
-        }) + listOf("volan", "viabusz", "kanyargo", "homm").mapNotNull { provider ->
-            sorted.firstOrNull { trip -> trip.legs.any { it.route?.providerId == provider } }
-        }
-        return (reserved + sorted).distinctBy { it.id }.take(8).sortedWith(order)
-    }
+    /** Up to three distinct, non-dominated choices; operator identity never reserves a slot. */
+    fun alternatives(journeys: List<TripItinerary>, ready: Instant? = null): List<TripItinerary> =
+        PlannerAlternatives.select(journeys,ready)
     private fun point(row: JSONObject): PlanPoint {
         val point = GeoPoint(row.getDouble("lat"), row.getDouble("lon"))
         require(point.lat.isFinite() && point.lon.isFinite() && point.lat in -90.0..90.0 && point.lon in -180.0..180.0)

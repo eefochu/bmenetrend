@@ -74,4 +74,19 @@ class EmmaJourneyTest {
         assertEquals(VehicleMarkerStyle.TRAIN, VehicleMarkerStyle.forVehicle(vehicle("mav", "RAIL")))
         assertEquals(VehicleMarkerStyle.VIABUSZ_BUS, VehicleMarkerStyle.forVehicle(vehicle("viabusz", null)))
     }
+    @Test fun returnTripUsesItsLastStopEvenWhenRouteNameAndHeadsignPointTheOtherWay() {
+        val root=response()
+        root.getJSONObject("data").getJSONObject("trip").put("stops",JSONArray()
+            .put(stop("hkir:etyek","Etyek")).put(stop("hkir:budapest","Budapest, Kelenföld")))
+        val trip=EmmaJourneyParser.parse(root.toString(),"hkir:trip")
+        assertEquals("Budapest, Kelenföld",trip.destination)
+        assertEquals("Etyek → Budapest, Kelenföld",JourneyDirection.endpoints(trip.stops))
+    }
+    @Test fun shortTurnsUseTheirActualEndInsteadOfTheLinesFullRoute() {
+        val root=response()
+        root.getJSONObject("data").getJSONObject("trip").put("stops",JSONArray()
+            .put(stop("hkir:first","Budapest")).put(stop("hkir:short","Biatorbágy")))
+        assertEquals("Biatorbágy",EmmaJourneyParser.parse(root.toString(),"hkir:trip").destination)
+    }
+
 }

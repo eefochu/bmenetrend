@@ -66,7 +66,7 @@ Az alkalmazás csomagazonosítója és Kotlin-névtere `hu.app.bmenetrend`. A fe
 
 ```bash
 # Repository klónozása
-git clone https://github.com/micr0softstore/bmenetrend.git
+git clone https://github.com/eefochu/bmenetrend.git
 cd bmenetrend
 
 # Optimalizált debug csatornás APK fordítása (R8 + erőforrás-zsugorítás)
@@ -118,3 +118,7 @@ A BMenetrend független, nyílt közösségi segédprogram.
 - A helyjelölő és a legközelebbi megálló kiválasztása helyben használja a GPS-helyzetet. Az útvonaltervezéshez az EMMA megkapja a kiindulópont és a cél koordinátáit, valamint az indulási időt. Ha a jelenlegi helyzetedről tervezel, ez a GPS-koordinátáidat is jelenti. A Photon a keresőszöveget kapja meg, a GPS-helyzetet nem.
 - Nincsenek beépített analitikák, követőkódok vagy háttérben futó adatgyűjtők.
 - A térképhez, helykereséshez és menetrendekhez nincs szükség fiókra vagy privát API-kulcsokra. A térképcsempék és keresési találatok letöltése internetkapcsolatot igényel.
+
+### Frissítések közzététele
+
+Az alkalmazás közvetlenül az [`eefochu/bmenetrend` GitHub-kiadásait](https://github.com/eefochu/bmenetrend/releases) ellenőrzi; nincs külön GitHub Pages OTA-JSON. Stabil csatornához egy nem előzetes, verziószámos kiadásba `app-release.apk`, a debug csatornához `app-debug.apk` fájlt kell feltölteni. Egy kiadás mindkét APK-t is tartalmazhat. A changelog a kiadás leírásából származik. Az új kiadás `versionName` és `versionCode` értékét növelni kell, az alkalmazásazonosítót és az aláírókulcsot meg kell tartani a meglévő telepítések frissíthetőségéhez.

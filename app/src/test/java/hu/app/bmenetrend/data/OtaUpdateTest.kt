@@ -34,8 +34,8 @@ class OtaUpdateTest {
             {
               "tag": "DEBUG",
               "version": "0.3.0",
-              "apk": "https://github.com/micr0softstore/bmenetrend/releases/download/v0.3.0-debug/app-debug.apk",
-              "lastCommit": "https://github.com/micr0softstore/bmenetrend/commit/da014fc48142ef2d210d3314848135e379cc8654",
+              "apk": "https://github.com/eefochu/bmenetrend/releases/download/v0.3.0-debug/app-debug.apk",
+              "lastCommit": "https://github.com/eefochu/bmenetrend/commit/da014fc48142ef2d210d3314848135e379cc8654",
               "changelog": "Whatever bence fixed or improved.\nAnd whatever comes here"
             }
         """.trimIndent()
@@ -43,8 +43,8 @@ class OtaUpdateTest {
         val info = OtaRepository.parseJson(json)
         assertEquals("DEBUG", info.tag)
         assertEquals("0.3.0", info.version)
-        assertEquals("https://github.com/micr0softstore/bmenetrend/releases/download/v0.3.0-debug/app-debug.apk", info.apkUrl)
-        assertEquals("https://github.com/micr0softstore/bmenetrend/commit/da014fc48142ef2d210d3314848135e379cc8654", info.lastCommit)
+        assertEquals("https://github.com/eefochu/bmenetrend/releases/download/v0.3.0-debug/app-debug.apk", info.apkUrl)
+        assertEquals("https://github.com/eefochu/bmenetrend/commit/da014fc48142ef2d210d3314848135e379cc8654", info.lastCommit)
         assertTrue(info.changelog?.contains("Whatever bence fixed") == true)
     }
 

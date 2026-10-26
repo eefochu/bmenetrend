@@ -53,11 +53,11 @@ class TripPlannerTest {
         assertTrue(result.itineraries.all { it.transfers >= 1 })
         assertTrue(result.itineraries.all { TripPlanner.feasible(it.legs,result.readyAt) })
     }
-    @Test fun shortestDurationWinsOverEarlierArrival() {
+    @Test fun earlierArrivalWinsOverAShortRideAfterALongWait() {
         val text=fixture("metro"); val root=JSONObject(text); val rows=root.getJSONObject("data").getJSONObject("plan").getJSONArray("itineraries")
         val earlier=rows.getJSONObject(1)
         val later=rows.getJSONObject(2)
-        // A later journey takes less total duration, so it should be placed at the top.
+        // A shorter ride departing an hour later must not outrank an earlier arrival.
         val legs=later.getJSONArray("legs")
         var clock=Instant.ofEpochMilli(earlier.getLong("endTime")).plusSeconds(3_600)
         later.put("startTime",clock.toEpochMilli())
@@ -72,8 +72,8 @@ class TripPlannerTest {
         val earlierDuration = earlier.getLong("endTime") - earlier.getLong("startTime")
         assertTrue(laterDuration < earlierDuration)
         val result=parse(root.toString())
-        assertEquals(laterDuration / 1000, result.itineraries.first().durationSeconds)
-        assertTrue(result.itineraries.zipWithNext().all { (a,b)->a.durationSeconds <= b.durationSeconds })
+        assertTrue(result.itineraries.first().end.toEpochMilli() < later.getLong("endTime"))
+        assertTrue(result.itineraries.zipWithNext().all { (a,b)->a.end <= b.end })
     }
     @Test fun cannotBoardAminuteAwayAfterTwoMinuteWalk() {
         val ready=Instant.parse("2026-10-23T12:00:00Z")

@@ -106,8 +106,8 @@ class PlannerRenderingTest {
         compose.onNodeWithText(app.getString(R.string.planner_find)).performClick()
         compose.waitUntil(10_000) { !model.state.value.planning }
         org.junit.Assert.assertTrue(model.state.value.toString(),model.state.value.result?.itineraries?.isNotEmpty() == true)
-        org.junit.Assert.assertEquals(8,model.state.value.result!!.itineraries.size)
-        for(index in 0..7) {
+        org.junit.Assert.assertEquals(3,model.state.value.result!!.itineraries.size)
+        for(index in 0..2) {
             compose.onNode(hasScrollAction()).performScrollToNode(hasText("287-$index"))
             compose.onNodeWithText("287-$index").assertIsDisplayed()
         }
@@ -146,6 +146,17 @@ class PlannerRenderingTest {
         compose.runOnIdle { shown.value=vehicle.copy(routeNumber="2") }
         compose.onNodeWithText("2").assertIsDisplayed()
         compose.onAllNodesWithText(app.getString(R.string.vehicle_route_estimated)).assertCountEquals(0)
+    }
+
+    @Test fun anExpiredDirectionIdDoesNotSilentlySelectTheFirstOppositePattern() {
+        val route=TransitRoute("bkk:1","1","A–B",emptyList(),"bkk",transportMode="BUS")
+        val stops=listOf(TransitStop("a","A",GeoPoint(47.4,19.0),listOf(route.id)),
+            TransitStop("b","B",GeoPoint(47.5,19.0),listOf(route.id)))
+        val pattern=LinePattern("new",setOf("new"),"B",stops,emptyList())
+        val state=UiState(lineDetails=mapOf(route.id to LineDetails(route,listOf(pattern))))
+        val app=ApplicationProvider.getApplicationContext<android.app.Application>()
+        compose.setContent { ViaBuszTheme { EmmaLineBrowser(state,route,"expired",{}, {_,_,_->}, {}) } }
+        compose.onNodeWithText(app.getString(R.string.line_from,"A")).assertIsDisplayed()
     }
 
 }

@@ -17,7 +17,7 @@ object EmmaStopsParser {
     val SEARCH_QUERY = """query FindStops(${'$'}name: String!) { stops(name:${'$'}name) { $STOP_FIELDS } }"""
     val BOARD_FIELDS = """$STOP_FIELDS
         stoptimesForPatterns(startTime:${'$'}start,timeRange:${'$'}range,numberOfDepartures:$BOARD_LIMIT,omitNonPickups:true) {
-            pattern { code }
+            pattern { code headsign }
             stoptimes {
                 scheduledDeparture realtimeDeparture realtime realtimeState serviceDay headsign pickupType
                 stop { gtfsId platformCode }
@@ -144,7 +144,8 @@ object EmmaStopsParser {
                 val group = groups.getJSONObject(i)
                 val times = group.getJSONArray("stoptimes")
                 if (times.length() >= BOARD_LIMIT) limitReached = true
-                for (j in 0 until times.length()) flat.put(times.getJSONObject(j).put("_sourcePatternCode", group.optJSONObject("pattern")?.text("code")))
+                for (j in 0 until times.length()) flat.put(times.getJSONObject(j).put("_sourcePatternCode", group.optJSONObject("pattern")?.text("code"))
+                    .put("_sourceHeadsign", group.optJSONObject("pattern")?.text("headsign")))
             }
         }
         val routes = linkedMapOf<String, TransitRoute>().apply { catalogue.routes.forEach { put(it.id, it) } }
@@ -168,7 +169,7 @@ object EmmaStopsParser {
             val expected = if (realtime) Instant.ofEpochSecond(day + realtimeSeconds!!) else scheduled ?: return@mapNotNull null
             if (expected < now || expected > now.plusSeconds(windowMinutes * 60L)) return@mapNotNull null
             routes[route.id] = route
-            Departure(route.id, route.number, time.text("headsign") ?: trip.text("tripHeadsign") ?: route.name,
+            Departure(route.id, route.number, time.text("headsign") ?: trip.text("tripHeadsign") ?: time.text("_sourceHeadsign").orEmpty(),
                 expectedId, scheduled, expected, if (realtime) ArrivalKind.LIVE else ArrivalKind.SCHEDULED,
                 // The full trip ID distinguishes departures with identical route/headsign/time.
                 directionId = tripId,

@@ -103,7 +103,7 @@ object EmmaJourneyParser {
             expectedTripId,
             parsedRoute.number,
             route.text("longName"),
-            trip.text("tripHeadsign"),
+            JourneyDirection.destination(stops, trip.text("tripHeadsign")),
             stops,
             runCatching { EmmaRouteParser.tripGeometry(trip.optJSONArray("geometry")) }.getOrDefault(emptyList()),
             trip.optJSONObject("pattern").text("code"),

@@ -38,7 +38,7 @@ private val observationFormat = DateTimeFormatter.ofPattern("HH:mm:ss").withZone
 @Composable
 fun VehiclePanel(state: UiState, onClose: () -> Unit, onRefresh: () -> Unit, onStop: (String) -> Unit, onShowRoute: () -> Unit, modifier: Modifier = Modifier) {
     val vehicle = state.selectedVehicle ?: return
-    val journey = state.vehicleJourney
+    val journey = state.vehicleJourney?.takeIf { it.tripId == vehicle.tripId }
     val listState = rememberLazyListState()
     val color = lineColor(vehicle.providerId, vehicle.transportMode, vehicle.markerColor)
     val progress = VehicleStopProgress.resolve(vehicle, journey, state.now)
@@ -97,7 +97,7 @@ fun VehiclePanel(state: UiState, onClose: () -> Unit, onRefresh: () -> Unit, onS
             }
             if (journey != null) item(contentType = "route_summary") {
                 Column(Modifier.padding(horizontal = 22.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    journey.routeName?.takeIf { it != destination && it != number }?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+                    hu.app.bmenetrend.data.JourneyDirection.endpoints(journey.stops)?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
                     if (journey.geometry.size >= 2) OutlinedButton(onClick = onShowRoute) { Text(stringResource(R.string.line_show_route)) }
                 }
             }

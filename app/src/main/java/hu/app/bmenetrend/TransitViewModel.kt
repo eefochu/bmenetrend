@@ -32,6 +32,8 @@ import kotlin.math.*
 class TransitViewModel(application: Application) : AndroidViewModel(application) {
     private val otaRepository = OtaRepository(application)
     private var otaJob: Job? = null
+    private var otaDownloadJob: Job? = null
+    private var otaDownloadedUrl: String? = null
     private val repository = TransitRepository(application)
     private val routeEstimator by lazy {
         ViabuszRouteEstimator(RouteRoads.decode(application.assets.open("viabusz-route-geometry.json").bufferedReader().use { it.readText() }))
@@ -852,8 +854,11 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun setOtaChannel(channel: UpdateChannel) {
+        otaDownloadJob?.cancel()
+        otaDownloadedUrl = null
         preferences.edit().putString("ota_channel", channel.key).apply()
-        mutableState.update { it.copy(otaChannel = channel, otaUpdateAvailable = null, otaCheckError = null) }
+        mutableState.update { it.copy(otaChannel = channel, otaUpdateAvailable = null, otaCheckError = null,
+            otaDownloadedApk = null, otaDownloadProgress = null, showOtaDialog = false) }
         checkForUpdates(isAutoCheck = false)
     }
 
@@ -867,45 +872,50 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             try {
                 val info = otaRepository.fetchUpdateInfo(channel)
                 val currentVersion = BuildConfig.VERSION_NAME
-                val isNew = VersionComparator.isNewer(info.version, currentVersion)
+                val isNew = info != null && VersionComparator.isNewer(info.version, currentVersion)
+                if (info?.apkUrl != otaDownloadedUrl) otaDownloadedUrl = null
                 mutableState.update { current ->
                     current.copy(
                         otaCheckLoading = false,
                         otaCheckError = null,
                         otaLastChecked = Instant.now(),
                         otaUpdateAvailable = if (isNew) info else null,
-                        showOtaDialog = if (isNew) true else current.showOtaDialog
+                        otaDownloadedApk = current.otaDownloadedApk.takeIf { otaDownloadedUrl != null && otaDownloadedUrl == info?.apkUrl },
+                        showOtaDialog = isNew
                     )
                 }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (e: Exception) {
-                if (!isAutoCheck) {
-                    mutableState.update { it.copy(otaCheckLoading = false, otaCheckError = e.localizedMessage ?: "Hiba a frissítések lekérésekor") }
-                }
+                mutableState.update { it.copy(otaCheckLoading = false,
+                    otaCheckError = if (isAutoCheck) it.otaCheckError else e.localizedMessage ?: "Hiba a frissítések lekérésekor") }
             }
         }
     }
 
     fun startOtaDownloadAndInstall(context: Context, info: OtaUpdateInfo) {
         val apkUrl = info.apkUrl ?: return
+        if (otaDownloadJob?.isActive == true) return
         val downloaded = state.value.otaDownloadedApk
-        if (downloaded != null && downloaded.exists()) {
+        if (otaDownloadedUrl == apkUrl && downloaded != null && downloaded.exists()) {
             try {
                 otaRepository.installApk(downloaded)
                 return
             } catch (_: Exception) {}
         }
-        mutableState.update { it.copy(otaDownloadProgress = 0f, otaCheckError = null) }
-        viewModelScope.launch {
+        mutableState.update { it.copy(otaDownloadProgress = 0f, otaDownloadedApk = null, otaCheckError = null) }
+        otaDownloadJob = viewModelScope.launch {
             try {
                 val otaDir = File(context.cacheDir, "ota_updates")
                 val target = File(otaDir, "bmenetrend-${info.version}-${info.tag}.apk")
                 val file = otaRepository.downloadApk(apkUrl, target) { progress ->
                     mutableState.update { it.copy(otaDownloadProgress = progress) }
                 }
+                otaDownloadedUrl = apkUrl
                 mutableState.update { it.copy(otaDownloadProgress = null, otaDownloadedApk = file) }
                 otaRepository.installApk(file)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
             } catch (e: Exception) {
                 mutableState.update { it.copy(otaDownloadProgress = null, otaCheckError = e.localizedMessage ?: "Letöltési hiba") }
             }

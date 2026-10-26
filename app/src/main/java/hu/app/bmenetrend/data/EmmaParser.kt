@@ -73,7 +73,7 @@ object EmmaParser {
             val vehicle = Vehicle(
                 id = "emma:$sourceId", position = GeoPoint(lat, lon), observedAt = observed,
                 routeId = sourceRouteId?.let { "$provider:$it" }, providerId = provider,
-                routeNumber = routeNumber, destination = trip?.text("tripHeadsign") ?: route?.text("longName"),
+                routeNumber = routeNumber, destination = trip?.text("tripHeadsign"),
                 registration = row.text("label") ?: sourceId.substringAfter(":").removePrefix("hkir_"),
                 tripId = trip?.text("gtfsId"), routeName = route?.text("longName"), transportMode = mode,
                 heading = row.number("heading")?.takeIf { it in 0.0..360.0 },
