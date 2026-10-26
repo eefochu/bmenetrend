@@ -486,10 +486,10 @@ fun NativeTransitMap(
             (lineFocus?.includes(vehicle) ?: true) && TransitMapVisibility.vehicle(vehicle.transportMode, zoom, focused) && viewport?.let { vehicle.position.lat in it.south..it.north && vehicle.position.lon in it.west..it.east } == true
         }
         visibleVehicles.forEach { vehicle ->
-            val number = if (vehicle.providerId == "mav") vehicle.displayNumber else vehicle.routeNumber ?: network?.routes?.find { it.id == vehicle.routeId }?.number ?: context.getString(if (vehicle.providerId == "bkk") R.string.emma_vehicle else R.string.engine_vehicle_bus)
+            val number = if (vehicle.providerId == "mav") vehicle.displayNumber else vehicle.displayRouteNumber ?: network?.routes?.find { it.id == vehicle.routeId }?.number ?: context.getString(if (vehicle.providerId == "bkk") R.string.emma_vehicle else R.string.engine_vehicle_bus)
             val options = MarkerOptions()
                 .position(LatLng(vehicle.position.lat, vehicle.position.lon))
-                .title("${when (vehicle.providerId) { "mav" -> "MÁV / GYSEV"; "hev" -> "HÉV"; "kanyargo" -> "KanyarGO"; "homm" -> "HOMM"; "volan" -> "Volán"; "bkk" -> "BKK"; else -> "ViaBusz" }} · $number · ${vehicle.registration ?: vehicle.id.substringAfter(":")}")
+                .title("${when (vehicle.providerId) { "mav" -> "MÁV / GYSEV"; "hev" -> "HÉV"; "kanyargo" -> "KanyarGO"; "homm" -> "HOMM"; "volan" -> "Volán"; "bkk" -> "BKK"; else -> "ViaBusz" }} · $number${if (vehicle.isRouteEstimated) " · ${context.getString(R.string.vehicle_route_estimated)}" else ""} · ${vehicle.registration ?: vehicle.id.substringAfter(":")}")
                 .snippet(listOfNotNull(vehicle.destination?.takeIf(String::isNotBlank), vehicle.nextStopName?.takeIf(String::isNotBlank), context.getString(if (vehicle.providerId in setOf("volan", "bkk", "hev", "mav")) R.string.volan_observation_time else R.string.engine_gps_time, formatter.format(vehicle.observedAt)), if (vehicle.providerId in setOf("volan", "bkk", "hev", "mav")) context.getString(R.string.volan_position_source) else null,
                     vehicle.speedKmh?.let { context.getString(R.string.emma_speed, it.toInt()) }, if (vehicle.routeId == null) context.getString(R.string.engine_no_vehicle_route) else null).joinToString("\n"))
                 .icon(vehicleIcon(vehicle))

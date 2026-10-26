@@ -188,12 +188,12 @@ object TransitSearch {
         if (cached != null && vehicles === lastVehiclesRef) return cached
         val entries = vehicles.map { vehicle ->
             val mode = vehicle.transportMode ?: "BUS"
-            val text = normalize(listOfNotNull(vehicle.registration, vehicle.trainNumber, vehicle.serviceName, vehicle.id, vehicle.routeNumber, vehicle.routeName, vehicle.destination, vehicle.providerId).joinToString(" "))
+            val text = normalize(listOfNotNull(vehicle.registration, vehicle.trainNumber, vehicle.serviceName, vehicle.id, vehicle.displayRouteNumber, vehicle.routeName, vehicle.destination, vehicle.providerId).joinToString(" "))
             VehicleEntry(
                 vehicle = vehicle,
                 mode = mode,
                 providerId = vehicle.providerId,
-                normalizedNumber = normalize(vehicle.routeNumber.orEmpty()),
+                normalizedNumber = normalize(vehicle.displayRouteNumber.orEmpty()),
                 normalizedText = text,
                 compactText = text.replace(nonAlphanumericRegex, ""),
                 cleanRegistration = normalize(vehicle.registration.orEmpty()).replace("-", ""),

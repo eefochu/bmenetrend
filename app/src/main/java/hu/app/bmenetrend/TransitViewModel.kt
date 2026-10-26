@@ -33,6 +33,9 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private val otaRepository = OtaRepository(application)
     private var otaJob: Job? = null
     private val repository = TransitRepository(application)
+    private val routeEstimator by lazy {
+        ViabuszRouteEstimator(RouteRoads.decode(application.assets.open("viabusz-route-geometry.json").bufferedReader().use { it.readText() }))
+    }
     private val preferences = application.getSharedPreferences("viabusz", 0)
     private val emmaRepository = EmmaRepository(application)
     private val stopsRepository = EmmaStopsRepository(application)
@@ -335,7 +338,11 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                         current.copy(network = network, selectedStopId = selected, nearestStopId = nearest, loading = false)
                     }
                 }
-                live = repository.refresh()
+                val refreshed = repository.refresh()
+                val estimateNetwork = state.value.network
+                live = kotlinx.coroutines.withContext(Dispatchers.Default) {
+                    refreshed.copy(vehicles = routeEstimator.update(refreshed.vehicles, estimateNetwork, Instant.now()))
+                }
                 liveError = false
                 mutableState.update { it.copy(error = null, loading = false,
                     lastUpdated = if (live?.vehicleDataAvailable == true) live?.fetchedAt else it.lastUpdated) }
@@ -380,7 +387,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             }
             val vehicles = (snapshot?.vehicles.orEmpty() + emmaVehicles).filter {
                 Duration.between(it.observedAt, now).seconds in -30..180
-            }
+            }.map { if (Duration.between(it.observedAt, now).seconds > 90) it.copy(routeEstimate = null) else it }
             val emmaMessage = when {
                 emma?.messageResource == R.plurals.volan_positions -> null
                 emma != null -> getApplication<Application>().getString(emma.messageResource)
@@ -434,7 +441,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 },
                 departures = departures,
                 vehicles = vehicles,
-                selectedVehicle = current.selectedVehicle?.let { selected -> vehicles.find { it.id == selected.id } ?: selected },
+                selectedVehicle = current.selectedVehicle?.let { selected -> vehicles.find { it.id == selected.id } ?: selected.copy(routeEstimate = null) },
                 emmaRoutes = EmmaParser.routeCatalogue(vehicles.filter { it.providerId in setOf("volan", "bkk", "hev", "mav") }, (stopRoutes + lineCatalogue + emmaRepository.catalogue).distinctBy { it.id }),
                 emmaStatus = emmaMessage,
                 liveStopMinutes = snapshot?.arrivals.orEmpty()

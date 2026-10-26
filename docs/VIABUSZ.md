@@ -50,3 +50,21 @@ python3 scripts/build_viabusz_calendar_snapshot.py --source-dir research
 ```
 
 A mappában a `calendar-via-school.pdf` és `calendar-via-break.pdf` fájlok kellenek. Az eredmény `app/src/main/assets/viabusz-calendar-network.json`; az eredeti `network.json` a régi HTML-parser teszteléséhez változatlanul megmarad. Új PDF esetén előbb teljes forrásellenőrzés és vizuális áttekintés szükséges, nem elegendő csak a lenyomatot kicserélni. A tesztpéldány frissítése is szükséges az `app/src/test/resources/viabusz-calendar-network.json` helyen.
+
+## Becsült élő járatszám
+
+A GPS-forrás továbbra sem ad megerősített járat-/menetazonosítót. A kliens most külön, **becsült** járatszámot is megjeleníthet a ViaBusz járműveinél. A normál zöld járatjelzés mellett, azon kívül sárga `Becsült` szöveg jelenik meg a járműpanelen és a keresőben. A becslés nem változtatja meg a forrás `routeId`, `routeNumber`, `tripId` mezőit, nem készít élő indulási előrejelzést, és nem érinti a többi szolgáltatót.
+
+A `ViabuszRouteEstimator` több, különböző időpontú GPS-fixet illeszt a hivatalos GPX-nyomvonalakra. A `scripts/build_viabusz_geometry.py` az öt GPX-et a menetrend sorrendezett megállói mentén bontja útszakaszokra. Az 1P GPX csak a kitérőt tartalmazza, ezért a közös szakaszokhoz az 1-es nyomvonalát is használjuk. A GPX-fájlok legfeljebb 15 méteres felmérési hézagai összeköthetők; hosszú hiányzó utcákat nem egészítünk ki egyenes vonallal. A letöltési URL-ek és SHA-256-lenyomatok az `app/src/main/assets/viabusz-route-geometry.json` fájlban vannak. Az import újrafuttatható a fenti Python-szkripttel; frissítés után a geometriai és visszajátszási teszteket is futtatni kell.
+
+A becslés feltételei:
+
+- Aznap ellenőrzött PDF-forrás és aktív tanítási/tanszüneti naptár.
+- Legalább három külön GPS-időpont, legalább 20 másodpercnyi megfigyelés és 60 méter előrehaladás; az első egyértelmű találat után még egy friss csomag megerősítése szükséges. A 15 másodperces frissítésnél ez kedvező esetben kb. 45 másodperc.
+- Az úttól legfeljebb 110 méteres egyedi eltérés, legfeljebb 55 méteres átlagos négyzetes hiba; irányban és sebességben is következetes haladás a megállók sorrendjében.
+- A haladáshoz illő, legfeljebb öt perccel korábbi vagy harminc perccel későbbi menetrendi pozíció. A konstans késést megengedjük; a változó időeltérés rontja a pontszámot.
+- A legjobb másik járat legalább 25 ponttal gyengébb összesített illeszkedése. Közös útszakasz, bizonytalan irány vagy közeli pontszám esetén a szám rejtve marad.
+
+A legfeljebb ötperces, tizenkét csomagos előzmény csak a memóriában él. Ismételt csomag nem erősíti a találatot. 90 másodpercnél régebbi GPS, hosszú adathiány, valószínűtlen ugrás, végállomási tartózkodás vagy egyperces állás törli a becslést; járatváltás után új megerősítés kell. Azonos időbélyeghez eltérő helyadat szintén érvényteleníti az előzményt.
+
+A tesztek mesterséges, ismert irányú és idejű mozgásokat, valamint az öt hivatalos nyomvonal zajjal kiegészített menetrendi visszajátszását használják. Ezek regressziós ellenőrzések; hitelesített, valódi jármű–járat párosítás hiányában nem állítunk mért valós pontossági százalékot. Nagy késés, terelés, GPS-hiba és közös nyomvonal továbbra is korlátozhatja vagy elnémíthatja a becslést.

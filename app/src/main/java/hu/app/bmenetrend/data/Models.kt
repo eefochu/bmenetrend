@@ -54,6 +54,9 @@ data class TransitNetwork(
 )
 
 @Immutable
+data class VehicleRouteEstimate(val routeId: String, val number: String)
+
+@Immutable
 data class Vehicle(
     val id: String,
     val position: GeoPoint,
@@ -77,8 +80,11 @@ data class Vehicle(
     val trainNumber: String? = null,
     val serviceName: String? = null,
     val nextStopParentId: String? = null,
+    val routeEstimate: VehicleRouteEstimate? = null,
 ) {
-    val displayNumber: String get() = if (RailSupport.isTrain(transportMode)) RailSupport.label(routeNumber, trainNumber) else routeNumber ?: "?"
+    val displayRouteNumber: String? get() = routeNumber ?: routeEstimate?.number
+    val isRouteEstimated: Boolean get() = routeNumber == null && routeEstimate != null
+    val displayNumber: String get() = if (RailSupport.isTrain(transportMode)) RailSupport.label(routeNumber, trainNumber) else displayRouteNumber ?: "?"
 }
 
 enum class ArrivalKind { SCHEDULED, LIVE }

@@ -114,4 +114,5 @@
     <string name="ota_retry">Újrapróbálás</string>
     <string name="ota_dialog_update_title">Új verzió érhető el!</string>
     <string name="ota_dialog_update_now">Frissítés most</string>
+    <string name="vehicle_route_estimated">Becsült</string>
 </resources>
