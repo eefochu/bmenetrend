@@ -1,5 +1,6 @@
 package hu.app.bmenetrend.ui
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.core.app.ApplicationProvider
@@ -23,9 +24,10 @@ class FavoritesScreenTest {
 
     private val trainRoute1 = TransitRoute("mav:s10", "S10", "Győr", emptyList(), "mav", transportMode = "RAIL")
     private val trainRoute2 = TransitRoute("mav:ic123", "IC", "Szombathely", emptyList(), "mav", transportMode = "RAIL")
+    private val trainRouteDuplicate = TransitRoute("mav:s10_alt", "S10", "Komárom", emptyList(), "mav", transportMode = "RAIL")
     private val busRoute = TransitRoute("volan:762", "762", "Sóskút", emptyList(), "volan", transportMode = "BUS")
 
-    private val stationStop = TransitStop("stop_kelenfold", "Budapest-Kelenföld", GeoPoint(47.46, 19.02), listOf(trainRoute1.id, trainRoute2.id, busRoute.id), "mav")
+    private val stationStop = TransitStop("stop_kelenfold", "Budapest-Kelenföld", GeoPoint(47.46, 19.02), listOf(trainRoute1.id, trainRoute2.id, trainRouteDuplicate.id, busRoute.id), "mav")
     private val platform1 = TransitStop("plat_1", "1. vágány", GeoPoint(47.46, 19.02), listOf(trainRoute1.id), "mav")
     private val platform2 = TransitStop("plat_2", "2. vágány", GeoPoint(47.46, 19.02), listOf(trainRoute2.id), "mav")
 
@@ -49,36 +51,78 @@ class FavoritesScreenTest {
         kind = ArrivalKind.SCHEDULED,
         serviceName = "BAKONY InterCity"
     )
+    // Duplicate departure for S10 and duplicate for IC to verify deduplication
+    private val depDuplicateS10 = Departure(
+        routeId = "mav:s10_alt",
+        routeNumber = "S10",
+        destination = "Hegyeshalom",
+        stopId = platform1.id,
+        scheduledAt = Instant.now().plusSeconds(3600),
+        expectedAt = Instant.now().plusSeconds(3600),
+        kind = ArrivalKind.SCHEDULED,
+        serviceName = "Személyvonat"
+    )
 
     private val nearbyStation = NearbyStation(
         stop = stationStop,
         platforms = listOf(platform1, platform2),
         distanceMeters = 100.0,
-        departures = listOf(dep1, dep2),
+        departures = listOf(dep1, dep2, depDuplicateS10),
         loading = false,
         unavailable = false
     )
 
     private val uiState = UiState(
-        network = TransitNetwork(listOf(stationStop, platform1, platform2), listOf(trainRoute1, trainRoute2, busRoute), emptyList(), Instant.now(), "test"),
+        network = TransitNetwork(listOf(stationStop, platform1, platform2), listOf(trainRoute1, trainRoute2, trainRouteDuplicate, busRoute), emptyList(), Instant.now(), "test"),
         favorites = setOf(stationStop.id),
         favoriteStations = listOf(nearbyStation),
         favoritesLoading = false
     )
 
     @Test
-    fun extractStationLinesCategorizesTrainAndOtherRoutesCorrectly() {
+    fun extractStationLinesDeduplicatesBadgesAndCategorizesCorrectly() {
         val lines = extractStationLines(nearbyStation, uiState)
 
-        assertTrue(lines.trainTypes.contains("Személyvonat"))
-        assertTrue(lines.trainTypes.contains("InterCity"))
-        assertEquals(2, lines.trainRoutes.size)
-        assertEquals(1, lines.otherRoutes.size)
-        assertEquals("762", lines.otherRoutes.first().number)
+        // Verify deduplication: S10 appears only once even though multiple routes & departures have S10
+        val s10Count = lines.trainBadges.count { it.label == "S10" }
+        assertEquals(1, s10Count)
+
+        val icCount = lines.trainBadges.count { it.label == "IC" }
+        assertEquals(1, icCount)
+
+        assertEquals(2, lines.trainBadges.size)
+        assertEquals(1, lines.otherBadges.size)
+        assertEquals("762", lines.otherBadges.first().label)
     }
 
     @Test
-    fun favoritesScreenRendersTrainTypesAndLineBadgesAndTriggersCallbacks() {
+    fun railLineColorMatchesSpecification() {
+        assertEquals(Color(0xFF008001), railLineColor("IR"))
+        assertEquals(Color(0xFF008001), railLineColor("IR87"))
+        assertEquals(Color(0xFFA9CD45), railLineColor("G10"))
+        assertEquals(Color(0xFFA9CD45), railLineColor("G43"))
+        assertEquals(Color(0xFF00AFEF), railLineColor("S10"))
+        assertEquals(Color(0xFF00AFEF), railLineColor("S30"))
+        assertEquals(Color(0xFFFECD28), railLineColor("Z30"))
+        assertEquals(Color(0xFF171B20), railLineTextColor("Z30"))
+        assertEquals(Color.White, railLineTextColor("S10"))
+        assertEquals(Color.White, railLineTextColor("G10"))
+        assertEquals(Color(0xFF2E5EA7), railLineColor("IC"))
+        assertEquals(Color(0xFF2E5EA7), railLineColor("rjx"))
+        assertEquals(Color(0xFF2E5EA7), railLineColor("Gy"))
+        assertEquals(Color(0xFF2E5EA7), railLineColor("Sz"))
+    }
+
+    @Test
+    fun naturalCompareSortsBadgesCorrectly() {
+        val badges = listOf("rjx", "Sz", "S", "S10", "G10", "G43", "G40", "G44", "S30", "S12", "S36", "S40", "S42", "Z30", "IC", "IR", "EC", "EN", "Ex")
+        val sorted = badges.sortedWith { a, b -> naturalCompare(a, b) }
+        val expected = listOf("EC", "EN", "Ex", "G10", "G40", "G43", "G44", "IC", "IR", "S", "S10", "S12", "S30", "S36", "S40", "S42", "Sz", "Z30", "rjx")
+        assertEquals(expected, sorted)
+    }
+
+    @Test
+    fun favoritesScreenRendersDistinctBadgesAndTriggersCallbacks() {
         var clickedStopId: String? = null
         var clickedRouteId: String? = null
         var allDeparturesStopId: String? = null
@@ -103,14 +147,9 @@ class FavoritesScreenTest {
         // Check station name header is displayed
         compose.onNodeWithText("Budapest-Kelenföld").assertIsDisplayed()
 
-        // Check train types are displayed
-        compose.onNodeWithText(app.getString(R.string.favorites_train_types)).assertIsDisplayed()
-        compose.onNodeWithText("Személyvonat").assertIsDisplayed()
-        compose.onNodeWithText("InterCity").assertIsDisplayed()
-
-        // Check train lines section is displayed with line badges
-        compose.onNodeWithText(app.getString(R.string.favorites_train_lines)).assertIsDisplayed()
+        // Check line badges are displayed
         compose.onNodeWithText("S10").assertIsDisplayed()
+        compose.onNodeWithText("IC").assertIsDisplayed()
 
         // Check other lines section is displayed
         compose.onNodeWithText(app.getString(R.string.favorites_other_lines)).assertIsDisplayed()
@@ -123,8 +162,8 @@ class FavoritesScreenTest {
             assertEquals(trainRoute1.id, clickedRouteId)
         }
 
-        // Clicking a train type chip should also trigger onStopRoute for the matching route
-        compose.onNodeWithText("InterCity").performClick()
+        // Clicking another line badge should trigger onStopRoute
+        compose.onNodeWithText("IC").performClick()
         compose.runOnIdle {
             assertEquals(stationStop.id, clickedStopId)
             assertEquals(trainRoute2.id, clickedRouteId)

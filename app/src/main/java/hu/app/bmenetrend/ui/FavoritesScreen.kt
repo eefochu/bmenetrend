@@ -13,57 +13,61 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import hu.app.bmenetrend.R
 import hu.app.bmenetrend.data.*
 import kotlinx.coroutines.flow.distinctUntilChanged
 
+data class StationBadgeItem(
+    val id: String,
+    val label: String,
+    val isTrain: Boolean,
+    val provider: String,
+    val mode: String?,
+    val sourceColor: String? = null,
+)
+
 data class StationLines(
-    val trainTypes: List<String>,
-    val trainRoutes: List<TransitRoute>,
-    val otherRoutes: List<TransitRoute>,
+    val trainBadges: List<StationBadgeItem>,
+    val otherBadges: List<StationBadgeItem>,
 )
 
-private val TRAIN_TYPE_PRIORITY = listOf(
-    "Személyvonat",
-    "Gyorsított",
-    "Zónázó",
-    "InterRégió",
-    "InterCity",
-    "Railjet",
-    "EuroCity",
-    "EuroNight",
-    "Expressz",
-    "Gyorsvonat",
-    "Tram-Train",
-)
-
-internal fun trainTypeLabel(number: String, serviceName: String?): String {
-    val cleanService = serviceName?.trim()?.uppercase(java.util.Locale.ROOT).orEmpty()
-    val numUpper = number.trim().uppercase(java.util.Locale.ROOT)
-    return when {
-        cleanService.contains("INTERCITY") || numUpper.startsWith("IC") -> "InterCity"
-        cleanService.contains("INTERRÉGIÓ") || cleanService.contains("INTERREGIO") || numUpper.startsWith("IR") -> "InterRégió"
-        cleanService.contains("RAILJET") || numUpper.startsWith("RJ") -> "Railjet"
-        cleanService.contains("EUROCITY") || numUpper.startsWith("EC") -> "EuroCity"
-        cleanService.contains("EURONIGHT") || numUpper.startsWith("EN") -> "EuroNight"
-        cleanService.contains("EXPRESSZ") || numUpper.startsWith("EX") -> "Expressz"
-        cleanService.contains("TRAM-TRAIN") || cleanService.contains("TRAMTRAIN") || numUpper.startsWith("TT") -> "Tram-Train"
-        cleanService.contains("GYORSÍTOTT") || numUpper.startsWith("G") -> "Gyorsított"
-        cleanService.contains("ZÓNÁZÓ") || cleanService.contains("ZONAZO") || numUpper.startsWith("Z") -> "Zónázó"
-        cleanService.contains("GYORS") -> "Gyorsvonat"
-        cleanService.contains("SZEMÉLY") || numUpper.startsWith("S") -> "Személyvonat"
-        cleanService.isNotBlank() && cleanService.length in 3..25 && !cleanService.any { it.isDigit() } -> serviceName!!.trim()
-        else -> "Személyvonat"
+internal fun naturalCompare(a: String, b: String): Int {
+    val tokenRegex = Regex("([a-zA-Z]+|\\d+)")
+    val tokensA = tokenRegex.findAll(a).map { it.value }.toList()
+    val tokensB = tokenRegex.findAll(b).map { it.value }.toList()
+    for (i in 0 until minOf(tokensA.size, tokensB.size)) {
+        val tA = tokensA[i]
+        val tB = tokensB[i]
+        val nA = tA.toIntOrNull()
+        val nB = tB.toIntOrNull()
+        if (nA != null && nB != null) {
+            val cmp = nA.compareTo(nB)
+            if (cmp != 0) return cmp
+        } else if (nA != null) {
+            return -1
+        } else if (nB != null) {
+            return 1
+        } else {
+            // Case-sensitive comparison: uppercase before lowercase in ASCII so 'Z30' comes before 'rjx'
+            val cmp = tA.compareTo(tB)
+            if (cmp != 0) return cmp
+        }
     }
+    return tokensA.size.compareTo(tokensB.size)
 }
 
 internal fun isTrainRoute(route: TransitRoute): Boolean {
     return RailSupport.isTrain(route.transportMode) ||
            route.providerId in setOf("mav", "gysev") ||
-           route.transportMode in setOf("RAIL", "SUBURBAN_RAILWAY", "TRAMTRAIN")
+           route.transportMode in setOf("RAIL", "SUBURBAN_RAILWAY", "TRAMTRAIN") ||
+           route.number.matches(Regex("^[GSZgsz]\\d+.*")) ||
+           route.number in setOf("S", "SZ", "G", "GY", "Z", "IC", "IR", "RJ", "RJX", "EC", "EN", "EX")
 }
 
 internal fun extractStationLines(station: NearbyStation, state: UiState): StationLines {
@@ -73,65 +77,114 @@ internal fun extractStationLines(station: NearbyStation, state: UiState): Statio
     val clusterRouteIds = cluster.flatMap { it.routeIds }
     val allRouteIds = (allPlatformRouteIds + departureRouteIds + clusterRouteIds).distinct()
 
-    val resolvedRoutes = allRouteIds.mapNotNull { routeId ->
-        state.findRoute(routeId) ?: if (routeId.startsWith("emma:")) {
-            val dep = station.departures.firstOrNull { it.routeId == routeId }
-            TransitRoute(
-                id = routeId,
-                number = dep?.serviceName?.let { RailSupport.serviceNumber(it) } ?: routeId.substringAfter(":"),
-                name = dep?.serviceName ?: "",
-                directions = emptyList(),
-                providerId = "mav",
-                transportMode = "RAIL"
-            )
-        } else null
-    }.distinctBy { it.id }
+    val rawTrainBadges = mutableListOf<StationBadgeItem>()
+    val rawOtherBadges = mutableListOf<StationBadgeItem>()
 
-    val (trainRoutes, otherRoutes) = resolvedRoutes.partition { isTrainRoute(it) }
-
-    val rawTrainTypes = mutableSetOf<String>()
-    for (route in trainRoutes) {
-        val dep = station.departures.firstOrNull { it.routeId == route.id }
-        rawTrainTypes.add(trainTypeLabel(route.number, dep?.serviceName ?: route.name))
+    fun addBadge(id: String, label: String, isTrain: Boolean, provider: String, mode: String?, color: String? = null) {
+        if (label.isBlank() || label == "?") return
+        val item = StationBadgeItem(id, label, isTrain, provider, mode, color)
+        if (isTrain) rawTrainBadges.add(item) else rawOtherBadges.add(item)
     }
+
+    // 1. From routes catalogue
+    for (routeId in allRouteIds) {
+        val route = state.findRoute(routeId)
+        if (route != null) {
+            val isTrain = isTrainRoute(route)
+            val label = if (isTrain) RailSupport.canonicalBadge(route.number, route.name) else route.number
+            addBadge(route.id, label, isTrain, route.providerId, route.transportMode, route.color)
+        }
+    }
+
+    // 2. From departures (covers ad-hoc trips, EMMA train departures, etc.)
     for (dep in station.departures) {
         val route = state.findRoute(dep.routeId)
-        if (route == null || isTrainRoute(route)) {
-            rawTrainTypes.add(trainTypeLabel(route?.number ?: dep.routeId, dep.serviceName))
-        }
+        val isTrain = if (route != null) isTrainRoute(route) else RailSupport.isTrainDeparture(dep.routeNumber, dep.serviceName)
+        val label = if (isTrain) RailSupport.canonicalBadge(route?.number ?: dep.routeNumber, dep.serviceName)
+                    else route?.number ?: dep.routeNumber.ifBlank { dep.routeId.substringAfter(":") }
+        val provider = route?.providerId ?: if (isTrain) "mav" else "volan"
+        val mode = route?.transportMode ?: if (isTrain) "RAIL" else "BUS"
+        addBadge(dep.routeId, label, isTrain, provider, mode, route?.color)
     }
 
-    val sortedTrainTypes = rawTrainTypes.toList().sortedWith(
-        Comparator { a, b ->
-            val idxA = TRAIN_TYPE_PRIORITY.indexOf(a)
-            val idxB = TRAIN_TYPE_PRIORITY.indexOf(b)
-            when {
-                idxA != -1 && idxB != -1 -> idxA.compareTo(idxB)
-                idxA != -1 -> -1
-                idxB != -1 -> 1
-                else -> a.compareTo(b)
-            }
-        }
-    )
+    // 3. Deduplicate by label (so there is only one Gy, one S, one Sz, one IC, one IR, one S10, etc.)
+    // and sort naturally (EC, EN, Ex, G10, G40, G43, G44, IC, IR, S, S10, S12, S30, S36, S40, S42, Sz, Z30, rjx)
+    val trainBadges = rawTrainBadges
+        .distinctBy { it.label }
+        .sortedWith { b1, b2 -> naturalCompare(b1.label, b2.label) }
 
-    val sortedTrainRoutes = trainRoutes.sortedWith(
-        Comparator { r1, r2 ->
-            val type1 = trainTypeLabel(r1.number, r1.name)
-            val type2 = trainTypeLabel(r2.number, r2.name)
-            val p1 = TRAIN_TYPE_PRIORITY.indexOf(type1).let { if (it == -1) 999 else it }
-            val p2 = TRAIN_TYPE_PRIORITY.indexOf(type2).let { if (it == -1) 999 else it }
-            if (p1 != p2) p1.compareTo(p2) else r1.number.compareTo(r2.number)
-        }
-    )
+    val otherBadges = rawOtherBadges
+        .distinctBy { it.label }
+        .sortedWith { b1, b2 -> naturalCompare(b1.label, b2.label) }
 
     return StationLines(
-        trainTypes = sortedTrainTypes,
-        trainRoutes = sortedTrainRoutes,
-        otherRoutes = otherRoutes.sortedBy { it.number }
+        trainBadges = trainBadges,
+        otherBadges = otherBadges,
     )
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun StationBadgeGrid(
+    badges: List<StationBadgeItem>,
+    onBadgeClick: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        badges.chunked(4).forEach { rowBadges ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                rowBadges.forEach { badge ->
+                    val (bgColor, textColor) = if (badge.isTrain) {
+                        railLineColor(badge.label) to railLineTextColor(badge.label)
+                    } else {
+                        val base = lineColor(badge.provider, badge.mode, badge.sourceColor, badge.label)
+                        val text = if (base.luminance() > .35f) Color(0xFF171B20) else Color.White
+                        base to text
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = bgColor,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(28.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .clickable { onBadgeClick(badge.id) }
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Text(
+                                text = badge.label,
+                                color = textColor,
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = (-0.3).sp,
+                                    lineHeight = 18.sp,
+                                ),
+                                fontFamily = OpenSans,
+                                maxLines = 1,
+                            )
+                        }
+                    }
+                }
+                repeat(4 - rowBadges.size) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun FavoritesScreen(
     state: UiState,
@@ -194,112 +247,36 @@ fun FavoritesScreen(
                                 Icon(Icons.Rounded.Favorite, stringResource(R.string.ui_remove_favorite), tint = MaterialTheme.colorScheme.primary)
                             }
                         }
-                        if (station.loading && lines.trainRoutes.isEmpty() && lines.otherRoutes.isEmpty()) {
+                        if (station.loading && lines.trainBadges.isEmpty() && lines.otherBadges.isEmpty()) {
                             LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp))
                         }
 
-                        if (lines.trainTypes.isNotEmpty()) {
-                            Text(
-                                stringResource(R.string.favorites_train_types),
-                                Modifier.padding(start = 16.dp, top = 6.dp, bottom = 4.dp),
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                        if (lines.trainBadges.isNotEmpty()) {
+                            StationBadgeGrid(
+                                badges = lines.trainBadges,
+                                onBadgeClick = { routeId -> onStopRoute(station.stop.id, routeId) },
+                                modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
                             )
-                            FlowRow(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
-                            ) {
-                                lines.trainTypes.forEach { type ->
-                                    Surface(
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(12.dp))
-                                            .clickable {
-                                                val matchingRoute = lines.trainRoutes.firstOrNull {
-                                                    val depService = station.departures.firstOrNull { d -> d.routeId == it.id }?.serviceName
-                                                    trainTypeLabel(it.number, depService ?: it.name) == type
-                                                }
-                                                if (matchingRoute != null) {
-                                                    onStopRoute(station.stop.id, matchingRoute.id)
-                                                } else {
-                                                    val matchingDep = station.departures.firstOrNull {
-                                                        trainTypeLabel(state.findRoute(it.routeId)?.number ?: it.routeId, it.serviceName) == type
-                                                    }
-                                                    if (matchingDep != null) {
-                                                        onStopRoute(station.stop.id, matchingDep.routeId)
-                                                    } else {
-                                                        onStop(station.stop.id)
-                                                    }
-                                                }
-                                            }
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                        ) {
-                                            Icon(Icons.Rounded.Train, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
-                                            Text(text = type, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
-                                        }
-                                    }
-                                }
-                            }
                         }
 
-                        if (lines.trainRoutes.isNotEmpty()) {
-                            Text(
-                                stringResource(R.string.favorites_train_lines),
-                                Modifier.padding(start = 16.dp, top = 10.dp, bottom = 4.dp),
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            FlowRow(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
-                            ) {
-                                lines.trainRoutes.forEach { route ->
-                                    Box(
-                                        Modifier
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .clickable { onStopRoute(station.stop.id, route.id) }
-                                    ) {
-                                        LineBadge(route, showIcon = false)
-                                    }
-                                }
+                        if (lines.otherBadges.isNotEmpty()) {
+                            if (lines.trainBadges.isNotEmpty()) {
+                                Text(
+                                    stringResource(R.string.favorites_other_lines),
+                                    Modifier.padding(start = 16.dp, top = 10.dp, bottom = 4.dp),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
+                            StationBadgeGrid(
+                                badges = lines.otherBadges,
+                                onBadgeClick = { routeId -> onStopRoute(station.stop.id, routeId) },
+                                modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
+                            )
                         }
 
-                        if (lines.otherRoutes.isNotEmpty()) {
-                            Text(
-                                stringResource(R.string.favorites_other_lines),
-                                Modifier.padding(start = 16.dp, top = 10.dp, bottom = 4.dp),
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            FlowRow(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
-                            ) {
-                                lines.otherRoutes.forEach { route ->
-                                    Box(
-                                        Modifier
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .clickable { onStopRoute(station.stop.id, route.id) }
-                                    ) {
-                                        LineBadge(route, showIcon = false)
-                                    }
-                                }
-                            }
-                        }
-
-                        if (lines.trainRoutes.isEmpty() && lines.otherRoutes.isEmpty() && !station.loading) {
+                        if (lines.trainBadges.isEmpty() && lines.otherBadges.isEmpty() && !station.loading) {
                             Text(
                                 stringResource(if (station.unavailable) R.string.nearby_unavailable else R.string.favorites_no_lines),
                                 Modifier.padding(16.dp),
@@ -307,7 +284,7 @@ fun FavoritesScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        if (station.unavailable && (lines.trainRoutes.isNotEmpty() || lines.otherRoutes.isNotEmpty())) {
+                        if (station.unavailable && (lines.trainBadges.isNotEmpty() || lines.otherBadges.isNotEmpty())) {
                             Text(
                                 stringResource(R.string.nearby_partial),
                                 Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
@@ -319,7 +296,7 @@ fun FavoritesScreen(
                         TextButton(onClick = { onStop(station.stop.id) }, modifier = Modifier.padding(start = 8.dp, top = 4.dp)) {
                             Text(stringResource(R.string.favorites_all_departures))
                             Spacer(Modifier.width(4.dp))
-                            Icon(Icons.Rounded.ChevronRight, null)
+                            Icon(Icons.Rounded.ChevronRight, null, Modifier.size(18.dp))
                         }
                     }
                 }

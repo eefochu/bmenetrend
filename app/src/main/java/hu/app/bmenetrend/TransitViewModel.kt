@@ -839,7 +839,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         val canonicalId = network?.let { SharedStops.resolve(it, stopId) } ?: SharedStops.canonicalId(stopId)
         val selectedIds = setOf(canonicalId)
         val route = current.findRoute(routeId)
-        val title = route?.name?.ifBlank { null } ?: route?.number ?: routeId
+        val badge = route?.let { RailSupport.canonicalBadge(it.number, it.name) }
+        val title = route?.name?.ifBlank { null } ?: badge ?: route?.number ?: routeId
         loadLine(routeId)
         mutableState.update { it.copy(
             showNearby = false,
@@ -847,7 +848,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             selectedPlatformIds = selectedIds,
             selectedPlace = null,
             cameraRequest = it.cameraRequest + 1,
-            boardingSelection = BoardingSelection(routeId, title),
+            boardingSelection = BoardingSelection(routeId, title, routeNumber = badge ?: route?.number),
             trackedVehicle = null,
             selectedVehicle = null,
         ) }

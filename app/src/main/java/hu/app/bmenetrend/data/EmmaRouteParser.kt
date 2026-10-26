@@ -26,11 +26,24 @@ data class LineDetails(val route: TransitRoute, val patterns: List<LinePattern>)
 }
 
 @Immutable
-data class BoardingSelection(val routeId: String, val title: String, val pattern: LinePattern? = null, val localDirectionId: String? = null) {
-    fun matches(departure: Departure): Boolean = departure.routeId == routeId && when {
-        pattern != null -> departure.patternCode in pattern.codes
-        localDirectionId != null -> departure.directionId == localDirectionId
-        else -> true
+data class BoardingSelection(
+    val routeId: String,
+    val title: String,
+    val pattern: LinePattern? = null,
+    val localDirectionId: String? = null,
+    val routeNumber: String? = null,
+) {
+    fun matches(departure: Departure): Boolean {
+        val idMatch = departure.routeId == routeId
+        val numMatch = routeNumber != null && (
+            departure.routeNumber.equals(routeNumber, ignoreCase = true) ||
+            RailSupport.canonicalBadge(departure.routeNumber, departure.serviceName).equals(routeNumber, ignoreCase = true)
+        )
+        return (idMatch || numMatch) && when {
+            pattern != null -> departure.patternCode in pattern.codes
+            localDirectionId != null -> departure.directionId == localDirectionId
+            else -> true
+        }
     }
 }
 
