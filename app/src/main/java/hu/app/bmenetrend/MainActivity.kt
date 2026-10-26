@@ -123,7 +123,8 @@ class MainActivity : ComponentActivity() {
                     onToggleFavorite = model::toggleFavorite,
                     onRecenter = model::recenter,
                     onNationwideNetworkChanged = model::setNationwideNetwork,
-                    onVehicleClosed = model::returnToNearby,
+                    onVehicleClosed = model::closeVehicle,
+                    onReturnToNearby = model::returnToNearby,
                     onAccentColorChanged = model::setAccentColor,
                     onCustomAccentChanged = model::setCustomAccentColor,
                     onLineOpened = model::loadLine,
@@ -168,7 +169,7 @@ class MainActivity : ComponentActivity() {
                     val stopBearings=remember(state.network,state.emmaStops,state.lineDetails,state.vehicleJourney) {
                         hu.app.bmenetrend.map.StopDirections.collect(state.routes,state.stops,state.lineDetails.values,state.vehicleJourney)
                     }
-                    NativeTransitMap(state.network, state.vehicles, state.selectedStopId.takeUnless { state.showNearby }, state.userLocation, modifier, onMapStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, state.selectedVehicle, routeGeometry = geometry, routeStops = stops, routeColor = color.toArgb(), fitRouteRequest = state.fitRouteRequest, selectedPlace = state.selectedPlace, placeCameraRequest = state.placeCameraRequest, lineFocus = focus, browsingNearby = state.showNearby, locationCameraRequest = state.locationCameraRequest, onViewportChanged = model::updateMapArea,stopBearings=stopBearings,onSharedStopSelected=model::selectStop)
+                    NativeTransitMap(state.network, state.vehicles, state.selectedStopId.takeUnless { state.showNearby || browsingRoute!=null || state.selectedVehicle!=null }, state.userLocation, modifier, onMapStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, state.selectedVehicle, routeGeometry = geometry, routeStops = stops, routeColor = color.toArgb(), fitRouteRequest = state.fitRouteRequest, selectedPlace = state.selectedPlace, placeCameraRequest = state.placeCameraRequest, lineFocus = focus, browsingNearby = state.showNearby, locationCameraRequest = state.locationCameraRequest, onViewportChanged = model::updateMapArea,stopBearings=stopBearings,onSharedStopSelected=model::selectStopGroup)
                 }
                 })
 

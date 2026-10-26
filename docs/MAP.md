@@ -45,10 +45,20 @@ A physical platform shared by different operators has one marker. Compatible mod
 
 Shared markers use fixed split-colour rings, with an equal segment for each distinct operator colour (including ViaBusz, KanyarGO, HOMM and Volán). All operator colours remain visible together. The departure card lists provider names as well, so colour is not the only identification. A shared marker opens the combined station departures directly.
 
-Stop markers always stay on source coordinates; they are never displaced and have no connector lines. Shared groups use the Volán source location when present, otherwise an actual member's location. Isolated platforms retain large rings; nearby platforms shrink symmetrically into small dots as screen-space distance decreases. They naturally regain their full size when zoomed in far enough. Vehicle icons may cover a stop, without moving its position. Tapping an ambiguous overview overlap zooms in; close-up taps choose the nearest source dot directly without a platform menu.
+Stop markers always stay on source coordinates; they are never displaced and have no connector lines. Shared groups use the Volán source location when present, otherwise an actual member's location. In ordinary browsing, isolated platforms retain large rings and nearby platforms shrink symmetrically into small dots as screen-space distance decreases. Highlighted lines always use full-size 24-dp rings and may overlap visually. They naturally regain their full size when zoomed in far enough. Vehicle icons may cover a stop, without moving its position. Tapping an ambiguous overview overlap zooms in; close-up taps choose the nearest source dot directly without a platform menu.
 
 Direction pointers use the ordered onward stops and, when available, the route shape tangent. This works for buses, trolleys, trams, metro and rail. Arrival-only endpoints and unknown directions do not get invented arrows; a platform used in two known directions can show two pointers. Opposite-direction paths and platforms are highlighted together with the rest of the line. The selected direction's boarding identity and departure details remain specific to that direction.
 
 Selecting a line from search closes the search overlay and opens a bottom card with its service type and direction choices. The map remains visible above it. Long direction names wrap beside a route badge and arrow. The same direction presentation is used by local and national line browsers, vehicle cards, departures and journey steps.
 
 Hiding a station or vehicle card, including by dragging it down, clears route focus. Clearing boarding selection does not reopen a dismissed sheet. The line card has Back and Close actions; Android Back returns from a direction to its overview, then closes the line card. Exit route view remains available directly below search for vehicle and boarding selections.
+
+## Platform-specific departure cards
+
+A separate platform opens only its own departures, regardless of nearby stops sharing its name, parent station or coordinates. A shared map marker passes its exact member IDs to the card; no additional proximity/name grouping is performed. Reviewed local aliases already merged by `SharedStops` remain one physical platform. The card title and provider/mode/platform labels use this same selection, without a “több megálló” suffix. Ordinary station names throughout search also omit that suffix.
+
+Departure request keys include the exact selected platform set as well as the stop ID and time window. Changing from a single platform to a shared marker triggers a fresh request, and responses from an earlier selection cannot populate the new card.
+
+Opening another line clears the previous boarding/vehicle highlight. Closing the new line cannot revive the old highlight. Direction-only state updates no longer dismiss an open line preview, equivalent path-point reordering does not refit the camera, and line/vehicle previews do not retain a stale filled stop from an earlier selection.
+
+Line filtering is applied after shared-platform grouping, preserving the same member IDs, source anchor and operator segments in ordinary and highlighted views. Other platforms are still excluded from that marker's departure card.

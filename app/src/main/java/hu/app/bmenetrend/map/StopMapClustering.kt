@@ -22,7 +22,7 @@ object StopMapClustering {
     }
 
     @Suppress("UNUSED_PARAMETER")
-    fun groups(stops: List<TransitStop>,bounds: MapBounds?,zoom: Double,bearings: Map<String,List<Double>> = emptyMap()): List<List<TransitStop>> {
+    fun groups(stops: List<TransitStop>,bounds: MapBounds?,zoom: Double,bearings: Map<String,List<Double>> = emptyMap(),highlightedStopIds: Set<String>? = null): List<List<TransitStop>> {
         if(bounds==null) return emptyList()
         val visible=stops.filter { it.position.lat in bounds.south..bounds.north && it.position.lon in bounds.west..bounds.east }
             .distinctBy { it.id }.sortedBy { it.id }
@@ -45,6 +45,6 @@ object StopMapClustering {
                 buckets.getOrPut(bucket) { mutableListOf() }.add(group)
             }
         }
-        return groups
+        return if(highlightedStopIds==null) groups else groups.filter { group -> group.any { it.id in highlightedStopIds } }
     }
 }

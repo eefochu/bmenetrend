@@ -79,4 +79,16 @@ class StopMapClusteringTest {
         assertEquals(listOf(vendel),groups.first { vendel in it })
     }
 
+    @Test fun highlightingALinePreservesAllMembersOfItsSharedPlatform() {
+        val local=stop("local").copy(providerId="viabusz",providerIds=listOf("viabusz"))
+        val volan=stop("volan",lon=19.00002).copy(providerId="volan",providerIds=listOf("volan"))
+        val opposite=local.copy(id="opposite",position=GeoPoint(47.5,19.0005))
+        val all=listOf(local,volan,opposite)
+        val normal=StopMapClustering.groups(all,bounds,15.0).first { local in it }
+        val highlighted=StopMapClustering.groups(all,bounds,15.0,highlightedStopIds=setOf(local.id)).single()
+        assertEquals(normal,highlighted)
+        assertEquals(setOf(local,volan),highlighted.toSet())
+        assertFalse(opposite in highlighted)
+    }
+
 }

@@ -61,6 +61,39 @@ class RouteMapCardTest {
         compose.runOnIdle { assertNull(previewRoute) }
     }
 
+    @Test fun openingAndClosingALineReplacesThePreviousBoardingHighlight() {
+        val ui=mutableStateOf(state().copy(showNearby=false,selectedStopId=a.id,boardingSelection=BoardingSelection(route.id,"Previous",out)))
+        var preview:String?=null
+        compose.setContent { ViaBuszTheme {
+            ViaBuszScreen(ui.value,{}, {}, {}, {}, {},onClearBoarding={ui.value=ui.value.copy(boardingSelection=null)},
+                mapContent={ modifier,_,line,_ -> SideEffect { preview=line?.id }; Box(modifier) })
+        } }
+        compose.onNodeWithText(app.getString(R.string.ui_search_short)).performClick()
+        compose.onNode(hasSetTextAction()).performTextInput("762")
+        compose.waitUntil(5000) { compose.onAllNodes(hasText("762") and hasClickAction() and !hasSetTextAction()).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasText("762") and hasClickAction() and !hasSetTextAction()).performClick()
+        compose.runOnIdle { assertEquals(route.id,preview); assertNull(ui.value.boardingSelection) }
+        compose.onNodeWithContentDescription(app.getString(R.string.route_close)).performClick()
+        compose.runOnIdle {
+            assertNull(preview); assertNull(ui.value.boardingSelection)
+            assertFalse(ui.value.showNearby)
+            assertEquals(a.id,ui.value.selectedStopId)
+        }
+    }
+
+    @Test fun platformCardHasItsOwnModeProviderAndPlatformWithoutAMultipleStopsSuffix() {
+        val tram=a.copy(id="tram-a",name="Example tér",providerId="bkk",providerIds=listOf("bkk"),transportMode="TRAM",platformCode="A")
+        val opposite=tram.copy(id="tram-b",platformCode="B")
+        val bus=a.copy(id="bus",name=tram.name,position=tram.position)
+        val ui=state().copy(showNearby=false,selectedStopId=tram.id,network=state().network!!.copy(stops=listOf(tram,opposite,bus)))
+        compose.setContent { ViaBuszTheme { ViaBuszScreen(ui,{}, {}, {}, {}, {}) } }
+        compose.onNodeWithText("Example tér").assertIsDisplayed()
+        compose.onNodeWithText("több megálló",substring=true).assertDoesNotExist()
+        compose.onNodeWithText("Volán",substring=true).assertDoesNotExist()
+        compose.onNodeWithText(app.getString(R.string.emma_platform,"A"),substring=true).assertIsDisplayed()
+        compose.onNodeWithText(app.getString(R.string.emma_mode_tram),substring=true).assertIsDisplayed()
+    }
+
     @Test fun localAndCityServicesGetTheirOwnTypeInsteadOfRegionalLabels() {
         compose.setContent { ViaBuszTheme { Column {
             Text(serviceTypeLabel("viabusz",null))

@@ -88,14 +88,8 @@ object StopClusters {
         return clusterFor(stop, allStops).size > 1
     }
 
-    fun stopDisplayName(name: String, isMultiStop: Boolean, multipleLabel: String): String {
-        if (!isMultiStop) return name
-        if (name.contains("(több megálló)", ignoreCase = true) ||
-            name.contains("(multiple stations)", ignoreCase = true)) {
-            return name
-        }
-        return "$name $multipleLabel"
-    }
+    fun stopDisplayName(name: String): String = name
+        .replace(Regex("\\s*\\((?:több megálló|multiple stations)\\)",RegexOption.IGNORE_CASE),"").trim()
 
     fun consolidateForSearch(stops: List<TransitStop>): List<TransitStop> {
         if (stops.isEmpty()) return emptyList()

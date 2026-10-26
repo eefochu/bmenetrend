@@ -63,4 +63,12 @@ class StopMarkerLayoutTest {
         assertEquals(0xFFE31B23.toInt(),StopMarkerLayout.color("bkk","TROLLEYBUS"))
         assertEquals(0xFFF9B900.toInt(),StopMarkerLayout.color("volan","COACH"))
     }
+    @Test fun highlightedLinesRetainFullSizeOverlappingRingsAtExactCoordinates() {
+        val nodes=(0..24).map { node("p$it") }
+        val placed=StopMarkerLayout.layout(nodes,2.75,24.0,highlighted=true)
+        assertEquals(25,placed.size)
+        assertTrue(placed.all { it.x==100.0 && it.y==100.0 && it.sizePx==66.0 })
+        assertTrue(StopMarkerLayout.layout(nodes,2.75,24.0).all { it.sizePx==16.5 })
+    }
+
 }

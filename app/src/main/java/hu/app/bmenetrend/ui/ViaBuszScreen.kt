@@ -180,6 +180,16 @@ fun ViaBuszScreen(
         routeId = null
         directionId = null
     }
+    val closeLine: ()->Unit = { routeId=null; directionId=null; onClearBoarding() }
+    val openLine: (String,String?)->Unit = { id,direction ->
+        onVehicleClosed()
+        onClearBoarding()
+        routeId=id
+        directionId=direction
+        onLineOpened(id,false)
+        searchOpen=false
+        scope.launch { sheetState.bottomSheetState.partialExpand() }
+    }
     val openDeparture: (Departure) -> Unit = { departure ->
         val observed = state.vehicles.find { it.tripId != null && it.tripId == departure.directionId }
         if (observed != null) {
@@ -187,20 +197,16 @@ fun ViaBuszScreen(
             onVehicleOpened(observed.id)
             searchOpen = false
         } else (state.findRoute(departure.routeId))?.let { route ->
-            routeId = route.id
-            directionId = state.lineDetails[route.id]?.patterns?.find { departure.patternCode in it.codes }?.id
-                ?: route.directions.firstOrNull { it.id == departure.directionId }?.id
+            val direction=state.lineDetails[route.id]?.patterns?.find { departure.patternCode in it.codes }?.id
+                ?: route.directions.firstOrNull { it.id==departure.directionId }?.id
                 ?: route.directions.singleOrNull()?.id
-            onVehicleClosed()
-            onLineOpened(route.id, false)
-            searchOpen = false
-            scope.launch { sheetState.bottomSheetState.partialExpand() }
+            openLine(route.id,direction)
         }
     }
     val navigateBack: () -> Unit = {
         when {
             directionId != null -> directionId = null
-            routeId != null -> routeId = null
+            routeId != null -> closeLine()
             else -> searchOpen = false
         }
     }
@@ -227,7 +233,7 @@ fun ViaBuszScreen(
         }
     }
     BackHandler(enabled = !searchOpen && !showSettings && !showAbout && !showUpdates && !isMinimized, onBack = {
-        if (routeId != null) { if(directionId != null) directionId=null else routeId=null }
+        if (routeId != null) { if(directionId != null) directionId=null else closeLine() }
         else if (state.selectedVehicle != null || state.boardingSelection != null || !state.showNearby) exitRouteView()
         else collapse()
     })
@@ -246,10 +252,10 @@ fun ViaBuszScreen(
             sheet.partialExpand()
         }
     }
-    LaunchedEffect(state.selectedStopId, state.cameraRequest, state.boardingSelection) {
+    LaunchedEffect(state.selectedStopId, state.cameraRequest) {
         if (!state.showNearby && state.selectedVehicle == null && state.selectedStopId != null) {
             val token = state.selectedStopId to state.cameraRequest
-            if (state.boardingSelection != null || token != shownStopToken) {
+            if (token != shownStopToken) {
                 routeId=null; directionId=null
                 sheet.partialExpand()
             }
@@ -300,8 +306,8 @@ fun ViaBuszScreen(
                     if(selectedRoute != null && !searchOpen) RouteBrowserCard(state,selectedRoute,directionId,
                         onDirection={ directionId=it },
                         onBoard={ line,direction,stop -> routeId=null; directionId=null; onBoardingStop(line,direction,stop) },
-                        onBack={ if(directionId!=null) directionId=null else routeId=null },
-                        onClose={ routeId=null; directionId=null },
+                        onBack={ if(directionId!=null) directionId=null else closeLine() },
+                        onClose=closeLine,
                         onRetry={ onLineOpened(selectedRoute.id,true) },
                         modifier=Modifier.fillMaxWidth().fillMaxHeight(0.88f))
                     else if (state.selectedVehicle != null) VehiclePanel(
@@ -335,7 +341,7 @@ fun ViaBuszScreen(
                         onWindowChanged = onWindowChanged,
                         onClearBoarding = exitRouteView,
                         onChangeDirection = {
-                            state.boardingSelection?.let { routeId = it.routeId; directionId = null; onLineOpened(it.routeId, false); searchOpen = false; scope.launch { sheet.partialExpand() } }
+                            state.boardingSelection?.let { openLine(it.routeId,null) }
                         },
                         onToggleFavorite = onToggleFavorite,
                         onSearch = openSearch,
@@ -429,7 +435,7 @@ fun ViaBuszScreen(
                     query = query,
                     onQueryChanged = { query = it },
                     onBack = navigateBack,
-                    onRoute = { routeId = it; directionId = null; onVehicleClosed(); onLineOpened(it, false); searchOpen=false; scope.launch { sheet.partialExpand() } },
+                    onRoute = { openLine(it,null) },
                     onStop = selectStop,
                     onSearchPlaces = onSearchPlaces,
                     onPlace = { place ->
@@ -522,19 +528,12 @@ private fun StopPanel(
     val latestDepartureAction by rememberUpdatedState(onDeparture)
     val openDeparture = remember { { departure: Departure -> latestDepartureAction(departure) } }
     val routeById = remember(state.network?.routes, state.emmaRoutes) { state.routesById }
-    val isMulti = stop != null && (stop.isMultiStop || remember(stop.id, state.stops) { StopClusters.isMultiStop(stop.id, state.stops) })
-    val stopTitle = if (stop != null) {
-        StopClusters.stopDisplayName(stop.name, isMulti, stringResource(R.string.ui_multiple_stations))
-    } else stringResource(if (state.loading) R.string.ui_loading_stops else R.string.ui_select_stop)
-    val clusterProviders = remember(stop?.id, state.stops) {
-        if (stop == null) emptyList()
-        else {
-            val cluster = StopClusters.clusterFor(stop.id, state.stops)
-            cluster.flatMap { it.providerIds }.distinct().ifEmpty { stop.providerIds }
-        }
-    }
-    val boardingInfo = if (isMulti) null else (stop?.platformCode?.let { stringResource(R.string.emma_platform, it) }
-        ?: stop?.takeIf { it.id.startsWith("emma:") }?.let { stringResource(R.string.emma_stop_code, it.id.substringAfterLast(":")) })
+    val platforms=state.selectedPlatforms
+    val stopTitle=stop?.let { StopClusters.stopDisplayName(it.name) }
+        ?: stringResource(if(state.loading) R.string.ui_loading_stops else R.string.ui_select_stop)
+    val clusterProviders=platforms.flatMap { it.providerIds }.distinct().ifEmpty { stop?.providerIds.orEmpty() }
+    val boardingInfo=if(platforms.size>1) null else (stop?.platformCode?.let { stringResource(R.string.emma_platform,it) }
+        ?: stop?.takeIf { it.id.startsWith("emma:") }?.let { stringResource(R.string.emma_stop_code,it.id.substringAfterLast(":")) })
     val timetableOnly = clusterProviders.isNotEmpty() && clusterProviders.all { it == "homm" }
     Column(modifier) {
         Row(Modifier.fillMaxWidth().padding(start = 22.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -559,7 +558,7 @@ private fun StopPanel(
                 }
                 Text(stopTitle, style = MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 5.dp))
                 if (stop != null) {
-                    Text(listOfNotNull(providerNames(clusterProviders), if (isMulti) null else transportLabel(stop.transportMode), boardingInfo).joinToString(" · "), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 3.dp))
+                    Text(listOfNotNull(providerNames(clusterProviders), transportLabel(stop.transportMode), boardingInfo).joinToString(" · "), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 3.dp))
                 }
             }
             if (stop != null) {
@@ -786,7 +785,7 @@ private fun stopLabel(stop: TransitStop): String? = stop.platformCode?.let { str
 @Composable
 internal fun StopSearchRow(stop: TransitStop, state: UiState, favorite: Boolean, onStop: (String) -> Unit) {
     val isMulti = stop.isMultiStop || remember(stop.id, state.stops) { StopClusters.isMultiStop(stop.id, state.stops) }
-    val displayName = StopClusters.stopDisplayName(stop.name, isMulti, stringResource(R.string.ui_multiple_stations))
+    val displayName = StopClusters.stopDisplayName(stop.name)
     Row(
         Modifier.fillMaxWidth().clickable { onStop(stop.id) }.padding(horizontal = 22.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),

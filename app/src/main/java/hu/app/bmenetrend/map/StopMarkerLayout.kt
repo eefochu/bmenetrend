@@ -21,10 +21,11 @@ object StopMarkerLayout {
         else -> 0xFF40576A.toInt()
     }
 
-    fun layout(nodes: List<Node>,density: Double,maxSizeDp: Double=22.0): List<Placement> {
+    fun layout(nodes: List<Node>,density: Double,maxSizeDp: Double=22.0,highlighted: Boolean=false): List<Placement> {
         require(density>0 && density.isFinite() && maxSizeDp>=6)
         val ordered=nodes.distinctBy { it.stop.id }.sortedBy { it.stop.id }
         val maximum=maxSizeDp*density
+        if(highlighted) return ordered.map { Placement(it.stop,it.x,it.y,maximum) }
         val gap=3*density
         // A spatial index limits comparisons to markers close enough to constrain the requested size.
         val buckets=ordered.groupBy { floor(it.x/maximum).toInt() to floor(it.y/maximum).toInt() }

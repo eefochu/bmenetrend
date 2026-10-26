@@ -89,7 +89,7 @@ fun NativeTransitMap(
     locationCameraRequest: Int = 0,
     onViewportChanged: (MapBounds, GeoPoint) -> Unit = { _, _ -> },
     stopBearings: Map<String,List<Double>> = emptyMap(),
-    onSharedStopSelected: (String)->Unit = onStopSelected,
+    onSharedStopSelected: (List<String>)->Unit = { ids -> ids.firstOrNull()?.let(onStopSelected) },
 ) {
     val darkTheme = isSystemInDarkTheme()
     val styleUri = if (darkTheme) "asset://map/night.json" else "https://tiles.openfreemap.org/styles/positron"
@@ -202,7 +202,7 @@ fun NativeTransitMap(
                 val candidate=StopHitTesting.candidates(hits,point.x.toDouble(),point.y.toDouble(),density).firstOrNull()
                 if(candidate==null) false else {
                     if(StopHitTesting.needsZoom(hits,point.x.toDouble(),point.y.toDouble(),density,ready.cameraPosition.zoom)) reveal(location)
-                    else if(stopGroups[candidate.id].orEmpty().flatMap { it.providerIds }.distinct().size>1) onSharedSelect(candidate.id)
+                    else if(stopGroups[candidate.id].orEmpty().flatMap { it.providerIds }.distinct().size>1) onSharedSelect(listOf(candidate.id)+stopGroups[candidate.id].orEmpty().map { it.id }.filterNot { it==candidate.id })
                     else onSelect(candidate.id)
                     true
                 }
@@ -289,7 +289,7 @@ fun NativeTransitMap(
             previousFocusKey = lineFocus!!.key
             // Keep directions as separate paths: never invent links between their termini.
             val points = (paths.flatten() + focusStops.map { it.position }).distinct()
-            val signature = listOf(lineFocus.key, points, fitRouteRequest, bottomPaddingPx, size)
+            val signature = listOf(lineFocus.key, points.toSet(), fitRouteRequest, bottomPaddingPx, size)
             if (signature != fittedSignature) {
                 fittedSignature = signature
                 if (points.size >= 2) {
@@ -341,7 +341,7 @@ fun NativeTransitMap(
         }
     }
     AndroidView(factory = { mapView }, modifier = modifier.onSizeChanged { size = it })
-    LaunchedEffect(map, styleLoaded, viewport, zoom, displayStops, vehicles, lineFocus, routeColor, selectedVehicle?.id, selectedStopId, selectedPlace, userLocation,stopBearings) {
+    LaunchedEffect(map, styleLoaded, viewport, zoom, displayStops, stops, vehicles, lineFocus, routeColor, selectedVehicle?.id, selectedStopId, selectedPlace, userLocation,stopBearings) {
         val nativeMap = map ?: return@LaunchedEffect
         if (!styleLoaded) return@LaunchedEffect
         val activeVehicles = mutableSetOf<String>()
@@ -446,7 +446,9 @@ fun NativeTransitMap(
         val splitRings = mutableListOf<Feature>()
         val splitIcons = mutableMapOf<String,Pair<List<Int>,Double>>()
         if (focused || zoom >= 9.0) {
-            val groups = StopMapClustering.groups(displayStops.filter { TransitMapVisibility.stop(it.transportMode, zoom, focused) }, viewport, zoom,stopBearings)
+            val candidates=if(focused) stops+displayStops else displayStops
+            val groups=StopMapClustering.groups(candidates.filter { TransitMapVisibility.stop(it.transportMode,zoom,focused) },
+                viewport,zoom,stopBearings,highlightedIds.takeIf { focused })
             val grouped = zoom < StopMapClustering.PLATFORM_ZOOM
             val representatives = groups.map { members ->
                 val first = members.firstOrNull { it.id == selectedStopId } ?: members.firstOrNull { it.id in highlightedIds } ?: members.first()
@@ -459,12 +461,12 @@ fun NativeTransitMap(
                 StopMarkerLayout.Node(stop, point.x.toDouble(), point.y.toDouble())
             }
             val diameter = when {
-                !grouped -> if (focused) 24.0 else 22.0
-                focused -> 16.0
+                focused -> 24.0
+                !grouped -> 22.0
                 zoom >= StopMapClustering.DETAIL_ZOOM -> 12.0
                 else -> 8.0
             }
-            StopMarkerLayout.layout(nodes,density.toDouble(),diameter)
+            StopMarkerLayout.layout(nodes,density.toDouble(),diameter,highlighted=focused)
                 .sortedBy { placement -> stopGroups[placement.stop.id].orEmpty().any { it.id==selectedStopId } }.forEach { placement ->
                 val stop = placement.stop
                 val position = nativeMap.projection.fromScreenLocation(PointF(placement.x.toFloat(), placement.y.toFloat()))
