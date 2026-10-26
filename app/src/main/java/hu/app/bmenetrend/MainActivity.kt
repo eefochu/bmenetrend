@@ -139,7 +139,7 @@ class MainActivity : ComponentActivity() {
                     onOtaChannelChanged = model::setOtaChannel,
                     onCheckOtaUpdates = { model.checkForUpdates(false) },
                     onDownloadAndInstallOta = { info -> model.startOtaDownloadAndInstall(this@MainActivity, info) },
-                ) { modifier, bottomPaddingPx, browsingRoute, browsingDirection ->
+                ) { modifier, bottomPaddingPx, browsingRoute, browsingDirection, onDismissHighlight ->
                     val vehicle = state.selectedVehicle
                     val browsingPattern=browsingRoute?.let { line -> state.lineDetails[line.id]?.patterns?.find { it.id==browsingDirection } }
                     val preview=browsingRoute?.let { hu.app.bmenetrend.data.BoardingSelection(it.id,it.name,browsingPattern,
@@ -169,13 +169,31 @@ class MainActivity : ComponentActivity() {
                             else model.selectStop(id)
                         }
                     }
+                    val onMapSharedStop: (List<String>) -> Unit = { ids ->
+                        val matchedStopId = if (state.selectedVehicle != null) {
+                            ids.find { id -> state.vehicleJourney?.stops?.any { it.id == id } == true }
+                        } else if (focus?.routeId != null) {
+                            ids.find { id ->
+                                val rId = focus.routeId
+                                boarding?.pattern?.stops?.any { it.id == id } == true ||
+                                    state.lineDetails[rId]?.patterns?.any { p -> p.stops.any { it.id == id } } == true ||
+                                    route?.directions?.any { d -> id in d.stopIds } == true
+                            }
+                        } else null
+
+                        if (matchedStopId != null) {
+                            onMapStop(matchedStopId)
+                        } else {
+                            model.selectStopGroup(ids)
+                        }
+                    }
                     val stopBearings=remember(state.network,state.emmaStops,state.lineDetails,state.vehicleJourney) {
                         val routes=state.routes; val allStops=state.stops
                         hu.app.bmenetrend.map.traceMapWork("BMenetrend.StopDirections") {
                             hu.app.bmenetrend.map.StopDirections.collect(routes,allStops,state.lineDetails.values,state.vehicleJourney)
                         }
                     }
-                    NativeTransitMap(state.network, state.vehicles, state.selectedStopId.takeUnless { state.showNearby || browsingRoute!=null || state.selectedVehicle!=null }, state.userLocation, modifier, onMapStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, state.selectedVehicle, routeGeometry = geometry, routeStops = stops, routeColor = color.toArgb(), fitRouteRequest = state.fitRouteRequest, selectedPlace = state.selectedPlace, placeCameraRequest = state.placeCameraRequest, lineFocus = focus, browsingNearby = state.showNearby, locationCameraRequest = state.locationCameraRequest, onViewportChanged = model::updateMapArea,stopBearings=stopBearings,onSharedStopSelected=model::selectStopGroup)
+                    NativeTransitMap(state.network, state.vehicles, state.selectedStopId.takeUnless { state.showNearby || browsingRoute!=null || state.selectedVehicle!=null }, state.userLocation, modifier, onMapStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, state.selectedVehicle, routeGeometry = geometry, routeStops = stops, routeColor = color.toArgb(), fitRouteRequest = state.fitRouteRequest, selectedPlace = state.selectedPlace, placeCameraRequest = state.placeCameraRequest, lineFocus = focus, browsingNearby = state.showNearby, locationCameraRequest = state.locationCameraRequest, onViewportChanged = model::updateMapArea,stopBearings=stopBearings,onSharedStopSelected=onMapSharedStop,onMapClick=onDismissHighlight)
                 }
                 })
 

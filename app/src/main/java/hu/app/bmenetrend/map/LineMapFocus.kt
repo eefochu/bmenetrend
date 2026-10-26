@@ -90,8 +90,9 @@ data class LineMapFocus(
                 }
             }
 
+            val directionKey = vehicle?.tripId ?: boarding?.pattern?.id ?: boarding?.localDirectionId ?: "all"
             return LineMapFocus(
-                key = routeId ?: "vehicle:${vehicle!!.id}",
+                key = "${routeId ?: "vehicle:${vehicle!!.id}"}:$directionKey",
                 routeId = routeId,
                 providerId = provider,
                 number = number,

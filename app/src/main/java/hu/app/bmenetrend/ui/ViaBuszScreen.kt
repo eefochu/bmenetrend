@@ -146,7 +146,7 @@ fun ViaBuszScreen(
     onOtaChannelChanged: (hu.app.bmenetrend.data.UpdateChannel) -> Unit = {},
     onCheckOtaUpdates: () -> Unit = {},
     onDownloadAndInstallOta: (hu.app.bmenetrend.data.OtaUpdateInfo) -> Unit = {},
-    mapContent: @Composable (Modifier, Int, TransitRoute?, String?) -> Unit = { modifier, _, _, _ -> Box(modifier) },
+    mapContent: @Composable (Modifier, Int, TransitRoute?, String?, () -> Unit) -> Unit = { modifier, _, _, _, _ -> Box(modifier) },
 ) {
     var searchOpen by rememberSaveable { mutableStateOf(false) }
     var query by rememberSaveable { mutableStateOf("") }
@@ -180,7 +180,7 @@ fun ViaBuszScreen(
         routeId = null
         directionId = null
     }
-    val closeLine: ()->Unit = { routeId=null; directionId=null; onClearBoarding() }
+    val closeLine: () -> Unit = { routeId = null; directionId = null; onClearBoarding(); scope.launch { sheetState.bottomSheetState.partialExpand() } }
     val openLine: (String,String?)->Unit = { id,direction ->
         onVehicleClosed()
         onClearBoarding()
@@ -210,14 +210,6 @@ fun ViaBuszScreen(
             else -> searchOpen = false
         }
     }
-    val minimize: () -> Unit = {
-        scope.launch { sheetState.bottomSheetState.hide() }
-    }
-    val exitRouteView: () -> Unit = {
-        onClearBoarding()
-        onReturnToNearby()
-        minimize()
-    }
     val sheet = sheetState.bottomSheetState
     // Discrete anchor changes drive controls. Drag offsets stay inside Material's layout phase.
     val isExpanded by remember { derivedStateOf { sheet.currentValue == SheetValue.Expanded } }
@@ -232,10 +224,46 @@ fun ViaBuszScreen(
             if (sheet.targetValue == SheetValue.Expanded) sheet.partialExpand() else sheet.expand()
         }
     }
-    BackHandler(enabled = !searchOpen && !showSettings && !showAbout && !showUpdates && !isMinimized, onBack = {
-        if (routeId != null) { if(directionId != null) directionId=null else closeLine() }
-        else if (state.selectedVehicle != null || state.boardingSelection != null || !state.showNearby) exitRouteView()
-        else collapse()
+    val closeVehicle: () -> Unit = {
+        onVehicleClosed()
+        onClearBoarding()
+        scope.launch { sheet.partialExpand() }
+    }
+    val dismissHighlight: () -> Unit = {
+        when {
+            searchOpen -> searchOpen = false
+            directionId != null || routeId != null -> closeLine()
+            state.selectedVehicle != null -> closeVehicle()
+            state.boardingSelection != null -> {
+                onClearBoarding()
+                scope.launch { sheet.partialExpand() }
+            }
+            state.selectedPlace != null -> onPlaceClosed()
+            !state.showNearby -> {
+                onReturnToNearby()
+                scope.launch { sheet.partialExpand() }
+            }
+            isExpanded -> collapse()
+        }
+    }
+    BackHandler(enabled = !searchOpen && !showSettings && !showAbout && !showUpdates, onBack = {
+        when {
+            directionId != null -> directionId = null
+            routeId != null -> closeLine()
+            state.selectedVehicle != null -> closeVehicle()
+            state.boardingSelection != null -> {
+                onClearBoarding()
+                scope.launch { sheet.partialExpand() }
+            }
+            state.selectedPlace != null -> onPlaceClosed()
+            !state.showNearby -> {
+                onReturnToNearby()
+                scope.launch { sheet.partialExpand() }
+            }
+            isExpanded -> collapse()
+            isMinimized -> scope.launch { sheet.partialExpand() }
+            else -> collapse()
+        }
     })
     BackHandler(enabled = searchOpen, onBack = navigateBack)
     LaunchedEffect(sheet.currentValue) {
@@ -312,7 +340,7 @@ fun ViaBuszScreen(
                         modifier=Modifier.fillMaxWidth().fillMaxHeight(0.88f))
                     else if (state.selectedVehicle != null) VehiclePanel(
                         state = state,
-                        onClose = exitRouteView,
+                        onClose = closeVehicle,
                         onShowRoute = { onShowWholeRoute(); scope.launch { sheetState.bottomSheetState.partialExpand() } },
                         onRefresh = onRefresh,
                         onStop = onJourneyBoardingStop,
@@ -339,7 +367,10 @@ fun ViaBuszScreen(
                         stop = selectedStop,
                         onRefresh = onRefresh,
                         onWindowChanged = onWindowChanged,
-                        onClearBoarding = exitRouteView,
+                        onClearBoarding = {
+                            onClearBoarding()
+                            scope.launch { sheet.partialExpand() }
+                        },
                         onChangeDirection = {
                             state.boardingSelection?.let { openLine(it.routeId,null) }
                         },
@@ -355,11 +386,11 @@ fun ViaBuszScreen(
             ) { _ ->
                 Box(Modifier.fillMaxSize()) {
                     // Full-screen map going under both the top search blob and the bottom sheet.
-                    mapContent(Modifier.fillMaxSize(), bottomPaddingPx, selectedRoute.takeUnless { searchOpen }, directionId)
+                    mapContent(Modifier.fillMaxSize(), bottomPaddingPx, selectedRoute.takeUnless { searchOpen }, directionId, dismissHighlight)
 
-                    if (state.selectedVehicle != null || state.boardingSelection != null) {
+                    if (state.selectedVehicle != null || state.boardingSelection != null || selectedRoute != null) {
                         FilledTonalButton(
-                            onClick = exitRouteView,
+                            onClick = dismissHighlight,
                             modifier = Modifier.align(Alignment.TopStart).statusBarsPadding().padding(start = 16.dp, top = 86.dp),
                         ) {
                             Icon(Icons.Rounded.Close, null, Modifier.size(18.dp))

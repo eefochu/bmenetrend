@@ -92,6 +92,7 @@ fun NativeTransitMap(
     onViewportChanged: (MapBounds, GeoPoint) -> Unit = { _, _ -> },
     stopBearings: Map<String,List<Double>> = emptyMap(),
     onSharedStopSelected: (List<String>)->Unit = { ids -> ids.firstOrNull()?.let(onStopSelected) },
+    onMapClick: () -> Unit = {},
 ) {
     val darkTheme = isSystemInDarkTheme()
     val styleUri = if (darkTheme) "asset://map/night.json" else "https://tiles.openfreemap.org/styles/positron"
@@ -99,6 +100,7 @@ fun NativeTransitMap(
     val owner = LocalLifecycleOwner.current
     val onSelect by rememberUpdatedState(onStopSelected)
     val onSharedSelect by rememberUpdatedState(onSharedStopSelected)
+    val onMapClicked by rememberUpdatedState(onMapClick)
     val onError by rememberUpdatedState(onMapError)
     val onArea by rememberUpdatedState(onViewportChanged)
     val onZoom by rememberUpdatedState(onMapZoomChanged)
@@ -220,7 +222,10 @@ fun NativeTransitMap(
                 val hits=targets()
                 val density=context.resources.displayMetrics.density.toDouble()
                 val candidate=StopHitTesting.candidates(hits,point.x.toDouble(),point.y.toDouble(),density).firstOrNull()
-                if(candidate==null) false else {
+                if(candidate==null) {
+                    onMapClicked()
+                    true
+                } else {
                     if(StopHitTesting.needsZoom(hits,point.x.toDouble(),point.y.toDouble(),density,ready.cameraPosition.zoom)) reveal(location)
                     else if(stopGroups[candidate.id].orEmpty().flatMap { it.providerIds }.distinct().size>1) onSharedSelect(listOf(candidate.id)+stopGroups[candidate.id].orEmpty().map { it.id }.filterNot { it==candidate.id })
                     else onSelect(candidate.id)
@@ -322,11 +327,10 @@ fun NativeTransitMap(
         } else if (previousFocusKey != null) {
             previousFocusKey = null
             fittedSignature = null
-            previousCamera?.let { ready.animateCamera(CameraUpdateFactory.newCameraPosition(it), 650) }
+            if (selectedStopId == null) {
+                previousCamera?.let { ready.animateCamera(CameraUpdateFactory.newCameraPosition(it), 650) }
+            }
             previousCamera = null
-            centeredStop = selectedStopId
-            centeredRequest = cameraRequest
-            lastBottomPadding = bottomPaddingPx
         } else if (selectedPlace != null) {
             val bounds = selectedPlace.bounds
             var boundsAnimated = false

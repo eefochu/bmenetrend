@@ -9,11 +9,13 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.core.app.ApplicationProvider
 import hu.app.bmenetrend.R
 import hu.app.bmenetrend.data.*
+import hu.app.bmenetrend.map.LineMapFocus
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -40,7 +42,7 @@ class RouteMapCardTest {
         var previewRoute:String?=null
         var previewDirection:String?=null
         compose.setContent { ViaBuszTheme {
-            ViaBuszScreen(state(),{}, {}, {}, {}, {}, mapContent={ modifier,_,line,direction ->
+            ViaBuszScreen(state(),{}, {}, {}, {}, {}, mapContent={ modifier,_,line,direction,_ ->
                 SideEffect { previewRoute=line?.id; previewDirection=direction }
                 Box(modifier.testTag("map")) { Text("Map stays visible") }
             })
@@ -66,7 +68,7 @@ class RouteMapCardTest {
         var preview:String?=null
         compose.setContent { ViaBuszTheme {
             ViaBuszScreen(ui.value,{}, {}, {}, {}, {},onClearBoarding={ui.value=ui.value.copy(boardingSelection=null)},
-                mapContent={ modifier,_,line,_ -> SideEffect { preview=line?.id }; Box(modifier) })
+                mapContent={ modifier,_,line,_,_ -> SideEffect { preview=line?.id }; Box(modifier) })
         } }
         compose.onNodeWithText(app.getString(R.string.ui_search_short)).performClick()
         compose.onNode(hasSetTextAction()).performTextInput("762")
@@ -79,6 +81,74 @@ class RouteMapCardTest {
             assertFalse(ui.value.showNearby)
             assertEquals(a.id,ui.value.selectedStopId)
         }
+    }
+
+    @Test fun clickingOutOfHighlightModeViaMapDismissesBrowsingRouteWithoutHidingSheet() {
+        var previewRoute: String? = null
+        compose.setContent { ViaBuszTheme {
+            ViaBuszScreen(state(), {}, {}, {}, {}, {}, mapContent = { modifier, _, line, _, onDismiss ->
+                SideEffect { previewRoute = line?.id }
+                Box(modifier.testTag("map")) {
+                    Text("Dismiss", Modifier.testTag("map_click").clickable { onDismiss() })
+                }
+            })
+        } }
+        compose.onNodeWithText(app.getString(R.string.ui_search_short)).performClick()
+        compose.onNode(hasSetTextAction()).performTextInput("762")
+        compose.waitUntil(5000) { compose.onAllNodes(hasText("762") and hasClickAction() and !hasSetTextAction()).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasText("762") and hasClickAction() and !hasSetTextAction()).performClick()
+        compose.runOnIdle { assertEquals(route.id, previewRoute) }
+
+        compose.onNodeWithTag("map_click").performClick()
+        compose.runOnIdle {
+            assertNull(previewRoute)
+        }
+        compose.onNodeWithText(app.getString(R.string.map_exit_route)).assertDoesNotExist()
+    }
+
+    @Test fun floatingCloseButtonOnMapClosesBrowsingRoute() {
+        var previewRoute: String? = null
+        compose.setContent { ViaBuszTheme {
+            ViaBuszScreen(state(), {}, {}, {}, {}, {}, mapContent = { modifier, _, line, _, _ ->
+                SideEffect { previewRoute = line?.id }
+                Box(modifier.testTag("map"))
+            })
+        } }
+        compose.onNodeWithText(app.getString(R.string.ui_search_short)).performClick()
+        compose.onNode(hasSetTextAction()).performTextInput("762")
+        compose.waitUntil(5000) { compose.onAllNodes(hasText("762") and hasClickAction() and !hasSetTextAction()).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasText("762") and hasClickAction() and !hasSetTextAction()).performClick()
+        compose.runOnIdle { assertEquals(route.id, previewRoute) }
+
+        val exitBtn = compose.onNodeWithText(app.getString(R.string.map_exit_route))
+        exitBtn.assertIsDisplayed()
+        exitBtn.performClick()
+        compose.runOnIdle { assertNull(previewRoute) }
+    }
+
+    @Test fun lineMapFocusKeyChangesWithDirection() {
+        val details = mapOf(route.id to LineDetails(route, listOf(out, inbound)))
+        val focusOut = LineMapFocus.create(
+            vehicle = null,
+            boarding = BoardingSelection(route.id, out.headsign, pattern = out),
+            routes = listOf(route),
+            details = details,
+            journey = null,
+            allStops = listOf(a, b, c)
+        )
+        val focusIn = LineMapFocus.create(
+            vehicle = null,
+            boarding = BoardingSelection(route.id, inbound.headsign, pattern = inbound),
+            routes = listOf(route),
+            details = details,
+            journey = null,
+            allStops = listOf(a, b, c)
+        )
+        assertNotNull(focusOut)
+        assertNotNull(focusIn)
+        assertNotEquals(focusOut!!.key, focusIn!!.key)
+        assertTrue(focusOut.key.contains("out"))
+        assertTrue(focusIn.key.contains("in"))
     }
 
     @Test fun platformCardHasItsOwnModeProviderAndPlatformWithoutAMultipleStopsSuffix() {
