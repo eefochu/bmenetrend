@@ -91,4 +91,19 @@ class StopMapClusteringTest {
         assertFalse(opposite in highlighted)
     }
 
+    @Test fun cityWideLatitudeStripsCannotMakeDistantOperatorsAPlatformCandidate() {
+        val local=(0..500).map { i -> stop("local-$i",lon=18.5+i*.002).copy(providerId="viabusz",providerIds=listOf("viabusz")) }
+        val volan=local.map { it.copy(id="v-${it.id}",providerId="volan",providerIds=listOf("volan"),position=it.position.copy(lon=it.position.lon+.00002)) }
+        val groups=StopMapClustering.groups(local+volan,bounds,12.0)
+        assertEquals(501,groups.size)
+        assertTrue(groups.all { it.size==2 })
+        assertEquals(groups,StopMapClustering.groups((local+volan).reversed(),bounds,12.0))
+    }
+    @Test fun cellsKeepThirtyMetreNeighboursAcrossBothGridBoundaries() {
+        val a=stop("a",lon=19.000401).copy(position=GeoPoint(47.500191,19.000401),providerId="viabusz",providerIds=listOf("viabusz"))
+        val b=stop("b",lon=19.00065).copy(position=GeoPoint(47.50031,19.00065),providerId="volan",providerIds=listOf("volan"))
+        assertTrue(StopClusters.distanceMeters(a.position,b.position)<30)
+        assertEquals(1,StopMapClustering.groups(listOf(a,b),bounds,16.0).size)
+    }
+
 }

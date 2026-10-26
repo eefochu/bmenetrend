@@ -1,0 +1,7 @@
+"name","execution","calls","mean_ms","max_ms","total_ms"
+"BMenetrend.LineFocus","main",35,2.302000,20.945000,80.600000
+"BMenetrend.MapLayout","main",28,0.206000,0.409000,5.800000
+"BMenetrend.MapUpload","main",28,0.075000,0.372000,2.100000
+"BMenetrend.MapVehicles","main",59,1.808000,14.665000,106.700000
+"BMenetrend.StopDirections","main",1,6.224000,6.224000,6.200000
+"BMenetrend.StopGroups","worker",31,13.060000,33.909000,404.900000

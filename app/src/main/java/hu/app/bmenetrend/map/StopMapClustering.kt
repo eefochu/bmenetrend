@@ -3,6 +3,9 @@ package hu.app.bmenetrend.map
 import hu.app.bmenetrend.data.MapBounds
 import hu.app.bmenetrend.data.StopClusters
 import hu.app.bmenetrend.data.TransitStop
+import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.floor
 
 /** Only co-located operator records share a dot. Opposite platforms never merge by name alone. */
 object StopMapClustering {
@@ -12,13 +15,12 @@ object StopMapClustering {
 
     fun samePlatform(a: TransitStop,b: TransitStop,bearings: Map<String,List<Double>> = emptyMap()): Boolean {
         if(a.providerIds.any { it in b.providerIds }) return false
+        if(StopClusters.distanceMeters(a.position,b.position)>SHARED_PLATFORM_METERS) return false
         fun mode(stop: TransitStop) = stop.transportMode?.takeUnless { it in setOf("BUS","COACH") } ?: "BUS"
         if(mode(a)!=mode(b)) return false
         val ah=bearings[a.id].orEmpty(); val bh=bearings[b.id].orEmpty()
         if(ah.isNotEmpty() && bh.isNotEmpty() && ah.none { aHeading -> bh.any { StopDirections.difference(aHeading,it)<45 } }) return false
-        val radius=SHARED_PLATFORM_METERS
-        return (listOf(a.name)+a.aliases).any { an -> (listOf(b.name)+b.aliases).any { bn -> StopClusters.areNamesCloselyMatching(an,bn) } } &&
-            StopClusters.distanceMeters(a.position,b.position)<=radius
+        return (listOf(a.name)+a.aliases).any { an -> (listOf(b.name)+b.aliases).any { bn -> StopClusters.areNamesCloselyMatching(an,bn) } }
     }
 
     @Suppress("UNUSED_PARAMETER")
@@ -28,11 +30,18 @@ object StopMapClustering {
             .distinctBy { it.id }.sortedBy { it.id }
         val parents=visible.mapNotNull { it.parentStationId }.toSet()
         val groups=mutableListOf<MutableList<TransitStop>>()
-        // Latitude buckets limit comparisons without allowing transitive chains along a street.
-        val buckets=mutableMapOf<Int,MutableList<MutableList<TransitStop>>>()
+        // Both axes matter: latitude-only strips compare unrelated stops across the entire city.
+        // The most extreme visible latitude makes longitude cells wide enough for every 30-m match.
+        val latitudeStep=.0003
+        val extremeLatitude=maxOf(abs(bounds.south),abs(bounds.north)).coerceAtMost(89.999)
+        val longitudeStep=latitudeStep/cos(Math.toRadians(extremeLatitude)).coerceAtLeast(.00001)
+        val buckets=mutableMapOf<Pair<Int,Int>,MutableList<MutableList<TransitStop>>>()
         for(stop in visible.filterNot { it.station && it.id in parents }) {
-            val bucket=kotlin.math.floor(stop.position.lat/.0003).toInt()
-            val shared=(bucket-1..bucket+1).asSequence().flatMap { buckets[it].orEmpty() }
+            val bucket=floor(stop.position.lat/latitudeStep).toInt() to floor(stop.position.lon/longitudeStep).toInt()
+            val neighbours=sequence {
+                for(dy in -1..1) for(dx in -1..1) yieldAll(buckets[bucket.first+dy to bucket.second+dx].orEmpty())
+            }
+            val shared=neighbours
                 .filter { group -> group.all { samePlatform(it,stop,bearings) } }
                 .sortedBy { group -> group.map { StopClusters.distanceMeters(it.position,stop.position) }.average() }.toList()
             val first=shared.firstOrNull()

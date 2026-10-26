@@ -71,4 +71,27 @@ class StopMarkerLayoutTest {
         assertTrue(StopMarkerLayout.layout(nodes,2.75,16.0).all { it.sizePx==16.5 })
     }
 
+    @Test fun closeZoomEnlargesAndStacksCoincidentPlatformsWithBoundedNudges() {
+        val nodes=listOf(node("a"),node("b"))
+        val far=StopMarkerLayout.layout(nodes,1.0,22.0,zoom=14.0)
+        val close=StopMarkerLayout.layout(nodes,1.0,22.0,zoom=15.0)
+        assertTrue(close.all { it.sizePx>far.first().sizePx })
+        assertEquals(96.0,close.first().y,0.0)
+        assertEquals(104.0,close.last().y,0.0)
+        assertTrue(close.all { kotlin.math.hypot(it.x-100,it.y-100)<=4 })
+        assertTrue(close.last().y-close.first().y<close.first().sizePx)
+        assertEquals(close,StopMarkerLayout.layout(nodes.reversed(),1.0,22.0,zoom=15.0))
+        assertTrue(far.all { it.x==100.0 && it.y==100.0 && it.sizePx==6.0 })
+    }
+    @Test fun closeZoomNudgesScaleWithDensityAndNeverAffectHighlightedRings() {
+        val nodes=listOf(node("a"),node("b",112.0))
+        val close=StopMarkerLayout.layout(nodes,1.0,22.0,zoom=16.0)
+        val scaled=StopMarkerLayout.layout(nodes.map { it.copy(x=it.x*3,y=it.y*3) },3.0,22.0,zoom=16.0)
+        close.zip(scaled).forEach { (a,b) -> assertEquals(a.x*3,b.x,.00001);assertEquals(a.sizePx*3,b.sizePx,.00001) }
+        val highlighted=StopMarkerLayout.layout(nodes,1.0,16.0,highlighted=true,zoom=16.0)
+        assertEquals(listOf(100.0,112.0),highlighted.map { it.x })
+        assertTrue(highlighted.all { it.sizePx==16.0 })
+        assertTrue(StopMarkerLayout.layout(nodes,1.0,8.0,zoom=16.0).all { it.sizePx<=8.0 })
+    }
+
 }

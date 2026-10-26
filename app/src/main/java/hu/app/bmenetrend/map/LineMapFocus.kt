@@ -15,8 +15,8 @@ data class LineMapFocus(
     val contextStops: List<TransitStop> = emptyList(),
     val contextPaths: List<List<GeoPoint>> = emptyList(),
 ) {
-    val displayStops: List<TransitStop> get() = (stops+contextStops).distinctBy { it.id }
-    val displayPaths: List<List<GeoPoint>> get() = (paths+contextPaths).distinct()
+    val displayStops: List<TransitStop> = (stops+contextStops).distinctBy { it.id }
+    val displayPaths: List<List<GeoPoint>> = (paths+contextPaths).distinct()
 
     fun includes(vehicle: Vehicle): Boolean = when {
         vehicle.id == selectedVehicleId -> true

@@ -1,0 +1,5 @@
+"name","execution","calls","mean_ms","max_ms","total_ms"
+"BMenetrend.LineFocus","main",31,1.897000,10.914000,58.800000
+"BMenetrend.MapRender","main",68,17.633000,46.029000,1199.100000
+"BMenetrend.StopDirections","main",1,10.496000,10.496000,10.500000
+"BMenetrend.StopGroups","main",68,9.817000,37.044000,667.500000
