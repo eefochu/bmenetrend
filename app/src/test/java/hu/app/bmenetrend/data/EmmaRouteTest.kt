@@ -64,4 +64,12 @@ class EmmaRouteTest {
         assertTrue(local.matches(departure.copy(routeId = "viabusz:1", directionId = "out")))
         assertFalse(local.matches(departure.copy(routeId = "viabusz:1", directionId = "in")))
     }
+    @Test fun reversedPatternKeepsStopOrderAndCorrectsAnOppositeHeadsign() {
+        val root=response()
+        root.getJSONObject("data").getJSONObject("route").getJSONArray("patterns").getJSONObject(2).put("headsign","C")
+        val reverse=EmmaRouteParser.parse(root.toString(),"bkk:BKK:3010").patterns.single { "BKK:in" in it.codes }
+        assertEquals("A",reverse.headsign)
+        assertEquals("C → A",JourneyDirection.endpoints(reverse.stops))
+    }
+
 }

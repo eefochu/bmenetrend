@@ -107,4 +107,10 @@ class EmmaTest {
         assertEquals(2, result.count { it.number == "4" })
         assertEquals(36, EmmaParser.catalogue(File("src/main/assets/volan-routes.json").readText()).size)
     }
+    @Test fun genericLineNameIsNotUsedAsAVehiclesUnverifiedDestination() {
+        val row=bus().apply { getJSONObject("trip").remove("tripHeadsign") }
+        assertNull(EmmaParser.parse(response(row),now).single().destination)
+        assertEquals("Budapest – Etyek",EmmaParser.parse(response(row),now).single().routeName)
+    }
+
 }

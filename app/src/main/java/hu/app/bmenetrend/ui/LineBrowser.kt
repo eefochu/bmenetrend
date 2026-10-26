@@ -32,7 +32,7 @@ fun EmmaLineBrowser(
         details?.patterns?.groupBy { it.familyKey }?.values?.map { it.first() }.orEmpty()
     }
     val pattern = if (patternId != null) {
-        details?.patterns?.find { it.id == patternId } ?: details?.patterns?.firstOrNull()
+        details?.patterns?.find { it.id == patternId }
     } else {
         null
     }
@@ -41,7 +41,7 @@ fun EmmaLineBrowser(
         item {
             Column(Modifier.padding(horizontal = 22.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 LineBadge(route, showIcon = false)
-                Text(route.name, style = MaterialTheme.typography.titleLarge)
+                Text(pattern?.let { hu.app.bmenetrend.data.JourneyDirection.endpoints(it.stops) } ?: route.name, style = MaterialTheme.typography.titleLarge)
                 Text(pattern?.headsign ?: stringResource(R.string.line_direction_hint), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (pattern != null) Text(pluralStringResource(R.plurals.emma_journey_stops, pattern.stops.size, pattern.stops.size), style = MaterialTheme.typography.labelMedium)
                 val variants = details?.patterns?.filter { it.familyKey == pattern?.familyKey }.orEmpty()

@@ -8,6 +8,7 @@ enum class UpdateChannel(
     val tag: String,
     val labelRes: Int,
     val descriptionRes: Int,
+    val assetName: String,
     val url: String
 ) {
     STABLE(
@@ -15,14 +16,16 @@ enum class UpdateChannel(
         tag = "STABLE",
         labelRes = R.string.ota_channel_stable,
         descriptionRes = R.string.ota_channel_stable_desc,
-        url = "https://micr0softstore.github.io/ota/bmenetrend/stable.json"
+        assetName = "app-release.apk",
+        url = AppRepository.RELEASES_API
     ),
     DEBUG(
         key = "debug",
         tag = "DEBUG",
         labelRes = R.string.ota_channel_debug,
         descriptionRes = R.string.ota_channel_debug_desc,
-        url = "https://micr0softstore.github.io/ota/bmenetrend/debug.json"
+        assetName = "app-debug.apk",
+        url = AppRepository.RELEASES_API
     );
 
     companion object {

@@ -106,3 +106,7 @@ The basemap uses MapLibre Native Android with OpenFreeMap tiles, fonts and sprit
 Visible native markers update incrementally rather than clearing the scene on every vehicle poll. Precise tap hit testing preserves independent platform selection. Selected trip geometry uses a GeoJSON line with a contrasting casing; camera updates fit route geometry and place bounds. Visible stations use a GPU circle layer, with independent source platforms at their own coordinates; coincident markers remain individually selectable.
 
 Basemap requests go directly to OpenFreeMap. Photon receives search text, without GPS. EMMA receives origin and destination coordinates and departure time for journey planning, including GPS when planning from the current location; map servers receive IP addresses and requested tile areas. The app retains attribution and caches map resources through MapLibre.
+
+## Járművek és irányok ellenőrzése
+
+A vonal általános A–B neve nem egy jármű aktuális célállomása. A járműpanelen a kiválasztott `tripId` pontos menetének megállósorrendje határozza meg a `honnan → hová` feliratot és a végállomást, beleértve a visszautat és a rövidített meneteket. Körjáratnál a forrás via-pontot megnevező headsignje megmarad. Az irányválasztóban lejárt/eltűnt pattern-azonosító esetén új irányt kell választani; a kliens nem ugrik önkényesen az első mintára. Hiányzó menet-/megállói headsign helyett nem jelenik meg az általános vonalnév ellenőrzött célállomásként.

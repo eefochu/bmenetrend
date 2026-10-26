@@ -73,7 +73,7 @@ object EmmaRouteParser {
             val geometry = pattern.optJSONArray("geometry")?.let { points -> (0 until points.length()).map { index ->
                 val p = points.getJSONObject(index); point(p.getDouble("lat"), p.getDouble("lon"))
             }}.orEmpty()
-            LinePattern(code, setOf(code), pattern.text("headsign") ?: stops.last().name, stops, geometry, pattern.optJSONArray("tripsForDate")?.length() ?: 0, pattern.text("directionId"))
+            LinePattern(code, setOf(code), JourneyDirection.destination(stops, pattern.text("headsign")) ?: stops.last().name, stops, geometry, pattern.optJSONArray("tripsForDate")?.length() ?: 0, pattern.text("directionId"))
         }
         // Different service calendars can share one physical stop sequence; keep all their codes for board filtering.
         val grouped = parsed.groupBy { it.headsign to it.stops.map(TransitStop::id) }.values.map { aliases ->

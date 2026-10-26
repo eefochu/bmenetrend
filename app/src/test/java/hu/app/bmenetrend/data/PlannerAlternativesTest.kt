@@ -7,30 +7,89 @@ import java.time.Instant
 
 class PlannerAlternativesTest {
     private val ready = Instant.parse("2026-10-24T09:00:00Z")
-    private fun journey(index:Int,mode:String,provider:String):TripItinerary {
-        val start = ready.plusSeconds(60)
-        val end = start.plusSeconds((index+1)*600L)
-        val route = TransitRoute("$provider:$index","$index","route",emptyList(),provider,transportMode=mode)
-        val leg = PlanLeg(mode,start,end,1_000.0,PlanPoint("A",GeoPoint(47.4,18.8)),PlanPoint("B",GeoPoint(47.5,18.8)),
-            route,"B",false,false,emptyList())
-        return TripItinerary("$index",start,end,listOf(leg))
+    private fun journey(id: String, minutes: Long = 30, transfers: Int = 0, walk: Double = 0.0,
+                        provider: String = "bkk", line: String = id, shift: Double = 0.0, restricted: Boolean = false): TripItinerary {
+        val from=PlanPoint("A-$id",GeoPoint(47.4+shift,18.8))
+        val to=PlanPoint("B-$id",GeoPoint(47.5+shift,18.8))
+        val end=ready.plusSeconds(minutes*60)
+        val walking=kotlin.math.ceil(walk/TripPlanner.WALK_SPEED).toLong()
+        val legs=mutableListOf<PlanLeg>()
+        var clock=ready
+        if(walk>0) {
+            legs+=PlanLeg("WALK",clock,clock.plusSeconds(walking),walk,from,from,null,null,false,false,emptyList())
+            clock=clock.plusSeconds(walking)
+        }
+        clock=clock.plusSeconds(60)
+        val rideSeconds=(java.time.Duration.between(clock,end).seconds-transfers*180)/(transfers+1)
+        require(rideSeconds>0)
+        for(i in 0..transfers) {
+            val route=TransitRoute("$provider:$line:$i","$line-$i","route",emptyList(),provider,transportMode="BUS")
+            val arrive=if(i==transfers) end else clock.plusSeconds(rideSeconds)
+            legs+=PlanLeg("BUS",clock,arrive,1000.0,from,to,route,"B",false,false,emptyList(),restrictedService=restricted)
+            clock=arrive.plusSeconds(180)
+        }
+        return TripItinerary(id,legs.first().start,end,legs)
     }
-    @Test fun volanIsRetainedEvenWhenItsSourceOptionIsAfterTheFirstThreeTrains() {
-        val result = TripPlanner.alternatives((0..10).map { journey(it,"RAIL","mav") } + journey(20,"COACH","volan"))
-        assertTrue(result.any { it.legs.any { leg -> leg.route?.providerId == "volan" } })
-        assertTrue(result.zipWithNext().all { (a,b) -> a.end <= b.end })
-        assertEquals("0",result.first().id)
+    private fun select(vararg trips: TripItinerary)=TripPlanner.alternatives(trips.toList(),ready)
+
+    @Test fun inferiorOperatorsNoLongerReservePlaces() {
+        val best=journey("best",provider="mav")
+        val result=select(best,journey("volan",minutes=40,provider="volan"),
+            journey("via",minutes=45,provider="viabusz"),journey("homm",minutes=50,provider="homm"))
+        assertEquals(listOf(best),result)
     }
-    @Test fun alternativesRetainEachLocalOperatorWithoutFillingTheListWithRepeatedDepartures() {
-        val source = (0..10).map { journey(it,"RAIL","mav") } + listOf("viabusz","kanyargo","homm").mapIndexed { i,p -> journey(20+i,"BUS",p) }
-        val result = TripPlanner.alternatives(source)
-        assertTrue(result.size <= 8)
-        assertTrue(result.flatMap { it.legs }.mapNotNull { it.route?.providerId }.containsAll(listOf("viabusz","kanyargo","homm")))
+    @Test fun bestBusOptionsSurviveWhenTheyActuallySaveWalkingOrTransfers() {
+        val rail=journey("rail",transfers=1,walk=600.0,provider="mav")
+        val bkk=journey("bkk",minutes=31,transfers=1,walk=300.0)
+        val volan=journey("volan",minutes=33,walk=100.0,provider="volan")
+        assertEquals(listOf(rail,bkk,volan),select(volan,rail,bkk))
     }
-    @Test fun volanStillAppearsWhenTheFastestBusOnlyAlternativeIsBkk() {
-        val source = (0..10).map { journey(it,"RAIL","mav") } + journey(12,"BUS","bkk") + journey(20,"COACH","volan")
-        val providers = TripPlanner.alternatives(source).flatMap { it.legs }.map { it.route!!.providerId }
-        assertTrue(providers.containsAll(listOf("bkk","volan","mav")))
+    @Test fun sameLinesAtNearbyBoardingStopsAreOneJourneyDespiteDifferentNamesAndIds() {
+        val best=journey("best",line="762",walk=100.0)
+        val almost=journey("almost",line="762",minutes=31,walk=120.0,shift=.0003)
+        val repeatedDeparture=journey("later",line="762",minutes=40,walk=100.0)
+        assertEquals(listOf(best),select(almost,repeatedDeparture,best,best))
+    }
+    @Test fun routeVariantsWithDistantBoardingPointsAreNotMistakenForDuplicates() {
+        val fast=journey("fast",line="762",walk=500.0)
+        val lessWalking=journey("nearer",line="762",minutes=32,walk=100.0,shift=.004)
+        assertEquals(listOf(fast,lessWalking),select(fast,lessWalking))
+    }
+    @Test fun fewerThanThreeUsefulOptionsAreNotPadded() {
+        val best=journey("a")
+        assertEquals(listOf(best),select(best,journey("b",minutes=31),journey("c",minutes=32)))
+        assertTrue(select().isEmpty())
+    }
+    @Test fun hugeDetoursAreDroppedEvenIfTheySaveOneTransferOrSomeWalking() {
+        val fast=journey("fast",transfers=1,walk=600.0)
+        val huge=journey("huge",minutes=90,walk=0.0)
+        assertEquals(listOf(fast),select(huge,fast))
+    }
+    @Test fun tinyWalkingSavingsDoNotJustifyLaterArrival() {
+        val fast=journey("fast",walk=500.0)
+        val marginal=journey("marginal",minutes=31,walk=450.0)
+        assertEquals(listOf(fast),select(fast,marginal))
+    }
+    @Test fun threeChoicesCoverFastestEasiestAndLeastWalkingRatherThanThreeMinorVariants() {
+        val fastest=journey("fastest",transfers=2,walk=600.0)
+        val almost=journey("almost",minutes=31,transfers=2,walk=350.0)
+        val easy=journey("easy",minutes=33,transfers=0,walk=500.0)
+        val walk=journey("walk",minutes=34,transfers=1,walk=100.0)
+        val source=listOf(walk,almost,easy,fastest)
+        assertEquals(listOf(fastest,easy,walk),TripPlanner.alternatives(source,ready))
+        assertEquals(TripPlanner.alternatives(source,ready),TripPlanner.alternatives(source.reversed(),ready))
+    }
+    @Test fun aRestrictedSchoolServiceDoesNotEraseAnAvailablePublicJourney() {
+        val restricted=journey("school",restricted=true)
+        val public=journey("public",minutes=32,line="school")
+        assertEquals(listOf(restricted,public),select(restricted,public))
+    }
+    @Test fun arrivalTimeTakesPriorityOverShorterRideDepartingMuchLater() {
+        val early=journey("early",walk=100.0)
+        val late=journey("late",minutes=90).let { trip -> trip.copy(start=trip.start.plusSeconds(3600),
+            legs=trip.legs.map { it.copy(start=it.start.plusSeconds(3600)) }) }
+        assertTrue(late.durationSeconds<early.durationSeconds)
+        assertEquals(early,select(late,early).first())
     }
     @Test fun saturdayVolanResponseKeepsActualPublicBoardingStopsTimesAndCoachIdentity() {
         val text = javaClass.getResource("/planner/volan-weekend.json")!!.readText()
