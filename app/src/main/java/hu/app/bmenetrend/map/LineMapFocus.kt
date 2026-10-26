@@ -13,8 +13,10 @@ data class LineMapFocus(
     val stops: List<TransitStop>,
     val selectedVehicleId: String? = null,
     val contextStops: List<TransitStop> = emptyList(),
+    val contextPaths: List<List<GeoPoint>> = emptyList(),
 ) {
     val displayStops: List<TransitStop> get() = (stops+contextStops).distinctBy { it.id }
+    val displayPaths: List<List<GeoPoint>> get() = (paths+contextPaths).distinct()
 
     fun includes(vehicle: Vehicle): Boolean = when {
         vehicle.id == selectedVehicleId -> true
@@ -97,7 +99,8 @@ data class LineMapFocus(
                 paths = paths,
                 stops = stops,
                 selectedVehicleId = vehicle?.id,
-                contextStops = (patterns.flatMap { it.stops } + allStops.filter { stop ->
+                contextPaths = line?.patterns.orEmpty().map { it.geometry }.filter { it.size>=2 && it !in paths }.distinct(),
+                contextStops = (line?.patterns.orEmpty().flatMap { it.stops } + allStops.filter { stop ->
                     routeId!=null && (routeId in stop.routeIds || route?.directions.orEmpty().any { stop.id in it.stopIds })
                 }).distinctBy { it.id }.filterNot { other -> stops.any { it.id==other.id } },
             )

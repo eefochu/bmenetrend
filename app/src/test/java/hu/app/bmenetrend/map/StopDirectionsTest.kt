@@ -36,17 +36,26 @@ class StopDirectionsTest {
         val east=StopDirections.triangle(50.0,50.0,12.0,1.0,0.0,1.0)
         assertEquals(69.0,east.first().x,.001)
     }
-    @Test fun sharedOperatorColoursFadeContinuouslyAndReturnToTheFirstColour() {
-        val green=StopMarkerLayout.color("viabusz",null); val yellow=StopMarkerLayout.color("volan",null)
-        val palette=listOf(green,yellow)
-        assertEquals(green,StopMarkerColors.at(palette,0.0))
-        assertEquals(yellow,StopMarkerColors.at(palette,.5))
-        assertEquals(green,StopMarkerColors.at(palette,1.0))
-        val middle=StopMarkerColors.at(palette,.25)
-        assertNotEquals(green,middle); assertNotEquals(yellow,middle)
-        assertEquals(StopMarkerColors.at(palette,.000001),StopMarkerColors.at(palette,.999999))
+    @Test fun sharedOperatorColoursAppearTogetherInEqualSplitRingSectors() {
         val shared=stop("shared",47.5).copy(providerIds=listOf("viabusz","kanyargo","homm","volan"))
-        assertEquals(4,StopMarkerColors.palette(listOf(shared)).size)
-        assertEquals(green,StopMarkerColors.at(listOf(green),.83))
+        val colors=StopMarkerColors.palette(listOf(shared))
+        val sectors=StopMarkerColors.sectors(colors,50.0,50.0,12.0)
+        assertEquals(4,sectors.size)
+        assertEquals(colors,sectors.map { it.color })
+        sectors.forEachIndexed { i,sector ->
+            assertEquals(StopDirections.Point(50.0,50.0),sector.points.first())
+            assertEquals(sector.points.first(),sector.points.last())
+            sector.points.drop(1).dropLast(1).forEach { point ->
+                assertEquals(12.0,kotlin.math.hypot(point.x-50,point.y-50),.00001)
+            }
+            val end=sector.points[sector.points.lastIndex-1]
+            val next=sectors[(i+1)%sectors.size].points[1]
+            assertEquals(end.x,next.x,.00001)
+            assertEquals(end.y,next.y,.00001)
+        }
+        val two=StopMarkerColors.sectors(colors.take(2),50.0,50.0,12.0)
+        assertEquals(50.0,two.first().points[1].x,.00001)
+        assertEquals(38.0,two.first().points[1].y,.00001)
+        assertEquals(62.0,two.first().points[two.first().points.lastIndex-1].y,.00001)
     }
 }

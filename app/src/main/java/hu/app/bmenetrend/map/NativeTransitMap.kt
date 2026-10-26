@@ -1,7 +1,5 @@
 package hu.app.bmenetrend.map
 
-import android.animation.ValueAnimator
-import android.view.animation.LinearInterpolator
 import android.content.ComponentCallbacks2
 import android.content.res.Configuration
 import android.graphics.BitmapFactory
@@ -53,6 +51,7 @@ import org.maplibre.geojson.LineString
 import org.maplibre.geojson.Point
 import org.maplibre.geojson.Polygon
 import org.maplibre.android.style.layers.FillLayer
+import org.maplibre.android.style.layers.SymbolLayer
 import org.maplibre.android.maps.Style
 import org.maplibre.android.style.layers.LineLayer
 import org.maplibre.android.style.layers.CircleLayer
@@ -102,18 +101,16 @@ fun NativeTransitMap(
     val onArea by rememberUpdatedState(onViewportChanged)
     val onZoom by rememberUpdatedState(onMapZoomChanged)
     val onVehicle by rememberUpdatedState(onVehicleSelected)
-    var markerPalettes by remember { mutableStateOf<Map<String,List<Int>>>(emptyMap()) }
-    var stopLayerVersion by remember { mutableIntStateOf(0) }
     val stops = remember(network?.stops, additionalStops, routeStops) { (network?.stops.orEmpty() + additionalStops + routeStops).distinctBy { it.id } }
     var savedLat by rememberSaveable { mutableDoubleStateOf(47.473) }
     var savedLon by rememberSaveable { mutableDoubleStateOf(18.825) }
     var savedZoom by rememberSaveable { mutableDoubleStateOf(13.2) }
     var zoom by remember { mutableDoubleStateOf(savedZoom) }
     val focused = lineFocus != null
-    val focusStops = lineFocus?.stops.orEmpty()
+    val focusStops = lineFocus?.displayStops.orEmpty()
     val displayStops = if (focused) lineFocus!!.displayStops else stops
     val highlightedIds = remember(focusStops) { focusStops.map { it.id }.toSet() }
-    val paths = lineFocus?.paths ?: listOf(routeGeometry).filter { it.size >= 2 }
+    val paths = lineFocus?.displayPaths ?: listOf(routeGeometry).filter { it.size >= 2 }
     var size by remember { mutableStateOf(IntSize.Zero) }
     var previousCamera by rememberSaveable { mutableStateOf<CameraPosition?>(null) }
     var previousFocusKey by rememberSaveable { mutableStateOf<String?>(null) }
@@ -137,6 +134,7 @@ fun NativeTransitMap(
     val stopHitTargets = remember { mutableMapOf<String, Pair<LatLng, Float>>() }
     val stopGroups = remember { mutableMapOf<String, List<TransitStop>>() }
     val iconCache = remember { mutableMapOf<String, Icon>() }
+    val splitIconKeys=remember { mutableSetOf<String>() }
     val formatter = remember { DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.of("Europe/Budapest")) }
 
     DisposableEffect(mapView, owner) {
@@ -193,10 +191,7 @@ fun NativeTransitMap(
             ready.setOnMarkerClickListener { marker ->
                 val vehicle=markerVehicles[marker.id]
                 if(vehicle!=null) {
-                    val point=ready.projection.toScreenLocation(marker.position)
-                    val overlapping=StopHitTesting.candidates(targets(),point.x.toDouble(),point.y.toDouble(),context.resources.displayMetrics.density.toDouble())
-                    if(ready.cameraPosition.zoom<StopMapClustering.PLATFORM_ZOOM && overlapping.isNotEmpty()) reveal(marker.position)
-                    else onVehicle(vehicle)
+                    onVehicle(vehicle)
                     true
                 } else false
             }
@@ -226,32 +221,6 @@ fun NativeTransitMap(
         val inset = (12 * context.resources.displayMetrics.density).toInt()
         val bottom = maxOf(bottomPaddingPx, if (selectedPlace != null) (110 * context.resources.displayMetrics.density).toInt() else 0)
         map?.uiSettings?.setAttributionMargins(inset, 0, 0, bottom + inset)
-    }
-    DisposableEffect(map,styleLoaded,stopLayerVersion,markerPalettes,owner) {
-        val layer=map?.style?.getLayerAs<CircleLayer>("detail-stop-ring")
-        if(!styleLoaded || layer==null) return@DisposableEffect onDispose { }
-        fun applyColors(phase: Double) {
-            val expression=if(markerPalettes.isEmpty()) Expression.get("color") else Expression.match(
-                Expression.get("palette"),Expression.toColor(Expression.get("color")),
-                *markerPalettes.map { (key,colors) -> Expression.stop(key,Expression.color(StopMarkerColors.at(colors,phase))) }.toTypedArray())
-            layer.setProperties(PropertyFactory.circleColor(expression))
-        }
-        applyColors(0.0)
-        val animator=ValueAnimator.ofFloat(0f,1f).apply {
-            duration=6000L
-            repeatCount=ValueAnimator.INFINITE
-            interpolator=LinearInterpolator()
-            addUpdateListener { applyColors((it.animatedValue as Float).toDouble()) }
-        }
-        fun sync() {
-            if(markerPalettes.isNotEmpty() && owner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED) && ValueAnimator.areAnimatorsEnabled()) {
-                if(!animator.isStarted) animator.start()
-            } else animator.cancel()
-        }
-        val observer=LifecycleEventObserver { _,_ -> sync() }
-        owner.lifecycle.addObserver(observer)
-        sync()
-        onDispose { owner.lifecycle.removeObserver(observer); animator.cancel() }
     }
     // Theme changes reload only the basemap, retaining camera and current selections.
     // Failed loads retry in the foreground using the currently selected theme.
@@ -472,22 +441,18 @@ fun NativeTransitMap(
         val visibleVehicles = vehicles.filter { vehicle ->
             (lineFocus?.includes(vehicle) ?: true) && TransitMapVisibility.vehicle(vehicle.transportMode, zoom, focused) && viewport?.let { vehicle.position.lat in it.south..it.north && vehicle.position.lon in it.west..it.east } == true
         }
-        val obstacles=visibleVehicles.map { vehicle ->
-            val point=nativeMap.projection.toScreenLocation(LatLng(vehicle.position.lat,vehicle.position.lon))
-            val size=if(!focused && zoom<VEHICLE_ICON_MIN_ZOOM) 10 else (if(zoom<13.5) 24 else 36)+(if(vehicle.id==selectedVehicle?.id) 6 else 0)
-            StopMarkerLayout.Obstacle(point.x.toDouble(),point.y.toDouble(),size*density/2.0)
-        }
         val detailFeatures = mutableListOf<Feature>()
-        val connectors = mutableListOf<Feature>()
         val arrows = mutableListOf<Feature>()
-        val palettes = mutableMapOf<String,List<Int>>()
+        val splitRings = mutableListOf<Feature>()
+        val splitIcons = mutableMapOf<String,Pair<List<Int>,Double>>()
         if (focused || zoom >= 9.0) {
             val groups = StopMapClustering.groups(displayStops.filter { TransitMapVisibility.stop(it.transportMode, zoom, focused) }, viewport, zoom,stopBearings)
             val grouped = zoom < StopMapClustering.PLATFORM_ZOOM
             val representatives = groups.map { members ->
                 val first = members.firstOrNull { it.id == selectedStopId } ?: members.firstOrNull { it.id in highlightedIds } ?: members.first()
                 stopGroups[first.id] = members
-                first.copy(position = GeoPoint(members.map { it.position.lat }.average(), members.map { it.position.lon }.average()))
+                val anchor=members.firstOrNull { it.providerId=="volan" } ?: first
+                first.copy(position=anchor.position)
             }
             val nodes = representatives.map { stop ->
                 val point = nativeMap.projection.toScreenLocation(LatLng(stop.position.lat, stop.position.lon))
@@ -499,9 +464,7 @@ fun NativeTransitMap(
                 zoom >= StopMapClustering.DETAIL_ZOOM -> 12.0
                 else -> 8.0
             }
-            val safeBounds=StopMarkerLayout.Bounds(12.0*density,96.0*density,size.width-12.0*density,
-                maxOf(120.0*density,size.height-bottomPaddingPx-12.0*density))
-            StopMarkerLayout.layout(nodes,density.toDouble(),diameter,zoom,obstacles,safeBounds)
+            StopMarkerLayout.layout(nodes,density.toDouble(),diameter)
                 .sortedBy { placement -> stopGroups[placement.stop.id].orEmpty().any { it.id==selectedStopId } }.forEach { placement ->
                 val stop = placement.stop
                 val position = nativeMap.projection.fromScreenLocation(PointF(placement.x.toFloat(), placement.y.toFloat()))
@@ -509,28 +472,29 @@ fun NativeTransitMap(
                 val selected = members.any { it.id == selectedStopId }
                 val highlighted=!focused || members.any { it.id in highlightedIds }
                 val colors=StopMarkerColors.palette(members)
-                val paletteKey=colors.joinToString(",")
-                if(colors.size>1) palettes[paletteKey]=colors
                 val dotColor=when {
+                    colors.size>1 -> android.graphics.Color.WHITE
                     focused && !highlighted -> if(darkTheme) 0xFFADB5BF.toInt() else 0xFF66717D.toInt()
                     focused -> routeColor
                     else -> colors.first()
                 }
-                val radius=if(focused && !highlighted && !selected) 6.0 else placement.sizePx/density/2
+                val radius=placement.sizePx/density/2
                 val source=LatLng(stop.position.lat,stop.position.lon)
                 val original=nativeMap.projection.toScreenLocation(source)
-                if(kotlin.math.hypot(placement.x-original.x,placement.y-original.y)>2*density) {
-                    connectors+=Feature.fromGeometry(LineString.fromLngLats(listOf(
-                        Point.fromLngLat(source.longitude,source.latitude),Point.fromLngLat(position.longitude,position.latitude))))
-                }
                 detailFeatures += Feature.fromGeometry(Point.fromLngLat(position.longitude, position.latitude)).apply {
                     addStringProperty("stopId", stop.id)
                     addStringProperty("color", "#%06X".format(dotColor and 0xFFFFFF))
-                    addStringProperty("palette",paletteKey)
                     addNumberProperty("radius",radius)
-                    addNumberProperty("inner",if(!selected && highlighted) (radius-3).coerceAtLeast(0.0) else 0.0)
+                    addNumberProperty("inner",if(radius>=5 && ((!selected && highlighted) || colors.size>1)) (radius-3).coerceAtLeast(0.0) else 0.0)
                 }
-                if(zoom>=StopMapClustering.PLATFORM_ZOOM) {
+                if(colors.size>1) {
+                    val iconKey="stop-split-${colors.joinToString(",")}-$radius"
+                    splitIcons[iconKey]=colors to (radius-.75)
+                    splitRings+=Feature.fromGeometry(Point.fromLngLat(position.longitude,position.latitude)).apply {
+                        addStringProperty("icon",iconKey)
+                    }
+                }
+                if(zoom>=StopMapClustering.PLATFORM_ZOOM && radius>=5) {
                     val bearings=members.flatMap { stopBearings[it.id].orEmpty() }.fold(mutableListOf<Double>()) { values,heading ->
                         if(values.none { StopDirections.difference(it,heading)<35 }) values.add(heading)
                         values
@@ -550,16 +514,6 @@ fun NativeTransitMap(
             }
         }
         val style = nativeMap.style ?: return@LaunchedEffect
-        val connectorSource=style.getSourceAs<GeoJsonSource>("stop-connectors")
-        val connectorData=FeatureCollection.fromFeatures(connectors)
-        if(connectorSource!=null) connectorSource.setGeoJson(connectorData) else {
-            style.addSource(GeoJsonSource("stop-connectors",connectorData))
-            val layer=LineLayer("stop-connectors-line","stop-connectors").withProperties(
-                PropertyFactory.lineWidth(1.2f),PropertyFactory.lineOpacity(.65f),PropertyFactory.lineColor(if(darkTheme) "#ADB5BF" else "#66717D"))
-            if(style.getLayer("detail-stop-halo")!=null) style.addLayerBelow(layer,"detail-stop-halo")
-            else if(style.getLayer(MapLibreConstants.LAYER_ID_ANNOTATIONS)!=null) style.addLayerBelow(layer,MapLibreConstants.LAYER_ID_ANNOTATIONS)
-            else style.addLayer(layer)
-        }
         val arrowSource=style.getSourceAs<GeoJsonSource>("stop-directions")
         val arrowData=FeatureCollection.fromFeatures(arrows)
         if(arrowSource!=null) arrowSource.setGeoJson(arrowData) else {
@@ -571,7 +525,6 @@ fun NativeTransitMap(
             else if(style.getLayer(MapLibreConstants.LAYER_ID_ANNOTATIONS)!=null) style.addLayerBelow(layer,MapLibreConstants.LAYER_ID_ANNOTATIONS)
             else style.addLayer(layer)
         }
-        markerPalettes=palettes
         val details = FeatureCollection.fromFeatures(detailFeatures)
         val stopSource = style.getSourceAs<GeoJsonSource>("detail-stops")
         if (stopSource != null) stopSource.setGeoJson(details) else {
@@ -588,12 +541,28 @@ fun NativeTransitMap(
                 PropertyFactory.circleStrokeColor("#FFFFFF"), PropertyFactory.circleStrokeWidth(1.5f)))
             addStopLayer(CircleLayer("detail-stop-center", "detail-stops").withProperties(
                 PropertyFactory.circleRadius(Expression.get("inner")), PropertyFactory.circleColor("#FFFFFF")))
-            stopLayerVersion++
         }
         style.getLayerAs<CircleLayer>("detail-stop-halo")?.setProperties(
             PropertyFactory.circleRadius(Expression.sum(Expression.get("radius"), Expression.literal(if (focused) 2.5 else 1.0))))
         style.getLayerAs<CircleLayer>("detail-stop-center")?.setProperties(
             PropertyFactory.circleColor(if(focused && darkTheme) "#10160F" else "#FFFFFF"))
+        val splitSource=style.getSourceAs<GeoJsonSource>("stop-split-rings")
+        if(splitSource==null) splitIconKeys.clear()
+        splitIcons.forEach { (key,spec) ->
+            if(splitIconKeys.add(key)) {
+                val bitmap=StopMarkerColors.render(spec.first,spec.second)
+                style.addImage(key,bitmap)
+                bitmap.recycle()
+            }
+        }
+        val splitData=FeatureCollection.fromFeatures(splitRings)
+        if(splitSource!=null) splitSource.setGeoJson(splitData) else {
+            style.addSource(GeoJsonSource("stop-split-rings",splitData))
+            style.addLayerBelow(SymbolLayer("stop-split-rings-icons","stop-split-rings").withProperties(
+                PropertyFactory.iconImage(Expression.get("icon")),PropertyFactory.iconAllowOverlap(true),
+                PropertyFactory.iconIgnorePlacement(true),PropertyFactory.iconRotationAlignment("viewport"),
+                PropertyFactory.iconPitchAlignment("viewport")),"detail-stop-center")
+        }
         visibleVehicles.forEach { vehicle ->
             val number = if (vehicle.providerId == "mav") vehicle.displayNumber else vehicle.displayRouteNumber ?: network?.routes?.find { it.id == vehicle.routeId }?.number ?: context.getString(if (vehicle.providerId == "bkk") R.string.emma_vehicle else R.string.engine_vehicle_bus)
             val options = MarkerOptions()
