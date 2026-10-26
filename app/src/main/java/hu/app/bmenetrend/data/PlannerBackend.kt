@@ -21,20 +21,29 @@ internal interface PlannerBackend {
     suspend fun stops(bounds: MapBounds): List<TransitStop> = emptyList()
 }
 
-/** One concurrency limit for national searches and small, aliased street-walking batches. */
+/** Bound HTTP work separately from the number of walking aliases being routed. */
+internal class PlannerRequestBudget {
+    private val requests = Semaphore(4)
+    private val walkingBatches = Semaphore(3)
+
+    suspend fun <T> request(block: suspend () -> T): T = requests.withPermit { block() }
+    suspend fun <T> walking(block: suspend () -> T): T = walkingBatches.withPermit { request(block) }
+}
+
+/** Shared budget for national searches and small, aliased street-walking batches. */
 internal class EmmaPlannerBackend(private val client: EmmaGraphqlClient) : PlannerBackend {
-    private val permits = Semaphore(3)
+    private val budget = PlannerRequestBudget()
     private val walks = object : LinkedHashMap<WalkKey, WalkingLink?>(512, .75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<WalkKey, WalkingLink?>?) = size > 1_024
     }
 
-    override suspend fun stops(bounds: MapBounds): List<TransitStop> = permits.withPermit {
+    override suspend fun stops(bounds: MapBounds): List<TransitStop> = budget.request {
         val text = client.execute(EmmaStopsParser.AREA_QUERY, JSONObject().put("south", bounds.south)
             .put("north", bounds.north).put("west", bounds.west).put("east", bounds.east))
         withContext(Dispatchers.Default) { EmmaStopsParser.area(text).stops }
     }
 
-    override suspend fun routes(from: PlannerEndpoint, to: PlannerEndpoint, ready: Instant, busesOnly: Boolean): List<TripItinerary> = permits.withPermit {
+    override suspend fun routes(from: PlannerEndpoint, to: PlannerEndpoint, ready: Instant, busesOnly: Boolean): List<TripItinerary> = budget.request {
         val text = client.execute(TripPlanner.query(busesOnly), TripPlanner.variables(from, to, ready))
         withContext(Dispatchers.Default) { TripPlanner.parse(text, from, to, ready, ready).itineraries }
     }
@@ -44,7 +53,7 @@ internal class EmmaPlannerBackend(private val client: EmmaGraphqlClient) : Plann
         val missing = distinct.filter { (a, b) -> synchronized(walks) { !walks.containsKey(a.position to b.position) } }
         val results = missing.chunked(8).map { batch -> async {
             try {
-                val values = permits.withPermit {
+                val values = budget.walking {
                     val dateTime = TripPlanner.variables(endpoint(batch.first().first), endpoint(batch.first().second), ready)
                     val variables = JSONObject().put("date", dateTime.getString("date")).put("time", dateTime.getString("time"))
                     batch.forEachIndexed { index, (from, to) ->

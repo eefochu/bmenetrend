@@ -2,6 +2,8 @@ package hu.app.bmenetrend.data
 
 import hu.app.bmenetrend.data.LocalTimetableRouter.Companion.point
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -11,11 +13,15 @@ import java.time.Duration
 import java.time.Instant
 
 /** Join reviewed local timetables to national services using independently routed street walks. */
-internal class HybridTripPlanner(private val backend: PlannerBackend) {
+internal class HybridTripPlanner(
+    private val backend: PlannerBackend,
+    private val worker: CoroutineDispatcher = Dispatchers.Default,
+) {
     // Serialize orchestration state while keeping HTTP asynchronous and routing off the UI thread.
-    private val dispatcher = Dispatchers.Default.limitedParallelism(1)
+    private val dispatcher = worker.limitedParallelism(1)
     private data class Start(val endpoint: PlannerEndpoint, val path: LocalPath?)
     private data class End(val endpoint: PlannerEndpoint, val stop: TransitStop?)
+    private data class RemoteKey(val from: GeoPoint, val to: GeoPoint, val time: Instant, val bus: Boolean)
 
     suspend fun plan(
         origin: PlannerEndpoint, destination: PlannerEndpoint, requested: Instant, ready: Instant,
@@ -25,11 +31,17 @@ internal class HybridTripPlanner(private val backend: PlannerBackend) {
         val journeys = mutableListOf<TripItinerary>()
         var partial = false
         var nationalSucceeded = false
+        val remoteRequests = mutableMapOf<RemoteKey, Deferred<List<TripItinerary>>>()
         fun result() = TripPlan(origin, destination, requested, ready, TripPlanner.alternatives(journeys, ready), partial)
-        suspend fun remote(from: PlannerEndpoint, to: PlannerEndpoint, time: Instant, bus: Boolean = false): List<TripItinerary> = try {
-            backend.routes(from, to, time, bus).also { nationalSucceeded = true }
-        } catch (cancelled: CancellationException) { throw cancelled }
-        catch (_: Exception) { partial = true; emptyList() }
+        // Local gateway IDs can refer to the exact same coordinates as an endpoint.
+        // Share identical in-flight/completed calls within this search, with no stale
+        // timetable/realtime cache between searches. Bus-only remains a separate query.
+        suspend fun remote(from: PlannerEndpoint, to: PlannerEndpoint, time: Instant, bus: Boolean = false): List<TripItinerary> =
+            remoteRequests.getOrPut(RemoteKey(from.position, to.position, time, bus)) { async {
+                try { backend.routes(from, to, time, bus).also { nationalSucceeded = true } }
+                catch (cancelled: CancellationException) { throw cancelled }
+                catch (_: Exception) { partial = true; emptyList() }
+            } }.await()
 
         // The independent bus search prevents train-heavy source rankings from hiding Volán.
         val direct = listOf(false, true).map { bus -> async {
@@ -40,9 +52,9 @@ internal class HybridTripPlanner(private val backend: PlannerBackend) {
             catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) { partial = true; null }
         }
-        direct.awaitAll()
         val network = local.await()
         if (network == null) {
+            direct.awaitAll()
             check(nationalSucceeded || journeys.isNotEmpty()) { "Planning services unavailable" }
             return@coroutineScope result()
         }
@@ -60,6 +72,7 @@ internal class HybridTripPlanner(private val backend: PlannerBackend) {
         val access = activeStops.filter { distance(it.position, origin.position) <= ACCESS_METERS }
         val egress = activeStops.filter { distance(it.position, destination.position) <= ACCESS_METERS }
         if (access.isEmpty() && egress.isEmpty()) {
+            direct.awaitAll()
             check(nationalSucceeded) { "Planning services unavailable" }
             return@coroutineScope result()
         }
@@ -78,13 +91,17 @@ internal class HybridTripPlanner(private val backend: PlannerBackend) {
             walking.links[a.position to b.position]?.let { (a.id to b.id) to it }
         }.toMap()
         val egressLinks = egress.mapNotNull { stop -> walking.links[stop.position to destination.position]?.let { stop.id to it } }.toMap()
-        val router = withContext(Dispatchers.Default) { LocalTimetableRouter(network, ready) }
+        val router = withContext(worker) { LocalTimetableRouter(network, ready) }
         val seeds = access.mapNotNull { stop -> walking.links[origin.position to stop.position]?.let { walk ->
             LocalPath(stop.id, ready.plusSeconds(walk.seconds), listOf(walk.leg(ready)))
         } }
-        val reached = withContext(Dispatchers.Default) { router.search(seeds, transferLinks) }
-        journeys += withContext(Dispatchers.Default) { router.finish(reached, egressLinks) }
+        val reached = withContext(worker) { router.search(seeds, transferLinks) }
+        journeys += withContext(worker) { router.finish(reached, egressLinks) }
         onProgress(result())
+
+        // Local access/walking does not depend on either national search. Join only when
+        // their stop references are needed, so a slow bus/rail query cannot hold it up.
+        direct.awaitAll()
 
         // Preserve exact source identities: proximity selects a gateway, never merges its board.
         val indexed = nationalStops.filter { it.id.startsWith("emma:") && !it.station }.ifEmpty {
@@ -101,11 +118,17 @@ internal class HybridTripPlanner(private val backend: PlannerBackend) {
                     emptyList(), transportMode = leg.mode) }
             }
         }
+        // A journey ending after the selector's absolute delay limit cannot enter the
+        // final three. Prune only by this safe time bound, never by operator or distance.
+        val latestUsefulArrival = journeys.minOfOrNull { it.end }
+            ?.plusSeconds(PlannerAlternatives.MAX_ARRIVAL_DELAY_SECONDS)
+        fun useful(path: LocalPath) = path.boardings > 0 &&
+            (latestUsefulArrival == null || path.arrival <= latestUsefulArrival)
         val starts = listOf(Start(origin, null)) + gateways(relevant.filter { stop ->
-            reached[stop.id].orEmpty().any { it.boardings > 0 }
+            reached[stop.id].orEmpty().any(::useful)
         }, references, destination.position) { stop ->
-            reached.getValue(stop.id).filter { it.boardings > 0 }.minOf { Duration.between(ready, it.arrival).seconds.toDouble() }
-        }.map { stop -> Start(stop.endpoint(), reached.getValue(stop.id).filter { it.boardings > 0 }.minBy { it.arrival }) }
+            reached.getValue(stop.id).filter(::useful).minOf { Duration.between(ready, it.arrival).seconds.toDouble() }
+        }.map { stop -> Start(stop.endpoint(), reached.getValue(stop.id).filter(::useful).minBy { it.arrival }) }
         val ends = listOf(End(destination, null)) + gateways(connectedStops(activeStops,
             network.routes.filter { it.id in active }, egress), references, origin.position) { stop ->
             distance(stop.position, destination.position) / 5.0
@@ -120,7 +143,7 @@ internal class HybridTripPlanner(private val backend: PlannerBackend) {
                 for (trip in middle) {
                     val legs = prefix + trip.legs
                     val added = if (end.stop == null) listOfNotNull(TripPlanner.itinerary(legs, ready))
-                    else withContext(Dispatchers.Default) {
+                    else withContext(worker) {
                         router.finish(router.search(listOf(LocalPath(end.stop.id, trip.end, legs)), transferLinks), egressLinks)
                     }
                     journeys += added

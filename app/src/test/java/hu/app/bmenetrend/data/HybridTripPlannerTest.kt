@@ -1,11 +1,14 @@
 package hu.app.bmenetrend.data
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Test
 import java.time.Instant
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class HybridTripPlannerTest {
     private val ready = Instant.parse("2026-10-22T05:00:00Z")
     private val a = TransitStop("a","A",GeoPoint(47.40,18.8),listOf("via"))
@@ -94,5 +97,51 @@ class HybridTripPlannerTest {
             HybridTripPlanner(backend).plan(a.endpoint(),e.endpoint(),ready,ready,catalogue,{network()})
             fail("cancellation must propagate")
         } catch (_:CancellationException) { }
+    }
+
+    @Test fun localResultsDoNotWaitForSlowNationalQueries() = runTest {
+        val delegate = FakeBackend()
+        val backend = object : PlannerBackend by delegate {
+            override suspend fun routes(from: PlannerEndpoint, to: PlannerEndpoint, ready: Instant, busesOnly: Boolean): List<TripItinerary> {
+                delay(30_000)
+                return emptyList()
+            }
+            override suspend fun walking(pairs: List<Pair<PlanPoint, PlanPoint>>, ready: Instant): WalkingResult {
+                delay(1_000)
+                return delegate.walking(pairs, ready)
+            }
+        }
+        var firstResultAt: Long? = null
+        val result = HybridTripPlanner(backend, StandardTestDispatcher(testScheduler)).plan(
+            a.endpoint(), b.endpoint(), ready, ready, catalogue, { delay(1_000); network() }) { progress ->
+            if (progress.itineraries.isNotEmpty() && firstResultAt == null) firstResultAt = testScheduler.currentTime
+        }
+        assertEquals(2_000L, firstResultAt)
+        assertTrue(result.itineraries.any { it.legs.any { leg -> leg.route?.providerId == "viabusz" } })
+    }
+
+    @Test fun lateLocalPrefixesArePrunedAndIdenticalGatewayRequestsAreShared() = runTest {
+        val calls = mutableListOf<Pair<Pair<GeoPoint, GeoPoint>, Boolean>>()
+        val direct = coach(ready.plusSeconds(60)).copy(from = a.point(), to = c.point())
+        val backend = object : PlannerBackend by FakeBackend() {
+            override suspend fun routes(from: PlannerEndpoint, to: PlannerEndpoint, ready: Instant, busesOnly: Boolean): List<TripItinerary> {
+                calls += (from.position to to.position) to busesOnly
+                return if (from.position == a.position && to.position == c.position)
+                    listOf(TripItinerary("direct", direct.start, direct.end, listOf(direct))) else emptyList()
+            }
+        }
+        // The ViaBusz prefix reaches the interchange 40 minutes after ready. The
+        // national journey ends at 11 minutes; even the maximum 20-minute allowance
+        // cannot make a journey using this prefix selectable.
+        val late = network().copy(trips = network().trips.map { trip ->
+            if (trip.routeId == "via") trip.copy(stopTimes = listOf(StopTime("a", 422), StopTime("b", 460))) else trip
+        })
+        val result = HybridTripPlanner(backend, StandardTestDispatcher(testScheduler)).plan(
+            a.endpoint(), c.endpoint(), ready, ready, catalogue, { late })
+        assertTrue(result.itineraries.isNotEmpty())
+        assertTrue(calls.none { it.first.first == b.position })
+        // Origin -> destination and origin -> the same local gateway share their
+        // unrestricted request. The independent bus-only request must still run.
+        assertEquals(listOf(false, true), calls.filter { it.first == a.position to c.position }.map { it.second }.sorted())
     }
 }
