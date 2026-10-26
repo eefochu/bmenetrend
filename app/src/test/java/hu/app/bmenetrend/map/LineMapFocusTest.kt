@@ -23,6 +23,8 @@ class LineMapFocusTest {
         assertEquals(listOf(outbound.geometry), focusNorth.paths)
         assertEquals(setOf(a.id, b.id), focusNorth.stops.map { it.id }.toSet())
         assertFalse(focusNorth.stops.any { it.id == c.id })
+        assertTrue(c in focusNorth.contextStops)
+        assertEquals(setOf(a,b,c),focusNorth.displayStops.toSet())
 
         val focusSouth = LineMapFocus.create(vehicle(destination = "South"), null, listOf(route), mapOf(route.id to LineDetails(route, listOf(outbound, inbound))), null, listOf(a,b,c))!!
         assertEquals(listOf(inbound.geometry), focusSouth.paths)
@@ -56,6 +58,8 @@ class LineMapFocusTest {
         assertEquals(listOf(outbound.geometry),focus.paths)
         assertEquals(outbound.stops,focus.stops)
         assertFalse(focus.stops.contains(unrelated))
+        assertTrue(c in focus.contextStops)
+        assertFalse(unrelated in focus.displayStops)
     }
 
     @Test fun missingRouteIdentityDoesNotShowAllUnknownVehicles() {

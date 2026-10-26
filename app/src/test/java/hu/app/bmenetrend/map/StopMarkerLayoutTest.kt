@@ -45,4 +45,36 @@ class StopMarkerLayoutTest {
         assertEquals(0xFFE31B23.toInt(),StopMarkerLayout.color("bkk","TROLLEYBUS"))
         assertEquals(0xFFF9B900.toInt(),StopMarkerLayout.color("volan","COACH"))
     }
+    @Test fun closeZoomSeparatesCoincidentPlatformsAndEveryDotSelectsDirectly() {
+        val nodes=(0..24).map { node("platform-$it",180.0,260.0) }
+        for(density in listOf(1.0,2.75)) {
+            val scaled=nodes.map { it.copy(x=it.x*density,y=it.y*density) }
+            val placed=StopMarkerLayout.layout(scaled,density,24.0,16.0)
+            for((index,a) in placed.withIndex()) for(b in placed.drop(index+1)) {
+                assertTrue(kotlin.math.hypot(a.x-b.x,a.y-b.y)>=42*density-.001)
+            }
+            val targets=placed.map { StopHitTesting.Target(it.stop,it.x,it.y,it.sizePx/2) }
+            placed.forEach { point ->
+                assertEquals(point.stop,StopHitTesting.candidates(targets,point.x,point.y,density).first())
+                assertFalse(StopHitTesting.needsZoom(targets,point.x,point.y,density,16.0))
+            }
+            assertEquals(placed,StopMarkerLayout.layout(scaled.reversed(),density,24.0,16.0))
+        }
+    }
+    @Test fun closeZoomAvoidsCoveringBusesAndKeepsDotsInsideTheVisibleMap() {
+        val nodes=(0..15).map { node("p$it",35.0,125.0) }
+        val bounds=StopMarkerLayout.Bounds(0.0,96.0,360.0,450.0)
+        val placed=StopMarkerLayout.layout(nodes,1.0,24.0,16.0,listOf(StopMarkerLayout.Obstacle(35.0,125.0,21.0)),bounds)
+        placed.forEach {
+            assertTrue(bounds.contains(it.x,it.y,it.sizePx/2))
+            assertTrue(kotlin.math.hypot(it.x-35,it.y-125)>=51)
+        }
+    }
+    @Test fun tappingOverlappingOverviewRingsZoomsInButNearbyDistinctDotsSelectDirectly() {
+        val targets=listOf(StopHitTesting.Target(node("a").stop,100.0,100.0,8.0),StopHitTesting.Target(node("b").stop,110.0,100.0,8.0))
+        assertTrue(StopHitTesting.needsZoom(targets,100.0,100.0,1.0,12.0))
+        assertFalse(StopHitTesting.needsZoom(targets,100.0,100.0,1.0,16.0))
+        assertFalse(StopHitTesting.needsZoom(targets.mapIndexed { i,t -> t.copy(x=100.0+i*40) },100.0,100.0,1.0,12.0))
+    }
+
 }

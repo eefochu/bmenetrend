@@ -119,6 +119,5 @@
     <string name="service_local_bus">Local bus</string>
     <string name="service_city_bus">City bus</string>
     <string name="service_ferry">Ferry</string>
-    <string name="map_choose_stop">Choose a stop</string>
     <string name="route_close">Close line view</string>
 </resources>

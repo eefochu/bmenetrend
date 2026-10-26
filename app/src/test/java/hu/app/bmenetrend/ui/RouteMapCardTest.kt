@@ -61,16 +61,6 @@ class RouteMapCardTest {
         compose.runOnIdle { assertNull(previewRoute) }
     }
 
-    @Test fun overlappingPlatformsRemainReachableInThePickerIncludingABusAboveThem() {
-        val stops=(1..25).map { a.copy(id="p$it",name="Vasútállomás",platformCode=it.toString()) }
-        var chosen:String?=null
-        val vehicle=Vehicle("bus",a.position,Instant.now(),routeId=route.id,providerId="volan",routeNumber="762",destination=c.name)
-        compose.setContent { ViaBuszTheme { MapStopPicker(stops,vehicle,{chosen=it},{},{}) } }
-        compose.onNode(hasScrollAction()).performScrollToNode(hasText(app.getString(R.string.emma_platform,"25"),substring=true))
-        compose.onNodeWithText(app.getString(R.string.emma_platform,"25"),substring=true).performClick()
-        compose.runOnIdle { assertEquals("p25",chosen) }
-    }
-
     @Test fun localAndCityServicesGetTheirOwnTypeInsteadOfRegionalLabels() {
         compose.setContent { ViaBuszTheme { Column {
             Text(serviceTypeLabel("viabusz",null))

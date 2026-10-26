@@ -157,13 +157,18 @@ class MainActivity : ComponentActivity() {
                         if (state.selectedVehicle != null && state.vehicleJourney?.stops?.any { it.id == id } == true) model.selectJourneyBoardingStop(id)
                         else {
                             val linePattern=boarding?.pattern?.takeIf { it.stops.any { stop -> stop.id==id } }
-                            val localDirection=boarding?.localDirectionId
+                            val localDirection=boarding?.localDirectionId?.takeIf { direction ->
+                                route?.directions?.any { it.id==direction && id in it.stopIds } == true
+                            }
                             if(focus?.routeId!=null && linePattern!=null) model.selectBoardingStop(focus.routeId,linePattern.id,id)
                             else if(focus?.routeId!=null && localDirection!=null) model.selectBoardingStop(focus.routeId,localDirection,id)
                             else model.selectStop(id)
                         }
                     }
-                    NativeTransitMap(state.network, state.vehicles, state.selectedStopId.takeUnless { state.showNearby }, state.userLocation, modifier, onMapStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, state.selectedVehicle, routeGeometry = geometry, routeStops = stops, routeColor = color.toArgb(), fitRouteRequest = state.fitRouteRequest, selectedPlace = state.selectedPlace, placeCameraRequest = state.placeCameraRequest, lineFocus = focus, browsingNearby = state.showNearby, locationCameraRequest = state.locationCameraRequest, onViewportChanged = model::updateMapArea)
+                    val stopBearings=remember(state.network,state.emmaStops,state.lineDetails,state.vehicleJourney) {
+                        hu.app.bmenetrend.map.StopDirections.collect(state.routes,state.stops,state.lineDetails.values,state.vehicleJourney)
+                    }
+                    NativeTransitMap(state.network, state.vehicles, state.selectedStopId.takeUnless { state.showNearby }, state.userLocation, modifier, onMapStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, state.selectedVehicle, routeGeometry = geometry, routeStops = stops, routeColor = color.toArgb(), fitRouteRequest = state.fitRouteRequest, selectedPlace = state.selectedPlace, placeCameraRequest = state.placeCameraRequest, lineFocus = focus, browsingNearby = state.showNearby, locationCameraRequest = state.locationCameraRequest, onViewportChanged = model::updateMapArea,stopBearings=stopBearings,onSharedStopSelected=model::selectStop)
                 }
                 })
 
