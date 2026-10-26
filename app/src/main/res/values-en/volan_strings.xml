@@ -46,4 +46,6 @@
     <string name="emma_vehicle_next_stop">Next stop: %1$s</string>
     <string name="emma_vehicle_old_position">This position is no longer fresh. The last source observation is shown above.</string>
     <plurals name="emma_journey_stops"><item quantity="one">%1$d stop on this trip</item><item quantity="other">%1$d stops on this trip · tap to view departures</item></plurals>
+    <string name="emma_lines_saved">Showing saved EMMA lines. The list will refresh automatically.</string>
+    <string name="emma_lines_unavailable">EMMA lines could not be loaded. Retrying automatically.</string>
 </resources>

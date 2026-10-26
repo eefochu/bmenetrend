@@ -5,7 +5,7 @@
     <string name="favorites_nav">Kedvencek</string>
     <string name="favorites_title">Kedvenc megállók</string>
     <string name="favorites_window">Következő %1$s</string>
-    <string name="favorites_empty">A megálló indulási tábláján lévő szívvel mentheted ide a kedvenceidet. Bárhonnan láthatod az érkező járataikat.</string>
+    <string name="favorites_empty">A megálló indulási tábláján lévő szívvel mentheted ide a kedvenceidet. Itt az összes hozzájuk tartozó járatot megtalálod.</string>
     <string name="favorites_loading">A kedvenc megállók betöltése…</string>
     <string name="favorites_index_unavailable">A mentett megállók átmenetileg nem érhetők el. Próbálj frissíteni.</string>
     <string name="favorites_all_departures">Összes indulás</string>
@@ -15,4 +15,7 @@
     <string name="favorites_lines">Járatok</string>
     <string name="favorites_no_lines">Nincsenek elérhető vonalak ehhez a megállóhoz</string>
     <string name="rail_platform">%1$s. vágány</string>
+    <string name="favorites_refresh_lines">Járatlisták frissítése</string>
+    <string name="favorites_lines_unavailable">A megálló járatlistája nem tölthető be. Próbálj frissíteni.</string>
+    <string name="favorites_lines_stale">A frissítés nem sikerült. A legutóbbi ismert járatlistát látod.</string>
 </resources>

@@ -5,6 +5,7 @@ import java.time.Instant
 
 /** Presentation selection only: every operator still participates in routing. */
 internal object PlannerAlternatives {
+    const val MAX_ARRIVAL_DELAY_SECONDS = 1200L
     fun select(journeys: List<TripItinerary>, ready: Instant? = null): List<TripItinerary> {
         val sorted = journeys.distinctBy { it.id }.sortedWith(TripPlanner.order)
         val distinct = mutableListOf<TripItinerary>()
@@ -13,7 +14,7 @@ internal object PlannerAlternatives {
         val fastest = frontier.firstOrNull() ?: return emptyList()
         val baseline = ready ?: sorted.minOf { it.start }
         // A small walking/transfer saving must not keep a journey that arrives much later.
-        val delayBudget = (Duration.between(baseline,fastest.end).seconds / 4).coerceIn(600L,1200L)
+        val delayBudget = (Duration.between(baseline,fastest.end).seconds / 4).coerceIn(600L,MAX_ARRIVAL_DELAY_SECONDS)
         val useful = frontier.filter { trip ->
             val delay = Duration.between(fastest.end,trip.end).seconds
             trip === fastest || delay <= delayBudget && (

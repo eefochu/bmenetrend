@@ -5,7 +5,7 @@
     <string name="favorites_nav">Favourites</string>
     <string name="favorites_title">Favourite stations</string>
     <string name="favorites_window">Next %1$s</string>
-    <string name="favorites_empty">Tap the heart on a station’s departure board to save it here. See its incoming services from anywhere.</string>
+    <string name="favorites_empty">Tap the heart on a station’s departure board to save it here. Find all of its serving lines here.</string>
     <string name="favorites_loading">Loading your saved stations…</string>
     <string name="favorites_index_unavailable">Saved stations are temporarily unavailable. Refresh to try again.</string>
     <string name="favorites_all_departures">All departures</string>
@@ -15,4 +15,7 @@
     <string name="favorites_lines">Lines</string>
     <string name="favorites_no_lines">No lines available for this stop</string>
     <string name="rail_platform">Platform %1$s</string>
+    <string name="favorites_refresh_lines">Refresh serving lines</string>
+    <string name="favorites_lines_unavailable">The station’s serving lines could not be loaded. Try refreshing.</string>
+    <string name="favorites_lines_stale">Refresh failed. Showing the last known serving lines.</string>
 </resources>

@@ -15,6 +15,7 @@ object EmmaStopsParser {
         stopsByBbox(minLat:${'$'}south,minLon:${'$'}west,maxLat:${'$'}north,maxLon:${'$'}east) { $STOP_FIELDS }
     }""".trimIndent()
     val SEARCH_QUERY = """query FindStops(${'$'}name: String!) { stops(name:${'$'}name) { $STOP_FIELDS } }"""
+    val LINES_QUERY = """query StopLines(${'$'}id:String!) { stop(id:${'$'}id) { $STOP_FIELDS } }"""
     val BOARD_FIELDS = """$STOP_FIELDS
         stoptimesForPatterns(startTime:${'$'}start,timeRange:${'$'}range,numberOfDepartures:$BOARD_LIMIT,omitNonPickups:true) {
             pattern { code headsign }
@@ -129,6 +130,15 @@ object EmmaStopsParser {
     }
     fun area(text: String) = stops(EmmaGraphqlClient.data(text).getJSONArray("stopsByBbox"))
     fun search(text: String) = stops(EmmaGraphqlClient.data(text).getJSONArray("stops"))
+    /** All routes attached to the exact source stop, without a date or departure-time filter. */
+    fun servingLines(text: String,expectedId: String): Catalogue {
+        val row=EmmaGraphqlClient.data(text).getJSONObject("stop")
+        require(row.getString("gtfsId")==sourceId(expectedId)) { "Wrong stop returned" }
+        val parsed=stops(JSONArray().put(row))
+        val stop=parsed.stops.singleOrNull()?.takeIf { it.id==expectedId } ?: error("Unsupported stop")
+        val routes=parsed.routes.filter { it.providerId==stop.providerId && StopBoardScope.acceptsMode(stop.transportMode,it.transportMode) }
+        return Catalogue(listOf(stop.copy(routeIds=routes.map { it.id })),routes)
+    }
     fun board(text: String, expectedId: String, now: Instant, windowMinutes: Int): Board {
         val row = EmmaGraphqlClient.data(text).getJSONObject("stop")
         return boardRow(row, expectedId, now, windowMinutes)
@@ -151,7 +161,8 @@ object EmmaStopsParser {
         val routes = linkedMapOf<String, TransitRoute>().apply { catalogue.routes.forEach { put(it.id, it) } }
         val departures = (0 until rows.length()).mapNotNull { index ->
             val time = rows.optJSONObject(index) ?: return@mapNotNull null
-            if (time.text("realtimeState") == "CANCELED" || time.text("pickupType") == "NONE") return@mapNotNull null
+            val cancelled=time.text("realtimeState")=="CANCELED"
+            if (!cancelled && time.text("pickupType") == "NONE") return@mapNotNull null
             val trip = time.optJSONObject("trip") ?: return@mapNotNull null
             val tripId = trip.text("gtfsId") ?: return@mapNotNull null
             val route = trip.optJSONObject("route")?.let(::route) ?: return@mapNotNull null
@@ -164,7 +175,7 @@ object EmmaStopsParser {
             val day = time.number("serviceDay")?.toLong() ?: return@mapNotNull null
             val scheduledSeconds = time.number("scheduledDeparture")?.toLong()?.takeIf { it in 0..172799 }
             val realtimeSeconds = time.number("realtimeDeparture")?.toLong()?.takeIf { it in 0..172799 }
-            val realtime = time.optBoolean("realtime", false) && realtimeSeconds != null && time.text("realtimeState") != "SCHEDULED"
+            val realtime = !cancelled && time.optBoolean("realtime", false) && realtimeSeconds != null && time.text("realtimeState") != "SCHEDULED"
             val scheduled = scheduledSeconds?.let { seconds -> runCatching { Instant.ofEpochSecond(day + seconds) }.getOrNull() }
             val expected = if (realtime) Instant.ofEpochSecond(day + realtimeSeconds!!) else scheduled ?: return@mapNotNull null
             if (expected < now || expected > now.plusSeconds(windowMinutes * 60L)) return@mapNotNull null

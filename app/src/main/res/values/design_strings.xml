@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="board_cancelled">Kimarad</string>
+    <plurals name="board_delay"><item quantity="one">+%1$d perc</item><item quantity="other">+%1$d perc</item></plurals>
+    <string name="design_transit_data">Adatforrások</string>
+</resources>

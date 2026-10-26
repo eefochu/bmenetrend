@@ -109,7 +109,10 @@ data class Departure(
     val trainNumber: String? = null,
     val serviceName: String? = null,
     val platformCode: String? = null,
-)
+) {
+    val isCancelled: Boolean get() = realtimeState == "CANCELED"
+    val delayMinutes: Long get() = scheduledAt?.let { java.time.Duration.between(it,expectedAt).toMinutes() } ?: 0L
+}
 
 @Immutable
 data class LiveArrival(

@@ -47,29 +47,20 @@ fun UpdatesPage(
                 .statusBarsPadding()
                 .navigationBarsPadding()
         ) {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.ui_back))
-                }
-                Text(stringResource(R.string.ota_updates_title), style = MaterialTheme.typography.headlineSmall)
-            }
+            TransitPageHeader(stringResource(R.string.ota_updates_title),onBack)
 
             Column(
                 Modifier
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp, vertical = 12.dp),
+                    .padding(horizontal = adaptivePageGutter(), vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Current version card
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+                    shape = TransitDesign.groupShape,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest)
                 ) {
                     Row(
                         Modifier
@@ -78,7 +69,7 @@ fun UpdatesPage(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
+                        Column(Modifier.weight(1f)) {
                             Text(
                                 stringResource(R.string.ota_installed_version, BuildConfig.VERSION_NAME),
                                 style = MaterialTheme.typography.titleMedium
@@ -95,7 +86,8 @@ fun UpdatesPage(
                 // Channel Selector Card
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+                    shape = TransitDesign.groupShape,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest)
                 ) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text(
@@ -291,7 +283,8 @@ fun UpdatesPage(
                     // Up-to-date card
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+                        shape = TransitDesign.groupShape,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest)
                     ) {
                         Row(
                             Modifier.padding(16.dp),

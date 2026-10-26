@@ -80,6 +80,31 @@ class FavoritesScreenTest {
     )
 
     @Test
+    fun loadingAnotherPlatformDoesNotAddLinesToTheSavedStation() {
+        val saved=stationStop.copy(routeIds=listOf(trainRoute1.id))
+        val favorite=NearbyStation(saved,listOf(saved),0.0)
+        val before=UiState(network=TransitNetwork(listOf(saved),listOf(trainRoute1),emptyList(),Instant.now(),"test"))
+        // Loading nearby platform/board data enriches the global catalogue, not this favourite's scope.
+        val otherPlatform=saved.copy(id="other-platform",name="${saved.name} (Ellenirány)",
+            routeIds=listOf(trainRoute2.id,busRoute.id))
+        val after=before.copy(emmaStops=listOf(otherPlatform),emmaRoutes=listOf(trainRoute2,busRoute))
+        assertEquals(listOf("S10"),extractStationLines(favorite,before).trainBadges.map { it.label })
+        assertEquals(extractStationLines(favorite,before),extractStationLines(favorite,after))
+    }
+
+    @Test
+    fun allStationLinesRemainVisibleWithoutDeparturesAndAcrossTimeWindows() {
+        val noServicesToday=nearbyStation.copy(departures=emptyList())
+        val small=extractStationLines(noServicesToday,uiState.copy(windowMinutes=30))
+        val large=extractStationLines(noServicesToday,uiState.copy(windowMinutes=300))
+        assertEquals(listOf("IC","S10"),small.trainBadges.map { it.label })
+        assertEquals(listOf("762"),small.otherBadges.map { it.label })
+        assertEquals(small,large)
+        val incidental=dep1.copy(routeId="mav:incidental",routeNumber="IR",serviceName="InterRégió")
+        assertEquals(small,extractStationLines(noServicesToday.copy(departures=listOf(incidental)),uiState))
+    }
+
+    @Test
     fun extractStationLinesDeduplicatesBadgesAndCategorizesCorrectly() {
         val lines = extractStationLines(nearbyStation, uiState)
 
@@ -105,8 +130,8 @@ class FavoritesScreenTest {
         assertEquals(Color(0xFF00AFEF), railLineColor("S30"))
         assertEquals(Color(0xFFFECD28), railLineColor("Z30"))
         assertEquals(Color(0xFF171B20), railLineTextColor("Z30"))
-        assertEquals(Color.White, railLineTextColor("S10"))
-        assertEquals(Color.White, railLineTextColor("G10"))
+        assertEquals(Color(0xFF171B20), railLineTextColor("S10"))
+        assertEquals(Color(0xFF171B20), railLineTextColor("G10"))
         assertEquals(Color(0xFF2E5EA7), railLineColor("IC"))
         assertEquals(Color(0xFF2E5EA7), railLineColor("rjx"))
         assertEquals(Color(0xFF2E5EA7), railLineColor("Gy"))
@@ -138,11 +163,12 @@ class FavoritesScreenTest {
                     },
                     onRemove = {},
                     onRefresh = {},
-                    onWindow = {},
                     onVisible = {}
                 )
             }
         }
+
+        compose.onNodeWithText(app.getString(R.string.favorites_window,DepartureTime.compact(uiState.windowMinutes,true))).assertDoesNotExist()
 
         // Check station name header is displayed
         compose.onNodeWithText("Budapest-Kelenföld").assertIsDisplayed()

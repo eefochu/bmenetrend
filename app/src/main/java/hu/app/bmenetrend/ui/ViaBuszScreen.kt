@@ -38,6 +38,8 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.AccessTime
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.CloudDone
+import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.material.icons.rounded.DirectionsBus
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
@@ -98,6 +100,8 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -105,6 +109,7 @@ import androidx.compose.ui.unit.sp
 import hu.app.bmenetrend.R
 import hu.app.bmenetrend.data.ArrivalKind
 import hu.app.bmenetrend.data.Departure
+import hu.app.bmenetrend.data.StationTimetableRepository
 import hu.app.bmenetrend.data.StopClusters
 import hu.app.bmenetrend.data.TransitRoute
 import hu.app.bmenetrend.data.TransitStop
@@ -144,6 +149,9 @@ fun ViaBuszScreen(
     onSearchPlaces: (String, Boolean) -> Unit = { _, _ -> },
     onPlaceSelected: (hu.app.bmenetrend.data.PlaceResult) -> Unit = {},
     onPlaceClosed: () -> Unit = {},
+    onDownloadTimetable: (String) -> Unit = {},
+    onDeleteTimetable: (String) -> Unit = {},
+    onClearAllTimetables: () -> Unit = {},
     onOtaChannelChanged: (hu.app.bmenetrend.data.UpdateChannel) -> Unit = {},
     onCheckOtaUpdates: () -> Unit = {},
     onDownloadAndInstallOta: (hu.app.bmenetrend.data.OtaUpdateInfo) -> Unit = {},
@@ -319,17 +327,19 @@ fun ViaBuszScreen(
                 scaffoldState = sheetState,
                 modifier = Modifier.onSizeChanged { layoutHeightPx = it.height },
                 sheetPeekHeight = peekHeight,
-                sheetShape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
-                sheetContainerColor = MaterialTheme.colorScheme.surface,
+                sheetShape = TransitDesign.sheetShape,
+                sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
                 sheetTonalElevation = 1.dp,
-                sheetShadowElevation = 8.dp,
+                sheetShadowElevation = 4.dp,
                 containerColor = Color.Transparent,
                 sheetDragHandle = {
+                    val toggleDescription=stringResource(if(isExpanded) R.string.ui_collapse_departures else R.string.ui_expand_departures)
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable(onClick = toggleExpand)
-                            .padding(top = 10.dp, bottom = 6.dp),
+                            .semantics { contentDescription=toggleDescription }
+                            .clickable(role=Role.Button,onClick = toggleExpand)
+                            .heightIn(min = 48.dp).padding(top = 10.dp, bottom = 10.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Surface(
@@ -392,6 +402,8 @@ fun ViaBuszScreen(
                         onDeparture = openDeparture,
                         onToggleExpand = toggleExpand,
                         onCollapse = collapse,
+                        onDownloadTimetable = onDownloadTimetable,
+                        onDeleteTimetable = onDeleteTimetable,
                         modifier = Modifier.fillMaxWidth().fillMaxHeight(0.88f),
                         isExpanded = isExpanded,
                     )
@@ -512,6 +524,7 @@ fun ViaBuszScreen(
             onCustom = onCustomAccentChanged,
             onNationwide = onNationwideNetworkChanged,
             onAbout = { showAbout = true },
+            onClearAllTimetables = onClearAllTimetables,
             onBack = { showSettings = false }
         )
     }
@@ -529,10 +542,10 @@ private fun FloatingSearchBlob(
             .widthIn(max = 560.dp)
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
-        shape = RoundedCornerShape(28.dp),
-        color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 6.dp,
-        tonalElevation = 3.dp,
+        shape = RoundedCornerShape(topStart=20.dp,topEnd=20.dp,bottomStart=20.dp,bottomEnd=12.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        shadowElevation = 4.dp,
+        tonalElevation = 0.dp,
     ) {
         Row(
             modifier = Modifier.padding(start = 16.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
@@ -545,8 +558,8 @@ private fun FloatingSearchBlob(
                 modifier = Modifier.size(24.dp),
             )
             Text(stringResource(R.string.ui_search_short), Modifier.weight(1f).padding(horizontal = 12.dp),
-                style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            IconButton(onClick = onSettings) {
+                style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            FilledTonalIconButton(onClick = onSettings,shape=TransitDesign.controlShape) {
                 Icon(Icons.Rounded.Settings, stringResource(R.string.volan_settings))
             }
         }
@@ -566,6 +579,8 @@ private fun StopPanel(
     onDeparture: (Departure) -> Unit,
     onToggleExpand: () -> Unit,
     onCollapse: () -> Unit,
+    onDownloadTimetable: (String) -> Unit = {},
+    onDeleteTimetable: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     isExpanded: Boolean = true,
 ) {
@@ -579,49 +594,101 @@ private fun StopPanel(
     val boardingInfo=if(platforms.size>1) null else (stop?.platformCode?.let { stringResource(R.string.emma_platform,it) }
         ?: stop?.takeIf { it.id.startsWith("emma:") }?.let { stringResource(R.string.emma_stop_code,it.id.substringAfterLast(":")) })
     val timetableOnly = clusterProviders.isNotEmpty() && clusterProviders.all { it == "homm" }
+    var showOfflineDialog by remember { mutableStateOf(false) }
+
+    if (showOfflineDialog && stop != null) {
+        val meta = state.offlineStationTimetables[stop.id]
+            ?: state.offlineStationTimetables.values.firstOrNull { stop.id in it.platformIds }
+        AlertDialog(
+            onDismissRequest = { showOfflineDialog = false },
+            icon = { Icon(Icons.Rounded.CloudDone, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+            title = { Text(stringResource(R.string.ui_timetable_downloaded)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stopTitle, style = MaterialTheme.typography.titleMedium)
+                    if (meta != null) {
+                        val formattedDate = DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm")
+                            .withZone(ZoneId.of("Europe/Budapest"))
+                            .format(meta.downloadedAt)
+                        val sizeStr = StationTimetableRepository.formatFileSize(meta.fileSizeBytes)
+                        Text(
+                            stringResource(
+                                R.string.ui_offline_dialog_details,
+                                formattedDate,
+                                sizeStr,
+                                meta.departureCount,
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showOfflineDialog = false
+                    onDownloadTimetable(stop.id)
+                }) {
+                    Text(stringResource(R.string.ui_update_timetable))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showOfflineDialog = false
+                    onDeleteTimetable(stop.id)
+                }) {
+                    Text(stringResource(R.string.ui_delete_timetable), color = MaterialTheme.colorScheme.error)
+                }
+            }
+        )
+    }
+
     Column(modifier) {
-        Row(Modifier.fillMaxWidth().padding(start = 22.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(
-                Modifier
-                    .weight(1f)
-                    .clickable(enabled = !isExpanded, onClick = onToggleExpand)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                    Icon(
-                        if (stop != null && stop.id == state.nearestStopId) Icons.Rounded.NearMe else Icons.Rounded.LocationOn,
-                        null,
-                        Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                    Text(
-                        stringResource(if (stop != null && stop.id == state.nearestStopId) R.string.ui_nearest_stop else R.string.ui_selected_stop),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        letterSpacing = 0.8.sp,
-                    )
+        Column(Modifier.fillMaxWidth().padding(horizontal=TransitDesign.gutter)) {
+            Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
+                Text(stringResource(if(stop!=null && stop.id==state.nearestStopId) R.string.ui_nearest_stop else R.string.ui_selected_stop),
+                    Modifier.weight(1f),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.primary)
+                if(stop!=null) {
+                    val isDownloaded = stop.id in state.downloadedStationIds
+                    val isDownloading = stop.id in state.downloadingStationIds
+                    IconButton(
+                        onClick = {
+                            if (isDownloaded) {
+                                showOfflineDialog = true
+                            } else if (!isDownloading) {
+                                onDownloadTimetable(stop.id)
+                            }
+                        },
+                        enabled = !isDownloading
+                    ) {
+                        when {
+                            isDownloading -> CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                            isDownloaded -> Icon(
+                                Icons.Rounded.CloudDone,
+                                stringResource(R.string.ui_timetable_downloaded),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            else -> Icon(
+                                Icons.Rounded.CloudDownload,
+                                stringResource(R.string.ui_download_timetable)
+                            )
+                        }
+                    }
+                    IconButton(onClick={onToggleFavorite(stop.id)}) {
+                        Icon(if(stop.id in state.favorites) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                            stringResource(if(stop.id in state.favorites) R.string.ui_remove_favorite else R.string.ui_add_favorite),tint=MaterialTheme.colorScheme.primary)
+                    }
                 }
-                Text(stopTitle, style = MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 5.dp))
-                if (stop != null) {
-                    Text(listOfNotNull(providerNames(clusterProviders), transportLabel(stop.transportMode), boardingInfo).joinToString(" · "), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 3.dp))
+                IconButton(onClick=onRefresh,enabled=!state.refreshing) {
+                    if(state.refreshing) CircularProgressIndicator(Modifier.size(20.dp),strokeWidth=2.dp)
+                    else Icon(Icons.Rounded.Refresh,stringResource(R.string.ui_refresh_departures))
                 }
+                IconButton(onClick=onCollapse) { Icon(Icons.Rounded.KeyboardArrowDown,
+                    stringResource(if(isExpanded) R.string.ui_collapse_departures else R.string.ui_hide_departures)) }
             }
-            if (stop != null) {
-                IconButton(onClick = { onToggleFavorite(stop.id) }) {
-                    Icon(
-                        if (stop.id in state.favorites) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
-                        stringResource(if (stop.id in state.favorites) R.string.ui_remove_favorite else R.string.ui_add_favorite),
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                }
-            }
-            IconButton(onClick = onRefresh, enabled = !state.refreshing) {
-                if (state.refreshing) CircularProgressIndicator(Modifier.size(21.dp), strokeWidth = 2.dp)
-                else Icon(Icons.Rounded.Refresh, stringResource(R.string.ui_refresh_departures))
-            }
-            IconButton(onClick = onCollapse) {
-                Icon(Icons.Rounded.KeyboardArrowDown,
-                    stringResource(if (isExpanded) R.string.ui_collapse_departures else R.string.ui_hide_departures))
-            }
+            Text(stopTitle,Modifier.fillMaxWidth().clickable(enabled=!isExpanded,onClick=onToggleExpand),
+                style=MaterialTheme.typography.headlineSmall)
+            if(stop!=null) Text(listOfNotNull(providerNames(clusterProviders),transportLabel(stop.transportMode),boardingInfo).joinToString(" · "),
+                Modifier.padding(top=5.dp,bottom=8.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
         }
         state.boardingSelection?.let { selection ->
             Surface(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 10.dp), shape = MaterialTheme.shapes.medium,
@@ -661,11 +728,19 @@ private fun StopPanel(
             if (!state.error.isNullOrBlank()) {
                 item(contentType = "notice") { Notice(state.error, Icons.Rounded.WifiOff, isError = true) }
             }
+            if (state.isOfflineTimetableActive) {
+                item(contentType = "notice") {
+                    Notice(
+                        stringResource(R.string.ui_offline_timetable_active),
+                        Icons.Rounded.CloudDone,
+                    )
+                }
+            }
             if (!state.emmaStatus.isNullOrBlank()) {
                 item(contentType = "notice") { Notice(state.emmaStatus, Icons.Rounded.DirectionsBus) }
             }
             if (!state.stopStatus.isNullOrBlank()) item(contentType = "notice") { Notice(state.stopStatus, Icons.Rounded.LocationOn) }
-            if (!state.departureStatus.isNullOrBlank()) item(contentType = "notice") { Notice(state.departureStatus, Icons.Rounded.AccessTime) }
+            if (!state.departureStatus.isNullOrBlank() && !state.isOfflineTimetableActive) item(contentType = "notice") { Notice(state.departureStatus, Icons.Rounded.AccessTime) }
             if (stop == null && !state.loading) {
                 item(contentType = "empty") {
                     EmptyState(stringResource(R.string.ui_pick_stop_title), stringResource(R.string.ui_pick_stop_body), Icons.Rounded.LocationOn)
@@ -738,42 +813,7 @@ private fun LiveStopSignal(minutes: List<Int>) {
 
 @Composable
 private fun DepartureRow(departure: Departure, minutes: Int, providerId: String, route: TransitRoute?, boardingInfo: String?, onClick: () -> Unit) {
-    val live = departure.kind == ArrivalKind.LIVE
-    Row(
-        modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).padding(horizontal = 22.dp, vertical = 15.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(13.dp),
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            ServiceBadge(departure.routeNumber, providerId, route?.transportMode, route?.color, departure.trainNumber)
-            Text(providerName(providerId), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        Icon(Icons.AutoMirrored.Rounded.ArrowForward,null,Modifier.size(16.dp),tint=MaterialTheme.colorScheme.onSurfaceVariant)
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            Text(departure.destination.ifBlank { stringResource(R.string.emma_vehicle_no_direction) }, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Text(serviceTypeLabel(providerId,route?.transportMode),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-            departure.serviceName?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-            boardingInfo?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                Icon(if (live) Icons.Rounded.Sensors else Icons.Rounded.AccessTime, null, Modifier.size(13.dp), tint = if (live) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(stringResource(if (live) R.string.ui_live_arrival else R.string.ui_scheduled), style = MaterialTheme.typography.labelMedium, color = if (live) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            if (live && departure.scheduledAt != null && kotlin.math.abs(Duration.between(departure.scheduledAt, departure.expectedAt).seconds) >= 60) {
-                val delay = Duration.between(departure.scheduledAt, departure.expectedAt).toMinutes().toInt()
-                Text(stringResource(R.string.line_scheduled_delay, clockFormat.format(departure.scheduledAt), if (delay > 0) "+$delay" else "$delay"),
-                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            val features = listOfNotNull(
-                if (departure.wheelchairAccessible == "POSSIBLE") stringResource(R.string.line_accessible) else null,
-                if (departure.bikesAllowed == "ALLOWED") stringResource(R.string.line_bikes) else null)
-            if (features.isNotEmpty()) Text(features.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            if (departure.restrictedService) Text(stringResource(R.string.ui_registration_required), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            Text(countdown(minutes), style = MaterialTheme.typography.titleLarge, color = if (live) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
-            Text(clockFormat.format(departure.expectedAt), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
+    DepartureBoardRow(departure,providerId,route?.transportMode,route?.color,minutes,boardingInfo,onClick)
 }
 
 @Composable
@@ -830,13 +870,23 @@ private fun stopLabel(stop: TransitStop): String? = stop.platformCode?.let { str
 internal fun StopSearchRow(stop: TransitStop, state: UiState, favorite: Boolean, onStop: (String) -> Unit) {
     val isMulti = stop.isMultiStop || remember(stop.id, state.stops) { StopClusters.isMultiStop(stop.id, state.stops) }
     val displayName = StopClusters.stopDisplayName(stop.name)
+    val isDownloaded = stop.id in state.downloadedStationIds
     Row(
         Modifier.fillMaxWidth().clickable { onStop(stop.id) }.padding(horizontal = 22.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
-            Icon(if (favorite) Icons.Rounded.Favorite else Icons.Rounded.LocationOn, null, Modifier.padding(11.dp).size(21.dp), tint = MaterialTheme.colorScheme.primary)
+            Icon(
+                when {
+                    favorite -> Icons.Rounded.Favorite
+                    isDownloaded -> Icons.Rounded.CloudDone
+                    else -> Icons.Rounded.LocationOn
+                },
+                null,
+                Modifier.padding(11.dp).size(21.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(displayName, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -862,10 +912,10 @@ private fun Notice(message: String, icon: ImageVector, isError: Boolean = false)
 
 @Composable
 internal fun EmptyState(title: String, body: String, icon: ImageVector) {
-    Column(Modifier.fillMaxWidth().padding(horizontal = 28.dp, vertical = 24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Icon(icon, null, Modifier.size(27.dp), tint = MaterialTheme.colorScheme.primary)
-        Text(title, style = MaterialTheme.typography.titleMedium)
-        Text(body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Column(Modifier.fillMaxWidth().padding(horizontal=24.dp,vertical=24.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
+        TransitIconTile(icon)
+        Text(title,style=MaterialTheme.typography.titleLarge)
+        Text(body,style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

@@ -5,6 +5,9 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
+import androidx.compose.material3.Shapes
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.unit.dp
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -26,46 +29,57 @@ val OpenSans = FontFamily(
 )
 
 private val LightColors = lightColorScheme(
-    primary = Color(0xFF236942),
-    onPrimary = Color.White,
-    primaryContainer = Color(0xFFC9EFD2),
-    onPrimaryContainer = Color(0xFF082D19),
-    secondary = Color(0xFF526352),
-    secondaryContainer = Color(0xFFD5E8D1),
-    onSecondaryContainer = Color(0xFF111F10),
-    tertiary = Color(0xFF35666D),
-    tertiaryContainer = Color(0xFFB9EAF0),
-    background = Color(0xFFF7F9F2),
-    surface = Color(0xFFF7F9F2),
-    surfaceContainer = Color(0xFFEBEFE7),
-    surfaceContainerLow = Color(0xFFF1F5EC),
-    surfaceContainerHigh = Color(0xFFE5EAE0),
-    onSurface = Color(0xFF192018),
-    onSurfaceVariant = Color(0xFF455044),
-    outline = Color(0xFF758171),
-    outlineVariant = Color(0xFFD2DACC),
+    primary=Color(0xFF205C48),onPrimary=Color.White,
+    primaryContainer=Color(0xFFC7ECD9),onPrimaryContainer=Color(0xFF103C2C),
+    secondary=Color(0xFF49655C),onSecondary=Color.White,
+    secondaryContainer=Color(0xFFDCEBE3),onSecondaryContainer=Color(0xFF233F35),
+    tertiary=Color(0xFF346779),onTertiary=Color.White,
+    tertiaryContainer=Color(0xFFD2EBF4),onTertiaryContainer=Color(0xFF163E4E),
+    background=Color(0xFFF3F7F5),onBackground=Color(0xFF172D26),
+    surface=Color(0xFFFAFCFA),onSurface=Color(0xFF172D26),
+    surfaceContainerLowest=Color.White,surfaceContainerLow=Color(0xFFEDF3EF),
+    surfaceContainer=Color(0xFFE6EEE8),surfaceContainerHigh=Color(0xFFDCE8DF),
+    surfaceContainerHighest=Color(0xFFD3E1D7),surfaceVariant=Color(0xFFE2EBE4),
+    onSurfaceVariant=Color(0xFF4C6257),outline=Color(0xFF71867B),outlineVariant=Color(0xFFC4D2C9),
+    inverseSurface=Color(0xFF243B31),inverseOnSurface=Color(0xFFF0F6F1),inversePrimary=Color(0xFF9DDFC3),
 )
 
 private val DarkColors = darkColorScheme(
-    primary = Color(0xFFA0D5AF),
-    onPrimary = Color(0xFF00391D),
-    primaryContainer = Color(0xFF175130),
-    onPrimaryContainer = Color(0xFFBBF1C9),
-    secondary = Color(0xFFBACCB6),
-    secondaryContainer = Color(0xFF3B4C39),
-    tertiary = Color(0xFFA1CFD5),
-    background = Color(0xFF10160F),
-    surface = Color(0xFF10160F),
-    surfaceContainer = Color(0xFF1C231B),
-    surfaceContainerLow = Color(0xFF181F17),
-    surfaceContainerHigh = Color(0xFF272E25),
-    onSurface = Color(0xFFE0E5D9),
-    onSurfaceVariant = Color(0xFFC1CABA),
-    outlineVariant = Color(0xFF404A3C),
+    primary=Color(0xFF9DDFC3),onPrimary=Color(0xFF073B29),
+    primaryContainer=Color(0xFF245642),onPrimaryContainer=Color(0xFFC7F2DC),
+    secondary=Color(0xFFB4CFC1),onSecondary=Color(0xFF1F3B2F),
+    secondaryContainer=Color(0xFF344E42),onSecondaryContainer=Color(0xFFD4EADC),
+    tertiary=Color(0xFFA4D4E6),onTertiary=Color(0xFF103747),
+    tertiaryContainer=Color(0xFF244F60),onTertiaryContainer=Color(0xFFC8EAF6),
+    background=Color(0xFF101B17),onBackground=Color(0xFFE2EDE5),
+    surface=Color(0xFF111E18),onSurface=Color(0xFFE2EDE5),
+    surfaceContainerLowest=Color(0xFF0C1612),surfaceContainerLow=Color(0xFF18261F),
+    surfaceContainer=Color(0xFF1E2E25),surfaceContainerHigh=Color(0xFF283B30),
+    surfaceContainerHighest=Color(0xFF33473A),surfaceVariant=Color(0xFF304238),
+    onSurfaceVariant=Color(0xFFBACDC0),outline=Color(0xFF869E8E),outlineVariant=Color(0xFF3F5547),
+    inverseSurface=Color(0xFFE2EDE5),inverseOnSurface=Color(0xFF243B31),inversePrimary=Color(0xFF205C48),
+)
+
+internal val TransitShapes=Shapes(
+    extraSmall=RoundedCornerShape(8.dp),small=RoundedCornerShape(12.dp),medium=RoundedCornerShape(16.dp),
+    large=RoundedCornerShape(24.dp),extraLarge=RoundedCornerShape(28.dp),
+)
+private fun type(size: Int,line: Int,weight: FontWeight=FontWeight.Normal,tracking: Float=0f)=TextStyle(
+    fontFamily=OpenSans,fontWeight=weight,fontSize=size.sp,lineHeight=line.sp,letterSpacing=tracking.sp,
+    fontFeatureSettings="tnum",
+)
+internal val TransitTypography=Typography(
+    displayLarge=type(48,54,FontWeight.Bold,-1f),displayMedium=type(40,46,FontWeight.Bold,-.8f),
+    displaySmall=type(34,40,FontWeight.Bold,-.6f),headlineLarge=type(30,36,FontWeight.Bold,-.6f),
+    headlineMedium=type(27,34,FontWeight.Bold,-.5f),headlineSmall=type(24,30,FontWeight.Bold,-.4f),
+    titleLarge=type(21,27,FontWeight.Bold,-.3f),titleMedium=type(16,22,FontWeight.SemiBold,-.1f),
+    titleSmall=type(14,20,FontWeight.Bold),bodyLarge=type(16,24),bodyMedium=type(14,21),bodySmall=type(12,18),
+    labelLarge=type(14,20,FontWeight.SemiBold),labelMedium=type(12,17,FontWeight.SemiBold),labelSmall=type(11,16,FontWeight.SemiBold),
 )
 
 /** Tonal roles keep the chosen hue readable in both themes, including their container colours. */
 internal fun accentColorScheme(accent: AccentColor, dark: Boolean, customArgb: Int = 0xFF6750A4.toInt()): ColorScheme {
+    if(accent==AccentColor.GREEN) return if(dark) DarkColors else LightColors
     val custom = accentHueSaturation(customArgb)
     val hue = accent.hue ?: if (accent == AccentColor.CUSTOM) custom.first else return if (dark) DarkColors else LightColors
     fun tone(lightness: Float, saturation: Float = if (accent == AccentColor.CUSTOM) custom.second.coerceAtMost(0.85f) else 0.65f, shift: Float = 0f) =
@@ -114,23 +128,8 @@ fun ViaBuszTheme(accent: AccentColor = AccentColor.SYSTEM, customArgb: Int = 0xF
     } else if (darkTheme) DarkColors else LightColors
     MaterialTheme(
         colorScheme = colors,
-        typography = Typography(
-            displayLarge = Typography().displayLarge.copy(fontFamily = OpenSans),
-            displayMedium = Typography().displayMedium.copy(fontFamily = OpenSans),
-            displaySmall = Typography().displaySmall.copy(fontFamily = OpenSans),
-            headlineLarge = Typography().headlineLarge.copy(fontFamily = OpenSans),
-            headlineSmall = Typography().headlineSmall.copy(fontFamily = OpenSans),
-            titleSmall = Typography().titleSmall.copy(fontFamily = OpenSans),
-            bodySmall = Typography().bodySmall.copy(fontFamily = OpenSans),
-            labelSmall = Typography().labelSmall.copy(fontFamily = OpenSans),
-            headlineMedium = TextStyle(fontFamily = OpenSans, fontWeight = FontWeight.Bold, fontSize = 27.sp, lineHeight = 33.sp),
-            titleLarge = TextStyle(fontFamily = OpenSans, fontWeight = FontWeight.SemiBold, fontSize = 22.sp, lineHeight = 28.sp),
-            titleMedium = TextStyle(fontFamily = OpenSans, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, lineHeight = 23.sp),
-            bodyLarge = TextStyle(fontFamily = OpenSans, fontWeight = FontWeight.Normal, fontSize = 16.sp, lineHeight = 24.sp),
-            bodyMedium = TextStyle(fontFamily = OpenSans, fontWeight = FontWeight.Normal, fontSize = 14.sp, lineHeight = 20.sp),
-            labelLarge = TextStyle(fontFamily = OpenSans, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, lineHeight = 20.sp),
-            labelMedium = TextStyle(fontFamily = OpenSans, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp),
-        ),
+        shapes = TransitShapes,
+        typography = TransitTypography,
         content = content,
     )
 }

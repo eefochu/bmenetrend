@@ -31,7 +31,9 @@ internal fun departureLabel(departure: Instant): String {
 
 @Composable
 internal fun DepartureControl(departure: Instant?, onClick: () -> Unit) {
-    OutlinedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+    OutlinedCard(onClick = onClick, modifier = Modifier.fillMaxWidth(),shape=TransitDesign.groupShape,
+        colors=CardDefaults.outlinedCardColors(containerColor=MaterialTheme.colorScheme.surfaceContainerLow),
+        border=androidx.compose.foundation.BorderStroke(1.dp,MaterialTheme.colorScheme.outlineVariant.copy(alpha=.6f))) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Icon(Icons.Rounded.Schedule, null, tint = MaterialTheme.colorScheme.primary)
             Column(Modifier.weight(1f)) {
@@ -58,7 +60,7 @@ internal fun DeparturePicker(departure: Instant?, onDismiss: () -> Unit, onConfi
     var invalid by rememberSaveable { mutableStateOf(false) }
     val date = LocalDate.ofEpochDay(dateEpoch)
     val locale = LocalConfiguration.current.locales[0]
-    AlertDialog(onDismissRequest = onDismiss,
+    AlertDialog(shape=TransitDesign.panelShape,containerColor=MaterialTheme.colorScheme.surfaceContainerLow,onDismissRequest = onDismiss,
         icon = { Icon(Icons.Rounded.Schedule, null) },
         title = { Text(stringResource(R.string.planner_departure)) },
         text = {
@@ -111,7 +113,7 @@ internal fun DeparturePicker(departure: Instant?, onDismiss: () -> Unit, onConfi
     }
     if (timeOpen) {
         val picker = rememberTimePickerState(initialHour = hour, initialMinute = minute, is24Hour = true)
-        AlertDialog(onDismissRequest = { timeOpen = false }, title = { Text(stringResource(R.string.planner_departure_time)) },
+        AlertDialog(shape=TransitDesign.panelShape,containerColor=MaterialTheme.colorScheme.surfaceContainerLow,onDismissRequest = { timeOpen = false }, title = { Text(stringResource(R.string.planner_departure_time)) },
             text = { Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { TimeInput(picker) } },
             confirmButton = { TextButton(onClick = { hour = picker.hour; minute = picker.minute; invalid = false; timeOpen = false }) {
                 Text(stringResource(R.string.planner_apply))

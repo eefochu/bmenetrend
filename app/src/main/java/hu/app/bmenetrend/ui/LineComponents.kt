@@ -43,10 +43,14 @@ fun railLineColor(number: String): Color {
     }
 }
 
-fun railLineTextColor(number: String): Color {
-    val clean = number.trim().uppercase(java.util.Locale.ROOT)
-    return if (clean.matches(Regex("^Z\\d.*")) || clean == "Z") Color(0xFF171B20) else Color.White
+/** Preserve service colours while keeping small route labels readable. */
+fun badgeTextColor(background: Color): Color {
+    val light=background.luminance()
+    if(1.05f/(light+.05f)>=4.5f) return Color.White
+    val ink=Color(0xFF171B20)
+    return if((light+.05f)/(ink.luminance()+.05f)>=4.5f) ink else Color.Black
 }
+fun railLineTextColor(number: String): Color = badgeTextColor(railLineColor(number))
 
 fun lineColor(provider: String, mode: String?, source: String? = null, number: String? = null): Color {
     if (number != null && (provider in setOf("mav", "gysev") || mode in setOf("RAIL", "TRAMTRAIN"))) {
@@ -91,7 +95,7 @@ fun LineBadge(number: String, provider: String, mode: String? = null, sourceColo
     }
     val isRail = provider in setOf("mav", "gysev") || mode in setOf("RAIL", "TRAMTRAIN") || (mode == "SUBURBAN_RAILWAY" && number.matches(Regex("^[GSZgsz]\\d.*")))
     val color = if (isRail) railLineColor(number) else lineColor(provider, mode, sourceColor, number)
-    val textColor = if (isRail) railLineTextColor(number) else if (color.luminance() > .35f) Color(0xFF171B20) else Color.White
+    val textColor = if (isRail) railLineTextColor(number) else badgeTextColor(color)
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         if (showIcon) Image(rememberTransitIcon(VehicleMarkerStyle.forTransport(provider, mode).drawableRes, 28.dp),
             stringResource(when (mode) { "TRAM" -> R.string.emma_mode_tram; "TROLLEYBUS" -> R.string.emma_mode_trolley;

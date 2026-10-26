@@ -37,23 +37,13 @@ fun AboutPage(
                 .statusBarsPadding()
                 .navigationBarsPadding()
         ) {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.ui_back))
-                }
-                Text(stringResource(R.string.ota_about_title), style = MaterialTheme.typography.headlineSmall)
-            }
+            TransitPageHeader(stringResource(R.string.ota_about_title),onBack)
 
             Column(
                 Modifier
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp, vertical = 12.dp),
+                    .padding(horizontal = adaptivePageGutter(), vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -62,8 +52,8 @@ fun AboutPage(
                     painter = painterResource(R.drawable.ic_launcher),
                     contentDescription = null,
                     modifier = Modifier
-                        .size(80.dp)
-                        .clip(RoundedCornerShape(20.dp))
+                        .size(64.dp)
+                        .clip(TransitDesign.controlShape)
                 )
                 Text(
                     stringResource(R.string.ui_brand),
@@ -85,7 +75,8 @@ fun AboutPage(
 
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+                    shape = TransitDesign.groupShape,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest)
                 ) {
                     Column(
                         Modifier.padding(16.dp),
@@ -102,10 +93,7 @@ fun AboutPage(
                     }
                 }
 
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
-                ) {
+                Surface(modifier=Modifier.fillMaxWidth(),color=androidx.compose.ui.graphics.Color.Transparent) {
                     Column(
                         Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)

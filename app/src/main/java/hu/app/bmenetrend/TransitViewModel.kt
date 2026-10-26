@@ -35,6 +35,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private var otaDownloadJob: Job? = null
     private var otaDownloadedUrl: String? = null
     private val repository = TransitRepository(application)
+    private val stationTimetableRepository = StationTimetableRepository(application)
     private val routeEstimator by lazy {
         ViabuszRouteEstimator(RouteRoads.decode(application.assets.open("viabusz-route-geometry.json").bufferedReader().use { it.readText() }))
     }
@@ -66,6 +67,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private val mutableState = MutableStateFlow(UiState(
         network = initialNetwork,
         emmaRoutes = emmaRepository.catalogue,
+        lineCatalogueLoading = true,
         selectedStopId = initialNetwork.stops.firstOrNull { it.id == "1" }?.id ?: initialNetwork.stops.firstOrNull()?.id,
         favorites = preferences.getStringSet("favorites", emptySet())?.map(SharedStops::canonicalId)?.toSet().orEmpty(),
         customAccentArgb = preferences.getInt("custom_accent_argb", 0xFF6750A4.toInt()),
@@ -73,6 +75,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         nationwideNetwork = preferences.getBoolean("emma_nationwide", true),
         windowMinutes = preferences.getInt("window", 120).takeIf { it in DepartureTime.windows } ?: 120,
         otaChannel = UpdateChannel.fromKey(preferences.getString("ota_channel", "stable")),
+        downloadedStationIds = stationTimetableRepository.downloadedStopIds(),
+        offlineStationTimetables = stationTimetableRepository.allMetadata(),
     ))
     val state: StateFlow<UiState> = mutableState
     private val refreshMutex = Mutex()
@@ -108,26 +112,22 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private var favoriteJob: Job? = null
     private var favoriteGeneration = 0
     private var favoriteKey = emptyList<String>()
-    private var favoriteWindow = 0
     private var favoriteLoading = false
     private var favoriteFailures = emptySet<String>()
-    private val favoriteBoards = linkedMapOf<String, EmmaStopsParser.Board>()
+    private val favoriteLines = linkedMapOf<String, EmmaStopsRepository.Lines>()
     private var liveError = false
 
     init {
         checkForUpdates(isAutoCheck = true)
+        viewModelScope.launch(Dispatchers.Default) {
+            TransitSearch.indexStops(initialNetwork.stops, emptyList())
+        }
     }
 
     /** Owned by the activity's STARTED lifecycle; all polling stops in the background. */
     suspend fun observe() = coroutineScope {
         nearbyActive = true
-        if (favoritesVisible) ensureFavoriteRequest(force = true)
-        launch {
-            while (isActive) {
-                if (favoritesVisible) ensureFavoriteRequest(force = true)
-                delay(20_000)
-            }
-        }
+        if (favoritesVisible) ensureFavoriteRequest()
         launch {
             while (isActive) {
                 if (mapVisible) ensureNearbyRequest(force = true)
@@ -208,7 +208,10 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             favoriteSelectionIds = current.favorites
             favoriteSelection = FavoriteDepartures.stations(current.favorites, current.stops)
         }
-        return favoriteSelection
+        return favoriteSelection.map { station ->
+            val catalogued=favoriteLines[station.stop.id]?.catalogue?.stops?.singleOrNull()
+            if(catalogued==null) station else station.copy(stop=catalogued,platforms=listOf(catalogued))
+        }
     }
 
     private suspend fun fetchBoards(stops: List<TransitStop>, window: Int, cache: Map<String, EmmaStopsParser.Board>, force: Boolean,
@@ -233,13 +236,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         val stations = favoriteStations(current).let { all ->
             all.filter { it.stop.id in visibleFavorites }.ifEmpty { all.take(3) }.take(8)
         }
-        val window = current.windowMinutes
-        val key = stations.flatMap { it.platforms }.map { it.id }.sorted() + window.toString()
+        val key = stations.map { it.stop.id }.sorted()+LocalDate.now(budapest).toString()
         if (!force && key == favoriteKey && favoriteJob?.isCancelled != true) return
-        if (favoriteWindow != window) { favoriteBoards.clear(); favoriteWindow = window }
-        if (nearbyWindow == window) nearbyBoards.forEach { (id, board) ->
-            if (Duration.between(board.fetchedAt, Instant.now()).seconds in 0..29) favoriteBoards[id] = board
-        }
         favoriteKey = key
         val generation = ++favoriteGeneration
         favoriteJob?.cancel()
@@ -251,12 +249,21 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             try {
                 coroutineScope {
                     stations.map { station -> async {
-                        val results = fetchBoards(station.platforms, window, favoriteBoards, force, semaphore)
-                        if (generation == favoriteGeneration) {
-                            results.forEach { (id, result) -> if (result == null) favoriteFailures += id else favoriteBoards[id] = result }
-                            while (favoriteBoards.size > 64) favoriteBoards.remove(favoriteBoards.keys.first())
-                            stopRoutes = (results.flatMap { it.second?.catalogue?.routes.orEmpty() } + stopRoutes).distinctBy { it.id }
-                            recalculate()
+                        val id=station.stop.id
+                        if(id.startsWith("emma:")) {
+                            semaphore.acquire()
+                            try {
+                                val result=stopsRepository.servingLines(id,force)
+                                if(generation==favoriteGeneration) {
+                                    favoriteLines[id]=result
+                                    while(favoriteLines.size>64) favoriteLines.remove(favoriteLines.keys.first())
+                                    if(result.stale) favoriteFailures+=id
+                                    stopRoutes=(result.catalogue.routes+stopRoutes).distinctBy { it.id }
+                                    recalculate()
+                                }
+                            } catch(cancelled: CancellationException) { throw cancelled
+                            } catch(_: Exception) { if(generation==favoriteGeneration) { favoriteFailures+=id;recalculate() } }
+                            finally { semaphore.release() }
                         }
                     } }.awaitAll()
                 }
@@ -360,7 +367,16 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                     repository.departures(network, snapshot, localStop.id, now, current.windowMinutes)
                 }
             }.orEmpty()
-            val rawDepartures = (emmaDepartures + localDepartures)
+
+            val offlineBoard = if (selectedId != null && (validBoard == null || boardFailure) && emmaDepartures.isEmpty()) {
+                stationTimetableRepository.getOfflineBoard(selectedId, cluster.map { it.id }, now, current.windowMinutes)
+            } else null
+            val isOfflineActive = offlineBoard != null && (validBoard == null || boardFailure)
+            if (offlineBoard != null) {
+                stopRoutes = (stopRoutes + offlineBoard.routes).distinctBy { it.id }
+            }
+            val effectiveEmmaDepartures = if (isOfflineActive) offlineBoard!!.departures else emmaDepartures
+            val rawDepartures = (effectiveEmmaDepartures + localDepartures)
                 .distinctBy { listOf(it.routeId, it.directionId, it.expectedAt) }
                 .sortedBy { it.expectedAt }
             val departures = current.boardingSelection?.let { filter -> rawDepartures.filter(filter::matches) } ?: rawDepartures
@@ -390,14 +406,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             current.copy(
                 now = now,
                 favoriteStations = if (!favoritesVisible) current.favoriteStations else favoriteStations(current).map { station ->
-                    val rows = station.platforms.flatMap { platform ->
-                        if (platform.id.startsWith("emma:")) EmmaStopsParser.freshDepartures(favoriteBoards[platform.id], platform.id, now, current.windowMinutes)
-                        else current.network?.let { repository.departures(it, snapshot, platform.id, now, current.windowMinutes) }.orEmpty()
-                    }.distinctBy { listOf(it.routeId, it.directionId, it.expectedAt) }.sortedBy { it.expectedAt }
-                    station.copy(departures = rows,
-                        loading = favoriteLoading && (station.stop.id in visibleFavorites || visibleFavorites.isEmpty()),
-                        unavailable = !favoriteLoading && station.platforms.any { it.id in favoriteFailures ||
-                            it.id.startsWith("emma:") && favoriteBoards[it.id]?.let { board -> Duration.between(board.fetchedAt, now).seconds !in 0..60 } != false })
+                    station.copy(loading=favoriteLoading && (station.stop.id in visibleFavorites || visibleFavorites.isEmpty()),
+                        unavailable=station.stop.id in favoriteFailures || !favoriteLoading && station.stop.id.startsWith("emma:") && station.stop.id !in favoriteLines)
                 },
                 favoritesLoading = favoriteLoading || !current.stopIndexLoaded && !stopIndexFailed && current.favorites.any { it.startsWith("emma:") },
                 nearbyStations = nearbySelection.mapNotNull { station ->
@@ -416,14 +426,17 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 boardUpdatedAt = if (hasEmma) validBoard?.fetchedAt else null,
                 error = null,
                 departureBoardLoading = hasEmma && boardLoading,
-                departureBoardUnavailable = hasEmma && !boardLoading && (boardFailure || (validBoard == null && localDepartures.isEmpty())),
-                departureStatus = if (!hasEmma) null else when {
+                departureBoardUnavailable = hasEmma && !boardLoading && !isOfflineActive && (boardFailure || (validBoard == null && localDepartures.isEmpty())),
+                departureStatus = if (isOfflineActive) {
+                    getApplication<Application>().getString(R.string.ui_offline_timetable_active)
+                } else if (!hasEmma) null else when {
                     boardLoading && validBoard == null -> getApplication<Application>().getString(R.string.emma_board_loading)
                     boardFailure && validBoard != null -> getApplication<Application>().getString(R.string.emma_board_stale)
                     boardFailure || validBoard == null -> getApplication<Application>().getString(R.string.emma_board_unavailable)
                     validBoard.limitReached -> getApplication<Application>().getString(R.string.emma_board_limit)
                     else -> null
                 },
+                isOfflineTimetableActive = isOfflineActive,
                 departures = departures,
                 vehicles = vehicles,
                 selectedVehicle = current.selectedVehicle?.let { selected -> vehicles.find { it.id == selected.id } ?: selected.copy(routeEstimate = null) },
@@ -597,29 +610,38 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         recalculate()
     }
 
+    private fun publishStopIndex(index: EmmaStopsRepository.Index) {
+        stopIndexFailed = index.stale
+        mutableState.update { current ->
+            val updated = index.catalogue.stops.associateBy { it.id }.toMutableMap()
+            current.emmaStops.filter { it.routeIds.isNotEmpty() }.forEach { updated[it.id] = it }
+            val allStops = current.network?.stops.orEmpty() + updated.values
+            val nearest = current.userLocation?.let { nearestStop(allStops, it) }
+            current.copy(emmaStops = updated.values.toList(), stopIndexLoaded = true,
+                stopStatus = if (index.stale) getApplication<Application>().getString(R.string.emma_stops_saved) else null,
+                nearestStopId = nearest,
+                selectedStopId = if (!manualStop && nearest != null) nearest else current.selectedStopId,
+                selectedPlatformIds=if(!manualStop) emptySet() else current.selectedPlatformIds)
+        }
+        recalculate()
+        ensureBoardRequest()
+        ensureNearbyRequest()
+        ensureFavoriteRequest()
+        val snapshot = state.value
+        viewModelScope.launch(Dispatchers.Default) {
+            TransitSearch.indexStops(snapshot.network?.stops.orEmpty(), snapshot.emmaStops)
+        }
+    }
+
     private suspend fun refreshStopIndex() {
+        var published: EmmaStopsRepository.Index? = null
+        fun publish(index: EmmaStopsRepository.Index) {
+            if (published?.catalogue === index.catalogue && published?.stale == index.stale) return
+            published = index
+            publishStopIndex(index)
+        }
         try {
-            val index = stopsRepository.index()
-            stopIndexFailed = index.stale
-            mutableState.update { current ->
-                val updated = index.catalogue.stops.associateBy { it.id }.toMutableMap()
-                current.emmaStops.filter { it.routeIds.isNotEmpty() }.forEach { updated[it.id] = it }
-                val allStops = current.network?.stops.orEmpty() + updated.values
-                val nearest = current.userLocation?.let { nearestStop(allStops, it) }
-                current.copy(emmaStops = updated.values.toList(), stopIndexLoaded = true,
-                    stopStatus = if (index.stale) getApplication<Application>().getString(R.string.emma_stops_saved) else null,
-                    nearestStopId = nearest,
-                    selectedStopId = if (!manualStop && nearest != null) nearest else current.selectedStopId,
-                    selectedPlatformIds=if(!manualStop) emptySet() else current.selectedPlatformIds)
-            }
-            recalculate()
-            ensureBoardRequest()
-            ensureNearbyRequest()
-            ensureFavoriteRequest()
-            val stopsSnapshot = state.value.stops
-            viewModelScope.launch(Dispatchers.Default) {
-                TransitSearch.indexStops(stopsSnapshot)
-            }
+            publish(stopsRepository.index(onCached = ::publish))
         } catch (cancelled: CancellationException) { throw cancelled
         } catch (_: Exception) {
             stopIndexFailed = true
@@ -697,13 +719,21 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private suspend fun refreshLineCatalogue() {
-        try {
-            val result = linesRepository.get()
+        fun publish(result: EmmaLinesRepository.Catalogue) {
             lineCatalogue = result.routes
             lineCatalogueFailed = result.stale
+            mutableState.update { it.copy(lineCatalogueLoading = false,
+                lineCatalogueStatus = if (result.stale) getApplication<Application>().getString(R.string.emma_lines_saved) else null) }
             recalculate()
+        }
+        try {
+            publish(linesRepository.get(onCached = ::publish))
         } catch (cancelled: CancellationException) { throw cancelled
-        } catch (_: Exception) { lineCatalogueFailed = true }
+        } catch (_: Exception) {
+            lineCatalogueFailed = true
+            mutableState.update { it.copy(lineCatalogueLoading = false,
+                lineCatalogueStatus = getApplication<Application>().getString(R.string.emma_lines_unavailable)) }
+        }
     }
 
     fun selectJourneyBoardingStop(id: String) {
@@ -895,7 +925,6 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         recalculate()
         ensureBoardRequest()
         ensureNearbyRequest(force = true)
-        ensureFavoriteRequest(force = true)
     }
     fun toggleFavorite(id: String) {
         val canonicalId = SharedStops.canonicalId(id)
@@ -904,6 +933,72 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         mutableState.update { it.copy(favorites = updated) }
         recalculate()
         ensureFavoriteRequest()
+    }
+
+    fun downloadStationTimetable(stopId: String) {
+        viewModelScope.launch {
+            val current = state.value
+            val stop = current.stops.find { it.id == stopId } ?: return@launch
+            val cluster = StopClusters.clusterFor(stop, current.stops).ifEmpty { listOf(stop) }
+            val clusterIds = cluster.map { it.id }.toSet() + stopId
+            mutableState.update { it.copy(downloadingStationIds = it.downloadingStationIds + clusterIds) }
+            try {
+                val meta = stationTimetableRepository.downloadStationTimetable(
+                    station = stop,
+                    platforms = cluster,
+                    network = current.network,
+                    now = Instant.now(),
+                )
+                mutableState.update { s ->
+                    s.copy(
+                        downloadingStationIds = s.downloadingStationIds - clusterIds,
+                        downloadedStationIds = stationTimetableRepository.downloadedStopIds(),
+                        offlineStationTimetables = stationTimetableRepository.allMetadata(),
+                        status = getApplication<Application>().getString(
+                            R.string.ui_timetable_download_success,
+                            StationTimetableRepository.formatFileSize(meta.fileSizeBytes),
+                            meta.departureCount,
+                        ),
+                    )
+                }
+                recalculate()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (e: Exception) {
+                mutableState.update { s ->
+                    s.copy(
+                        downloadingStationIds = s.downloadingStationIds - clusterIds,
+                        status = getApplication<Application>().getString(R.string.ui_timetable_download_failed),
+                    )
+                }
+            }
+        }
+    }
+
+    fun deleteStationTimetable(stopId: String) {
+        viewModelScope.launch {
+            stationTimetableRepository.deleteStationTimetable(stopId)
+            mutableState.update { s ->
+                s.copy(
+                    downloadedStationIds = stationTimetableRepository.downloadedStopIds(),
+                    offlineStationTimetables = stationTimetableRepository.allMetadata(),
+                )
+            }
+            recalculate()
+        }
+    }
+
+    fun clearAllStationTimetables() {
+        viewModelScope.launch {
+            stationTimetableRepository.clearAll()
+            mutableState.update { s ->
+                s.copy(
+                    downloadedStationIds = emptySet(),
+                    offlineStationTimetables = emptyMap(),
+                )
+            }
+            recalculate()
+        }
     }
 
     fun setOtaChannel(channel: UpdateChannel) {

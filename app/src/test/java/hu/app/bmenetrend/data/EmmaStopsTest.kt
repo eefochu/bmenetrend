@@ -22,6 +22,18 @@ class EmmaStopsTest {
         .put("routes", JSONArray().put(route())).put("stoptimesWithoutPatterns", JSONArray(times.toList())))).toString()
     private fun index(vararg rows: JSONObject) = JSONObject().put("data", JSONObject().put("stops", JSONArray(rows.toList()))).toString()
 
+    @Test fun servingLinesIncludesEveryCatalogueRouteWithoutDepartureOrDateFields() {
+        val weekend=route().put("gtfsId","hkir:weekend").put("shortName","761")
+        val row=stop().put("routes",JSONArray().put(route()).put(weekend))
+        val text=JSONObject().put("data",JSONObject().put("stop",row)).toString()
+        val catalogue=EmmaStopsParser.servingLines(text,id)
+        assertEquals(listOf("760","761"),catalogue.routes.map { it.number })
+        assertEquals(catalogue.routes.map { it.id },catalogue.stops.single().routeIds)
+        assertFalse(EmmaStopsParser.LINES_QUERY.contains("stoptimes"))
+        assertFalse(EmmaStopsParser.LINES_QUERY.contains("date"))
+        assertTrue(runCatching { EmmaStopsParser.servingLines(text,"emma:hkir:other") }.isFailure)
+    }
+
     @Test fun streamsNationalIndexWithDistinctPlatformsAndSourceNamespaces() {
         val parsed = EmmaStopsParser.index(index(stop(), stop("hkir:platform2"), stop("BKK:platform1"), stop("1:rail"), stop("hkir:invalid").put("lat", 0)))
         assertEquals(listOf(id, "emma:hkir:platform2", "emma:BKK:platform1"), parsed.stops.map { it.id })
@@ -50,13 +62,17 @@ class EmmaStopsTest {
         assertEquals("volan:hkir:route760", departure.routeId)
         assertEquals("hkir:trip1", departure.directionId)
     }
-    @Test fun scheduledRowsStayScheduledAndCancelledNonPickupAndOutOfWindowAreExcluded() {
+    @Test fun cancelledRowsRemainLabelledWhileNonPickupAndOutOfWindowAreExcluded() {
         val scheduled = time().put("realtime", false)
         val board = EmmaStopsParser.board(response(scheduled, time("cancel").put("realtimeState", "CANCELED"),
             time("nopickup").put("pickupType", "NONE"), time("past", 80_000), time("future", 100_000)), id, now, 60)
-        assertEquals(1, board.departures.size)
-        assertEquals(ArrivalKind.SCHEDULED, board.departures.single().kind)
-        assertEquals(now.plusSeconds(100), board.departures.single().expectedAt)
+        assertEquals(2, board.departures.size)
+        val scheduledRow=board.departures.single { !it.isCancelled }
+        val cancelledRow=board.departures.single { it.isCancelled }
+        assertEquals(ArrivalKind.SCHEDULED,scheduledRow.kind)
+        assertEquals(now.plusSeconds(100),scheduledRow.expectedAt)
+        assertEquals(ArrivalKind.SCHEDULED,cancelledRow.kind)
+        assertEquals(cancelledRow.scheduledAt,cancelledRow.expectedAt)
     }
     @Test fun perPatternBoardFlattensAllDirectionsWithSourceFeaturesAndAddedLiveServices() {
         val first = time().apply { getJSONObject("trip").put("directionId", "0").put("wheelchairAccessible", "POSSIBLE").put("bikesAllowed", "ALLOWED") }

@@ -72,10 +72,8 @@ internal fun isTrainRoute(route: TransitRoute): Boolean {
 
 internal fun extractStationLines(station: NearbyStation, state: UiState): StationLines {
     val allPlatformRouteIds = (station.platforms.flatMap { it.routeIds } + station.stop.routeIds).distinct()
-    val departureRouteIds = station.departures.map { it.routeId }.distinct()
-    val cluster = StopClusters.clusterFor(station.stop, state.stops)
-    val clusterRouteIds = cluster.flatMap { it.routeIds }
-    val allRouteIds = (allPlatformRouteIds + departureRouteIds + clusterRouteIds).distinct()
+    // The complete station catalogue is independent of today's departures and time window.
+    val allRouteIds = allPlatformRouteIds
 
     val rawTrainBadges = mutableListOf<StationBadgeItem>()
     val rawOtherBadges = mutableListOf<StationBadgeItem>()
@@ -96,18 +94,7 @@ internal fun extractStationLines(station: NearbyStation, state: UiState): Statio
         }
     }
 
-    // 2. From departures (covers ad-hoc trips, EMMA train departures, etc.)
-    for (dep in station.departures) {
-        val route = state.findRoute(dep.routeId)
-        val isTrain = if (route != null) isTrainRoute(route) else RailSupport.isTrainDeparture(dep.routeNumber, dep.serviceName)
-        val label = if (isTrain) RailSupport.canonicalBadge(route?.number ?: dep.routeNumber, dep.serviceName)
-                    else route?.number ?: dep.routeNumber.ifBlank { dep.routeId.substringAfter(":") }
-        val provider = route?.providerId ?: if (isTrain) "mav" else "volan"
-        val mode = route?.transportMode ?: if (isTrain) "RAIL" else "BUS"
-        addBadge(dep.routeId, label, isTrain, provider, mode, route?.color)
-    }
-
-    // 3. Deduplicate by label (so there is only one Gy, one S, one Sz, one IC, one IR, one S10, etc.)
+    // Deduplicate by label (so there is only one Gy, one S, one Sz, one IC, one IR, one S10, etc.)
     // and sort naturally (EC, EN, Ex, G10, G40, G43, G44, IC, IR, S, S10, S12, S30, S36, S40, S42, Sz, Z30, rjx)
     val trainBadges = rawTrainBadges
         .distinctBy { it.label }
@@ -133,7 +120,8 @@ private fun StationBadgeGrid(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        badges.chunked(4).forEach { rowBadges ->
+        val columns=if(androidx.compose.ui.platform.LocalDensity.current.fontScale>1.3f) 3 else 4
+        badges.chunked(columns).forEach { rowBadges ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -145,22 +133,21 @@ private fun StationBadgeGrid(
                         railLineColor(badge.label) to railLineTextColor(badge.label)
                     } else {
                         val base = lineColor(badge.provider, badge.mode, badge.sourceColor, badge.label)
-                        val text = if (base.luminance() > .35f) Color(0xFF171B20) else Color.White
+                        val text = badgeTextColor(base)
                         base to text
                     }
 
+                    Box(Modifier.weight(1f).heightIn(min=48.dp).clickable { onBadgeClick(badge.id) },contentAlignment=Alignment.Center) {
                     Surface(
                         shape = RoundedCornerShape(6.dp),
                         color = bgColor,
                         modifier = Modifier
-                            .weight(1f)
-                            .height(28.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .clickable { onBadgeClick(badge.id) }
+                            .fillMaxWidth()
+                            .heightIn(min=28.dp)
                     ) {
                         Box(
                             contentAlignment = Alignment.Center,
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier.padding(vertical=3.dp)
                         ) {
                             Text(
                                 text = badge.label,
@@ -176,8 +163,9 @@ private fun StationBadgeGrid(
                             )
                         }
                     }
+                    }
                 }
-                repeat(4 - rowBadges.size) {
+                repeat(columns - rowBadges.size) {
                     Spacer(modifier = Modifier.weight(1f))
                 }
             }
@@ -192,31 +180,20 @@ fun FavoritesScreen(
     onStopRoute: (String, String) -> Unit = { _, _ -> },
     onRemove: (String) -> Unit,
     onRefresh: () -> Unit,
-    onWindow: (Int) -> Unit,
     onVisible: (Set<String>) -> Unit
 ) {
     val listState = rememberLazyListState()
     val visibleAction by rememberUpdatedState(onVisible)
-    var windowMenu by remember { mutableStateOf(false) }
     LaunchedEffect(listState) {
         snapshotFlow { listState.layoutInfo.visibleItemsInfo.mapNotNull { (it.key as? String)?.takeIf { key -> key.startsWith("favorite:") }?.removePrefix("favorite:") }.toSet() }
             .distinctUntilChanged().collect { visibleAction(it) }
     }
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
-        Row(Modifier.fillMaxWidth().padding(start = 20.dp, top = 16.dp, end = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(stringResource(R.string.favorites_title), Modifier.weight(1f), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            IconButton(onClick = onRefresh) { Icon(Icons.Rounded.Refresh, stringResource(R.string.ui_refresh_departures)) }
-        }
-        Box(Modifier.padding(horizontal = 20.dp)) {
-            OutlinedButton(onClick = { windowMenu = true }) {
-                Icon(Icons.Rounded.Schedule, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.favorites_window, compactDuration(state.windowMinutes)))
-                Icon(Icons.Rounded.ExpandMore, null)
-            }
-            DropdownMenu(windowMenu, onDismissRequest = { windowMenu = false }) {
-                DepartureTime.windows.forEach { minutes -> DropdownMenuItem(text = { Text(compactDuration(minutes)) },
-                    onClick = { onWindow(minutes); windowMenu = false },
-                    trailingIcon = { if (state.windowMinutes == minutes) Icon(Icons.Rounded.Check, null) }) }
+        Box(Modifier.padding(horizontal=20.dp,vertical=20.dp)) {
+            TransitPageIntro(stringResource(R.string.favorites_title),null) {
+                FilledTonalIconButton(onClick=onRefresh,shape=TransitDesign.controlShape) {
+                    Icon(Icons.Rounded.Refresh,stringResource(R.string.favorites_refresh_lines))
+                }
             }
         }
         Box(Modifier.fillMaxWidth().height(8.dp).padding(horizontal = 20.dp)) {
@@ -225,7 +202,8 @@ fun FavoritesScreen(
         LazyColumn(Modifier.weight(1f), state = listState, contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
             if (state.favoriteStations.isEmpty()) item(key = "empty", contentType = "notice") {
-                Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceContainerLow) {
+                Surface(shape = TransitDesign.panelShape, color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                    border=androidx.compose.foundation.BorderStroke(1.dp,MaterialTheme.colorScheme.outlineVariant.copy(alpha=.55f))) {
                     Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         Icon(Icons.Rounded.FavoriteBorder, null, Modifier.size(36.dp), tint = MaterialTheme.colorScheme.primary)
                         Text(stringResource(if (state.favorites.isEmpty()) R.string.favorites_empty else if (state.favoritesLoading) R.string.favorites_loading else R.string.favorites_index_unavailable),
@@ -234,10 +212,11 @@ fun FavoritesScreen(
                 }
             }
             items(state.favoriteStations, key = { "favorite:${it.stop.id}" }, contentType = { "station" }) { station ->
-                val lines = remember(station.stop.id, station.platforms, station.departures, state.stops, state.routes) {
+                val lines = remember(station.stop, station.platforms, state.routes) {
                     extractStationLines(station, state)
                 }
-                Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceContainerLow) {
+                Surface(shape = TransitDesign.panelShape, color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                    border=androidx.compose.foundation.BorderStroke(1.dp,MaterialTheme.colorScheme.outlineVariant.copy(alpha=.55f))) {
                     Column(Modifier.padding(bottom = 12.dp)) {
                         Row(Modifier.padding(start = 16.dp, end = 4.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                             TextButton(onClick = { onStop(station.stop.id) }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(vertical = 8.dp)) {
@@ -278,7 +257,7 @@ fun FavoritesScreen(
 
                         if (lines.trainBadges.isEmpty() && lines.otherBadges.isEmpty() && !station.loading) {
                             Text(
-                                stringResource(if (station.unavailable) R.string.nearby_unavailable else R.string.favorites_no_lines),
+                                stringResource(if (station.unavailable) R.string.favorites_lines_unavailable else R.string.favorites_no_lines),
                                 Modifier.padding(16.dp),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -286,7 +265,7 @@ fun FavoritesScreen(
                         }
                         if (station.unavailable && (lines.trainBadges.isNotEmpty() || lines.otherBadges.isNotEmpty())) {
                             Text(
-                                stringResource(R.string.nearby_partial),
+                                stringResource(R.string.favorites_lines_stale),
                                 Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
