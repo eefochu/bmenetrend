@@ -427,6 +427,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 departures = departures,
                 vehicles = vehicles,
                 selectedVehicle = current.selectedVehicle?.let { selected -> vehicles.find { it.id == selected.id } ?: selected.copy(routeEstimate = null) },
+                trackedVehicle = current.trackedVehicle?.let { tracked -> vehicles.find { it.id == tracked.id } ?: tracked.copy(routeEstimate = null) },
                 emmaRoutes = EmmaParser.routeCatalogue(vehicles.filter { it.providerId in setOf("volan", "bkk", "hev", "mav") }, (stopRoutes + lineCatalogue + emmaRepository.catalogue).distinctBy { it.id }),
                 emmaStatus = emmaMessage,
                 liveStopMinutes = snapshot?.arrivals.orEmpty()
@@ -450,7 +451,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
 
     fun selectVehicle(id: String) {
         val vehicle = state.value.vehicles.find { it.id == id } ?: return
-        mutableState.update { it.copy(showNearby = false, selectedVehicle = vehicle, selectedPlace = null, boardingSelection = null) }
+        manualStop = false
+        mutableState.update { it.copy(showNearby = false, selectedVehicle = vehicle, trackedVehicle = null, selectedStopId = null, selectedPlatformIds = emptySet(), selectedPlace = null, boardingSelection = null) }
         vehicle.routeId?.let { loadLine(it) }
         ensureVehicleJourney()
     }
@@ -459,7 +461,24 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         journeyGeneration++
         journeyJob?.cancel()
         journeyKey = null
-        mutableState.update { it.copy(selectedVehicle = null, vehicleJourney = null, vehicleJourneyLoading = false, vehicleJourneyError = false) }
+        mutableState.update { it.copy(selectedVehicle = null, trackedVehicle = null, vehicleJourney = null, vehicleJourneyLoading = false, vehicleJourneyError = false) }
+    }
+
+    fun returnToTrackedVehicle() {
+        val vehicle = state.value.trackedVehicle ?: return
+        manualStop = false
+        mutableState.update {
+            it.copy(
+                showNearby = false,
+                selectedVehicle = vehicle,
+                trackedVehicle = null,
+                selectedStopId = null,
+                selectedPlatformIds = emptySet(),
+                boardingSelection = null,
+                fitRouteRequest = it.fitRouteRequest + 1
+            )
+        }
+        recalculate()
     }
 
     fun returnToNearby() {
@@ -532,7 +551,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun ensureVehicleJourney(force: Boolean = false) {
-        val vehicle = state.value.selectedVehicle ?: return
+        val vehicle = state.value.selectedVehicle ?: state.value.trackedVehicle ?: return
         val key = vehicle.id to vehicle.tripId
         if (!force && key == journeyKey) return
         journeyKey = key
@@ -688,15 +707,29 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun selectJourneyBoardingStop(id: String) {
-        val vehicle = state.value.selectedVehicle
+        val vehicle = state.value.selectedVehicle ?: state.value.trackedVehicle
         val journey = state.value.vehicleJourney
         if (vehicle?.routeId == null || journey == null || journey.patternCode == null || journey.tripId != vehicle.tripId || journey.stops.none { it.id == id }) {
             selectStop(id); return
         }
         val pattern = LinePattern(journey.patternCode, setOf(journey.patternCode), journey.destination ?: vehicle.destination.orEmpty(), journey.stops, journey.geometry)
-        selectStop(id)
-        mutableState.update { it.copy(boardingSelection = BoardingSelection(vehicle.routeId, pattern.headsign, pattern)) }
+        manualStop = true
+        val network = state.value.network
+        val selectedIds = setOf(network?.let { SharedStops.resolve(it, id) } ?: SharedStops.canonicalId(id))
+        mutableState.update {
+            it.copy(
+                showNearby = false,
+                selectedStopId = selectedIds.first(),
+                selectedPlatformIds = selectedIds,
+                selectedPlace = null,
+                cameraRequest = it.cameraRequest + 1,
+                trackedVehicle = vehicle,
+                selectedVehicle = null,
+                boardingSelection = BoardingSelection(vehicle.routeId, pattern.headsign, pattern)
+            )
+        }
         recalculate()
+        ensureBoardRequest()
     }
 
     fun loadLine(id: String, force: Boolean = false) {

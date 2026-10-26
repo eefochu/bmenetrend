@@ -106,6 +106,75 @@ class RouteMapCardTest {
         compose.onNodeWithText(app.getString(R.string.map_exit_route)).assertDoesNotExist()
     }
 
+    @Test fun selectingStationOnVehicleJourneyKeepsHighlightAndDismissReturnsToVehicle() {
+        val vehicle = Vehicle("v-1", GeoPoint(47.4, 19.0), java.time.Instant.now(), routeId = route.id, routeNumber = "762", providerId = "volan", transportMode = "BUS", tripId = "trip-1")
+        val pattern = LinePattern("p1", setOf("p1"), "Budapest", listOf(a, b, c), listOf(GeoPoint(47.4, 19.0), GeoPoint(47.5, 19.1)))
+        var returnedToVehicle = false
+        var vehicleClosed = false
+        val uiState = state().copy(
+            showNearby = false,
+            selectedStopId = b.id,
+            trackedVehicle = vehicle,
+            selectedVehicle = null,
+            boardingSelection = BoardingSelection(route.id, pattern.headsign, pattern)
+        )
+        compose.setContent { ViaBuszTheme {
+            ViaBuszScreen(
+                state = uiState,
+                onStopSelected = {},
+                onRefresh = {},
+                onLocate = {},
+                onWindowChanged = {},
+                onToggleFavorite = {},
+                onVehicleClosed = { vehicleClosed = true },
+                onReturnToTrackedVehicle = { returnedToVehicle = true },
+                mapContent = { modifier, _, _, _, onDismiss ->
+                    Box(modifier.testTag("map")) {
+                        Text("Dismiss", Modifier.testTag("map_click").clickable { onDismiss() })
+                    }
+                }
+            )
+        } }
+
+        val exitBtn = compose.onNodeWithText(app.getString(R.string.map_exit_route))
+        exitBtn.assertIsDisplayed()
+
+        compose.onNodeWithTag("map_click").performClick()
+        compose.runOnIdle {
+            assertTrue(returnedToVehicle)
+            assertFalse(vehicleClosed)
+        }
+    }
+
+    @Test fun clearingBoardingBannerWhenTrackedVehiclePresentReturnsToVehicle() {
+        val vehicle = Vehicle("v-1", GeoPoint(47.4, 19.0), java.time.Instant.now(), routeId = route.id, routeNumber = "762", providerId = "volan", transportMode = "BUS", tripId = "trip-1")
+        val pattern = LinePattern("p1", setOf("p1"), "Budapest", listOf(a, b, c), listOf(GeoPoint(47.4, 19.0), GeoPoint(47.5, 19.1)))
+        var returnedToVehicle = false
+        val uiState = state().copy(
+            showNearby = false,
+            selectedStopId = b.id,
+            trackedVehicle = vehicle,
+            selectedVehicle = null,
+            boardingSelection = BoardingSelection(route.id, pattern.headsign, pattern)
+        )
+        compose.setContent { ViaBuszTheme {
+            ViaBuszScreen(
+                state = uiState,
+                onStopSelected = {},
+                onRefresh = {},
+                onLocate = {},
+                onWindowChanged = {},
+                onToggleFavorite = {},
+                onReturnToTrackedVehicle = { returnedToVehicle = true }
+            )
+        } }
+
+        compose.onNodeWithContentDescription(app.getString(R.string.ui_back)).performClick()
+        compose.runOnIdle {
+            assertTrue(returnedToVehicle)
+        }
+    }
+
     @Test fun floatingCloseButtonOnMapClosesBrowsingRoute() {
         var previewRoute: String? = null
         compose.setContent { ViaBuszTheme {

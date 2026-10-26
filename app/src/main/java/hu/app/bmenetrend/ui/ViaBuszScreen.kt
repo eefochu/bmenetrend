@@ -131,6 +131,7 @@ fun ViaBuszScreen(
     onRecenter: () -> Unit = {},
     onNationwideNetworkChanged: (Boolean) -> Unit = {},
     onVehicleClosed: () -> Unit = {},
+    onReturnToTrackedVehicle: () -> Unit = {},
     onReturnToNearby: () -> Unit = onVehicleClosed,
     onAccentColorChanged: (AccentColor) -> Unit = {},
     onCustomAccentChanged: (Int) -> Unit = {},
@@ -233,6 +234,10 @@ fun ViaBuszScreen(
         when {
             searchOpen -> searchOpen = false
             directionId != null || routeId != null -> closeLine()
+            state.trackedVehicle != null -> {
+                onReturnToTrackedVehicle()
+                scope.launch { sheet.partialExpand() }
+            }
             state.selectedVehicle != null -> closeVehicle()
             state.boardingSelection != null -> {
                 onClearBoarding()
@@ -250,6 +255,10 @@ fun ViaBuszScreen(
         when {
             directionId != null -> directionId = null
             routeId != null -> closeLine()
+            state.trackedVehicle != null -> {
+                onReturnToTrackedVehicle()
+                scope.launch { sheet.partialExpand() }
+            }
             state.selectedVehicle != null -> closeVehicle()
             state.boardingSelection != null -> {
                 onClearBoarding()
@@ -368,7 +377,11 @@ fun ViaBuszScreen(
                         onRefresh = onRefresh,
                         onWindowChanged = onWindowChanged,
                         onClearBoarding = {
-                            onClearBoarding()
+                            if (state.trackedVehicle != null) {
+                                onReturnToTrackedVehicle()
+                            } else {
+                                onClearBoarding()
+                            }
                             scope.launch { sheet.partialExpand() }
                         },
                         onChangeDirection = {
@@ -388,7 +401,7 @@ fun ViaBuszScreen(
                     // Full-screen map going under both the top search blob and the bottom sheet.
                     mapContent(Modifier.fillMaxSize(), bottomPaddingPx, selectedRoute.takeUnless { searchOpen }, directionId, dismissHighlight)
 
-                    if (state.selectedVehicle != null || state.boardingSelection != null || selectedRoute != null) {
+                    if (state.selectedVehicle != null || state.trackedVehicle != null || state.boardingSelection != null || selectedRoute != null) {
                         FilledTonalButton(
                             onClick = dismissHighlight,
                             modifier = Modifier.align(Alignment.TopStart).statusBarsPadding().padding(start = 16.dp, top = 86.dp),

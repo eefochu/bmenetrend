@@ -28,6 +28,7 @@ data class UiState(
     val departures: List<Departure> = emptyList(),
     val vehicles: List<Vehicle> = emptyList(),
     val selectedVehicle: Vehicle? = null,
+    val trackedVehicle: Vehicle? = null,
     val selectedPlace: PlaceResult? = null,
     val placeCameraRequest: Int = 0,
     val placeResults: List<PlaceResult> = emptyList(),

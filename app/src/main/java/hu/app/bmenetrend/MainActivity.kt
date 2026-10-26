@@ -125,6 +125,7 @@ class MainActivity : ComponentActivity() {
                     onNationwideNetworkChanged = model::setNationwideNetwork,
                     onVehicleClosed = model::closeVehicle,
                     onReturnToNearby = model::returnToNearby,
+                    onReturnToTrackedVehicle = model::returnToTrackedVehicle,
                     onAccentColorChanged = model::setAccentColor,
                     onCustomAccentChanged = model::setCustomAccentColor,
                     onLineOpened = model::loadLine,
@@ -140,7 +141,7 @@ class MainActivity : ComponentActivity() {
                     onCheckOtaUpdates = { model.checkForUpdates(false) },
                     onDownloadAndInstallOta = { info -> model.startOtaDownloadAndInstall(this@MainActivity, info) },
                 ) { modifier, bottomPaddingPx, browsingRoute, browsingDirection, onDismissHighlight ->
-                    val vehicle = state.selectedVehicle
+                    val vehicle = state.selectedVehicle ?: state.trackedVehicle
                     val browsingPattern=browsingRoute?.let { line -> state.lineDetails[line.id]?.patterns?.find { it.id==browsingDirection } }
                     val preview=browsingRoute?.let { hu.app.bmenetrend.data.BoardingSelection(it.id,it.name,browsingPattern,
                         localDirectionId=browsingDirection.takeIf { _ -> it.providerId !in setOf("volan","bkk","hev","mav") }) }
@@ -158,7 +159,7 @@ class MainActivity : ComponentActivity() {
                     val color = if (vehicle != null) lineColor(vehicle.providerId, vehicle.transportMode, vehicle.markerColor)
                         else route?.let(::lineColor) ?: androidx.compose.ui.graphics.Color(0xFF199DCF)
                     val onMapStop: (String) -> Unit = { id ->
-                        if (state.selectedVehicle != null && state.vehicleJourney?.stops?.any { it.id == id } == true) model.selectJourneyBoardingStop(id)
+                        if ((state.selectedVehicle != null || state.trackedVehicle != null) && state.vehicleJourney?.stops?.any { it.id == id } == true) model.selectJourneyBoardingStop(id)
                         else {
                             val linePattern=boarding?.pattern?.takeIf { it.stops.any { stop -> stop.id==id } }
                             val localDirection=boarding?.localDirectionId?.takeIf { direction ->
@@ -170,7 +171,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                     val onMapSharedStop: (List<String>) -> Unit = { ids ->
-                        val matchedStopId = if (state.selectedVehicle != null) {
+                        val matchedStopId = if (state.selectedVehicle != null || state.trackedVehicle != null) {
                             ids.find { id -> state.vehicleJourney?.stops?.any { it.id == id } == true }
                         } else if (focus?.routeId != null) {
                             ids.find { id ->
@@ -193,7 +194,7 @@ class MainActivity : ComponentActivity() {
                             hu.app.bmenetrend.map.StopDirections.collect(routes,allStops,state.lineDetails.values,state.vehicleJourney)
                         }
                     }
-                    NativeTransitMap(state.network, state.vehicles, state.selectedStopId.takeUnless { state.showNearby || browsingRoute!=null || state.selectedVehicle!=null }, state.userLocation, modifier, onMapStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, state.selectedVehicle, routeGeometry = geometry, routeStops = stops, routeColor = color.toArgb(), fitRouteRequest = state.fitRouteRequest, selectedPlace = state.selectedPlace, placeCameraRequest = state.placeCameraRequest, lineFocus = focus, browsingNearby = state.showNearby, locationCameraRequest = state.locationCameraRequest, onViewportChanged = model::updateMapArea,stopBearings=stopBearings,onSharedStopSelected=onMapSharedStop,onMapClick=onDismissHighlight)
+                    NativeTransitMap(state.network, state.vehicles, state.selectedStopId.takeUnless { state.showNearby || browsingRoute!=null || state.selectedVehicle!=null }, state.userLocation, modifier, onMapStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, vehicle, routeGeometry = geometry, routeStops = stops, routeColor = color.toArgb(), fitRouteRequest = state.fitRouteRequest, selectedPlace = state.selectedPlace, placeCameraRequest = state.placeCameraRequest, lineFocus = focus, browsingNearby = state.showNearby, locationCameraRequest = state.locationCameraRequest, onViewportChanged = model::updateMapArea,stopBearings=stopBearings,onSharedStopSelected=onMapSharedStop,onMapClick=onDismissHighlight)
                 }
                 })
 

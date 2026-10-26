@@ -312,17 +312,25 @@ fun NativeTransitMap(
         ready.setPadding(0, topInset, 0, bottomInset)
         if (focused) {
             previousFocusKey = lineFocus!!.key
-            // Keep directions as separate paths: never invent links between their termini.
-            val points = (paths.flatten() + focusStops.map { it.position }).distinct()
-            val signature = listOf(lineFocus.key, points.toSet(), fitRouteRequest, bottomPaddingPx, size)
-            if (signature != fittedSignature) {
-                fittedSignature = signature
-                if (points.size >= 2) {
-                    val bounds = LatLngBounds.Builder().includes(points.map { LatLng(it.lat, it.lon) }).build()
-                    val margin = (36 * context.resources.displayMetrics.density).toInt()
-                    ready.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 0.0, 0.0,
-                        margin, topInset + margin, margin, bottomInset + margin), 650)
-                } else selectedVehicle?.let { ready.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(it.position.lat, it.position.lon), 13.5), 650) }
+            val stop = displayStops.find { it.id == selectedStopId }
+            if (stop != null && (centeredStop != stop.id || centeredRequest != cameraRequest)) {
+                centeredStop = stop.id
+                centeredRequest = cameraRequest
+                ready.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(stop.position.lat, stop.position.lon), maxOf(15.0, ready.cameraPosition.zoom)), 650)
+            } else {
+                if (stop == null) centeredStop = null
+                // Keep directions as separate paths: never invent links between their termini.
+                val points = (paths.flatten() + focusStops.map { it.position }).distinct()
+                val signature = listOf(lineFocus.key, points.toSet(), fitRouteRequest, bottomPaddingPx, size)
+                if (signature != fittedSignature) {
+                    fittedSignature = signature
+                    if (points.size >= 2) {
+                        val bounds = LatLngBounds.Builder().includes(points.map { LatLng(it.lat, it.lon) }).build()
+                        val margin = (36 * context.resources.displayMetrics.density).toInt()
+                        ready.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 0.0, 0.0,
+                            margin, topInset + margin, margin, bottomInset + margin), 650)
+                    } else selectedVehicle?.let { ready.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(it.position.lat, it.position.lon), 13.5), 650) }
+                }
             }
         } else if (previousFocusKey != null) {
             previousFocusKey = null
