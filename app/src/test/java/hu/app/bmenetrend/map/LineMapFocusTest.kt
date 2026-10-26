@@ -23,6 +23,9 @@ class LineMapFocusTest {
         assertEquals(listOf(outbound.geometry), focusNorth.paths)
         assertEquals(setOf(a.id, b.id), focusNorth.stops.map { it.id }.toSet())
         assertFalse(focusNorth.stops.any { it.id == c.id })
+        assertTrue(c in focusNorth.contextStops)
+        assertEquals(listOf(outbound.geometry,inbound.geometry),focusNorth.displayPaths)
+        assertEquals(setOf(a,b,c),focusNorth.displayStops.toSet())
 
         val focusSouth = LineMapFocus.create(vehicle(destination = "South"), null, listOf(route), mapOf(route.id to LineDetails(route, listOf(outbound, inbound))), null, listOf(a,b,c))!!
         assertEquals(listOf(inbound.geometry), focusSouth.paths)
@@ -49,12 +52,16 @@ class LineMapFocusTest {
         assertTrue(wrongTrip.paths.isEmpty())
     }
 
-    @Test fun boardingSelectionStillShowsBothDirectionsWithoutLeakingUnrelatedStops() {
+    @Test fun selectedBoardingDirectionHighlightsOnlyItsOwnStopsAndPath() {
         val unrelated = stop("unrelated",47.7).copy(routeIds = listOf("other"))
         val focus = LineMapFocus.create(null, BoardingSelection(route.id,"North",outbound), listOf(route),
             mapOf(route.id to LineDetails(route,listOf(outbound,inbound))), null, listOf(unrelated))!!
-        assertEquals(2,focus.paths.size)
+        assertEquals(listOf(outbound.geometry),focus.paths)
+        assertEquals(outbound.stops,focus.stops)
         assertFalse(focus.stops.contains(unrelated))
+        assertTrue(c in focus.contextStops)
+        assertEquals(listOf(outbound.geometry,inbound.geometry),focus.displayPaths)
+        assertFalse(unrelated in focus.displayStops)
     }
 
     @Test fun missingRouteIdentityDoesNotShowAllUnknownVehicles() {
@@ -67,4 +74,11 @@ class LineMapFocusTest {
     @Test fun noSelectionMeansNoFocus() {
         assertNull(LineMapFocus.create(null,null,emptyList(),emptyMap(),null,emptyList()))
     }
+    @Test fun lineOverviewStillShowsBothDirectionsUntilOneIsChosen() {
+        val focus=LineMapFocus.create(null,BoardingSelection(route.id,"Line overview"),listOf(route),
+            mapOf(route.id to LineDetails(route,listOf(outbound,inbound))),null,listOf(a,b,c))!!
+        assertEquals(2,focus.paths.size)
+        assertEquals(setOf(a,b,c),focus.stops.toSet())
+    }
+
 }

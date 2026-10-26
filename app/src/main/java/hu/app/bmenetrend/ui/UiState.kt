@@ -24,6 +24,7 @@ data class UiState(
     val nearbyLoading: Boolean = true,
     val network: TransitNetwork? = null,
     val selectedStopId: String? = null,
+    val selectedPlatformIds: Set<String> = emptySet(),
     val departures: List<Departure> = emptyList(),
     val vehicles: List<Vehicle> = emptyList(),
     val selectedVehicle: Vehicle? = null,
@@ -85,6 +86,12 @@ data class UiState(
         else if (emmaStops.isEmpty()) netStops
         else netStops + emmaStops
     }
+
+    val selectedPlatforms: List<TransitStop> by lazy(LazyThreadSafetyMode.NONE) {
+        hu.app.bmenetrend.data.StopBoardScope.platforms(selectedStopId,selectedPlatformIds,stops)
+    }
+    val boardRequestKey: hu.app.bmenetrend.data.StopBoardScope.RequestKey get() =
+        hu.app.bmenetrend.data.StopBoardScope.requestKey(selectedStopId,selectedPlatformIds,windowMinutes)
 
     val routes: List<TransitRoute> by lazy(LazyThreadSafetyMode.NONE) {
         val netRoutes = network?.routes

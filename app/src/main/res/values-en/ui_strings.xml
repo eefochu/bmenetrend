@@ -82,7 +82,6 @@
     <string name="ui_about_homm_data">HOMM routes 288 and 289 show timetable departures only. Live vehicle locations and live arrival estimates are not available for these routes.</string>
     <string name="ui_homm_website">HOMM official website</string>
     <string name="ui_homm_schedule_only">HOMM timetable · no live data</string>
-    <string name="ui_multiple_stations">(multiple stations)</string>
     <string name="ui_collapse_departures">Collapse departures</string>
 
     <!-- OTA and About strings -->
@@ -115,4 +114,9 @@
     <string name="ota_dialog_update_title">New update available!</string>
     <string name="ota_dialog_update_now">Update now</string>
     <string name="vehicle_route_estimated">Estimated</string>
+    <string name="service_interurban_bus">Regional / interurban bus</string>
+    <string name="service_local_bus">Local bus</string>
+    <string name="service_city_bus">City bus</string>
+    <string name="service_ferry">Ferry</string>
+    <string name="route_close">Close line view</string>
 </resources>

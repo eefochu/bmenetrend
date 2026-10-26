@@ -82,7 +82,6 @@
     <string name="ui_about_homm_data">A HOMM 288-as és 289-es járatán csak menetrendi indulások láthatók. Ezekhez a járatokhoz nem érhető el élő buszhelyzet és valós idejű érkezési becslés.</string>
     <string name="ui_homm_website">HOMM hivatalos weboldal</string>
     <string name="ui_homm_schedule_only">HOMM-menetrend · élő adatok nélkül</string>
-    <string name="ui_multiple_stations">(több megálló)</string>
     <string name="ui_collapse_departures">Indulások részleges nézete</string>
 
     <!-- OTA and About strings -->
@@ -115,4 +114,9 @@
     <string name="ota_dialog_update_title">Új verzió érhető el!</string>
     <string name="ota_dialog_update_now">Frissítés most</string>
     <string name="vehicle_route_estimated">Becsült</string>
+    <string name="service_interurban_bus">Regionális / helyközi busz</string>
+    <string name="service_local_bus">Helyi busz</string>
+    <string name="service_city_bus">Városi busz</string>
+    <string name="service_ferry">Hajó</string>
+    <string name="route_close">Vonalnézet bezárása</string>
 </resources>

@@ -3,7 +3,7 @@ package hu.app.bmenetrend.map
 import hu.app.bmenetrend.data.TransitStop
 import kotlin.math.*
 
-/** Individual source platforms with consistent sizing and the smallest collision offset. */
+/** Compact at overview zoom; close platforms get a bounded four-dp nudge and readable overlapping rings. */
 object StopMarkerLayout {
     data class Node(val stop: TransitStop, val x: Double, val y: Double)
     data class Placement(val stop: TransitStop, val x: Double, val y: Double, val sizePx: Double)
@@ -21,33 +21,35 @@ object StopMarkerLayout {
         else -> 0xFF40576A.toInt()
     }
 
-    fun layout(nodes: List<Node>, density: Double, maxSizeDp: Double = 22.0): List<Placement> {
-        require(density > 0 && density.isFinite() && maxSizeDp >= 6)
-        val sorted = nodes.distinctBy { it.stop.id }.sortedBy { it.stop.id }
-        val cellSize = (maxSizeDp + 2) * density
-        fun cell(x: Double, y: Double) = floor(x / cellSize).toInt() to floor(y / cellSize).toInt()
-        val occupied = mutableMapOf<Pair<Int, Int>, MutableList<Placement>>()
-        return sorted.map { node ->
-            val size = maxSizeDp * density
-            fun free(x: Double, y: Double): Boolean {
-                val (gx, gy) = cell(x, y)
-                for (dx in -1..1) for (dy in -1..1) {
-                    if (occupied[gx + dx to gy + dy].orEmpty().any { hypot(x - it.x, y - it.y) < (size + it.sizePx) / 2 + density }) return false
+    fun layout(nodes: List<Node>,density: Double,maxSizeDp: Double=22.0,highlighted: Boolean=false,zoom: Double=0.0): List<Placement> {
+        require(density>0 && density.isFinite() && maxSizeDp>=6)
+        val ordered=nodes.distinctBy { it.stop.id }.sortedBy { it.stop.id }
+        val maximum=maxSizeDp*density
+        if(highlighted) return ordered.map { Placement(it.stop,it.x,it.y,maximum) }
+        val gap=3*density
+        // A spatial index limits comparisons to markers close enough to constrain the requested size.
+        val buckets=ordered.groupBy { floor(it.x/maximum).toInt() to floor(it.y/maximum).toInt() }
+        return ordered.map { node ->
+            val cx=floor(node.x/maximum).toInt(); val cy=floor(node.y/maximum).toInt()
+            var nearest=maximum+gap
+            var neighbour: Node?=null
+            for(dx in -2..2) for(dy in -2..2) {
+                buckets[cx+dx to cy+dy].orEmpty().forEach { other ->
+                    if(other.stop.id!=node.stop.id) {
+                        val distance=hypot(other.x-node.x,other.y-node.y)
+                        if(distance<nearest) { nearest=distance;neighbour=other }
+                    }
                 }
-                return true
             }
-            var x = node.x; var y = node.y; var ring = 0
-            while (!free(x, y)) {
-                ring++
-                val radius = ring * 2 * density
-                val count = max(8, ring * 8)
-                val candidate = (0 until count).map { angle ->
-                    val theta = angle * 2 * PI / count
-                    node.x + cos(theta) * radius to node.y + sin(theta) * radius
-                }.firstOrNull { free(it.first, it.second) }
-                if (candidate != null) { x = candidate.first; y = candidate.second; break }
-            }
-            Placement(node.stop, x, y, size).also { occupied.getOrPut(cell(x, y)) { mutableListOf() }.add(it) }
+            if(zoom>=15 && neighbour!=null) {
+                val overlap=3*density
+                val size=floor((nearest+11*density).coerceIn(minOf(10*density,maximum),maximum)/density)*density
+                val nudge=((size-overlap-nearest)/2).coerceIn(0.0,4*density)
+                val other=neighbour!!
+                val ux=if(nearest>.001) (node.x-other.x)/nearest else 0.0
+                val uy=if(nearest>.001) (node.y-other.y)/nearest else if(node.stop.id<other.stop.id) -1.0 else 1.0
+                Placement(node.stop,node.x+ux*nudge,node.y+uy*nudge,size)
+            } else Placement(node.stop,node.x,node.y,floor((nearest-gap).coerceIn(6*density,maximum)/density)*density)
         }
     }
 }

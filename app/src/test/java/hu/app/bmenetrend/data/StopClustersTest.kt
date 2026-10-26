@@ -124,13 +124,11 @@ class StopClustersTest {
     }
 
     @Test
-    fun stopDisplayNameAppendsMultiStopLabelWhenMultiStop() {
-        assertEquals("Budaörsi lakótelep (több megálló)", StopClusters.stopDisplayName("Budaörsi lakótelep", true, "(több megálló)"))
-        assertEquals("Budaörsi lakótelep (multiple stations)", StopClusters.stopDisplayName("Budaörsi lakótelep", true, "(multiple stations)"))
-        // Single stop remains unchanged
-        assertEquals("Patkó utca", StopClusters.stopDisplayName("Patkó utca", false, "(több megálló)"))
-        // Already formatted name does not get duplicate label
-        assertEquals("Budaörsi lakótelep (több megálló)", StopClusters.stopDisplayName("Budaörsi lakótelep (több megálló)", true, "(több megálló)"))
+    fun stopDisplayNameKeepsOnlyTheStationNameAndRemovesLegacyGroupingSuffixes() {
+        assertEquals("Budaörsi lakótelep",StopClusters.stopDisplayName("Budaörsi lakótelep"))
+        assertEquals("Budaörsi lakótelep",StopClusters.stopDisplayName("Budaörsi lakótelep (több megálló)"))
+        assertEquals("Budaörsi lakótelep",StopClusters.stopDisplayName("Budaörsi lakótelep (multiple stations)"))
+        assertEquals("Patkó utca (Ellenirány)",StopClusters.stopDisplayName("Patkó utca (Ellenirány)"))
     }
 
     @Test

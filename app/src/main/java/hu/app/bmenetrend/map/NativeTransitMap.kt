@@ -49,15 +49,16 @@ import org.maplibre.geojson.Feature
 import org.maplibre.geojson.FeatureCollection
 import org.maplibre.geojson.LineString
 import org.maplibre.geojson.Point
+import org.maplibre.android.style.layers.SymbolLayer
 import org.maplibre.android.maps.Style
 import org.maplibre.android.style.layers.LineLayer
-import org.maplibre.android.style.layers.CircleLayer
 import org.maplibre.android.style.expressions.Expression
 import org.maplibre.android.style.layers.PropertyFactory
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 private const val VEHICLE_ICON_MIN_ZOOM = 12.0
+private data class StationHitTarget(val position: LatLng,val radius: Float,val dx: Float=0f,val dy: Float=0f)
 
 /** Keyless OpenFreeMap basemap, with a bundled custom night style. */
 @Composable
@@ -85,12 +86,15 @@ fun NativeTransitMap(
     browsingNearby: Boolean = false,
     locationCameraRequest: Int = 0,
     onViewportChanged: (MapBounds, GeoPoint) -> Unit = { _, _ -> },
+    stopBearings: Map<String,List<Double>> = emptyMap(),
+    onSharedStopSelected: (List<String>)->Unit = { ids -> ids.firstOrNull()?.let(onStopSelected) },
 ) {
     val darkTheme = isSystemInDarkTheme()
     val styleUri = if (darkTheme) "asset://map/night.json" else "https://tiles.openfreemap.org/styles/positron"
     val context = LocalContext.current
     val owner = LocalLifecycleOwner.current
     val onSelect by rememberUpdatedState(onStopSelected)
+    val onSharedSelect by rememberUpdatedState(onSharedStopSelected)
     val onError by rememberUpdatedState(onMapError)
     val onArea by rememberUpdatedState(onViewportChanged)
     val onZoom by rememberUpdatedState(onMapZoomChanged)
@@ -101,9 +105,10 @@ fun NativeTransitMap(
     var savedZoom by rememberSaveable { mutableDoubleStateOf(13.2) }
     var zoom by remember { mutableDoubleStateOf(savedZoom) }
     val focused = lineFocus != null
-    val focusStops = lineFocus?.stops.orEmpty()
-    val displayStops = if (focused) focusStops else stops
-    val paths = lineFocus?.paths ?: listOf(routeGeometry).filter { it.size >= 2 }
+    val focusStops = lineFocus?.displayStops.orEmpty()
+    val displayStops = if (focused) lineFocus!!.displayStops else stops
+    val highlightedIds = remember(focusStops) { focusStops.map { it.id }.toSet() }
+    val paths = lineFocus?.displayPaths ?: listOf(routeGeometry).filter { it.size >= 2 }
     var size by remember { mutableStateOf(IntSize.Zero) }
     var previousCamera by rememberSaveable { mutableStateOf<CameraPosition?>(null) }
     var previousFocusKey by rememberSaveable { mutableStateOf<String?>(null) }
@@ -124,9 +129,10 @@ fun NativeTransitMap(
     var locationMarker by remember { mutableStateOf<Marker?>(null) }
     var placeMarker by remember { mutableStateOf<Marker?>(null) }
     val markerVehicles = remember { mutableMapOf<Long, String>() }
-    val stopHitTargets = remember { mutableMapOf<String, Pair<LatLng, Float>>() }
+    val stopHitTargets = remember { mutableMapOf<String,StationHitTarget>() }
     val stopGroups = remember { mutableMapOf<String, List<TransitStop>>() }
     val iconCache = remember { mutableMapOf<String, Icon>() }
+    val stationIconKeys=remember { mutableSetOf<String>() }
     val formatter = remember { DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.of("Europe/Budapest")) }
 
     DisposableEffect(mapView, owner) {
@@ -171,31 +177,38 @@ fun NativeTransitMap(
                 onArea(viewport!!, GeoPoint(savedLat, savedLon))
             }
             ready.setMaxZoomPreference(19.0)
+            fun targets(): List<StopHitTesting.Target> = stopHitTargets.mapNotNull { (id,target) ->
+                val stop=stopGroups[id]?.firstOrNull { it.id==id } ?: return@mapNotNull null
+                val point=ready.projection.toScreenLocation(target.position)
+                val angle=Math.toRadians(ready.cameraPosition.bearing)
+                val x=point.x+target.dx*kotlin.math.cos(angle)+target.dy*kotlin.math.sin(angle)
+                val y=point.y-target.dx*kotlin.math.sin(angle)+target.dy*kotlin.math.cos(angle)
+                StopHitTesting.Target(stop,x,y,target.radius.toDouble())
+            }
+            fun reveal(location: LatLng) {
+                ready.animateCamera(CameraUpdateFactory.newLatLngZoom(location,
+                    maxOf(16.0,ready.cameraPosition.zoom+2).coerceAtMost(19.0)),450)
+            }
             ready.setOnMarkerClickListener { marker ->
-                val vehicle = markerVehicles[marker.id]
-                if (vehicle != null) {
+                val vehicle=markerVehicles[marker.id]
+                if(vehicle!=null) {
                     onVehicle(vehicle)
-                    return@setOnMarkerClickListener true
-                }
-                false
+                    true
+                } else false
             }
             ready.addOnMapClickListener { location ->
-                val hit = ready.projection.toScreenLocation(location)
-                val nearest = stopHitTargets.entries.mapNotNull { (id, target) ->
-                    val point = ready.projection.toScreenLocation(target.first)
-                    val distance = kotlin.math.hypot(point.x - hit.x, point.y - hit.y)
-                    id.takeIf { distance <= target.second + 2 * context.resources.displayMetrics.density }?.let { it to distance }
-                }.minByOrNull { it.second }?.first
-                if (nearest != null) {
-                    val members = stopGroups[nearest].orEmpty()
-                    if (members.size > 1) {
-                        val center = stopHitTargets[nearest]!!.first
-                        ready.animateCamera(CameraUpdateFactory.newLatLngZoom(center, maxOf(StopMapClustering.PLATFORM_ZOOM + .3, ready.cameraPosition.zoom + 1.0)), 500)
-                    } else onSelect(members.firstOrNull()?.id ?: nearest)
-                    return@addOnMapClickListener true
+                val point=ready.projection.toScreenLocation(location)
+                val hits=targets()
+                val density=context.resources.displayMetrics.density.toDouble()
+                val candidate=StopHitTesting.candidates(hits,point.x.toDouble(),point.y.toDouble(),density).firstOrNull()
+                if(candidate==null) false else {
+                    if(StopHitTesting.needsZoom(hits,point.x.toDouble(),point.y.toDouble(),density,ready.cameraPosition.zoom)) reveal(location)
+                    else if(stopGroups[candidate.id].orEmpty().flatMap { it.providerIds }.distinct().size>1) onSharedSelect(listOf(candidate.id)+stopGroups[candidate.id].orEmpty().map { it.id }.filterNot { it==candidate.id })
+                    else onSelect(candidate.id)
+                    true
                 }
-                false
             }
+
         }
         onDispose {
             owner.lifecycle.removeObserver(observer)
@@ -258,7 +271,7 @@ fun NativeTransitMap(
             val line = LineLayer("selected-line-stroke", "selected-line").withProperties(
                 PropertyFactory.lineColor(routeColor), PropertyFactory.lineWidth(5f),
                 PropertyFactory.lineCap("round"), PropertyFactory.lineJoin("round"))
-            val aboveRoute = style.getLayer("detail-stop-halo")?.id ?: MapLibreConstants.LAYER_ID_ANNOTATIONS
+            val aboveRoute = style.getLayer("station-symbols")?.id ?: MapLibreConstants.LAYER_ID_ANNOTATIONS
             if (style.getLayer(aboveRoute) != null) style.addLayerBelow(casing, aboveRoute) else style.addLayer(casing)
             style.addLayerAbove(line, "selected-line-casing")
         }
@@ -277,7 +290,7 @@ fun NativeTransitMap(
             previousFocusKey = lineFocus!!.key
             // Keep directions as separate paths: never invent links between their termini.
             val points = (paths.flatten() + focusStops.map { it.position }).distinct()
-            val signature = listOf(lineFocus.key, points, fitRouteRequest, bottomPaddingPx, size)
+            val signature = listOf(lineFocus.key, points.toSet(), fitRouteRequest, bottomPaddingPx, size)
             if (signature != fittedSignature) {
                 fittedSignature = signature
                 if (points.size >= 2) {
@@ -329,16 +342,105 @@ fun NativeTransitMap(
         }
     }
     AndroidView(factory = { mapView }, modifier = modifier.onSizeChanged { size = it })
-
-    LaunchedEffect(map, styleLoaded, viewport, zoom, displayStops, vehicles, lineFocus, routeColor, selectedVehicle?.id, selectedStopId, selectedPlace, userLocation) {
-        val nativeMap = map ?: return@LaunchedEffect
-        if (!styleLoaded) return@LaunchedEffect
-        val activeVehicles = mutableSetOf<String>()
-        stopHitTargets.clear()
-        stopGroups.clear()
-        markerVehicles.clear()
-        if (iconCache.size > 256) iconCache.clear()
-        val density = context.resources.displayMetrics.density
+    LaunchedEffect(map,styleLoaded,viewport,zoom,displayStops,stops,highlightedIds,routeColor,selectedStopId,stopBearings,darkTheme) {
+        val nativeMap=map ?: return@LaunchedEffect
+        if(!styleLoaded) return@LaunchedEffect
+        val density=context.resources.displayMetrics.density.toDouble()
+        val groups=withContext(Dispatchers.Default) {
+            val candidates=if(focused) stops+displayStops else displayStops
+            val visible=candidates.filter { TransitMapVisibility.stop(it.transportMode,zoom,focused) }
+            traceMapWork("BMenetrend.StopGroups") {
+                StopMapClustering.groups(visible,viewport,zoom,stopBearings,highlightedIds.takeIf { focused })
+            }
+        }
+        val style=nativeMap.style ?: return@LaunchedEffect
+        val source=style.getSourceAs<GeoJsonSource>("station-markers")
+        if(source==null) stationIconKeys.clear()
+        val nextGroups=mutableMapOf<String,List<TransitStop>>()
+        val nextTargets=mutableMapOf<String,StationHitTarget>()
+        val features=mutableListOf<Feature>()
+        val sprites=mutableMapOf<String,StationSprite>()
+        val bearing=Math.toRadians(nativeMap.cameraPosition.bearing)
+        val cosBearing=kotlin.math.cos(bearing);val sinBearing=kotlin.math.sin(bearing)
+        traceMapWork("BMenetrend.MapLayout") {
+            val nodes=groups.map { members ->
+                val first=members.firstOrNull { it.id==selectedStopId } ?: members.firstOrNull { it.id in highlightedIds } ?: members.first()
+                nextGroups[first.id]=members
+                val anchor=members.firstOrNull { it.providerId=="volan" } ?: first
+                val stop=first.copy(position=anchor.position)
+                // Highlighted rings need no JNI projection round trips or collision layout.
+                val point=if(focused) null else nativeMap.projection.toScreenLocation(LatLng(stop.position.lat,stop.position.lon))
+                StopMarkerLayout.Node(stop,point?.x?.toDouble() ?: 0.0,point?.y?.toDouble() ?: 0.0)
+            }
+            val diameter=when { focused -> 16.0;zoom>=StopMapClustering.PLATFORM_ZOOM -> 22.0;zoom>=StopMapClustering.DETAIL_ZOOM -> 12.0;else -> 8.0 }
+            val originals=nodes.associateBy { it.stop.id }
+            StopMarkerLayout.layout(nodes,density,diameter,focused,zoom).forEach { placement ->
+                val stop=placement.stop
+                val members=nextGroups.getValue(stop.id)
+                val selected=members.any { it.id==selectedStopId }
+                val sizeDp=(placement.sizePx/density).toInt()
+                val directions=if(zoom>=StopMapClustering.PLATFORM_ZOOM && sizeDp>=10) members.flatMap { stopBearings[it.id].orEmpty() }
+                    .fold(mutableListOf<Double>()) { angles,value ->
+                        if(angles.none { StopDirections.difference(it,value)<35 }) angles.add(value)
+                        angles
+                    }.takeIf { it.size<=2 }.orEmpty().map { ((kotlin.math.round(it/5)*5).toInt()+360)%360 }.distinct().sorted() else emptyList()
+                val sprite=StationSprite(StopMarkerColors.palette(members),sizeDp,focused,selected,darkTheme,routeColor,directions)
+                sprites[sprite.key]=sprite
+                val original=originals.getValue(stop.id)
+                val dx=placement.x-original.x;val dy=placement.y-original.y
+                // Map-aligned sprites keep arrows correct while rotating. Store offsets in that same basis.
+                val ox=dx*cosBearing-dy*sinBearing;val oy=dx*sinBearing+dy*cosBearing
+                val position=LatLng(stop.position.lat,stop.position.lon)
+                features+=Feature.fromGeometry(Point.fromLngLat(stop.position.lon,stop.position.lat)).apply {
+                    addStringProperty("icon",sprite.key);addBooleanProperty("selected",selected)
+                    val offset=com.google.gson.JsonArray().apply { add(ox/density);add(oy/density) }
+                    addProperty("offset",offset)
+                }
+                nextTargets[stop.id]=StationHitTarget(position,(placement.sizePx/2).toFloat(),ox.toFloat(),oy.toFloat())
+            }
+        }
+        val cachedIcons=stationIconKeys.toSet()
+        val pending=mutableListOf<Pair<String,Bitmap>>()
+        try {
+            val json=withContext(Dispatchers.Default) {
+                sprites.forEach { (key,sprite) ->
+                    if(key !in cachedIcons) pending.add(key to sprite.render())
+                }
+                FeatureCollection.fromFeatures(features).toJson()
+            }
+            traceMapWork("BMenetrend.MapUpload") {
+                pending.forEach { (key,bitmap) -> style.addImage(key,bitmap);stationIconKeys.add(key) }
+                if(source!=null) source.setGeoJson(json) else {
+                    style.addSource(GeoJsonSource("station-markers",json))
+                    fun layer(id: String,selected: Boolean)=SymbolLayer(id,"station-markers").withProperties(
+                        PropertyFactory.iconImage(Expression.get("icon")),PropertyFactory.iconOffset(Expression.get("offset")),
+                        PropertyFactory.iconAllowOverlap(true),PropertyFactory.iconIgnorePlacement(true),
+                        PropertyFactory.iconRotationAlignment("map"),PropertyFactory.iconPitchAlignment("viewport"),
+                        PropertyFactory.symbolZOrder("viewport-y")
+                    ).withFilter(Expression.eq(Expression.get("selected"),Expression.literal(selected)))
+                    val ordinary=layer("station-symbols",false)
+                    if(style.getLayer(MapLibreConstants.LAYER_ID_ANNOTATIONS)!=null) style.addLayerBelow(ordinary,MapLibreConstants.LAYER_ID_ANNOTATIONS) else style.addLayer(ordinary)
+                    style.addLayerAbove(layer("station-selected",true),"station-symbols")
+                }
+                stopGroups.clear();stopGroups.putAll(nextGroups)
+                stopHitTargets.clear();stopHitTargets.putAll(nextTargets)
+                // Sizes/angles are quantized, and unused textures have a bounded lifetime.
+                if(stationIconKeys.size>256) {
+                    val expired=stationIconKeys.filter { it !in sprites }.take(stationIconKeys.size-256)
+                    expired.forEach { style.removeImage(it);stationIconKeys.remove(it) }
+                }
+            }
+        } finally { pending.forEach { it.second.recycle() } }
+    }
+    LaunchedEffect(map,styleLoaded,viewport,zoom,vehicles,lineFocus?.routeId,lineFocus?.providerId,lineFocus?.number,lineFocus?.mode,
+        selectedVehicle?.id,selectedStopId,selectedPlace,userLocation,network?.routes) {
+        val nativeMap=map ?: return@LaunchedEffect
+        if(!styleLoaded) return@LaunchedEffect
+        traceMapWork("BMenetrend.MapVehicles") {
+            val activeVehicles=mutableSetOf<String>()
+            markerVehicles.clear()
+            if(iconCache.size>256) iconCache.clear()
+            val density=context.resources.displayMetrics.density
         fun dotIcon(provider: String, selected: Boolean = false, location: Boolean = false, mode: String? = null, sizeOverride: Int? = null): Icon {
             val sizeDp = if (location) 18 else if (selected) { if (zoom >= 14) 32 else if (zoom >= 12.5) 28 else 16 } else if (zoom >= 14) 22 else if (zoom >= 12.5) 16 else 6
             val key = "dot-$provider-$mode-$sizeDp-$selected-$location-$sizeOverride"
@@ -427,61 +529,6 @@ fun NativeTransitMap(
                 IconFactory.getInstance(context).fromBitmap(bitmap)
             }
         }
-        val detailFeatures = mutableListOf<Feature>()
-        if (focused || zoom >= 9.0) {
-            val groups = StopMapClustering.groups(displayStops.filter { TransitMapVisibility.stop(it.transportMode, zoom, focused) }, viewport, zoom)
-            val grouped = zoom < StopMapClustering.PLATFORM_ZOOM
-            val representatives = groups.map { members ->
-                val first = members.firstOrNull { it.id == selectedStopId } ?: members.first()
-                stopGroups[first.id] = members
-                first.copy(position = GeoPoint(members.map { it.position.lat }.average(), members.map { it.position.lon }.average()))
-            }
-            val nodes = representatives.map { stop ->
-                val point = nativeMap.projection.toScreenLocation(LatLng(stop.position.lat, stop.position.lon))
-                StopMarkerLayout.Node(stop, point.x.toDouble(), point.y.toDouble())
-            }
-            val diameter = when {
-                !grouped -> if (focused) 24.0 else 22.0
-                focused -> 16.0
-                zoom >= StopMapClustering.DETAIL_ZOOM -> 12.0
-                else -> 8.0
-            }
-            StopMarkerLayout.layout(nodes, density.toDouble(), diameter).forEach { placement ->
-                val stop = placement.stop
-                val position = nativeMap.projection.fromScreenLocation(PointF(placement.x.toFloat(), placement.y.toFloat()))
-                val members = stopGroups[stop.id].orEmpty()
-                val selected = members.any { it.id == selectedStopId }
-                val colors = members.map { StopMarkerLayout.color(it.providerId, it.transportMode) }.distinct()
-                val dotColor = colors.singleOrNull() ?: StopMarkerLayout.color("shared", null)
-                detailFeatures += Feature.fromGeometry(Point.fromLngLat(position.longitude, position.latitude)).apply {
-                    addStringProperty("stopId", stop.id)
-                    addStringProperty("color", "#%06X".format(dotColor and 0xFFFFFF))
-                    addNumberProperty("radius", placement.sizePx / density / 2)
-                    addNumberProperty("inner", if (selected) 0 else placement.sizePx / density / 5)
-                }
-                stopHitTargets[stop.id] = position to (placement.sizePx / 2).toFloat()
-            }
-        }
-        val style = nativeMap.style ?: return@LaunchedEffect
-        val details = FeatureCollection.fromFeatures(detailFeatures)
-        val stopSource = style.getSourceAs<GeoJsonSource>("detail-stops")
-        if (stopSource != null) stopSource.setGeoJson(details) else {
-            style.addSource(GeoJsonSource("detail-stops", details))
-            fun addStopLayer(layer: Layer) {
-                if (style.getLayer(MapLibreConstants.LAYER_ID_ANNOTATIONS) != null)
-                    style.addLayerBelow(layer, MapLibreConstants.LAYER_ID_ANNOTATIONS) else style.addLayer(layer)
-            }
-            addStopLayer(CircleLayer("detail-stop-halo", "detail-stops").withProperties(
-                PropertyFactory.circleRadius(Expression.sum(Expression.get("radius"), Expression.literal(if (focused) 2.5 else 1.0))),
-                PropertyFactory.circleColor(if (darkTheme) "#111D2C" else "#FFFFFF")))
-            addStopLayer(CircleLayer("detail-stop-ring", "detail-stops").withProperties(
-                PropertyFactory.circleRadius(Expression.get("radius")), PropertyFactory.circleColor(Expression.get("color")),
-                PropertyFactory.circleStrokeColor("#FFFFFF"), PropertyFactory.circleStrokeWidth(1.5f)))
-            addStopLayer(CircleLayer("detail-stop-center", "detail-stops").withProperties(
-                PropertyFactory.circleRadius(Expression.get("inner")), PropertyFactory.circleColor("#FFFFFF")))
-        }
-        style.getLayerAs<CircleLayer>("detail-stop-halo")?.setProperties(
-            PropertyFactory.circleRadius(Expression.sum(Expression.get("radius"), Expression.literal(if (focused) 2.5 else 1.0))))
         val visibleVehicles = vehicles.filter { vehicle ->
             (lineFocus?.includes(vehicle) ?: true) && TransitMapVisibility.vehicle(vehicle.transportMode, zoom, focused) && viewport?.let { vehicle.position.lat in it.south..it.north && vehicle.position.lon in it.west..it.east } == true
         }
@@ -494,10 +541,10 @@ fun NativeTransitMap(
                     vehicle.speedKmh?.let { context.getString(R.string.emma_speed, it.toInt()) }, if (vehicle.routeId == null) context.getString(R.string.engine_no_vehicle_route) else null).joinToString("\n"))
                 .icon(vehicleIcon(vehicle))
             val marker = vehicleMarkers.getOrPut(vehicle.id) { nativeMap.addMarker(options) }
-            marker.position = options.position
-            marker.icon = options.icon
-            marker.title = options.title
-            marker.snippet = options.snippet
+            if(marker.position!=options.position) marker.position=options.position
+            if(marker.icon!=options.icon) marker.icon=options.icon
+            if(marker.title!=options.title) marker.title=options.title
+            if(marker.snippet!=options.snippet) marker.snippet=options.snippet
             activeVehicles += vehicle.id
             markerVehicles[marker.id] = vehicle.id
         }
@@ -507,7 +554,7 @@ fun NativeTransitMap(
         } else {
             val position = LatLng(userLocation.lat, userLocation.lon)
             if (locationMarker == null) locationMarker = nativeMap.addMarker(MarkerOptions().position(position).title(context.getString(R.string.engine_you_are_here)).icon(dotIcon("location", location = true)))
-            else locationMarker?.position = position
+            else if(locationMarker?.position!=position) locationMarker?.position=position
         }
         if (selectedPlace == null) {
             placeMarker?.let(nativeMap::removeMarker); placeMarker = null
@@ -528,6 +575,7 @@ fun NativeTransitMap(
                 placeMarker?.snippet = selectedPlace.address.takeIf { it.isNotBlank() }
                 placeMarker?.icon = pIcon
             }
+        }
         }
     }
 }

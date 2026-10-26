@@ -12,7 +12,12 @@ data class LineMapFocus(
     val paths: List<List<GeoPoint>>,
     val stops: List<TransitStop>,
     val selectedVehicleId: String? = null,
+    val contextStops: List<TransitStop> = emptyList(),
+    val contextPaths: List<List<GeoPoint>> = emptyList(),
 ) {
+    val displayStops: List<TransitStop> = (stops+contextStops).distinctBy { it.id }
+    val displayPaths: List<List<GeoPoint>> = (paths+contextPaths).distinct()
+
     fun includes(vehicle: Vehicle): Boolean = when {
         vehicle.id == selectedVehicleId -> true
         vehicle.providerId != providerId -> false
@@ -69,12 +74,20 @@ data class LineMapFocus(
                     }
                 }
             } else {
-                // Line overview when browsing boarding selection (no vehicle selected)
-                val localStops = route?.directions.orEmpty().flatMap { it.stopIds }.toSet()
-                stops = (patterns.flatMap { it.stops } + boarding?.pattern?.stops.orEmpty()
-                    + allStops.filter { it.id in localStops || (routeId != null && routeId in it.routeIds) }).distinctBy { it.id }
-                paths = (patterns.map { it.geometry } + listOfNotNull(boarding?.pattern?.geometry))
-                    .filter { it.size >= 2 }.distinct()
+                val selectedPattern=boarding?.pattern
+                val selectedLocal=route?.directions?.find { it.id==boarding?.localDirectionId }
+                if(selectedPattern!=null) {
+                    stops=selectedPattern.stops
+                    paths=listOf(selectedPattern.geometry).filter { it.size>=2 }
+                } else if(selectedLocal!=null) {
+                    val byId=allStops.associateBy { it.id }
+                    stops=selectedLocal.stopIds.mapNotNull(byId::get)
+                    paths=emptyList()
+                } else {
+                    val localStops=route?.directions.orEmpty().flatMap { it.stopIds }.toSet()
+                    stops=(patterns.flatMap { it.stops }+allStops.filter { it.id in localStops || routeId!=null && routeId in it.routeIds }).distinctBy { it.id }
+                    paths=patterns.map { it.geometry }.filter { it.size>=2 }.distinct()
+                }
             }
 
             return LineMapFocus(
@@ -85,7 +98,11 @@ data class LineMapFocus(
                 mode = mode,
                 paths = paths,
                 stops = stops,
-                selectedVehicleId = vehicle?.id
+                selectedVehicleId = vehicle?.id,
+                contextPaths = line?.patterns.orEmpty().map { it.geometry }.filter { it.size>=2 && it !in paths }.distinct(),
+                contextStops = (line?.patterns.orEmpty().flatMap { it.stops } + allStops.filter { stop ->
+                    routeId!=null && (routeId in stop.routeIds || route?.directions.orEmpty().any { stop.id in it.stopIds })
+                }).distinctBy { it.id }.filterNot { other -> stops.any { it.id==other.id } },
             )
         }
 

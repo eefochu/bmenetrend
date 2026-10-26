@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -44,12 +45,6 @@ fun VehiclePanel(state: UiState, onClose: () -> Unit, onRefresh: () -> Unit, onS
     val progress = VehicleStopProgress.resolve(vehicle, journey, state.now)
     val provider = when (vehicle.providerId) { "mav" -> stringResource(R.string.rail_provider); "hev" -> stringResource(R.string.emma_provider_hev); "volan" -> "Volán"; "bkk" -> "BKK"; "homm" -> "HOMM"; "kanyargo" -> "KanyarGO"; else -> "ViaBusz" }
     val style = VehicleMarkerStyle.forVehicle(vehicle)
-    val mode = stringResource(when (style) {
-        VehicleMarkerStyle.TROLLEY -> R.string.emma_mode_trolley
-        VehicleMarkerStyle.TRAM -> R.string.emma_mode_tram
-        VehicleMarkerStyle.TRAIN -> when (vehicle.transportMode) { "SUBWAY" -> R.string.emma_mode_metro; "SUBURBAN_RAILWAY" -> R.string.emma_mode_hev; else -> R.string.emma_mode_train }
-        else -> R.string.emma_mode_bus
-    })
     val number = journey?.routeNumber ?: vehicle.displayRouteNumber
     val hev = HevLineStyle.forLine(number, vehicle.transportMode)
     val context = LocalContext.current
@@ -65,19 +60,23 @@ fun VehiclePanel(state: UiState, onClose: () -> Unit, onRefresh: () -> Unit, onS
         if (journey != null && progress?.nextIndex != null) listState.scrollToItem(progress.nextIndex.coerceAtLeast(0))
     }
     Column(modifier) {
-        Row(Modifier.fillMaxWidth().padding(start = 22.dp, end = 8.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onClose) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.ui_back)) }
-            VehicleServiceBadge(vehicle, number, estimated = journey?.routeNumber == null && vehicle.isRouteEstimated)
-            Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                Text(provider, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                Text(mode, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(Modifier.fillMaxWidth().padding(start=8.dp,end=8.dp,top=4.dp),verticalAlignment=Alignment.CenterVertically) {
+            IconButton(onClick=onClose) { Icon(Icons.AutoMirrored.Rounded.ArrowBack,stringResource(R.string.ui_back)) }
+            Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(5.dp)) {
+                Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+                    VehicleServiceBadge(vehicle,number,estimated=journey?.routeNumber==null && vehicle.isRouteEstimated)
+                    Icon(Icons.AutoMirrored.Rounded.ArrowForward,null,Modifier.size(18.dp),tint=MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(destination ?: stringResource(R.string.emma_vehicle_no_direction),Modifier.weight(1f),
+                        style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.SemiBold,maxLines=2,overflow=TextOverflow.Ellipsis)
+                }
+                Text("${serviceTypeLabel(vehicle.providerId,vehicle.transportMode)} · $provider",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                journey?.stops?.firstOrNull()?.name?.let { origin ->
+                    if(origin!=destination) Text(stringResource(R.string.line_from,origin),style=MaterialTheme.typography.bodySmall,
+                        color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=2,overflow=TextOverflow.Ellipsis)
+                }
             }
-            IconButton(onClick = onRefresh, enabled = !state.vehicleJourneyLoading) {
-                Icon(Icons.Rounded.Refresh, stringResource(R.string.emma_vehicle_refresh))
-            }
+            IconButton(onClick=onRefresh,enabled=!state.vehicleJourneyLoading) { Icon(Icons.Rounded.Refresh,stringResource(R.string.emma_vehicle_refresh)) }
         }
-        Text(destination?.let { stringResource(R.string.emma_vehicle_towards, it) } ?: stringResource(R.string.emma_vehicle_no_direction),
-            Modifier.padding(start = 22.dp, end = 22.dp, top = 12.dp), style = MaterialTheme.typography.titleMedium, maxLines = 3, overflow = TextOverflow.Ellipsis)
         progress?.let { position ->
             Text(when {
                 position.at != null -> stringResource(R.string.vehicle_at_stop, position.at.name)
@@ -97,7 +96,6 @@ fun VehiclePanel(state: UiState, onClose: () -> Unit, onRefresh: () -> Unit, onS
             }
             if (journey != null) item(contentType = "route_summary") {
                 Column(Modifier.padding(horizontal = 22.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    hu.app.bmenetrend.data.JourneyDirection.endpoints(journey.stops)?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
                     if (journey.geometry.size >= 2) OutlinedButton(onClick = onShowRoute) { Text(stringResource(R.string.line_show_route)) }
                 }
             }

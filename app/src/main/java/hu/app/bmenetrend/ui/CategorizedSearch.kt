@@ -139,7 +139,7 @@ internal fun CategorizedSearch(
                     ) {
                         LineBadge(route)
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(listOfNotNull(providerName(route.providerId), transportLabel(route.transportMode)).joinToString(" · "), style = MaterialTheme.typography.titleMedium)
+                            Text(listOf(providerName(route.providerId), serviceTypeLabel(route.providerId,route.transportMode)).joinToString(" · "), style = MaterialTheme.typography.titleMedium)
                             Text(
                                 if (route.name == route.number) stringResource(R.string.ui_choose_direction) else route.name,
                                 style = MaterialTheme.typography.bodyMedium,

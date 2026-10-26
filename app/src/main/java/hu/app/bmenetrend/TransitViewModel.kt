@@ -57,7 +57,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private val boardMutex = Mutex()
     private var board: EmmaStopsParser.Board? = null
     private var boardJob: Job? = null
-    private var boardKey: Pair<String?, Int>? = null
+    private var boardKey: StopBoardScope.RequestKey? = null
     private var boardLoading = false
     private var boardFailure = false
     private var stopIndexFailed = false
@@ -117,25 +117,6 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     init {
         checkForUpdates(isAutoCheck = true)
     }
-
-    private var cachedClusterStopId: String? = null
-    private var cachedClusterStopsCount = -1
-    private var cachedClusterResult: List<TransitStop> = emptyList()
-
-    private fun getCluster(stopId: String?, stops: List<TransitStop>): List<TransitStop> {
-        if (stopId == null) return emptyList()
-        if (cachedClusterStopId == stopId && cachedClusterStopsCount == stops.size) {
-            return cachedClusterResult
-        }
-        val result = StopClusters.clusterFor(stopId, stops)
-        cachedClusterStopId = stopId
-        cachedClusterStopsCount = stops.size
-        cachedClusterResult = result
-        return result
-    }
-
-    private fun selectedStops(stopId: String?, stops: List<TransitStop>): List<TransitStop> =
-        getCluster(stopId, stops)
 
     /** Owned by the activity's STARTED lifecycle; all polling stops in the background. */
     suspend fun observe() = coroutineScope {
@@ -337,7 +318,9 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                             availableStops.any { it.id == current.selectedStopId } -> current.selectedStopId
                             else -> network.stops.firstOrNull { it.name.contains("Vasút", ignoreCase = true) }?.id ?: network.stops.firstOrNull()?.id
                         }
-                        current.copy(network = network, selectedStopId = selected, nearestStopId = nearest, loading = false)
+                        current.copy(network = network, selectedStopId = selected,
+                            selectedPlatformIds=current.selectedPlatformIds.takeIf { selected==current.selectedStopId }.orEmpty(),
+                            nearestStopId = nearest, loading = false)
                     }
                 }
                 val refreshed = repository.refresh()
@@ -366,10 +349,10 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         val snapshot = live?.takeIf { Duration.between(it.fetchedAt, now).seconds in 0..45 }
         mutableState.update { current ->
             val selectedId = current.selectedStopId.takeUnless { current.showNearby }
-            val cluster = if (selectedId != null) selectedStops(selectedId, current.stops) else emptyList()
+            val cluster = if(selectedId!=null) current.selectedPlatforms else emptyList()
             val hasEmma = cluster.any { it.id.startsWith("emma:") } || selectedId?.startsWith("emma:") == true
-            val validBoard = board?.takeIf { it.stopId == selectedId && Duration.between(it.fetchedAt, now).seconds in 0..60 }
-            val emmaDepartures = if (hasEmma) EmmaStopsParser.freshDepartures(board, selectedId, now, current.windowMinutes) else emptyList()
+            val validBoard = board?.takeIf { boardKey==current.boardRequestKey && it.stopId == selectedId && Duration.between(it.fetchedAt, now).seconds in 0..60 }
+            val emmaDepartures = if (hasEmma) EmmaStopsParser.freshDepartures(validBoard, selectedId, now, current.windowMinutes) else emptyList()
             val localStops = if (cluster.isNotEmpty()) cluster.filterNot { it.id.startsWith("emma:") }
                 else emptyList()
             val localDepartures = current.network?.let { network ->
@@ -482,7 +465,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     fun returnToNearby() {
         closeVehicle()
         mapSettledJob?.cancel()
-        mutableState.update { it.copy(showNearby = true, boardingSelection = null) }
+        mutableState.update { it.copy(showNearby = true, boardingSelection = null,selectedPlatformIds=emptySet()) }
+        ensureBoardRequest()
         ensureNearbyRequest()
     }
 
@@ -606,7 +590,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 current.copy(emmaStops = updated.values.toList(), stopIndexLoaded = true,
                     stopStatus = if (index.stale) getApplication<Application>().getString(R.string.emma_stops_saved) else null,
                     nearestStopId = nearest,
-                    selectedStopId = if (!manualStop && nearest != null) nearest else current.selectedStopId)
+                    selectedStopId = if (!manualStop && nearest != null) nearest else current.selectedStopId,
+                    selectedPlatformIds=if(!manualStop) emptySet() else current.selectedPlatformIds)
             }
             recalculate()
             ensureBoardRequest()
@@ -630,15 +615,15 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private fun ensureBoardRequest(force: Boolean = false) {
         if (!mapVisible) return
         if (state.value.showNearby) { boardJob?.cancel(); boardKey = null; return }
-        val key = state.value.selectedStopId to state.value.windowMinutes
+        val key = state.value.boardRequestKey
         if (!force && key == boardKey) return
         boardKey = key
         boardJob?.cancel()
         board = null
         boardFailure = false
-        val selectedId = key.first
+        val selectedId = key.stopId
         val emmaStops = if (selectedId != null) {
-            selectedStops(selectedId, state.value.stops).filter { it.id.startsWith("emma:") }
+            state.value.selectedPlatforms.filter { it.id.startsWith("emma:") }
                 .ifEmpty { if (selectedId.startsWith("emma:")) state.value.stops.filter { it.id == selectedId } else emptyList() }
         } else emptyList()
         boardLoading = emmaStops.isNotEmpty()
@@ -650,10 +635,12 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         if (!mapVisible || state.value.showNearby) return
         if (!waitForCurrent && boardMutex.isLocked) return
         boardMutex.withLock {
-            val stopId = state.value.selectedStopId ?: return@withLock
-            val window = state.value.windowMinutes
-            val allStops = state.value.stops
-            val cluster = selectedStops(stopId, allStops)
+            val selection=state.value
+            val requestKey=selection.boardRequestKey
+            val stopId = selection.selectedStopId ?: return@withLock
+            val window = selection.windowMinutes
+            val allStops = selection.stops
+            val cluster = selection.selectedPlatforms
             val emmaStops = EmmaBoardTargets.select(cluster.filter { it.id.startsWith("emma:") })
                 .ifEmpty { if (stopId.startsWith("emma:")) allStops.filter { it.id == stopId } else emptyList() }
             if (emmaStops.isEmpty()) return@withLock
@@ -664,7 +651,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 val results = fetchBoards(emmaStops, window, emptyMap(), true, semaphore).mapNotNull { it.second }
 
 
-                if (state.value.selectedStopId == stopId && state.value.windowMinutes == window) {
+                if (state.value.boardRequestKey==requestKey && !state.value.showNearby) {
                     if (results.isEmpty()) {
                         boardFailure = true
                     } else {
@@ -682,9 +669,9 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 }
             } catch (cancelled: CancellationException) { throw cancelled
             } catch (_: Exception) {
-                if (state.value.selectedStopId == stopId && state.value.windowMinutes == window) boardFailure = true
+                if (state.value.boardRequestKey==requestKey && !state.value.showNearby) boardFailure = true
             } finally {
-                if (state.value.selectedStopId == stopId && state.value.windowMinutes == window) boardLoading = false
+                if (state.value.boardRequestKey==requestKey && !state.value.showNearby) boardLoading = false
                 recalculate()
             }
         }
@@ -781,7 +768,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         manualStop = true
         mapSettledJob?.cancel()
         lastSettledCenter = place.position
-        mutableState.update { it.copy(showNearby = true, selectedPlace = place, selectedStopId = null, boardingSelection = null, placeCameraRequest = it.placeCameraRequest + 1) }
+        mutableState.update { it.copy(showNearby = true, selectedPlace = place, selectedStopId = null, selectedPlatformIds=emptySet(), boardingSelection = null, placeCameraRequest = it.placeCameraRequest + 1) }
         recalculate()
         ensureBoardRequest()
         ensureNearbyRequest(force = true)
@@ -795,11 +782,17 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         ensureNearbyRequest()
     }
 
-    fun selectStop(id: String) {
+    fun selectStop(id: String) = selectStopGroup(listOf(id))
+
+    /** Exact map marker members only: never expand a platform by name, parent or proximity. */
+    fun selectStopGroup(ids: List<String>) {
+        if(ids.isEmpty()) return
         closeVehicle()
         manualStop = true
-        val selectedId = state.value.network?.let { SharedStops.resolve(it, id) } ?: SharedStops.canonicalId(id)
-        mutableState.update { it.copy(showNearby = false, selectedStopId = selectedId, selectedPlace = null, cameraRequest = it.cameraRequest + 1, boardingSelection = null) }
+        val network=state.value.network
+        val selectedIds=ids.map { id -> network?.let { SharedStops.resolve(it,id) } ?: SharedStops.canonicalId(id) }.toSet()
+        mutableState.update { it.copy(showNearby=false,selectedStopId=selectedIds.first(),selectedPlatformIds=selectedIds,
+            selectedPlace=null,cameraRequest=it.cameraRequest+1,boardingSelection=null) }
         recalculate()
         ensureBoardRequest()
     }
@@ -814,7 +807,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         manualStop = false
         mapSettledJob?.cancel()
         lastSettledCenter = state.value.userLocation
-        state.value.nearestStopId?.let { id -> mutableState.update { it.copy(showNearby = false, selectedStopId = id, selectedPlace = null, cameraRequest = it.cameraRequest + 1, boardingSelection = null) } }
+        state.value.nearestStopId?.let { id -> mutableState.update { it.copy(showNearby = false, selectedStopId = id, selectedPlatformIds=emptySet(), selectedPlace = null, cameraRequest = it.cameraRequest + 1, boardingSelection = null) } }
         recalculate()
         ensureBoardRequest()
         ensureNearbyRequest()
@@ -825,6 +818,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             val nearest = nearestStop(current.stops, point)
             current.copy(userLocation = point, nearestStopId = nearest,
                 selectedStopId = if (!manualStop && nearest != null) nearest else current.selectedStopId,
+                selectedPlatformIds=if(!manualStop) emptySet() else current.selectedPlatformIds,
                 locationMessage = null)
         }
         recalculate()

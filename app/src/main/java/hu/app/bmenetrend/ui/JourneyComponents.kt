@@ -5,6 +5,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.DirectionsWalk
@@ -218,8 +219,13 @@ private fun LegDescription(leg: PlanLeg) {
             Text(stringResource(R.string.planner_walk_detail, minutes(Duration.between(leg.start, leg.end).seconds), leg.distance.roundToInt()),
                 style = MaterialTheme.typography.titleSmall)
         } else {
-            leg.route?.let { ServiceBadge(it.number, it.providerId, it.transportMode, it.color, leg.trainNumber) }
-            Text(leg.headsign ?: leg.to.name, style = MaterialTheme.typography.titleMedium)
+            Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+                leg.route?.let { ServiceBadge(it.number,it.providerId,it.transportMode,it.color,leg.trainNumber) }
+                Icon(Icons.AutoMirrored.Rounded.ArrowForward,null,Modifier.size(16.dp),tint=MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(leg.headsign ?: leg.to.name,Modifier.weight(1f),style=MaterialTheme.typography.titleMedium)
+            }
+            leg.route?.let { Text(serviceTypeLabel(it.providerId,it.transportMode),style=MaterialTheme.typography.bodySmall,
+                color=MaterialTheme.colorScheme.onSurfaceVariant) }
             Text("${stringResource(R.string.ui_minutes_short, minutes(Duration.between(leg.start, leg.end).seconds))} · ${stringResource(if (leg.realtime) R.string.ui_live_arrival else R.string.ui_scheduled)}",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (leg.stayOnBoard) Text(stringResource(R.string.planner_stay), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)

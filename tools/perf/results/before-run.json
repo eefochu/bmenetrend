@@ -1,0 +1,11 @@
+{
+  "label": "before",
+  "line": "762",
+  "iterations": 5,
+  "seconds": 79.64133954100544,
+  "serial": "emulator-5560",
+  "variant": "release",
+  "r8": true,
+  "compilation": "cmd package compile -f -m speed",
+  "device_kind": "emulator"
+}
