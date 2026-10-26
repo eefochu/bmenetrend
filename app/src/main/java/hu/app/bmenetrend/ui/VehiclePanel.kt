@@ -50,7 +50,7 @@ fun VehiclePanel(state: UiState, onClose: () -> Unit, onRefresh: () -> Unit, onS
         VehicleMarkerStyle.TRAIN -> when (vehicle.transportMode) { "SUBWAY" -> R.string.emma_mode_metro; "SUBURBAN_RAILWAY" -> R.string.emma_mode_hev; else -> R.string.emma_mode_train }
         else -> R.string.emma_mode_bus
     })
-    val number = journey?.routeNumber ?: vehicle.routeNumber
+    val number = journey?.routeNumber ?: vehicle.displayRouteNumber
     val hev = HevLineStyle.forLine(number, vehicle.transportMode)
     val context = LocalContext.current
     val height = with(LocalDensity.current) { 30.dp.roundToPx() }
@@ -67,7 +67,7 @@ fun VehiclePanel(state: UiState, onClose: () -> Unit, onRefresh: () -> Unit, onS
     Column(modifier) {
         Row(Modifier.fillMaxWidth().padding(start = 22.dp, end = 8.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onClose) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.ui_back)) }
-            ServiceBadge(number ?: "?", vehicle.providerId, vehicle.transportMode, vehicle.markerColor, vehicle.trainNumber)
+            VehicleServiceBadge(vehicle, number, estimated = journey?.routeNumber == null && vehicle.isRouteEstimated)
             Column(Modifier.weight(1f).padding(start = 12.dp)) {
                 Text(provider, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Text(mode, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)

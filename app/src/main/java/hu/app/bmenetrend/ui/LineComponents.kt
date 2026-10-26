@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import hu.app.bmenetrend.R
 import hu.app.bmenetrend.data.TransitRoute
 import hu.app.bmenetrend.data.TransitStop
+import hu.app.bmenetrend.data.Vehicle
 import hu.app.bmenetrend.map.VehicleMarkerStyle
 import hu.app.bmenetrend.map.MetroLineStyle
 
@@ -190,5 +191,16 @@ fun LineVehicleBetween(color: Color, icon: Int, bitmap: ImageBitmap? = null) {
         }
         Text(stringResource(R.string.line_on_the_way), Modifier.padding(start = 12.dp), style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/** Estimate status is a separate text sibling; the normal operator badge keeps its colour. */
+@Composable
+fun VehicleServiceBadge(vehicle: Vehicle, number: String? = vehicle.displayRouteNumber, estimated: Boolean = vehicle.isRouteEstimated) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        ServiceBadge(number ?: "?", vehicle.providerId, vehicle.transportMode, vehicle.markerColor, vehicle.trainNumber)
+        if (estimated) Text(stringResource(R.string.vehicle_route_estimated),
+            style = MaterialTheme.typography.labelMedium, maxLines = 1,
+            color = if (MaterialTheme.colorScheme.surface.luminance() < .5f) Color(0xFFFFD54F) else Color(0xFF795600))
     }
 }

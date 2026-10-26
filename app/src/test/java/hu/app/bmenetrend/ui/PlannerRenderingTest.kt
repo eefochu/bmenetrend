@@ -132,4 +132,20 @@ class PlannerRenderingTest {
         org.junit.Assert.assertTrue(app.getSystemService(android.content.ClipboardManager::class.java).primaryClip!!
             .getItemAt(0).text.toString().contains("test report"))
     }
+    @Test fun estimatedNumberHasASeparateLabelAndConfirmedNumbersDoNot() {
+        val vehicle = Vehicle("local",GeoPoint(47.47,18.82),Instant.now(),
+            routeEstimate=VehicleRouteEstimate("11","1P"))
+        val shown=mutableStateOf(vehicle)
+        compose.setContent { ViaBuszTheme { VehicleServiceBadge(shown.value) } }
+        val app=ApplicationProvider.getApplicationContext<android.app.Application>()
+        compose.onNodeWithText("1P").assertIsDisplayed()
+        val label=compose.onNodeWithText(app.getString(R.string.vehicle_route_estimated))
+        label.assertIsDisplayed()
+        org.junit.Assert.assertTrue(label.fetchSemanticsNode().boundsInRoot.left >=
+            compose.onNodeWithText("1P").fetchSemanticsNode().boundsInRoot.right)
+        compose.runOnIdle { shown.value=vehicle.copy(routeNumber="2") }
+        compose.onNodeWithText("2").assertIsDisplayed()
+        compose.onAllNodesWithText(app.getString(R.string.vehicle_route_estimated)).assertCountEquals(0)
+    }
+
 }

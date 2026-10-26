@@ -114,4 +114,5 @@
     <string name="ota_retry">Retry</string>
     <string name="ota_dialog_update_title">New update available!</string>
     <string name="ota_dialog_update_now">Update now</string>
+    <string name="vehicle_route_estimated">Estimated</string>
 </resources>

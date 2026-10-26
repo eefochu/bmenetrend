@@ -12,7 +12,7 @@ A menetrendeket a hivatalos PDF-ek vizuálisan ellenőrzött, reprodukálható i
 
 Részletek és források: [ViaBusz](VIABUSZ.md), [KanyarGO](KANYARGO.md), [HOMM](HOMM.md), [közös megállók](KOZOS-MEGALLOK.md).
 
-A KanyarGO hat szerződéses iskolai szakaszát a felület megjelöli. A friss GPS-pozíciók élők, a járatszámos indulások a helyi ViaBusz/KanyarGO/HOMM-hálózaton menetrendiek. Nincs kitalált GPS→járat összerendelés vagy HOMM-járműfeed.
+A KanyarGO hat szerződéses iskolai szakaszát a felület megjelöli. A friss GPS-pozíciók élők, a járatszámos indulások a helyi ViaBusz/KanyarGO/HOMM-hálózaton menetrendiek. Megerősített GPS→járat összerendelés és HOMM-járműfeed nincs. A ViaBusz járműveinél külön, sárga `Becsült` jelöléssel nyomvonal- és mozgásalapú járatszámbecslés jelenhet meg; ez nem élő indulási előrejelzés. Részletek: [ViaBusz](VIABUSZ.md#becsült-élő-járatszám).
 
 Az alábbi technikai rész a ViaBusz eredeti HTML- és élő forrásának feldolgozását dokumentálja. A HTML menettáblája összehasonlítási referencia maradt; a 0.3-as kliens **a PDF-menetrendeket használja** a tanítási és tanszüneti különbség miatt.
 
@@ -50,7 +50,7 @@ Válasz: `#` választja el a járműveket, `;` a mezőket:
 
 A honlap 13 másodpercenként frissít. Az alkalmazás 15 másodpercenként, kizárólag aktív képernyőn frissítsen. A parser 180 másodpercnél régebbi, több mint 60 másodperccel jövőbeli, illetve Biatorbágy térségén kívüli járműpozíciót nem közöl élőként.
 
-**A feed nem tartalmaz járat-/menetazonosítót.** Rendszám vagy térképi pozíció alapján nem szabad 1/1P/2/3/4 jelölést kitalálni. A natív térkép a publikus helyi feed friss járműveit rendszámmal jelzi. Üres stopIds és `0'` nem élő érkezés. Ha később megjelennek érvényes pozitív stopIds/ETA párok, azok járműhöz köthető megállói jelzésként olvashatók, továbbra is járatszám nélkül.
+**A feed nem tartalmaz járat-/menetazonosítót.** Rendszámból vagy egyetlen térképi pozícióból nem állapítunk meg járatszámot. Több GPS-fix és a hivatalos nyomvonal/menetrend alapján külön, becsült járatszám adható, minden megjelenítésénél `Becsült` címkével. A natív térkép a publikus helyi feed friss járműveit rendszámmal jelzi. Üres stopIds és `0'` nem élő érkezés. Ha később megjelennek érvényes pozitív stopIds/ETA párok, azok járműhöz köthető megállói jelzésként olvashatók, továbbra is járatszám nélkül.
 
 ## Összesített megállói visszaszámlálás
 
