@@ -201,11 +201,18 @@ class MainActivity : ComponentActivity() {
                             model.selectStopGroup(ids)
                         }
                     }
-                    val stopBearings=remember(state.network,state.emmaStops,state.lineDetails,state.vehicleJourney) {
-                        val routes=state.routes; val allStops=state.stops
-                        hu.app.bmenetrend.map.traceMapWork("BMenetrend.StopDirections") {
-                            hu.app.bmenetrend.map.StopDirections.collect(routes,allStops,state.lineDetails.values,state.vehicleJourney)
-                        }
+                    val stopBearings by produceState(
+                        initialValue = emptyMap<String, List<Double>>(),
+                        state.network,
+                        state.emmaStops,
+                        state.emmaRoutes,
+                        state.lineDetails,
+                        state.vehicleJourney
+                    ) {
+                        val routes = state.routes; val allStops = state.stops
+                        val details = state.lineDetails.values
+                        val journey = state.vehicleJourney
+                        value = hu.app.bmenetrend.map.StopDirections.collectAsync(routes, allStops, details, journey)
                     }
                     NativeTransitMap(state.network, state.vehicles, state.selectedStopId.takeUnless { state.showNearby || browsingRoute!=null || state.selectedVehicle!=null }, state.userLocation, modifier, onMapStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, vehicle, routeGeometry = geometry, routeStops = stops, routeColor = color.toArgb(), fitRouteRequest = state.fitRouteRequest, selectedPlace = state.selectedPlace, placeCameraRequest = state.placeCameraRequest, lineFocus = focus, browsingNearby = state.showNearby, locationCameraRequest = state.locationCameraRequest, onViewportChanged = model::updateMapArea,stopBearings=stopBearings,onSharedStopSelected=onMapSharedStop,onMapClick=onDismissHighlight, offline = state.offlineMode)
                 }

@@ -50,7 +50,7 @@ A közös átszállópontok (pl. *Biatorbágy vasútállomás*) automatikusan eg
 git clone https://github.com/eefochu/bmenetrend.git
 cd bmenetrend
 
-# Optimalizált debug csatornás APK fordítása (R8 + erőforrás-zsugorítás)
+# Optimális debug csatornás APK fordítása (R8 + erőforrás-zsugorítás)
 ./gradlew :app:assembleDebug
 
 # Release APK fordítása
@@ -62,11 +62,14 @@ cd bmenetrend
 # Egységtesztek futtatása
 ./gradlew :app:testDebugUnitTest
 
-# Telepítés csatlakoztatott eszközre
+# Telepítés csatlakoztatott eszközre (univerzális)
 adb install -r app/build/outputs/apk/debug/app-debug.apk
+
+# Vagy eszköz-specifikus ABI APK (kisebb méret, pl. arm64-v8a eszköz vagy x86_64 emulátor):
+# adb install -r app/build/outputs/apk/debug/app-arm64-v8a-debug.apk
 ```
 
-A `debug` és a `release` ugyanazt az optimalizálást használja; a terjeszthető `debug` APK sem debuggolható. A `development` változat debuggolható, külön `hu.app.bmenetrend.dev` csomagnévvel települ. A nagy univerzális APK mind a négy CPU-architektúrához tartalmaz natív MapLibre-könyvtárakat.
+A `debug` és a `release` ugyanazt az optimalizálást használja; a terjeszthető `debug` APK sem debuggolható. A `development` változat debuggolható, külön `hu.app.bmenetrend.dev` csomagnévvel települ. Az alkalmazás ABI-bontást (ABI splits) használ: a rendszer architektúra-specifikus APK-kat (`arm64-v8a`, `armeabi-v7a`, `x86`, `x86_64`) készít, valamint egy minden architektúrát tartalmazó univerzális változatot (`app-universal-*.apk`). Az univerzális APK automatikusan átmásolódik az `app-debug.apk` és `app-release.apk` névre is a meglévő OTA frissítések és külső eszközök teljes kompatibilitásáért.
 
 ### GitHub Actions CI
 

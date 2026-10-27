@@ -47,14 +47,17 @@ data class OfflinePackMetadata(
     }
 }
 
-enum class OfflinePackPhase { MISSING, DOWNLOADING, IMPORTING, READY, FAILED }
+enum class OfflinePackPhase { INITIALIZING, MISSING, DOWNLOADING, IMPORTING, READY, FAILED }
 @Immutable
 data class OfflinePackState(
-    val metadata: OfflinePackMetadata? = null, val phase: OfflinePackPhase = OfflinePackPhase.MISSING,
+    val metadata: OfflinePackMetadata? = null, val phase: OfflinePackPhase = OfflinePackPhase.INITIALIZING,
     val bytes: Long = 0, val total: Long = 0, val source: String = "", val error: String? = null,
     val wifiOnly: Boolean = true, val automaticUpdates: Boolean = false,
     val importProgress: OfflineImportProgress? = null,
-) { val busy get() = phase == OfflinePackPhase.DOWNLOADING || phase == OfflinePackPhase.IMPORTING }
+) {
+    val busy get() = phase == OfflinePackPhase.DOWNLOADING || phase == OfflinePackPhase.IMPORTING
+    val loaded get() = phase != OfflinePackPhase.INITIALIZING
+}
 
 class OfflineDateUnavailable : IllegalArgumentException("Date outside downloaded timetable")
 class OfflineEndpointUnavailable : IllegalArgumentException("Select a downloaded boarding stop")

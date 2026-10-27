@@ -13,6 +13,7 @@ One warm-up followed by five cached line 762 search → open/highlight → two m
 ```sh
 JAVA_HOME=/path/to/jdk21 ./gradlew :app:assembleRelease
 adb -s emulator-5560 install -r app/build/outputs/apk/release/app-release.apk
+# Note: For arm64 devices/emulators, app-arm64-v8a-release.apk is also produced alongside universal app-release.apk
 adb -s emulator-5560 shell cmd package compile -f -m speed hu.app.bmenetrend
 adb -s emulator-5560 shell am start -n hu.app.bmenetrend/.MainActivity
 python3 tools/perf/highlight_profile.py --serial emulator-5560 --label after --out /tmp/bmenetrend-perf-after
@@ -55,7 +56,7 @@ Raw diagnostic traces remain in `/tmp/bmenetrend-perf-before`, `/tmp/bmenetrend-
 
 ## Validation
 
-285 unit/Robolectric/Compose UI tests pass, including the spatial-grid boundary and city-strip cases, close-zoom nudge bounds/density scaling, unchanged highlighted sizing, and complete marker texture colours/direction bounds. Android lint reports zero errors (87 warnings); `:app:lintDebug`, `:app:assembleDebug`, and `:app:assembleRelease` pass. Both distributed variants use R8 and resource shrinking (about 45 MiB each).
+285 unit/Robolectric/Compose UI tests pass, including the spatial-grid boundary and city-strip cases, close-zoom nudge bounds/density scaling, unchanged highlighted sizing, and complete marker texture colours/direction bounds. Android lint reports zero errors (87 warnings); `:app:lintDebug`, `:app:assembleDebug`, and `:app:assembleRelease` pass. Both distributed variants use R8 and resource shrinking. ABI splits produce per-architecture APKs alongside universal `app-debug.apk` and `app-release.apk` aliases.
 
 The release emulator completed all five highlighted-line cycles without an app crash. Screenshots confirmed both-direction highlighted stop rings, native vehicle overlap, operator split colours and close-up platform rings. A Ritsmann Iskola selection retained its scoped ViaBusz/KanyarGO departure card; tapping a nearby marker opened the Vendel tér shared-platform board directly without a selection menu. No physical-device measurement was made.
 

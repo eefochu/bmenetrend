@@ -1,6 +1,9 @@
 package hu.app.bmenetrend.map
 
 import hu.app.bmenetrend.data.*
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlin.math.*
 
 /** Travel away from a platform, from ordered stops/shape geometry; never guess from its name. */
@@ -101,6 +104,18 @@ object StopDirections {
             val departures=departureSamples[id].orEmpty()
             val angles=departures.ifEmpty { arrivalSamples[id].orEmpty() }
             generalDirections(angles)
+        }
+    }
+
+    suspend fun collectAsync(
+        routes: List<TransitRoute>,
+        stops: List<TransitStop>,
+        details: Collection<LineDetails>,
+        journey: VehicleJourney? = null,
+        dispatcher: CoroutineDispatcher = Dispatchers.Default
+    ): Map<String, List<Double>> = withContext(dispatcher) {
+        traceMapWork("BMenetrend.StopDirections") {
+            collect(routes, stops, details, journey)
         }
     }
 

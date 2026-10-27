@@ -76,51 +76,65 @@ class OfflineTripPlanner(private val store: OfflinePackStore) {
             }
             var frontier = walks(start.map { Label(it, ready, emptyList()) })
             val journeys = mutableListOf<TripItinerary>()
+            val serviceDays = (-2L..1L).map { offset ->
+                val day = date.plusDays(offset)
+                val base = day.atTime(12, 0).atZone(TripPlanner.zone).toInstant().minusSeconds(43_200)
+                day to base
+            }
             repeat(5) { round ->
                 val next = mutableMapOf<LabelKey, MutableList<Label>>()
                 for (label in frontier) {
                     context.ensureActive()
-                    db.rawQuery("""SELECT s.trip,s.seq,s.departure,t.route,t.headsign,t.restricted,d.day
-                        FROM stop_times s JOIN trips t ON t.id=s.trip JOIN service_days d ON d.service=t.service
-                        WHERE s.stop=? AND s.pickup!=1 AND d.day BETWEEN ? AND ?""",
-                        arrayOf(label.stop.toString(), date.minusDays(2).toEpochDay().toString(), date.plusDays(1).toEpochDay().toString())).use { boarding ->
-                        while (boarding.moveToNext()) {
-                            context.ensureActive()
-                            val trip = boarding.getLong(0); val seq = boarding.getInt(1); val routeId = boarding.getLong(3)
-                            val serviceDay = LocalDate.ofEpochDay(boarding.getLong(6))
-                            val departure = serviceInstant(serviceDay, boarding.getInt(2))
-                            var allowance = if (round == 0) TripPlanner.BOARD_SECONDS else TripPlanner.TRANSFER_SECONDS
-                            var forbidden = false
-                            if (label.trip != 0L) {
-                                db.rawQuery("""SELECT seconds,forbidden FROM transfers WHERE from_stop=? AND to_stop=?
-                                    AND (from_trip=0 OR from_trip=?) AND (to_trip=0 OR to_trip=?)
-                                    AND (from_route=0 OR from_route=?) AND (to_route=0 OR to_route=?)""",
-                                    arrayOf(label.alighted.toString(), label.stop.toString(), label.trip.toString(), trip.toString(), label.route.toString(), routeId.toString())).use { rules ->
-                                    while (rules.moveToNext()) {
-                                        forbidden = forbidden || rules.getInt(1) != 0
-                                        // GTFS min_transfer_time is total since alighting, including walking.
-                                        val remaining = rules.getLong(0) - Duration.between(label.arrival, label.time).seconds
-                                        allowance = maxOf(allowance, remaining)
+                    val minDeparture = if (round == 0) label.time.plusSeconds(TripPlanner.BOARD_SECONDS) else label.time
+                    for ((serviceDay, serviceBase) in serviceDays) {
+                        context.ensureActive()
+                        val daySecMin = Duration.between(serviceBase, minDeparture).seconds
+                        val daySecMax = Duration.between(serviceBase, horizon).seconds
+                        val secMin = maxOf(0L, daySecMin)
+                        val secMax = daySecMax
+                        if (secMin > secMax) continue
+
+                        db.rawQuery("""SELECT s.trip,s.seq,s.departure,t.route,t.headsign,t.restricted,d.day
+                            FROM stop_times s JOIN trips t ON t.id=s.trip JOIN service_days d ON d.service=t.service
+                            WHERE s.stop=? AND s.pickup!=1 AND d.day=? AND s.departure BETWEEN ? AND ?""",
+                            arrayOf(label.stop.toString(), serviceDay.toEpochDay().toString(), secMin.toString(), secMax.toString())).use { boarding ->
+                            while (boarding.moveToNext()) {
+                                context.ensureActive()
+                                val trip = boarding.getLong(0); val seq = boarding.getInt(1); val routeId = boarding.getLong(3)
+                                val departure = serviceInstant(serviceDay, boarding.getInt(2))
+                                var allowance = if (round == 0) TripPlanner.BOARD_SECONDS else TripPlanner.TRANSFER_SECONDS
+                                var forbidden = false
+                                if (label.trip != 0L) {
+                                    db.rawQuery("""SELECT seconds,forbidden FROM transfers WHERE from_stop=? AND to_stop=?
+                                        AND (from_trip=0 OR from_trip=?) AND (to_trip=0 OR to_trip=?)
+                                        AND (from_route=0 OR from_route=?) AND (to_route=0 OR to_route=?)""",
+                                        arrayOf(label.alighted.toString(), label.stop.toString(), label.trip.toString(), trip.toString(), label.route.toString(), routeId.toString())).use { rules ->
+                                        while (rules.moveToNext()) {
+                                            forbidden = forbidden || rules.getInt(1) != 0
+                                            // GTFS min_transfer_time is total since alighting, including walking.
+                                            val remaining = rules.getLong(0) - Duration.between(label.arrival, label.time).seconds
+                                            allowance = maxOf(allowance, remaining)
+                                        }
                                     }
                                 }
-                            }
-                            if (forbidden || departure < label.time.plusSeconds(allowance) || departure > horizon) continue
-                            val rideRoute = route(routeId)
-                            val intermediate = mutableListOf<PlanPoint>()
-                            db.rawQuery("SELECT stop,arrival,dropoff FROM stop_times WHERE trip=? AND seq>? ORDER BY seq", arrayOf(trip.toString(), seq.toString())).use { times ->
-                                while (times.moveToNext()) {
-                                    val to = times.getLong(0)
-                                    val arrival = serviceInstant(serviceDay, times.getInt(1))
-                                    val candidateKey = LabelKey(to, if (specificTransfers) trip else 0L, if (specificTransfers) to else 0L, label.legs.any { it.restrictedService } || boarding.getInt(5) != 0)
-                                    if (times.getInt(2) != 1 && arrival >= departure && arrival <= horizon && next[candidateKey]?.any { it.time <= arrival && it.walking <= label.walking } != true) {
-                                        val ride = PlanLeg(rideRoute.transportMode ?: "BUS", departure, arrival, 0.0, point(label.stop), point(to), rideRoute, boarding.getString(4), false, false,
-                                            intermediate.toList(), restrictedService = boarding.getInt(5) != 0)
-                                        val updated = Label(to, arrival, label.legs + ride, trip, routeId, to, arrival, label.walking)
-                                        val bucket = next.getOrPut(candidateKey) { mutableListOf() }
-                                        bucket.removeAll { arrival <= it.time && label.walking <= it.walking }
-                                        bucket += updated
+                                if (forbidden || departure < label.time.plusSeconds(allowance) || departure > horizon) continue
+                                val rideRoute = route(routeId)
+                                val intermediate = mutableListOf<PlanPoint>()
+                                db.rawQuery("SELECT stop,arrival,dropoff FROM stop_times WHERE trip=? AND seq>? ORDER BY seq", arrayOf(trip.toString(), seq.toString())).use { times ->
+                                    while (times.moveToNext()) {
+                                        val to = times.getLong(0)
+                                        val arrival = serviceInstant(serviceDay, times.getInt(1))
+                                        val candidateKey = LabelKey(to, if (specificTransfers) trip else 0L, if (specificTransfers) to else 0L, label.legs.any { it.restrictedService } || boarding.getInt(5) != 0)
+                                        if (times.getInt(2) != 1 && arrival >= departure && arrival <= horizon && next[candidateKey]?.any { it.time <= arrival && it.walking <= label.walking } != true) {
+                                            val ride = PlanLeg(rideRoute.transportMode ?: "BUS", departure, arrival, 0.0, point(label.stop), point(to), rideRoute, boarding.getString(4), false, false,
+                                                intermediate.toList(), restrictedService = boarding.getInt(5) != 0)
+                                            val updated = Label(to, arrival, label.legs + ride, trip, routeId, to, arrival, label.walking)
+                                            val bucket = next.getOrPut(candidateKey) { mutableListOf() }
+                                            bucket.removeAll { arrival <= it.time && label.walking <= it.walking }
+                                            bucket += updated
+                                        }
+                                        intermediate += point(to)
                                     }
-                                    intermediate += point(to)
                                 }
                             }
                         }

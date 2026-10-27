@@ -77,6 +77,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -607,6 +608,14 @@ private fun StopPanel(
     val timetableOnly = clusterProviders.isNotEmpty() && clusterProviders.all { it == "homm" }
     var showOfflineDialog by remember { mutableStateOf(false) }
 
+    val nowMinuteEpoch = state.now.epochSecond / 60
+    val departuresWithMinutes = remember(state.departures, nowMinuteEpoch) {
+        state.departures.map { departure ->
+            val minutes = ceil(Duration.between(state.now, departure.expectedAt).seconds / 60.0).toInt().coerceAtLeast(0)
+            DepartureWithMinutes(departure, minutes)
+        }
+    }
+
     if (showOfflineDialog && stop != null) {
         val meta = state.offlineStationTimetables[stop.id]
             ?: state.offlineStationTimetables.values.firstOrNull { stop.id in it.platformIds }
@@ -763,24 +772,25 @@ private fun StopPanel(
             if (state.liveStopMinutes.isNotEmpty()) {
                 item(contentType = "live_signal") { LiveStopSignal(state.liveStopMinutes) }
             }
-            if (stop != null && state.departures.isEmpty() && !state.loading && !state.departureBoardLoading && !state.departureBoardUnavailable) {
+            if (stop != null && departuresWithMinutes.isEmpty() && !state.loading && !state.departureBoardLoading && !state.departureBoardUnavailable) {
                 item(contentType = "empty") { EmptyState(stringResource(R.string.ui_no_departures_title), stringResource(R.string.ui_no_departures_body, state.windowMinutes), Icons.Rounded.AccessTime) }
             }
             itemsIndexed(
-                state.departures,
-                key = { _, departure -> "${departure.routeId}-${departure.directionId}-${departure.expectedAt.epochSecond}" },
+                departuresWithMinutes,
+                key = { _, item -> "${item.departure.routeId}-${item.departure.directionId}-${item.departure.expectedAt.epochSecond}" },
                 contentType = { _, _ -> "departure" }
-            ) { index, departure ->
-                val minutes = ceil(Duration.between(state.now, departure.expectedAt).seconds / 60.0).toInt().coerceAtLeast(0)
+            ) { index, item ->
+                val departure = item.departure
+                val onClick = remember(departure) { { openDeparture(departure) } }
                 DepartureRow(
                     departure = departure,
-                    minutes = minutes,
+                    minutes = item.minutes,
                     providerId = routeById[departure.routeId]?.providerId ?: "viabusz",
                     route = routeById[departure.routeId],
                     boardingInfo = departure.platformCode?.let { stringResource(if (routeById[departure.routeId]?.providerId == "mav") R.string.rail_platform else R.string.emma_platform, it) } ?: boardingInfo,
-                    onClick = { openDeparture(departure) },
+                    onClick = onClick,
                 )
-                if (index < state.departures.lastIndex) HorizontalDivider(Modifier.padding(horizontal = 22.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                if (index < departuresWithMinutes.lastIndex) HorizontalDivider(Modifier.padding(horizontal = 22.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
             }
             if (!state.status.isNullOrBlank()) {
                 item(contentType = "notice") { Notice(state.status, Icons.Rounded.Info) }
@@ -821,6 +831,12 @@ private fun LiveStopSignal(minutes: List<Int>) {
         }
     }
 }
+
+@Immutable
+private data class DepartureWithMinutes(
+    val departure: Departure,
+    val minutes: Int,
+)
 
 @Composable
 private fun DepartureRow(departure: Departure, minutes: Int, providerId: String, route: TransitRoute?, boardingInfo: String?, onClick: () -> Unit) {
