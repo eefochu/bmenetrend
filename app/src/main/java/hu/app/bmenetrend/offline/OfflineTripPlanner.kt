@@ -19,9 +19,22 @@ class OfflineTripPlanner(private val store: OfflinePackStore) {
         store.read { db, meta ->
             val date = ready.atZone(TripPlanner.zone).toLocalDate()
             if (date < meta.validFrom || date > meta.validUntil) throw OfflineDateUnavailable()
-            fun resolve(endpoint: PlannerEndpoint): Long {
-                val exact = db.rawQuery("SELECT id FROM stops WHERE source_id=? AND station=0", arrayOf(sourceStopId(endpoint.id))).use { if (it.moveToFirst()) it.getLong(0) else null }
-                return exact ?: throw OfflineEndpointUnavailable()
+            fun resolve(endpoint: PlannerEndpoint): Set<Long> {
+                val platforms = linkedSetOf<Long>()
+                // Search results can represent several platforms/providers. Only expand
+                // those explicit IDs (or a source station's children), never nearby stops.
+                for (source in (endpoint.sourceStopIds + endpoint.id).map(::sourceStopId).distinct()) {
+                    context.ensureActive()
+                    db.rawQuery("SELECT id,station FROM stops WHERE source_id=?", arrayOf(source)).use { selected ->
+                        if (selected.moveToFirst()) {
+                            if (selected.getInt(1) == 0) platforms += selected.getLong(0)
+                            else db.rawQuery("SELECT id FROM stops WHERE parent=? AND station=0", arrayOf(source)).use { children ->
+                                while (children.moveToNext()) platforms += children.getLong(0)
+                            }
+                        }
+                    }
+                }
+                return platforms.takeIf { it.isNotEmpty() } ?: throw OfflineEndpointUnavailable()
             }
             val start = resolve(origin); val end = resolve(destination)
             val stops = mutableMapOf<Long, TransitStop>()
@@ -61,7 +74,7 @@ class OfflineTripPlanner(private val store: OfflinePackStore) {
                 }
                 return best.values.flatten()
             }
-            var frontier = walks(listOf(Label(start, ready, emptyList())))
+            var frontier = walks(start.map { Label(it, ready, emptyList()) })
             val journeys = mutableListOf<TripItinerary>()
             repeat(5) { round ->
                 val next = mutableMapOf<LabelKey, MutableList<Label>>()
@@ -114,7 +127,7 @@ class OfflineTripPlanner(private val store: OfflinePackStore) {
                     }
                 }
                 frontier = walks(next.values.flatten())
-                frontier.filter { it.stop == end }.forEach { label -> TripPlanner.itinerary(label.legs, ready)?.let(journeys::add) }
+                frontier.filter { it.stop in end }.forEach { label -> TripPlanner.itinerary(label.legs, ready)?.let(journeys::add) }
                 journeys.minOfOrNull { it.end }?.plusSeconds(PlannerAlternatives.MAX_ARRIVAL_DELAY_SECONDS)?.let { horizon = minOf(horizon, it) }
                 frontier = frontier.filter { it.time <= horizon }
             }

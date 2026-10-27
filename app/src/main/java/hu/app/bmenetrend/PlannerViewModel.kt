@@ -99,7 +99,7 @@ class PlannerViewModel internal constructor(
             delay(400)
             val stationResults = withContext(Dispatchers.Default) {
                 TransitSearch.stops(index, TransitSearch.query(query), location, emptySet()).take(6).map {
-                    PlannerEndpoint(it.id, it.name, it.platformCode.orEmpty(), it.position)
+                    PlannerEndpoint.fromStop(it)
                 }
             }
             if (generation != searchGeneration) return@launch
