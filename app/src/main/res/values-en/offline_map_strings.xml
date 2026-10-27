@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="offline_map_coverage">Hungary: bundled OpenStreetMap roads, street and settlement names, railways, water and broad land cover (2026-10-25). Geometry is simplified to about 6 m near Budapest; higher zoom enlarges this detail. No buildings, house numbers, POIs, footpaths or walking routing. Coverage ends at the Hungary extract edge. The map and local working copy count toward the 500 MB installed limit. Map updates arrive with app updates. Map data © OpenStreetMap contributors, ODbL 1.0; extract by Geofabrik.</string>
+</resources>

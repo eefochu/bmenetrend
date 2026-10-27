@@ -40,7 +40,7 @@ data class TripItinerary(val id: String, val start: Instant, val end: Instant, v
 @Immutable
 data class PlanSegment(val start: Instant, val end: Instant, val leg: PlanLeg?)
 @Immutable
-data class TripPlan(val origin: PlannerEndpoint, val destination: PlannerEndpoint, val requestedAt: Instant, val readyAt: Instant, val itineraries: List<TripItinerary>, val partial: Boolean = false)
+data class TripPlan(val origin: PlannerEndpoint, val destination: PlannerEndpoint, val requestedAt: Instant, val readyAt: Instant, val itineraries: List<TripItinerary>, val partial: Boolean = false, val offlinePack: String? = null, val offlineValidUntil: String? = null)
 
 object TripPlanner {
     const val WALK_SPEED = 1.15

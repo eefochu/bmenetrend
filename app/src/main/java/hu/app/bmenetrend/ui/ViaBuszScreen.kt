@@ -152,6 +152,13 @@ fun ViaBuszScreen(
     onDownloadTimetable: (String) -> Unit = {},
     onDeleteTimetable: (String) -> Unit = {},
     onClearAllTimetables: () -> Unit = {},
+    onOfflineMode: (Boolean) -> Unit = {},
+    onOfflineDownload: (Boolean) -> Unit = {},
+    onOfflineCancel: () -> Unit = {},
+    onAutomaticOfflineUpdates: (Boolean) -> Unit = {},
+    onOfflineDelete: () -> Unit = {},
+    onOfflineImport: (android.net.Uri) -> Unit = {},
+    openSettingsRequest: Int = 0,
     onOtaChannelChanged: (hu.app.bmenetrend.data.UpdateChannel) -> Unit = {},
     onCheckOtaUpdates: () -> Unit = {},
     onDownloadAndInstallOta: (hu.app.bmenetrend.data.OtaUpdateInfo) -> Unit = {},
@@ -162,6 +169,8 @@ fun ViaBuszScreen(
     var routeId by rememberSaveable { mutableStateOf<String?>(null) }
     var directionId by rememberSaveable { mutableStateOf<String?>(null) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
+    var handledSettingsRequest by rememberSaveable { mutableIntStateOf(0) }
+    LaunchedEffect(openSettingsRequest) { if (openSettingsRequest > handledSettingsRequest) { showSettings = true; handledSettingsRequest = openSettingsRequest } }
     var showAbout by rememberSaveable { mutableStateOf(false) }
     var showUpdates by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -525,6 +534,8 @@ fun ViaBuszScreen(
             onNationwide = onNationwideNetworkChanged,
             onAbout = { showAbout = true },
             onClearAllTimetables = onClearAllTimetables,
+            onOfflineMode = onOfflineMode, onOfflineDownload = onOfflineDownload, onOfflineCancel = onOfflineCancel,
+            onOfflineDelete = onOfflineDelete, onOfflineImport = onOfflineImport, onAutomaticOfflineUpdates = onAutomaticOfflineUpdates,
             onBack = { showSettings = false }
         )
     }

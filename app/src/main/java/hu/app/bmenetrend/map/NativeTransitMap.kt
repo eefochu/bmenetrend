@@ -93,9 +93,10 @@ fun NativeTransitMap(
     stopBearings: Map<String,List<Double>> = emptyMap(),
     onSharedStopSelected: (List<String>)->Unit = { ids -> ids.firstOrNull()?.let(onStopSelected) },
     onMapClick: () -> Unit = {},
+    offline: Boolean = false,
 ) {
     val darkTheme = isSystemInDarkTheme()
-    val styleUri = if (darkTheme) "asset://map/night.json" else "https://tiles.openfreemap.org/styles/positron"
+    val styleUri = if (offline) { if (darkTheme) "asset://map/offline-dark.json" else "asset://map/offline.json" } else if (darkTheme) "asset://map/night.json" else "https://tiles.openfreemap.org/styles/positron"
     val context = LocalContext.current
     val owner = LocalLifecycleOwner.current
     val onSelect by rememberUpdatedState(onStopSelected)
@@ -130,29 +131,31 @@ fun NativeTransitMap(
     var previousCamera by rememberSaveable { mutableStateOf<CameraPosition?>(null) }
     var previousFocusKey by rememberSaveable { mutableStateOf<String?>(null) }
     var fittedSignature by remember { mutableStateOf<Any?>(null) }
-    val mapView = remember {
+    val mapView = remember(offline) {
         MapLibre.getInstance(context.applicationContext)
+        org.maplibre.android.module.http.HttpRequestUtil.setOkHttpClient(hu.app.bmenetrend.data.EmmaGraphqlClient.defaultHttpClient())
         MapView(context).apply { onCreate(null) }
     }
-    var map by remember { mutableStateOf<MapLibreMap?>(null) }
+    var map by remember(mapView) { mutableStateOf<MapLibreMap?>(null) }
     var viewport by remember { mutableStateOf<MapBounds?>(null) }
-    var styleLoaded by remember { mutableStateOf(false) }
+    var styleLoaded by remember(mapView) { mutableStateOf(false) }
     var locatedOnce by rememberSaveable { mutableStateOf(false) }
     var locatedRequest by remember { mutableIntStateOf(-1) }
     var centeredStop by remember { mutableStateOf<String?>(null) }
     var centeredRequest by remember { mutableIntStateOf(-1) }
     var lastBottomPadding by remember { mutableIntStateOf(-1) }
-    val vehicleMarkers = remember { mutableMapOf<String, Marker>() }
-    var locationMarker by remember { mutableStateOf<Marker?>(null) }
-    var placeMarker by remember { mutableStateOf<Marker?>(null) }
-    val markerVehicles = remember { mutableMapOf<Long, String>() }
+    val vehicleMarkers = remember(mapView) { mutableMapOf<String, Marker>() }
+    var locationMarker by remember(mapView) { mutableStateOf<Marker?>(null) }
+    var placeMarker by remember(mapView) { mutableStateOf<Marker?>(null) }
+    val markerVehicles = remember(mapView) { mutableMapOf<Long, String>() }
     val stopHitTargets = remember { mutableMapOf<String,StationHitTarget>() }
     val stopGroups = remember { mutableMapOf<String, List<TransitStop>>() }
     val iconCache = remember { mutableMapOf<String, Icon>() }
-    val stationIconKeys=remember { mutableSetOf<String>() }
+    val stationIconKeys=remember(mapView) { mutableSetOf<String>() }
     val formatter = remember { DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.of("Europe/Budapest")) }
 
     DisposableEffect(mapView, owner) {
+        if (offline) OfflineBasemap.retain()
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_START -> mapView.onStart()
@@ -240,6 +243,7 @@ fun NativeTransitMap(
             if (owner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) mapView.onPause()
             if (owner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) mapView.onStop()
             mapView.onDestroy()
+            if (offline) OfflineBasemap.release(context.applicationContext)
         }
     }
     LaunchedEffect(map, bottomPaddingPx, selectedPlace) {
@@ -254,9 +258,13 @@ fun NativeTransitMap(
         var active = true
         styleLoaded = false
         try {
+            // Preparing/copying the archive and reading styles run on IO. HTTP is
+            // never a fallback for missing or damaged offline map resources.
+            val offlineStyle = if (offline) OfflineBasemap.style(context.applicationContext, darkTheme) else null
             owner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 fun loadStyle() {
-                    ready.setStyle(Style.Builder().fromUri(styleUri)) { _ ->
+                    val builder = if (offlineStyle != null) Style.Builder().fromJson(offlineStyle) else Style.Builder().fromUri(styleUri)
+                    ready.setStyle(builder) { _ ->
                         if (active) {
                             styleLoaded = true
                             onError(null)
@@ -277,6 +285,10 @@ fun NativeTransitMap(
                     if (!styleLoaded) loadStyle()
                 }
             }
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            onError(context.getString(R.string.engine_map_unavailable))
         } finally { active = false }
     }
     LaunchedEffect(map, styleLoaded, paths, routeColor, darkTheme) {
@@ -372,7 +384,7 @@ fun NativeTransitMap(
             }
         }
     }
-    AndroidView(factory = { mapView }, modifier = modifier.onSizeChanged { size = it })
+    key(mapView) { AndroidView(factory = { mapView }, modifier = modifier.onSizeChanged { size = it }) }
     LaunchedEffect(map,styleLoaded,viewport,zoom,stationScene,highlightedIds,focused,routeColor,selectedStopId,stopBearings,darkTheme) {
         val nativeMap=map ?: return@LaunchedEffect
         if(!styleLoaded) return@LaunchedEffect

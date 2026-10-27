@@ -3,4 +3,6 @@
     <string name="board_cancelled">Kimarad</string>
     <plurals name="board_delay"><item quantity="one">+%1$d perc</item><item quantity="other">+%1$d perc</item></plurals>
     <string name="design_transit_data">Adatforrások</string>
+    <string name="board_estimated_time">Várható: %1$s</string>
+    <string name="board_original_time">Menetrend: %1$s</string>
 </resources>

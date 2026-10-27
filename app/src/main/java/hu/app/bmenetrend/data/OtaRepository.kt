@@ -23,6 +23,8 @@ class OtaRepository(
         .readTimeout(60, TimeUnit.SECONDS)
         .build()
 ) {
+    private val guardedClient = hu.app.bmenetrend.offline.NetworkAccessPolicy.protect(client)
+
     suspend fun fetchUpdateInfo(channel: UpdateChannel): OtaUpdateInfo? = withContext(Dispatchers.IO) {
         val request = Request.Builder()
             .url(channel.url)
@@ -31,7 +33,7 @@ class OtaRepository(
             .header("X-GitHub-Api-Version", "2022-11-28")
             .header("User-Agent", "BMenetrend-Android")
             .build()
-        client.newCall(request).execute().use { response ->
+        guardedClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) throw IOException("HTTP ${response.code}: ${response.message}")
             val body = response.body?.string() ?: throw IOException("Empty response")
             GitHubUpdates.parse(body,channel)
@@ -46,7 +48,7 @@ class OtaRepository(
         val request = Request.Builder()
             .url(url)
             .build()
-        client.newCall(request).execute().use { response ->
+        guardedClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) throw IOException("Download failed with HTTP ${response.code}")
             val body = response.body ?: throw IOException("Empty response body")
             val contentLength = body.contentLength()

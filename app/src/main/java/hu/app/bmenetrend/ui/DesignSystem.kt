@@ -79,7 +79,7 @@ internal fun TransitSectionTitle(title: String, modifier: Modifier = Modifier) {
 
 /** The time is the scanning anchor. Live status has an icon as well as colour. */
 @Composable
-internal fun DepartureCount(minutes: Int, time: String, live: Boolean, modifier: Modifier = Modifier, cancelled: Boolean=false, delay: Long=0) {
+internal fun DepartureCount(minutes: Int, time: String, live: Boolean, modifier: Modifier = Modifier, cancelled: Boolean=false, delay: Long=0, scheduledTime: String?=null) {
     Surface(modifier.widthIn(min=58.dp),shape=RoundedCornerShape(14.dp),
         color=when { cancelled || delay>0 -> MaterialTheme.colorScheme.errorContainer;live -> MaterialTheme.colorScheme.primaryContainer;else -> MaterialTheme.colorScheme.surfaceContainerHigh },
         contentColor=when { cancelled || delay>0 -> MaterialTheme.colorScheme.onErrorContainer;live -> MaterialTheme.colorScheme.onPrimaryContainer;else -> MaterialTheme.colorScheme.onSurface }) {
@@ -92,7 +92,11 @@ internal fun DepartureCount(minutes: Int, time: String, live: Boolean, modifier:
             if(!cancelled && delay>0) Text(androidx.compose.ui.res.pluralStringResource(R.plurals.board_delay,delay.toInt(),delay),style=MaterialTheme.typography.labelMedium)
             Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(3.dp)) {
                 if(live && !cancelled) Icon(Icons.Rounded.Sensors,stringResource(R.string.ui_live_arrival),Modifier.size(12.dp))
-                Text(time,style=MaterialTheme.typography.labelSmall,textDecoration=if(cancelled) TextDecoration.LineThrough else null)
+                Text(if (live && scheduledTime != null && !cancelled) stringResource(R.string.board_estimated_time,time) else time,
+                    style=MaterialTheme.typography.labelLarge,textDecoration=if(cancelled) TextDecoration.LineThrough else null)
+            }
+            if (!cancelled && scheduledTime != null) {
+                Text(stringResource(R.string.board_original_time,scheduledTime),style=MaterialTheme.typography.labelSmall)
             }
         }
     }
@@ -114,7 +118,11 @@ internal fun DepartureBoardRow(
         }
     }
     val time: @Composable ()->Unit = {
-        DepartureCount(minutes,clock.format(departure.expectedAt),live,cancelled=departure.isCancelled,delay=departure.delayMinutes)
+        // Compare instants, not truncated delay minutes: even a short delay can change HH:mm.
+        val original = departure.scheduledAt?.takeIf { live && !departure.isCancelled && it != departure.expectedAt }
+        val shown = if (departure.isCancelled) departure.scheduledAt ?: departure.expectedAt else departure.expectedAt
+        DepartureCount(minutes,clock.format(shown),live,cancelled=departure.isCancelled,
+            delay=if (live) departure.delayMinutes else 0,scheduledTime=original?.let(clock::format))
     }
     val detail: @Composable ()->Unit = {
         Column(verticalArrangement=Arrangement.spacedBy(4.dp)) {
@@ -125,11 +133,6 @@ internal fun DepartureBoardRow(
             if(!departure.isCancelled) Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(4.dp)) {
                 Icon(if(live) Icons.Rounded.Sensors else Icons.Rounded.Schedule,null,Modifier.size(13.dp),tint=MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(stringResource(if(live) R.string.ui_live_arrival else R.string.ui_scheduled),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            if(!departure.isCancelled && departure.delayMinutes!=0L && departure.scheduledAt!=null) {
-                Text(stringResource(R.string.line_scheduled_delay,clock.format(departure.scheduledAt),
-                    if(departure.delayMinutes>0) "+${departure.delayMinutes}" else "${departure.delayMinutes}"),
-                    style=MaterialTheme.typography.labelSmall,color=if(departure.delayMinutes>0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
             }
             val features=listOfNotNull(
                 if(departure.wheelchairAccessible=="POSSIBLE") stringResource(R.string.line_accessible) else null,

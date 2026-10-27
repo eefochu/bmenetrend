@@ -14,12 +14,14 @@ import kotlin.coroutines.resumeWithException
 /** Shared EMMA transport for vehicles, stops and departure boards. */
 class EmmaGraphqlClient(private val client: OkHttpClient = defaultHttpClient(), private val backoff: EmmaRequestBackoff = sharedBackoff) {
     suspend fun execute(query: String, variables: JSONObject = JSONObject()): String {
+        hu.app.bmenetrend.offline.NetworkAccessPolicy.requireOnline()
+        val networkGeneration = hu.app.bmenetrend.offline.NetworkAccessPolicy.generation
         backoff.check(Instant.now())
         val body = JSONObject().put("query", query).put("variables", variables).toString()
         val request = Request.Builder().url(EmmaParser.ENDPOINT).header("Accept", "application/json")
             .header("User-Agent", "BMenetrendAndroid/0.3 (native transit viewer)")
             .post(body.toRequestBody("application/json; charset=utf-8".toMediaType())).build()
-        val call = client.newCall(request)
+        val call = hu.app.bmenetrend.offline.NetworkAccessPolicy.protect(client).newCall(request)
         return suspendCancellableCoroutine { continuation ->
             continuation.invokeOnCancellation { call.cancel() }
             call.enqueue(object : Callback {
@@ -30,6 +32,7 @@ class EmmaGraphqlClient(private val client: OkHttpClient = defaultHttpClient(), 
                             if (!it.isSuccessful) throw EmmaHttpException(it.code, backoff.denied(it.code, it.header("Retry-After"), Instant.now()))
                             it.body?.string() ?: throw IOException("Empty EMMA response")
                         }
+                        if (networkGeneration != hu.app.bmenetrend.offline.NetworkAccessPolicy.generation) throw IOException("Network mode changed")
                         if (continuation.isActive) continuation.resume(text)
                     } catch (error: Exception) { continuation.resumeWithException(error) }
                 }
@@ -38,8 +41,8 @@ class EmmaGraphqlClient(private val client: OkHttpClient = defaultHttpClient(), 
     }
     companion object {
         internal val sharedBackoff = EmmaRequestBackoff()
-        fun defaultHttpClient(): OkHttpClient = OkHttpClient.Builder().connectTimeout(8, TimeUnit.SECONDS)
-            .readTimeout(10, TimeUnit.SECONDS).callTimeout(15, TimeUnit.SECONDS).build()
+        fun defaultHttpClient(): OkHttpClient = hu.app.bmenetrend.offline.NetworkAccessPolicy.protect(OkHttpClient.Builder().connectTimeout(8, TimeUnit.SECONDS)
+            .readTimeout(10, TimeUnit.SECONDS).callTimeout(15, TimeUnit.SECONDS).build())
         fun data(text: String): JSONObject = JSONObject(text).let {
             require((it.optJSONArray("errors")?.length() ?: 0) == 0) { "EMMA GraphQL error" }
             it.getJSONObject("data")
