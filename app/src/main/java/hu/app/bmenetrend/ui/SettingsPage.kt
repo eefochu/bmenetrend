@@ -38,6 +38,12 @@ fun SettingsPage(
     onAbout: () -> Unit,
     onBack: () -> Unit,
     onClearAllTimetables: () -> Unit = {},
+    onOfflineMode: (Boolean) -> Unit = {},
+    onOfflineDownload: (Boolean) -> Unit = {},
+    onOfflineCancel: () -> Unit = {},
+    onAutomaticOfflineUpdates: (Boolean) -> Unit = {},
+    onOfflineDelete: () -> Unit = {},
+    onOfflineImport: (android.net.Uri) -> Unit = {},
 ) {
     BackHandler(onBack=onBack)
     Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background) {
@@ -45,6 +51,7 @@ fun SettingsPage(
             TransitPageHeader(stringResource(R.string.volan_settings),onBack)
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal=adaptivePageGutter()),
                 verticalArrangement=Arrangement.spacedBy(16.dp)) {
+                OfflinePackSettings(state, onOfflineMode, onOfflineDownload, onOfflineCancel, onOfflineDelete, onOfflineImport, onAutomaticOfflineUpdates)
                 TransitSectionTitle(stringResource(R.string.accent_title))
                 Text(stringResource(R.string.accent_hint),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
                 Column(Modifier.selectableGroup(),verticalArrangement=Arrangement.spacedBy(8.dp)) {

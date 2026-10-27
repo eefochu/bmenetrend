@@ -3,4 +3,6 @@
     <string name="board_cancelled">Cancelled</string>
     <plurals name="board_delay"><item quantity="one">+%1$d min</item><item quantity="other">+%1$d min</item></plurals>
     <string name="design_transit_data">Transit data</string>
+    <string name="board_estimated_time">Expected: %1$s</string>
+    <string name="board_original_time">Scheduled: %1$s</string>
 </resources>

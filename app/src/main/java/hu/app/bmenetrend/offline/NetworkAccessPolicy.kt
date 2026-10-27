@@ -1,0 +1,52 @@
+package hu.app.bmenetrend.offline
+
+import android.content.Context
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import okhttp3.Interceptor
+import okhttp3.OkHttpClient
+import okhttp3.Response
+import java.io.IOException
+import java.util.Collections
+import java.util.WeakHashMap
+
+/** Initialized by Application before any repository, worker or map can issue a request. */
+object NetworkAccessPolicy {
+    private val mutable = MutableStateFlow(false)
+    val offline = mutable.asStateFlow()
+    private val clients = Collections.newSetFromMap(WeakHashMap<OkHttpClient, Boolean>())
+    @Volatile private var epoch = 0L
+    val generation: Long get() = epoch
+
+    fun initialize(context: Context) {
+        val requested = context.getSharedPreferences("offline", 0).getBoolean("enabled", false)
+        // An interrupted deletion/install cannot leave a nonfunctional mode enabled.
+        val installed = OfflinePackStore(context).metadata() != null
+        setOffline(context, requested && installed)
+    }
+
+    @Synchronized fun setOffline(context: Context, enabled: Boolean) {
+        context.getSharedPreferences("offline", 0).edit().putBoolean("enabled", enabled).commit()
+        if (mutable.value != enabled) epoch++
+        mutable.value = enabled
+        if (enabled) clients.toList().forEach { it.dispatcher.cancelAll(); it.connectionPool.evictAll() }
+    }
+
+    fun requireOnline() { if (mutable.value) throw IOException("Offline mode") }
+
+    @Synchronized fun protect(client: OkHttpClient): OkHttpClient {
+        if (client.interceptors.any { it === guard }) { clients.add(client); return client }
+        return client.newBuilder().addInterceptor(guard).build().also { clients.add(it) }
+    }
+
+    private val guard = Interceptor { chain ->
+        requireOnline()
+        val started = epoch
+        val response: Response = chain.proceed(chain.request())
+        if (mutable.value || started != epoch) {
+            response.close()
+            throw IOException("Network mode changed")
+        }
+        response
+    }
+}

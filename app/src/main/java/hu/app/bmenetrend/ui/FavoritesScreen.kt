@@ -201,6 +201,9 @@ fun FavoritesScreen(
         }
         LazyColumn(Modifier.weight(1f), state = listState, contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            if (state.offlineMode && state.favorites.any { it !in state.stopsById }) item(key = "offline_missing", contentType = "notice") {
+                Text(stringResource(R.string.offline_missing_favorites), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             if (state.favoriteStations.isEmpty()) item(key = "empty", contentType = "notice") {
                 Surface(shape = TransitDesign.panelShape, color = MaterialTheme.colorScheme.surfaceContainerLowest,
                     border=androidx.compose.foundation.BorderStroke(1.dp,MaterialTheme.colorScheme.outlineVariant.copy(alpha=.55f))) {

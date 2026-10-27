@@ -77,18 +77,17 @@ object EmmaJourneyParser {
                 val realtimeSec = if (index == 0) {
                     (row.opt("realtimeDeparture") as? Number)?.toLong()?.takeIf { it in 0..172799 }
                         ?: (row.opt("realtimeArrival") as? Number)?.toLong()?.takeIf { it in 0..172799 }
-                        ?: scheduledSec
                 } else {
                     (row.opt("realtimeArrival") as? Number)?.toLong()?.takeIf { it in 0..172799 }
                         ?: (row.opt("realtimeDeparture") as? Number)?.toLong()?.takeIf { it in 0..172799 }
-                        ?: scheduledSec
                 }
-                val isRealtime = row.optBoolean("realtime", false) && row.optString("realtimeState") != "SCHEDULED"
+                val isRealtime = row.optBoolean("realtime", false) && realtimeSec != null &&
+                    row.optString("realtimeState") !in setOf("SCHEDULED", "CANCELED")
                 val expectedSec = if (isRealtime && realtimeSec != null) realtimeSec else (scheduledSec ?: return@map null)
                 val delaySec = if (isRealtime && scheduledSec != null && realtimeSec != null) (realtimeSec - scheduledSec) else 0L
                 val delayMinutes = (delaySec / 60).toInt()
                 val arrivalTime = formatTime(serviceDay, expectedSec)
-                val scheduledTime = if (isRealtime && scheduledSec != null && formatTime(serviceDay, scheduledSec) != arrivalTime) {
+                val scheduledTime = if (isRealtime && scheduledSec != null && scheduledSec != expectedSec) {
                     formatTime(serviceDay, scheduledSec)
                 } else {
                     null

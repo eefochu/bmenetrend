@@ -64,6 +64,40 @@ class EmmaJourneyTest {
         assertTrue(journey.stopTimes[2]?.isLive == true)
         assertEquals(0, journey.stopTimes[2]?.delayMinutes)
     }
+    @Test fun missingRealtimeSecondsAndCancelledRowsDoNotBecomeLiveEstimates() {
+        val withIncompleteRealtime = response().apply {
+            getJSONObject("data").getJSONObject("trip").put("stoptimes", JSONArray()
+                .put(JSONObject().put("scheduledDeparture", 51600).put("realtime", true).put("realtimeState", "UPDATED"))
+                .put(JSONObject().put("scheduledArrival", 52800).put("realtimeArrival", 53100).put("realtime", true).put("realtimeState", "CANCELED")))
+        }
+
+        val stopTimes = EmmaJourneyParser.parse(withIncompleteRealtime.toString(), "hkir:trip").stopTimes
+
+        // Without source realtime seconds the parser must use the timetable value and avoid implying a live estimate.
+        assertEquals("14:20", stopTimes[0]?.arrivalTime)
+        assertNull(stopTimes[0]?.scheduledTime)
+        assertFalse(stopTimes[0]?.isLive == true)
+        // Canceled rows retain the scheduled time; their stale/different realtime seconds are not presented as live.
+        assertEquals("14:40", stopTimes[1]?.arrivalTime)
+        assertNull(stopTimes[1]?.scheduledTime)
+        assertFalse(stopTimes[1]?.isLive == true)
+        assertEquals(0, stopTimes[1]?.delayMinutes)
+    }
+    @Test fun liveEstimateKeepsOriginalWhenSecondsDifferAcrossDisplayedMinuteBoundary() {
+        val root = response().apply {
+            getJSONObject("data").getJSONObject("trip").put("stoptimes", JSONArray()
+                .put(JSONObject().put("scheduledDeparture", 51600).put("realtimeDeparture", 51600).put("realtime", false))
+                // 14:40:45 to 14:41:15: delayMinutes truncates to zero, while display minutes differ.
+                .put(JSONObject().put("scheduledArrival", 52845).put("realtimeArrival", 52875).put("realtime", true).put("realtimeState", "UPDATED")))
+        }
+
+        val stopTime = EmmaJourneyParser.parse(root.toString(), "hkir:trip").stopTimes[1]
+
+        assertEquals("14:41", stopTime?.arrivalTime)
+        assertEquals("14:40", stopTime?.scheduledTime)
+        assertTrue(stopTime?.isLive == true)
+        assertEquals(0, stopTime?.delayMinutes)
+    }
     @Test fun iconUsesTransportModeBeforeRouteColourOrOperator() {
         fun vehicle(provider: String, mode: String?) = Vehicle("v", GeoPoint(47.46, 19.02), Instant.EPOCH, providerId = provider, transportMode = mode, markerColor = "000000")
         assertEquals(VehicleMarkerStyle.VOLAN_BUS, VehicleMarkerStyle.forVehicle(vehicle("volan", "COACH")))

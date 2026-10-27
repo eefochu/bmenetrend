@@ -45,7 +45,7 @@ internal fun CategorizedSearch(
     buildStopIndex: suspend (List<TransitStop>, List<TransitStop>) -> List<TransitSearch.StopEntry> = ::buildSearchStopIndex,
 ) {
     val parsed = remember(query) { TransitSearch.query(query) }
-    val searchPlaces = category == SearchCategory.ALL || category == SearchCategory.PLACES
+    val searchPlaces = !state.offlineMode && (category == SearchCategory.ALL || category == SearchCategory.PLACES)
     val localStops = state.network?.stops.orEmpty()
     val nationalStops = state.emmaStops
     val routes = remember(state.network?.routes, state.emmaRoutes) { state.routes }
@@ -85,6 +85,7 @@ internal fun CategorizedSearch(
     val limit = if (category == SearchCategory.ALL) 3 else 100
     val uri = LocalUriHandler.current
     Column(Modifier.fillMaxSize()) {
+        if (state.offlineMode) Text(stringResource(R.string.offline_live_unavailable), Modifier.padding(horizontal = 22.dp, vertical = 8.dp), style = MaterialTheme.typography.bodySmall)
         LazyRow(contentPadding = PaddingValues(horizontal = 18.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(SearchCategory.entries, key = { it.name }, contentType = { "category_chip" }) { section ->
                 FilterChip(selected = category == section, onClick = { onCategoryChanged(section) },shape=TransitDesign.controlShape,

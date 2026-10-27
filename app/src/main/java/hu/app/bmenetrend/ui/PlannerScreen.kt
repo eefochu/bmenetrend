@@ -68,6 +68,10 @@ fun PlannerScreen(model: PlannerViewModel, onRequestLocation: () -> Unit) {
         item(key = "title", contentType = "title") {
             TransitPageIntro(stringResource(R.string.planner_title),stringResource(R.string.planner_subtitle))
         }
+        if (state.offline) item(key = "offline", contentType = "notice") {
+            Text(stringResource(R.string.offline_valid_until, state.offlineValidUntil.orEmpty()), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+            Text(stringResource(R.string.offline_endpoint_unavailable), style = MaterialTheme.typography.bodySmall)
+        }
         item(key = "form", contentType = "form") {
             val connectorColor=MaterialTheme.colorScheme.outlineVariant
             Surface(shape = TransitDesign.panelShape, color = MaterialTheme.colorScheme.surfaceContainerLowest,
@@ -112,6 +116,8 @@ fun PlannerScreen(model: PlannerViewModel, onRequestLocation: () -> Unit) {
                     PlannerError.LOCATION -> R.string.planner_location_error
                     PlannerError.SAME_PLACE -> R.string.planner_same_place
                     PlannerError.NO_ROUTE -> R.string.planner_no_route
+                    PlannerError.OFFLINE_DATE -> R.string.offline_date_unavailable
+                    PlannerError.OFFLINE_ENDPOINT -> R.string.offline_endpoint_unavailable
                     PlannerError.UNAVAILABLE -> R.string.planner_unavailable
                 }), Modifier.padding(18.dp), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onErrorContainer)
             }

@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "source": "https://download.geofabrik.de/europe/hungary-261025.osm.pbf",
+  "source_sha256": "95cee027cb022b35b6633c511119d72f19fb6a606e8c8eceba0de80709d66912",
+  "license": "ODbL-1.0",
+  "minzoom": 5,
+  "maxzoom": 12,
+  "detail": 12,
+  "files": {
+    "offline/NOTICE.txt": {
+      "bytes": 1590,
+      "sha256": "ee0b8a9251558583938337dbf83b9f597e55d69cfa6b1ed99f1452d71a7b6365"
+    },
+    "offline/Noto-OFL.txt": {
+      "bytes": 4396,
+      "sha256": "cee9892f9f0cc8fe882c9e9537ee6a89621d86ee7ceaf70b02e2b2b1c25c061a"
+    },
+    "offline/ODbL-1.0.html": {
+      "bytes": 51176,
+      "sha256": "b8d8aebb21bf405f93f6e21bbf0d8f0a749844f9812ec58692f189add6402b47"
+    },
+    "offline/glyphs/Noto Sans Regular/0-255.pbf": {
+      "bytes": 83504,
+      "sha256": "fd5e19c99fdfa92ad4cac8fefdbf7452f652a1d626c54fb8ba0ce1991e9de849"
+    },
+    "offline/glyphs/Noto Sans Regular/1024-1279.pbf": {
+      "bytes": 134023,
+      "sha256": "03ed255e3ae41d88406a4be115ddaf49be8901b8c6365abcdb104601e1c9c5e2"
+    },
+    "offline/glyphs/Noto Sans Regular/256-511.pbf": {
+      "bytes": 137913,
+      "sha256": "a3d0473b8543d2b0c09382c02c99cc49b721bb9414fbd54a2e127cc76e055584"
+    },
+    "offline/glyphs/Noto Sans Regular/512-767.pbf": {
+      "bytes": 103422,
+      "sha256": "ebc3a4d68e501d211f668eac7d753e27c151e2bf754d94b44e6306dd2bbdf265"
+    },
+    "offline/glyphs/Noto Sans Regular/8192-8447.pbf": {
+      "bytes": 59239,
+      "sha256": "30f8e8922869ceadd64ddd4d2b5ef7d3caa3f6b8886bb08b9296f2a89d68fea2"
+    },
+    "offline/glyphs/Noto Sans Regular/9472-9727.pbf": {
+      "bytes": 394,
+      "sha256": "e473f2b545ba0bcd61dd65e24ccbebdac43acb229cf506a223c761caf7d0280b"
+    },
+    "offline/hungary.pmtiles": {
+      "bytes": 34857842,
+      "sha256": "8c8d5d0e8024ee6bb1b1a6930f7197f4a0903f059f8ee757f9d4a6079facbf88"
+    },
+    "offline-dark.json": {
+      "bytes": 5212,
+      "sha256": "915ce2c12cc1abe17e4ad46e51eba6accbfd0d03279ba7d09b54b80da19ae576"
+    },
+    "offline.json": {
+      "bytes": 5207,
+      "sha256": "e6d2666fa1b6c57038514290dcd419965a1e9d2fda6b1d6331e6ae0af718a750"
+    }
+  }
+}

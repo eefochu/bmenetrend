@@ -19,6 +19,8 @@ import java.time.Instant
 
 @Immutable
 data class UiState(
+    val offlineMode: Boolean = hu.app.bmenetrend.offline.NetworkAccessPolicy.offline.value,
+    val offlinePack: hu.app.bmenetrend.offline.OfflinePackState = hu.app.bmenetrend.offline.OfflinePackState(),
     val showNearby: Boolean = true,
     val nearbyStations: List<hu.app.bmenetrend.data.NearbyStation> = emptyList(),
     val nearbyAtUser: Boolean = false,

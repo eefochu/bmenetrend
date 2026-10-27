@@ -1,0 +1,29 @@
+Hungary offline context basemap
+
+Map data © OpenStreetMap contributors, Open Database License (ODbL) 1.0.
+https://www.openstreetmap.org/copyright
+https://opendatacommons.org/licenses/odbl/1-0/
+
+The Hungary PMTiles archive is a derivative database, distributed under ODbL
+1.0. It is separate from the timetable database and application code. This
+archive is the editable, machine-readable derivative database supplied with
+this application; it can be extracted directly from the APK assets directory.
+Preprocessing instructions and source hashes: tools/offline-map/README.md.
+
+Source: Geofabrik Hungary extract hungary-261025.osm.pbf,
+https://download.geofabrik.de/europe/hungary.html
+OSM data through 2026-10-25T21:21:21Z.
+
+Selection: public mapped road geometry and names (not a routable graph), place
+names, railways, water and broad land cover. Vector tiles z5–12, full detail
+4096; roughly 6 m geometry quantization near Budapest, overzoom above z12.
+No buildings, house numbers, POIs, footpaths or world coverage. This is a
+geographic context map, never a walking-access or road-safety guarantee.
+The static snapshot updates with the app, independently of timetable downloads.
+
+Font glyphs: Noto Sans Regular, SIL Open Font License 1.1 (Noto-OFL.txt).
+https://github.com/notofonts/latin-greek-cyrillic
+Glyph PBFs retrieved from OpenStreetMap US Tileservice:
+https://tiles.openstreetmap.us/fonts/Noto%20Sans%20Regular/{range}.pbf
+Only the Unicode ranges used by this snapshot are bundled. No network glyph
+fallback is configured. Map style and preprocessing code belong to this app.

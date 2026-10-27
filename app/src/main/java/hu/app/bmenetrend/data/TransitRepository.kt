@@ -26,9 +26,9 @@ class TransitRepository(context: Context) {
         Provider("kanyargo", "KanyarGO", "https://kanyargo.paty.hu/", "KanyarGo1012", "kanyargo-network.json"),
         Provider("homm", "HOMM", "https://homm.hu/", null, "homm-network.json"),
     )
-    private val client = OkHttpClient.Builder()
+    private val client = hu.app.bmenetrend.offline.NetworkAccessPolicy.protect(OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS).readTimeout(15, TimeUnit.SECONDS)
-        .callTimeout(20, TimeUnit.SECONDS).build()
+        .callTimeout(20, TimeUnit.SECONDS).build())
     private fun message(id: Int, vararg args: Any) = appContext.getString(id, *args)
     private fun bundled(provider: Provider) = NetworkJson.decode(appContext.assets.open(provider.asset).bufferedReader().use { it.readText() })
     private fun cache(provider: Provider) = File(appContext.filesDir, "${provider.id}-network-v3.json")

@@ -99,3 +99,7 @@ A BMenetrend független, nyílt közösségi segédprogram.
 ### Frissítések közzététele
 
 Az alkalmazás közvetlenül az [`eefochu/bmenetrend` GitHub-kiadásait](https://github.com/eefochu/bmenetrend/releases) ellenőrzi; nincs külön GitHub Pages OTA-JSON. Stabil csatornához egy nem előzetes, verziószámos kiadásba `app-release.apk`, a debug csatornához `app-debug.apk` fájlt kell feltölteni. Egy kiadás mindkét APK-t is tartalmazhat. A changelog a kiadás leírásából származik. Az új kiadás `versionName` és `versionCode` értékét növelni kell, az alkalmazásazonosítót és az aláírókulcsot meg kell tartani a meglévő telepítések frissíthetőségéhez.
+
+## Optional offline mode
+
+Settings now provides an optional offline timetable download and Offline mode switch. See [offline mode](docs/OFFLINE_MODE.md) for supported networks, the 500 MB size cap, source import, and current routing limitations.

@@ -22,7 +22,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import hu.app.bmenetrend.R
@@ -168,7 +167,7 @@ fun LineStopRow(
             }
             if (arrivalTime != null) {
                 Column(
-                    modifier = Modifier.padding(start = 8.dp, top = 16.dp, bottom = 16.dp),
+                    modifier = Modifier.widthIn(max = 132.dp).padding(start = 8.dp, top = 16.dp, bottom = 16.dp),
                     horizontalAlignment = Alignment.End,
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
@@ -182,7 +181,7 @@ fun LineStopRow(
                             )
                         }
                         Text(
-                            text = arrivalTime,
+                            text = if (isLive && scheduledTime != null) stringResource(R.string.board_estimated_time,arrivalTime) else arrivalTime,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = if (highlighted) FontWeight.Bold else FontWeight.SemiBold,
                             color = when {
@@ -193,10 +192,10 @@ fun LineStopRow(
                             }
                         )
                     }
-                    if (scheduledTime != null) {
+                    if (isLive && scheduledTime != null) {
                         Text(
-                            text = scheduledTime,
-                            style = MaterialTheme.typography.bodySmall.copy(textDecoration = TextDecoration.LineThrough),
+                            text = stringResource(R.string.board_original_time,scheduledTime),
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }

@@ -11,7 +11,7 @@ import java.time.Instant
 import java.util.concurrent.TimeUnit
 
 enum class PlannerField { ORIGIN, DESTINATION }
-enum class PlannerError { UNAVAILABLE, NO_ROUTE, SAME_PLACE, LOCATION, OUTSIDE_AREA, DEPARTURE_PASSED }
+enum class PlannerError { UNAVAILABLE, NO_ROUTE, SAME_PLACE, LOCATION, OUTSIDE_AREA, DEPARTURE_PASSED, OFFLINE_DATE, OFFLINE_ENDPOINT }
 @Immutable
 data class PlannerState(
     val origin: PlannerEndpoint? = null, val destination: PlannerEndpoint? = null,
@@ -20,6 +20,8 @@ data class PlannerState(
     val searchUnavailable: Boolean = false, val planning: Boolean = false,
     val error: PlannerError? = null, val result: TripPlan? = null, val selectedId: String? = null,
     val departure: Instant? = null,
+    val offline: Boolean = false,
+    val offlineValidUntil: String? = null,
 )
 
 class PlannerViewModel internal constructor(
@@ -31,6 +33,9 @@ class PlannerViewModel internal constructor(
         EmmaPlannerBackend(EmmaGraphqlClient(EmmaGraphqlClient.defaultHttpClient().newBuilder()
             .readTimeout(25, TimeUnit.SECONDS).callTimeout(30, TimeUnit.SECONDS).build())),
         TransitRepository(application)::planningNetwork)
+
+    private val offlineStore = hu.app.bmenetrend.offline.OfflinePackStore(application)
+    private val offlinePlanner = hu.app.bmenetrend.offline.OfflineTripPlanner(offlineStore)
 
     private val places = PlacesRepository(application)
     private val planner = HybridTripPlanner(backend)
@@ -45,11 +50,25 @@ class PlannerViewModel internal constructor(
     private var indexJob: Job? = null
     private var location: GeoPoint? = null
 
+    init {
+        viewModelScope.launch {
+            hu.app.bmenetrend.offline.NetworkAccessPolicy.offline.collect { enabled ->
+                invalidate()
+                closeSearch()
+                val metadata = withContext(Dispatchers.IO) { offlineStore.metadata() }
+                mutable.update { it.copy(offline = enabled, offlineValidUntil = metadata?.validUntil?.toString()) }
+            }
+        }
+    }
+
+
     fun updateStops(stops: List<TransitStop>, national: List<TransitStop> = emptyList()) {
-        stopCatalogue = if (national.isEmpty()) stops else stops + national
+        val local = if (hu.app.bmenetrend.offline.NetworkAccessPolicy.offline.value) emptyList() else stops
+        val available = national.filterNot { it.station }
+        stopCatalogue = if (available.isEmpty()) local else local + available
         indexJob?.cancel()
         indexJob = viewModelScope.launch {
-            index = withContext(Dispatchers.Default) { TransitSearch.indexStops(stops, national) }
+            index = withContext(Dispatchers.Default) { TransitSearch.indexStops(local, available) }
             if (state.value.editing != null) search(state.value.query)
         }
     }
@@ -80,11 +99,14 @@ class PlannerViewModel internal constructor(
             delay(400)
             val stationResults = withContext(Dispatchers.Default) {
                 TransitSearch.stops(index, TransitSearch.query(query), location, emptySet()).take(6).map {
-                    PlannerEndpoint(it.id, it.name, it.platformCode.orEmpty(), it.position)
+                    PlannerEndpoint.fromStop(it)
                 }
             }
             if (generation != searchGeneration) return@launch
             mutable.update { it.copy(suggestions = stationResults) }
+            if (state.value.offline) {
+                mutable.update { it.copy(searching = false) }; return@launch
+            }
             try {
                 val results = places.search(query).take(6).map { PlannerEndpoint(it.id, it.name, it.address, it.position) }
                 if (generation == searchGeneration) mutable.update { it.copy(suggestions = (results + stationResults).distinctBy { it.id }, searching = false) }
@@ -136,7 +158,7 @@ class PlannerViewModel internal constructor(
         mutable.update { it.copy(origin = origin, planning = true) }
         planJob = viewModelScope.launch {
             try {
-                val result = planner.plan(origin, destination, requested, ready, stopCatalogue, loadNetwork) { partial ->
+                val result = if (current.offline) offlinePlanner.plan(origin, destination, requested, ready) else planner.plan(origin, destination, requested, ready, stopCatalogue, loadNetwork) { partial ->
                     if (generation == planGeneration) mutable.update { it.copy(result = partial) }
                 }
                 if (generation == planGeneration) mutable.update { it.copy(planning = false, result = result,
@@ -145,6 +167,8 @@ class PlannerViewModel internal constructor(
                         if (result.partial) PlannerError.UNAVAILABLE else PlannerError.NO_ROUTE
                     } else null) }
             } catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: hu.app.bmenetrend.offline.OfflineDateUnavailable) { if (generation == planGeneration) mutable.update { it.copy(planning = false, error = PlannerError.OFFLINE_DATE) } }
+            catch (_: hu.app.bmenetrend.offline.OfflineEndpointUnavailable) { if (generation == planGeneration) mutable.update { it.copy(planning = false, error = PlannerError.OFFLINE_ENDPOINT) } }
             catch (_: Exception) { if (generation == planGeneration) mutable.update { it.copy(planning = false, error = PlannerError.UNAVAILABLE) } }
         }
     }

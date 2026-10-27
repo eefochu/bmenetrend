@@ -10,7 +10,17 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
 @Immutable
-data class PlannerEndpoint(val id: String, val name: String, val detail: String, val position: GeoPoint)
+data class PlannerEndpoint(
+    val id: String, val name: String, val detail: String, val position: GeoPoint,
+    /** Platforms represented by the selected search result, not walking connections. */
+    val sourceStopIds: List<String> = listOf(id),
+) {
+    companion object {
+        fun fromStop(stop: TransitStop) = PlannerEndpoint(
+            stop.id, stop.name, stop.platformCode.orEmpty(), stop.position, stop.sourceStopIds,
+        )
+    }
+}
 @Immutable
 data class PlanPoint(val name: String, val position: GeoPoint, val platform: String? = null)
 @Immutable
@@ -40,7 +50,7 @@ data class TripItinerary(val id: String, val start: Instant, val end: Instant, v
 @Immutable
 data class PlanSegment(val start: Instant, val end: Instant, val leg: PlanLeg?)
 @Immutable
-data class TripPlan(val origin: PlannerEndpoint, val destination: PlannerEndpoint, val requestedAt: Instant, val readyAt: Instant, val itineraries: List<TripItinerary>, val partial: Boolean = false)
+data class TripPlan(val origin: PlannerEndpoint, val destination: PlannerEndpoint, val requestedAt: Instant, val readyAt: Instant, val itineraries: List<TripItinerary>, val partial: Boolean = false, val offlinePack: String? = null, val offlineValidUntil: String? = null)
 
 object TripPlanner {
     const val WALK_SPEED = 1.15

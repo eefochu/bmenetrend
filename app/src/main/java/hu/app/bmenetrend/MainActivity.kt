@@ -54,6 +54,7 @@ class MainActivity : ComponentActivity() {
             var pendingCrash by remember { mutableStateOf(crashReports.read()) }
             val model: TransitViewModel = viewModel()
             val planner: PlannerViewModel = viewModel()
+            var offlineSettingsRequest by rememberSaveable { mutableIntStateOf(0) }
             var tab by rememberSaveable { mutableStateOf(MainTab.MAP) }
             val state by model.state.collectAsStateWithLifecycle()
             val language = LocalConfiguration.current.locales.toLanguageTags()
@@ -101,7 +102,7 @@ class MainActivity : ComponentActivity() {
                     crashReports.clear()
                     pendingCrash = null
                 } }
-                MainNavigation(tab, { tab = it }, planner = { PlannerScreen(planner, requestLocation) }, favorites = {
+                MainNavigation(tab, { tab = it }, offline = state.offlineMode, onOfflineSettings = { tab = MainTab.MAP; offlineSettingsRequest++ }, planner = { PlannerScreen(planner, requestLocation) }, favorites = {
                     FavoritesScreen(
                         state = state,
                         onStop = { model.selectStop(it); tab = MainTab.MAP },
@@ -146,6 +147,9 @@ class MainActivity : ComponentActivity() {
                     onDownloadTimetable = model::downloadStationTimetable,
                     onDeleteTimetable = model::deleteStationTimetable,
                     onClearAllTimetables = model::clearAllStationTimetables,
+                    onOfflineMode = model::setOfflineMode, onOfflineDownload = model::downloadOfflinePack,
+                    onAutomaticOfflineUpdates = model::setAutomaticOfflineUpdates, onOfflineCancel = model::cancelOfflineDownload, onOfflineDelete = model::deleteOfflinePack,
+                    onOfflineImport = model::importOfflineFeed, openSettingsRequest = offlineSettingsRequest,
                     onOtaChannelChanged = model::setOtaChannel,
                     onCheckOtaUpdates = { model.checkForUpdates(false) },
                     onDownloadAndInstallOta = { info -> model.startOtaDownloadAndInstall(this@MainActivity, info) },
@@ -203,7 +207,7 @@ class MainActivity : ComponentActivity() {
                             hu.app.bmenetrend.map.StopDirections.collect(routes,allStops,state.lineDetails.values,state.vehicleJourney)
                         }
                     }
-                    NativeTransitMap(state.network, state.vehicles, state.selectedStopId.takeUnless { state.showNearby || browsingRoute!=null || state.selectedVehicle!=null }, state.userLocation, modifier, onMapStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, vehicle, routeGeometry = geometry, routeStops = stops, routeColor = color.toArgb(), fitRouteRequest = state.fitRouteRequest, selectedPlace = state.selectedPlace, placeCameraRequest = state.placeCameraRequest, lineFocus = focus, browsingNearby = state.showNearby, locationCameraRequest = state.locationCameraRequest, onViewportChanged = model::updateMapArea,stopBearings=stopBearings,onSharedStopSelected=onMapSharedStop,onMapClick=onDismissHighlight)
+                    NativeTransitMap(state.network, state.vehicles, state.selectedStopId.takeUnless { state.showNearby || browsingRoute!=null || state.selectedVehicle!=null }, state.userLocation, modifier, onMapStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, vehicle, routeGeometry = geometry, routeStops = stops, routeColor = color.toArgb(), fitRouteRequest = state.fitRouteRequest, selectedPlace = state.selectedPlace, placeCameraRequest = state.placeCameraRequest, lineFocus = focus, browsingNearby = state.showNearby, locationCameraRequest = state.locationCameraRequest, onViewportChanged = model::updateMapArea,stopBearings=stopBearings,onSharedStopSelected=onMapSharedStop,onMapClick=onDismissHighlight, offline = state.offlineMode)
                 }
                 })
 

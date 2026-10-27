@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="offline_map_coverage">Magyarország: beépített OpenStreetMap-utak, utca- és településnevek, vasutak, vizek és nagyobb felszínborítási területek (2026-10-25). Budapest környékén kb. 6 m-es egyszerűsítés; a további nagyítás ezt a részletességet növeli. Épületek, házszámok, POI-k, gyalogösvények és gyalogos útvonaltervezés nélkül. A lefedettség a magyarországi kivonat szélén véget ér. A térkép és helyi munkapéldánya beleszámít az 500 MB-os telepítési korlátba. A térkép az alkalmazással frissül. Térképadatok: © OpenStreetMap közreműködők, ODbL 1.0; kivonat: Geofabrik.</string>
+</resources>
