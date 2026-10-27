@@ -329,6 +329,12 @@ POST_RELEASE_MEASUREMENT: finishedAfterRelease=true durationMs=8 repoNotNull=tru
 - **UI Thread Protection**: Offloaded heavy spherical trigonometry bursts (`atan2`, `circularMean`, `bearing`, and k-means corridor clustering in `generalDirections`) off the main thread, keeping the composable API and state contract identical for `NativeTransitMap`.
 - **Verification round + parent fix**: Combined verification (build + 369-test suite GREEN, static logic checks) confirmed the offload works but flagged staleness: `state.routes` derives from `network?.routes` AND `emmaRoutes`, so the `produceState` key set was missing `state.emmaRoutes` (route catalogue updates would not recompute bearings). Fixed in `MainActivity.kt` by adding `state.emmaRoutes` to the `produceState` keys; `:app:compileDebugKotlin` passes.
 
+### Import speedup fix (VERIFIED)
+
+- **Diagnosis**: the post-download install phase builds the ~388 MB SQLite pack row-by-row, previously under `PRAGMA journal_mode=DELETE` + `synchronous=FULL` (rollback-journal double-writes + hard fsyncs on a disposable staging file), and the finished file was SHA-256 hashed twice (worker metadata pass + recompute inside `activate()`).
+- **Fix (parent-applied)**: `GtfsImporter.create()` now uses `journal_mode=MEMORY` + `synchronous=OFF` for staging (disposable file: crash → `staging()` purges it, activation only promotes a digest-matched, `quick_check`-passed DB, `active.json` flips last via AtomicFile). `OfflinePackStore.activate()` gained optional `verifiedDigest` param; worker computes one SHA-256 pass and passes it through. Other callers keep pure-recompute behavior (tamper test still enforces digest mismatch rejection).
+- **Verification**: dedicated round 44/46 passed (2 env-gated assumption skips), contention 3/3, call-site audit clean, staging cleanup compatible with memory journaling. On-device magnitude is user-observable, not benchmarked locally.
+
 ### U1 fix: Gated Departure Row Recomposition (STATIC-VERIFIED)
 
 - **ViaBuszScreen.kt**: Hoisted `Duration.between(state.now, departure.expectedAt)` reads out of the per-item `LazyColumn` body into `departuresWithMinutes = remember(state.departures, nowMinuteEpoch)`, keyed on `nowMinuteEpoch = state.now.epochSecond / 60`.

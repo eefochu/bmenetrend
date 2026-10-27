@@ -255,7 +255,10 @@ class GtfsImporter(private val db: SQLiteDatabase, private val from: LocalDate, 
             return p[0] * 3600 + p[1] * 60 + p[2]
         }
         fun create(file: File): SQLiteDatabase = SQLiteDatabase.openOrCreateDatabase(file, null).apply {
-            rawQuery("PRAGMA journal_mode=DELETE", null).use { it.moveToFirst() }; execSQL("PRAGMA synchronous=FULL"); version = OFFLINE_FORMAT
+            // Staging build: journal to memory and skip fsyncs. A torn staging file is disposable
+            // (staging() deletes it; activation only promotes a verified digest + quick_check pass).
+            // This removes rollback-journal double-writes and full-durability syncs from the bulk load.
+            rawQuery("PRAGMA journal_mode=MEMORY", null).use { it.moveToFirst() }; execSQL("PRAGMA synchronous=OFF"); version = OFFLINE_FORMAT
             execSQL("CREATE TABLE stops(id INTEGER PRIMARY KEY,source_id TEXT UNIQUE NOT NULL,name TEXT NOT NULL,search TEXT NOT NULL,lat REAL NOT NULL,lon REAL NOT NULL,platform TEXT,parent TEXT,station INTEGER,feed TEXT)")
             execSQL("CREATE TABLE routes(id INTEGER PRIMARY KEY,source_id TEXT UNIQUE NOT NULL,number TEXT,name TEXT,mode TEXT,color TEXT,feed TEXT)")
             execSQL("CREATE TABLE services(id INTEGER PRIMARY KEY,source_id TEXT UNIQUE NOT NULL)")
