@@ -23,6 +23,7 @@ data class PlannerState(
     val offline: Boolean = false,
     val offlineValidUntil: String? = null,
     val userLocation: GeoPoint? = null,
+    val recommendation: PlannerEndpoint? = null,
 )
 
 class PlannerViewModel internal constructor(
@@ -100,12 +101,12 @@ class PlannerViewModel internal constructor(
     }
 
     fun edit(field: PlannerField) {
-        mutable.update { it.copy(editing = field, query = "", suggestions = emptyList(), searchUnavailable = false) }
+        mutable.update { it.copy(editing = field, query = "", suggestions = emptyList(), recommendation = null, searchUnavailable = false) }
     }
 
     fun closeSearch() {
         searchGeneration++; searchJob?.cancel()
-        mutable.update { it.copy(editing = null, searching = false) }
+        mutable.update { it.copy(editing = null, searching = false, recommendation = null) }
     }
 
     internal fun consolidateEndpoints(endpoints: List<PlannerEndpoint>): List<PlannerEndpoint> {
@@ -212,17 +213,17 @@ class PlannerViewModel internal constructor(
     fun search(query: String) {
         val generation = ++searchGeneration
         searchJob?.cancel()
-        mutable.update { it.copy(query = query, suggestions = emptyList(), searching = query.trim().length >= 2, searchUnavailable = false) }
+        mutable.update { it.copy(query = query, suggestions = emptyList(), recommendation = null, searching = query.trim().length >= 2, searchUnavailable = false) }
         if (query.trim().length < 2) return
         searchJob = viewModelScope.launch {
-            val localStationResults = withContext(Dispatchers.Default) {
-                TransitSearch.stops(index, TransitSearch.query(query), location, emptySet()).take(10).map {
-                    PlannerEndpoint.fromStop(it)
-                }
+            val (localStationResults, recommendation) = withContext(Dispatchers.Default) {
+                val parsed = TransitSearch.query(query)
+                val literal = TransitSearch.stops(index, parsed, location, emptySet()).take(10).map(PlannerEndpoint::fromStop)
+                literal to StationRecommendations.stops(index, parsed, location, emptySet()).firstOrNull()?.let(PlannerEndpoint::fromStop)
             }
             if (generation != searchGeneration) return@launch
             val consolidatedLocal = consolidateEndpoints(localStationResults)
-            mutable.update { it.copy(suggestions = consolidatedLocal) }
+            mutable.update { it.copy(suggestions = consolidatedLocal, recommendation = recommendation) }
             if (state.value.offline) {
                 mutable.update { it.copy(searching = false) }; return@launch
             }
@@ -243,16 +244,9 @@ class PlannerViewModel internal constructor(
                     mutable.update { it.copy(suggestions = stationResults) }
                 }
                 val placesResults = placesAsync.await()
-                val filteredPlaces = placesResults.filter { place ->
-                    val cleanPlace = StopClusters.cleanName(place.name)
-                    stationResults.none { station ->
-                        (StopClusters.cleanName(station.name) == cleanPlace ||
-                            StopClusters.areNamesCloselyMatching(station.name, place.name)) &&
-                            StopClusters.distanceMeters(station.position, place.position) <= StopClusters.MAX_HUB_DISTANCE_METERS
-                    }
-                }
+                // Places remain available below the station recommendation, even at the same address.
                 if (generation == searchGeneration) {
-                    mutable.update { it.copy(suggestions = stationResults + filteredPlaces, searching = false) }
+                    mutable.update { it.copy(suggestions = stationResults + placesResults, searching = false) }
                 }
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) {

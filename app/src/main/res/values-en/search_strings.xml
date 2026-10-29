@@ -15,4 +15,10 @@
     <string name="search_close_place">Close selected place</string>
     <string name="search_places_privacy">Place searches send your typed query to Photon. Your device location is not sent.</string>
     <string name="search_places_source">Places: Photon / OpenStreetMap</string>
+    <string name="search_recommended">Suggested match</string>
+    <string name="search_input_hint">Station, place or line</string>
+    <string name="search_discover_title">Where are you headed?</string>
+    <string name="search_discover_body">Short names work too. Try “kelen” to find Kelenföld.</string>
+    <string name="search_examples">Try a search</string>
+    <string name="search_favorites">Your favourite stations</string>
 </resources>

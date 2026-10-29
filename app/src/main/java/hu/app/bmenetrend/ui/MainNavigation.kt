@@ -55,8 +55,10 @@ fun MainNavigation(
             Column(Modifier.weight(1f)) {
                 Box(Modifier.weight(1f).fillMaxWidth().consumeWindowInsets(WindowInsets.navigationBars),contentAlignment=Alignment.TopCenter) {
                     saved.SaveableStateProvider(tab.name) {
-                        if(tab==MainTab.MAP) map() else Box(Modifier.widthIn(max=TransitDesign.contentWidth).fillMaxSize()) {
-                            if(tab==MainTab.PLANNER) planner() else favorites()
+                        when (tab) {
+                            MainTab.MAP -> map()
+                            MainTab.PLANNER -> planner()
+                            MainTab.FAVORITES -> Box(Modifier.widthIn(max=TransitDesign.contentWidth).fillMaxSize()) { favorites() }
                         }
                     }
                 }

@@ -13,6 +13,7 @@ object TransitSearch {
         val text: String,
         val name: String,
         val isMultiStop: Boolean = stop.isMultiStop,
+        val words: List<String> = name.split(' ', ',', '-', '(', ')').filter(String::isNotBlank),
     )
 
     @Immutable
