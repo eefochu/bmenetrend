@@ -13,6 +13,7 @@ class BMenetrendApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         hu.app.bmenetrend.offline.NetworkAccessPolicy.initialize(this)
+        hu.app.bmenetrend.offline.NetworkAccessPolicy.monitorConnectivity(this)
         val reports = CrashReports(File(filesDir, "last-crash.txt"))
         val details = "${BuildConfig.VERSION_NAME} (${BuildConfig.BUILD_TYPE}), Android ${Build.VERSION.RELEASE} / API ${Build.VERSION.SDK_INT}"
         // Android 11 also exposes native crashes and low-memory kills, which never reach a Java handler.

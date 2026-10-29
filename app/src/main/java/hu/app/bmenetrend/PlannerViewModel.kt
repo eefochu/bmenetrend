@@ -74,7 +74,7 @@ class PlannerViewModel internal constructor(
     }
     fun updateLocation(point: GeoPoint?) {
         location = point
-        if (point != null && state.value.useLocation && state.value.origin == null) mutable.update { it.copy(origin = currentEndpoint(point), error = null) }
+        if (point != null && state.value.useLocation) mutable.update { it.copy(origin = currentEndpoint(point), error = null) }
     }
     private fun currentEndpoint(point: GeoPoint) = PlannerEndpoint("current", "", "", point)
     fun useCurrentLocation() {
@@ -140,7 +140,11 @@ class PlannerViewModel internal constructor(
     }
     fun plan() {
         val current = state.value
-        val origin = (if (current.useLocation) location?.let(::currentEndpoint) ?: current.origin else current.origin) ?: return
+        val origin = (if (current.useLocation) location?.let(::currentEndpoint) ?: current.origin else current.origin)
+        if (origin == null) {
+            if (current.useLocation) mutable.update { it.copy(error = PlannerError.LOCATION) }
+            return
+        }
         val destination = current.destination ?: return
         invalidate()
         if (!TripPlanner.supported(origin.position) || !TripPlanner.supported(destination.position)) {

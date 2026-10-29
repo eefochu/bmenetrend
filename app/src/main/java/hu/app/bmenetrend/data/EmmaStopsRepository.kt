@@ -17,6 +17,14 @@ class EmmaStopsRepository(context: Context, private val graphql: EmmaGraphqlClie
     private val indexMutex = Mutex()
     data class Index(val catalogue: EmmaStopsParser.Catalogue, val fetchedAt: Instant, val stale: Boolean = false)
 
+    /** First visible dots do not wait for the nationwide catalogue or its mutex. */
+    suspend fun mapArea(bounds: MapBounds): EmmaStopsParser.Catalogue {
+        val variables = org.json.JSONObject().put("south", bounds.south).put("west", bounds.west)
+            .put("north", bounds.north).put("east", bounds.east)
+        val text = graphql.execute(EmmaStopsParser.MAP_AREA_QUERY, variables)
+        return withContext(Dispatchers.Default) { EmmaStopsParser.area(text) }
+    }
+
     suspend fun index(onCached: (Index) -> Unit = {}): Index = indexMutex.withLock {
         val now = Instant.now()
         var saved = memory ?: withContext(Dispatchers.IO) {

@@ -1,6 +1,6 @@
 # Offline mode
 
-The offline pack is optional. Open **Settings → Offline use**, download the pack, then enable **Offline mode**. Downloading does not enable the mode. Turn it off to restore normal EMMA/Photon/live operation. The app never switches modes silently after a failed network request.
+The offline pack is optional. Open **Settings → Offline use** and download the pack. With a pack installed, the app automatically uses offline mode while the default internet connection is unavailable or unvalidated (including captive Wi-Fi), and returns online when connectivity is restored. Working mobile data remains online. Automatic fallback does not change the saved manual preference. You can also enable **Offline mode** manually; it stays enabled until you turn it off. Without a downloaded pack, automatic switching cannot provide offline timetables.
 
 ## Included data and limits
 

@@ -28,9 +28,15 @@ object StopMapClustering {
     fun samePlatform(a: TransitStop,b: TransitStop,bearings: Map<String,List<Double>> = emptyMap()): Boolean {
         if(a.providerIds.any { it in b.providerIds }) return false
         val dist = StopClusters.distanceMeters(a.position,b.position)
-        fun mode(stop: TransitStop) = stop.transportMode?.takeUnless { it in setOf("BUS","COACH") } ?: "BUS"
+        if (dist > CORRIDOR_PLATFORM_METERS) return false
+        fun mode(stop: TransitStop) = stop.transportMode?.takeUnless { it == "BUS" || it == "COACH" } ?: "BUS"
         if(mode(a)!=mode(b)) return false
-        val namesMatch = (listOf(a.name)+a.aliases).any { an -> (listOf(b.name)+b.aliases).any { bn -> StopClusters.areNamesCloselyMatching(an,bn) } }
+        fun matches(name: String): Boolean {
+            if (StopClusters.areNamesCloselyMatching(name, b.name)) return true
+            for (alias in b.aliases) if (StopClusters.areNamesCloselyMatching(name, alias)) return true
+            return false
+        }
+        val namesMatch = matches(a.name) || a.aliases.any(::matches)
         if(!namesMatch && !isKnownPair(a.id, b.id)) return false
 
         val ah=bearings[a.id].orEmpty(); val bh=bearings[b.id].orEmpty()
@@ -52,26 +58,44 @@ object StopMapClustering {
         val groups=mutableListOf<MutableList<TransitStop>>()
         // Both axes matter: latitude-only strips compare unrelated stops across the entire city.
         // The most extreme visible latitude makes longitude cells wide enough for every match.
-        val latitudeStep=.0003
+        // A cell is at least 100m on either axis throughout these bounds.
+        // Since platforms can match only within 95m, only adjacent cells can
+        // contain a match. This replaces 49 lookups per stop with nine.
+        val latitudeStep=.0009
         val extremeLatitude=maxOf(abs(bounds.south),abs(bounds.north)).coerceAtMost(89.999)
         val longitudeStep=latitudeStep/cos(Math.toRadians(extremeLatitude)).coerceAtLeast(.00001)
-        val buckets=mutableMapOf<Pair<Int,Int>,MutableList<MutableList<TransitStop>>>()
-        for(stop in visible.filterNot { it.station && it.id in parents }) {
-            val bucket=floor(stop.position.lat/latitudeStep).toInt() to floor(stop.position.lon/longitudeStep).toInt()
-            val neighbours=sequence {
-                for(dy in -3..3) for(dx in -3..3) yieldAll(buckets[bucket.first+dy to bucket.second+dx].orEmpty())
-            }.distinct()
-            val shared=neighbours
-                .filter { group -> group.all { samePlatform(it,stop,bearings) } }
-                .sortedBy { group -> group.map { StopClusters.distanceMeters(it.position,stop.position) }.average() }.toList()
-            val first=shared.firstOrNull()
-            val chosen=first?.takeIf { shared.size==1 ||
-                shared[1].map { StopClusters.distanceMeters(it.position,stop.position) }.average()-
-                    first.map { StopClusters.distanceMeters(it.position,stop.position) }.average()>=4 }
-            if(chosen!=null) chosen.add(stop) else {
-                val group=mutableListOf(stop)
+        fun cellKey(y: Int, x: Int) = (y.toLong() shl 32) xor (x.toLong() and 0xffffffffL)
+        val buckets = LongCellMap<MutableList<MutableList<TransitStop>>>(visible.size)
+        for (stop in visible) {
+            if (stop.station && stop.id in parents) continue
+            val y = floor(stop.position.lat / latitudeStep).toInt()
+            val x = floor(stop.position.lon / longitudeStep).toInt()
+            var closest: MutableList<TransitStop>? = null
+            var closestDistance = Double.POSITIVE_INFINITY
+            var secondDistance = Double.POSITIVE_INFINITY
+            // Each group belongs to exactly one bucket. Avoid per-stop sequences,
+            // distinct sets, candidate lists and sorting just to find the nearest two.
+            for (dy in -1..1) for (dx in -1..1) {
+                val candidates = buckets[cellKey(y + dy, x + dx)] ?: continue
+                for (group in candidates) {
+                    if (!group.all { samePlatform(it, stop, bearings) }) continue
+                    var total = 0.0
+                    for (member in group) total += StopClusters.distanceMeters(member.position, stop.position)
+                    val distance = total / group.size
+                    if (distance < closestDistance) {
+                        secondDistance = closestDistance
+                        closestDistance = distance
+                        closest = group
+                    } else if (distance < secondDistance) secondDistance = distance
+                }
+            }
+            if (closest != null && secondDistance - closestDistance >= 4) closest.add(stop)
+            else {
+                val group = mutableListOf(stop)
                 groups.add(group)
-                buckets.getOrPut(bucket) { mutableListOf() }.add(group)
+                val key = cellKey(y, x)
+                val bucket = buckets[key] ?: ArrayList<MutableList<TransitStop>>().also { buckets[key] = it }
+                bucket.add(group)
             }
         }
         return if(highlightedStopIds==null) groups else groups.filter { group -> group.any { it.id in highlightedStopIds } }

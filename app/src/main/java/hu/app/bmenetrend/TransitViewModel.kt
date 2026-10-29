@@ -104,6 +104,9 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private var lastSettledCenter: GeoPoint? = null
     private var mapCenter = GeoPoint(47.473, 18.825)
     private var mapBounds: MapBounds? = null
+    private var mapStopsJob: Job? = null
+    private var mapStopsGeneration = 0
+    private var loadedMapBounds: MapBounds? = null
     private var nearbyKey = emptyList<String>()
     private var nearbySelection = emptyList<NearbyStation>()
     private val nearbyBoards = linkedMapOf<String, EmmaStopsParser.Board>()
@@ -199,7 +202,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             viewModelScope.launch { refreshData() }
             ensureBoardRequest(force = true)
             ensureNearbyRequest()
-        } else { mapSettledJob?.cancel(); nearbyJob?.cancel(); boardJob?.cancel() }
+        } else { mapSettledJob?.cancel(); nearbyJob?.cancel(); boardJob?.cancel(); mapStopsJob?.cancel(); mapStopsGeneration++ }
     }
 
     fun setFavoritesVisible(visible: Boolean) {
@@ -531,6 +534,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     fun updateMapArea(bounds: MapBounds, center: GeoPoint) {
         mapBounds = bounds
         mapCenter = center
+        ensureMapStops(bounds)
         if (!state.value.showNearby) return
         mapSettledJob?.cancel()
         mapSettledJob = viewModelScope.launch {
@@ -540,6 +544,41 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             if (dist > 30.0 || nearbySelection.isEmpty()) {
                 lastSettledCenter = center
                 ensureNearbyRequest()
+            }
+        }
+    }
+
+    private fun ensureMapStops(bounds: MapBounds) {
+        if (!mapVisible || NetworkAccessPolicy.offline.value || state.value.stopIndexLoaded) return
+        // Avoid a second nationwide request while zoomed out; the index is already loading.
+        if (bounds.north - bounds.south !in 0.0..1.0 || bounds.east - bounds.west !in 0.0..1.5) return
+        val covered = loadedMapBounds
+        if (covered != null && bounds.south >= covered.south && bounds.north <= covered.north &&
+            bounds.west >= covered.west && bounds.east <= covered.east) return
+        mapStopsJob?.cancel()
+        val generation = ++mapStopsGeneration
+        val networkGeneration = NetworkAccessPolicy.generation
+        val latMargin = (bounds.north - bounds.south) * .2
+        val lonMargin = (bounds.east - bounds.west) * .2
+        val area = MapBounds((bounds.west - lonMargin).coerceAtLeast(16.1), (bounds.south - latMargin).coerceAtLeast(45.7),
+            (bounds.east + lonMargin).coerceAtMost(22.9), (bounds.north + latMargin).coerceAtMost(48.6))
+        if (area.west >= area.east || area.south >= area.north) return
+        mapStopsJob = viewModelScope.launch {
+            try {
+                val catalogue = stopsRepository.mapArea(area)
+                if (generation != mapStopsGeneration || networkGeneration != NetworkAccessPolicy.generation || state.value.stopIndexLoaded) return@launch
+                loadedMapBounds = area
+                mutableState.update { current ->
+                    val merged = current.emmaStops.associateBy { it.id }.toMutableMap()
+                    catalogue.stops.forEach { stop ->
+                        if (merged[stop.id]?.routeIds.isNullOrEmpty()) merged[stop.id] = stop
+                    }
+                    current.copy(emmaStops = merged.values.toList())
+                }
+                recalculate()
+            } catch (cancelled: CancellationException) { throw cancelled
+            } catch (_: Exception) {
+                // The authoritative cached/national index continues independently.
             }
         }
     }
@@ -644,6 +683,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         }
     }
     private suspend fun applyOfflineMode(enabled: Boolean) {
+        mapStopsGeneration++; mapStopsJob?.cancel(); loadedMapBounds = null
         placeSearchGeneration++; lineGeneration++; journeyGeneration++; nearbyGeneration++; favoriteGeneration++
         placeSearchJob?.cancel(); lineJob?.cancel(); journeyJob?.cancel(); nearbyJob?.cancel(); favoriteJob?.cancel(); boardJob?.cancel()
         otaJob?.cancel(); otaDownloadJob?.cancel()
