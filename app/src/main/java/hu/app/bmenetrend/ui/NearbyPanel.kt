@@ -3,8 +3,6 @@ package hu.app.bmenetrend.ui
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -12,41 +10,31 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import hu.app.bmenetrend.R
-import hu.app.bmenetrend.data.ArrivalKind
-import hu.app.bmenetrend.data.Departure
-import hu.app.bmenetrend.data.DepartureTime
-import hu.app.bmenetrend.data.NearbyStation
-import java.time.Instant
-import hu.app.bmenetrend.data.TransitRoute
-import hu.app.bmenetrend.data.TransitStop
+import hu.app.bmenetrend.data.*
 import java.time.Duration
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
+import java.time.Instant
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
-private val nearbyClock = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.of("Europe/Budapest"))
-
 @Composable
-fun NearbyPanel(
+internal fun NearbyPanel(
     stations: List<NearbyStation>,
     routesById: Map<String, TransitRoute>,
-    atUser: Boolean,
     loading: Boolean,
     stopStatus: String?,
     windowMinutes: Int,
     now: Instant,
-    onStop: (String) -> Unit,
-    onDeparture: (Departure) -> Unit,
+    atUser: Boolean,
+    onWindow: (Int) -> Unit,
     onRefresh: () -> Unit,
     onLocate: () -> Unit,
-    onToggleExpand: () -> Unit,
+    onStop: (String) -> Unit,
+    onDeparture: (Departure) -> Unit,
     onCollapse: () -> Unit,
-    onWindow: (Int) -> Unit,
+    onToggleExpand: () -> Unit = onCollapse,
     modifier: Modifier = Modifier,
     isExpanded: Boolean = true,
 ) {
@@ -88,11 +76,15 @@ fun NearbyPanel(
         }
         stations.forEach { station ->
             item(key = "station-${station.stop.id}", contentType = "station_header") {
+                val stationPlatform = station.stop.platformCode?.ifBlank { null }
+                    ?: hu.app.bmenetrend.data.BkkPlatformIndex.getPlatformCode(station.stop.id)
                 Row(Modifier.fillMaxWidth().clickable { onStop(station.stop.id) }.padding(horizontal = 22.dp, vertical = 13.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Icon(Icons.Rounded.LocationOn, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
-                    Text(station.stop.name, Modifier.weight(1f), style = MaterialTheme.typography.titleSmall,
+                    Text(station.stop.name, Modifier.weight(1f, fill = false), style = MaterialTheme.typography.titleSmall,
                         maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    stationPlatform?.let { PlatformBadge(it) }
+                    Spacer(Modifier.weight(1f))
                     Text(stringResource(R.string.nearby_distance, station.distanceMeters.roundToInt()),
                         style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Icon(Icons.Rounded.ChevronRight, null, Modifier.size(18.dp))
@@ -132,10 +124,13 @@ internal fun NearbyDepartureCard(
     minutes: Int,
     onClick: () -> Unit,
 ) {
-    val provider=route?.providerId ?: platform?.providerId ?: "bkk"
-    val boarding=(departure.platformCode ?: platform?.platformCode)?.let {
-        stringResource(if(provider=="mav") R.string.rail_platform else R.string.emma_platform,it)
-    }
-    DepartureBoardRow(departure,provider,route?.transportMode ?: platform?.transportMode,route?.color,minutes,boarding,onClick)
+    val provider = route?.providerId ?: platform?.providerId ?: "bkk"
+    val resolvedPlatform = departure.platformCode?.ifBlank { null }
+        ?: platform?.platformCode?.ifBlank { null }
+        ?: hu.app.bmenetrend.data.BkkPlatformIndex.getPlatformCode(departure.stopId.ifBlank { null } ?: platform?.id)
+    val boarding = if (resolvedPlatform == null) {
+        departure.platformCode?.let { stringResource(if(provider=="mav") R.string.rail_platform else R.string.emma_platform, it) }
+    } else null
+    DepartureBoardRow(departure, provider, route?.transportMode ?: platform?.transportMode, route?.color, minutes, boarding, onClick, platformCode = resolvedPlatform)
     HorizontalDivider(Modifier.padding(start=20.dp,end=20.dp),color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=.45f))
 }

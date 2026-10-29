@@ -2,21 +2,25 @@ package hu.app.bmenetrend.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Sensors
 import androidx.compose.material.icons.rounded.Cancel
 import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import hu.app.bmenetrend.R
 
 /** Timetable spacing: compact information inside generous, consistent interaction bounds. */
@@ -77,6 +81,49 @@ internal fun TransitSectionTitle(title: String, modifier: Modifier = Modifier) {
         color=MaterialTheme.colorScheme.onSurface,fontWeight=FontWeight.Bold)
 }
 
+/**
+ * Vibrant orange platform / quay / track badge (e.g. "A1", "A4", "E4", "B1", "10", "1")
+ * styled after the standard BudapestGO / MÁV / Volán platform indicators.
+ */
+@Composable
+internal fun PlatformBadge(
+    platformCode: String?,
+    modifier: Modifier = Modifier,
+    backgroundColor: Color = Color(0xFFE67008),
+    contentColor: Color = Color.White,
+) {
+    val clean = platformCode?.trim().orEmpty()
+    if (clean.isBlank()) return
+    val isPill = clean.length > 2
+    Surface(
+        shape = if (isPill) RoundedCornerShape(11.dp) else CircleShape,
+        color = backgroundColor,
+        contentColor = contentColor,
+        modifier = modifier
+            .heightIn(min = 22.dp)
+            .widthIn(min = 22.dp),
+        shadowElevation = 0.5.dp,
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.padding(horizontal = if (isPill) 6.dp else 4.dp, vertical = 2.dp)
+        ) {
+            Text(
+                text = clean,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.5.sp,
+                    lineHeight = 12.sp,
+                    letterSpacing = 0.sp
+                ),
+                color = contentColor,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+            )
+        }
+    }
+}
+
 /** The time is the scanning anchor. Live status has an icon as well as colour. */
 @Composable
 internal fun DepartureCount(minutes: Int, time: String, live: Boolean, modifier: Modifier = Modifier, cancelled: Boolean=false, delay: Long=0, scheduledTime: String?=null) {
@@ -107,10 +154,13 @@ internal fun DepartureCount(minutes: Int, time: String, live: Boolean, modifier:
 internal fun DepartureBoardRow(
     departure: hu.app.bmenetrend.data.Departure,provider: String,mode: String?,sourceColor: String?,minutes: Int,
     boardingInfo: String?,onClick: ()->Unit,modifier: Modifier=Modifier,
+    platformCode: String? = departure.platformCode,
 ) {
     val large=androidx.compose.ui.platform.LocalDensity.current.fontScale>1.3f || transitWindowWidth()<350.dp
     val live=departure.kind==hu.app.bmenetrend.data.ArrivalKind.LIVE
     val clock=rememberBoardClock
+    val resolvedPlatform = platformCode?.ifBlank { null }
+        ?: hu.app.bmenetrend.data.BkkPlatformIndex.getPlatformCode(departure.stopId)
     val badge: @Composable ()->Unit = {
         Column(verticalArrangement=Arrangement.spacedBy(4.dp)) {
             ServiceBadge(departure.routeNumber,provider,mode,sourceColor,departure.trainNumber)
@@ -126,10 +176,14 @@ internal fun DepartureBoardRow(
     }
     val detail: @Composable ()->Unit = {
         Column(verticalArrangement=Arrangement.spacedBy(4.dp)) {
-            Text(departure.destination.ifBlank { stringResource(R.string.emma_vehicle_no_direction) },
-                style=MaterialTheme.typography.titleMedium,maxLines=if(large) 4 else 3,overflow=androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(departure.destination.ifBlank { stringResource(R.string.emma_vehicle_no_direction) },
+                    style=MaterialTheme.typography.titleMedium,maxLines=if(large) 4 else 3,overflow=androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false))
+                resolvedPlatform?.let { PlatformBadge(it) }
+            }
             Text(serviceTypeLabel(provider,mode),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-            listOfNotNull(departure.serviceName,boardingInfo).forEach { Text(it,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant) }
+            listOfNotNull(departure.serviceName, boardingInfo?.takeIf { resolvedPlatform == null }).forEach { Text(it,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant) }
             if(!departure.isCancelled) Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(4.dp)) {
                 Icon(if(live) Icons.Rounded.Sensors else Icons.Rounded.Schedule,null,Modifier.size(13.dp),tint=MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(stringResource(if(live) R.string.ui_live_arrival else R.string.ui_scheduled),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)

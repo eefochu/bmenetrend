@@ -88,8 +88,9 @@ object EmmaStopsParser {
             } else namespace
             val station = row.text("locationType") == "STATION"
             serving.forEach { routes[it.id] = it }
+            val platform = BkkPlatformIndex.resolve(source, row.text("platformCode"))
             TransitStop("emma:$source", name, GeoPoint(lat, lon), serving.map { it.id }, provider,
-                sourceStopIds = listOf(source), platformCode = row.text("platformCode"), station = station,
+                sourceStopIds = listOf(source), platformCode = platform, station = station,
                 parentStationId = row.optJSONObject("parentStation")?.text("gtfsId")?.let { "emma:$it" },
                 transportMode = if (provider == "hev") "SUBURBAN_RAILWAY" else mode)
         }.distinctBy { it.id }
@@ -131,7 +132,8 @@ object EmmaStopsParser {
             }
         }
         require(found && result.isNotEmpty()) { "Missing national stop index" }
-        return Catalogue(result.distinctBy { it.id }, emptyList())
+        return Catalogue(result.distinctBy { it.id }, emptyList() // Routes populated on demand
+        )
     }
     fun area(text: String) = stops(EmmaGraphqlClient.data(text).getJSONArray("stopsByBbox"))
     fun search(text: String) = stops(EmmaGraphqlClient.data(text).getJSONArray("stops"))
@@ -185,6 +187,11 @@ object EmmaStopsParser {
             val expected = if (realtime) Instant.ofEpochSecond(day + realtimeSeconds!!) else scheduled ?: return@mapNotNull null
             if (expected < now || expected > now.plusSeconds(windowMinutes * 60L)) return@mapNotNull null
             routes[route.id] = route
+            val stopObj = time.optJSONObject("stop")
+            val departurePlatform = BkkPlatformIndex.resolve(
+                stopObj?.text("gtfsId") ?: expectedId,
+                stopObj?.text("platformCode")
+            )
             Departure(route.id, route.number, time.text("headsign") ?: trip.text("tripHeadsign") ?: time.text("_sourceHeadsign").orEmpty(),
                 expectedId, scheduled, expected, if (realtime) ArrivalKind.LIVE else ArrivalKind.SCHEDULED,
                 // The full trip ID distinguishes departures with identical route/headsign/time.
@@ -194,7 +201,7 @@ object EmmaStopsParser {
                 realtimeState = time.text("realtimeState"),
                 trainNumber = if (route.providerId == "mav") RailSupport.serviceNumber(trip.text("tripShortName")) else null,
                 serviceName = if (route.providerId == "mav") RailSupport.clean(trip.text("tripShortName")) else null,
-                platformCode = time.optJSONObject("stop")?.text("platformCode"))
+                platformCode = departurePlatform)
         }.distinctBy { listOf(it.routeId, it.directionId, it.expectedAt) }.sortedBy { it.expectedAt }
         return Board(expectedId, departures, catalogue.copy(routes = routes.values.toList()), now, limitReached || groups == null && rows.length() >= BOARD_LIMIT)
     }

@@ -22,7 +22,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 internal enum class SearchCategory(val title: Int) {
-    ALL(R.string.search_all), PLACES(R.string.search_places), STATIONS(R.string.search_stations), VEHICLES(R.string.search_vehicles)
+    ALL(R.string.search_all), STATIONS(R.string.search_stations), PLACES(R.string.search_places), VEHICLES(R.string.search_vehicles)
 }
 
 @Immutable
@@ -97,6 +97,15 @@ internal fun CategorizedSearch(
             return@Column
         }
         LazyColumn(state = listState, contentPadding = PaddingValues(bottom = 32.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())) {
+            // Stations primarily
+            if (category == SearchCategory.ALL || category == SearchCategory.STATIONS) {
+                item(contentType = "section_header") { SearchSectionHeader(SearchCategory.STATIONS, matchingStops.size > 3 && category == SearchCategory.ALL) { onCategoryChanged(SearchCategory.STATIONS) } }
+                if (stopsLoading || matchingStops.isEmpty() && !state.stopIndexLoaded && state.stopStatus == null) item(contentType = "progress") { LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = 22.dp)) }
+                state.stopStatus?.let { status -> item(contentType = "status") { Text(status, Modifier.padding(horizontal = 22.dp, vertical = 8.dp), style = MaterialTheme.typography.bodyMedium) } }
+                items(matchingStops.take(limit), key = { "station-${it.id}" }, contentType = { "station" }) { stop -> StopSearchRow(stop, state, stop.id in state.favorites, onStop) }
+                if (!stopsLoading && state.stopIndexLoaded && matchingStops.isEmpty()) item(contentType = "empty") { SearchEmpty() }
+            }
+            // Normal places
             if (searchPlaces) {
                 item(contentType = "section_header") { SearchSectionHeader(SearchCategory.PLACES, places.size > 3 && category == SearchCategory.ALL) { onCategoryChanged(SearchCategory.PLACES) } }
                 if (placeLoading) item(contentType = "progress") { LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = 22.dp)) }
@@ -129,13 +138,7 @@ internal fun CategorizedSearch(
                     }
                 }
             }
-            if (category == SearchCategory.ALL || category == SearchCategory.STATIONS) {
-                item(contentType = "section_header") { SearchSectionHeader(SearchCategory.STATIONS, matchingStops.size > 3 && category == SearchCategory.ALL) { onCategoryChanged(SearchCategory.STATIONS) } }
-                if (stopsLoading || matchingStops.isEmpty() && !state.stopIndexLoaded && state.stopStatus == null) item(contentType = "progress") { LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = 22.dp)) }
-                state.stopStatus?.let { status -> item(contentType = "status") { Text(status, Modifier.padding(horizontal = 22.dp, vertical = 8.dp), style = MaterialTheme.typography.bodyMedium) } }
-                items(matchingStops.take(limit), key = { "station-${it.id}" }, contentType = { "station" }) { stop -> StopSearchRow(stop, state, stop.id in state.favorites, onStop) }
-                if (!stopsLoading && state.stopIndexLoaded && matchingStops.isEmpty()) item(contentType = "empty") { SearchEmpty() }
-            }
+            // Vehicles / Lines
             if (category == SearchCategory.ALL || category == SearchCategory.VEHICLES) {
                 item(contentType = "section_header") { SearchSectionHeader(SearchCategory.VEHICLES, matchingRoutes.size + matchingVehicles.size > 3 && category == SearchCategory.ALL) { onCategoryChanged(SearchCategory.VEHICLES) } }
                 if (routesLoading || vehiclesLoading || matchingRoutes.isEmpty() && matchingVehicles.isEmpty() && state.lineCatalogueLoading) item(contentType = "progress") { LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = 22.dp)) }

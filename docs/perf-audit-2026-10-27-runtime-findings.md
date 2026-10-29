@@ -335,6 +335,14 @@ POST_RELEASE_MEASUREMENT: finishedAfterRelease=true durationMs=8 repoNotNull=tru
 - **Fix (parent-applied)**: `GtfsImporter.create()` now uses `journal_mode=MEMORY` + `synchronous=OFF` for staging (disposable file: crash → `staging()` purges it, activation only promotes a digest-matched, `quick_check`-passed DB, `active.json` flips last via AtomicFile). `OfflinePackStore.activate()` gained optional `verifiedDigest` param; worker computes one SHA-256 pass and passes it through. Other callers keep pure-recompute behavior (tamper test still enforces digest mismatch rejection).
 - **Verification**: dedicated round 44/46 passed (2 env-gated assumption skips), contention 3/3, call-site audit clean, staging cleanup compatible with memory journaling. On-device magnitude is user-observable, not benchmarked locally.
 
+### Planner search duplicate fix verification (2026-10-29, VERIFIED ON EMULATOR)
+
+- **User report**: planner destination search for "kelenf" showed two Kelenföld entries ("Budapest-Kelenföld" + "Budapest, Kelenföld vasútállomás") and raw internal route-ID chips ("V2912_106", "hkir_V-R-200-686").
+- **Fix (previous agent, uncommitted in this stack)**: `PlannerViewModel.consolidateEndpoints` (two-pass station merge: `cleanName` grouping + hub-distance) and `StopClusters.isCleanRouteNumber` route-chip filtering.
+- **Investigation**: pulled the device's real EMMA stop index (71,535 stops, incl. MÁV European rail records like "Budapest-Kelenföld") and replicated the exact pipeline in a throwaway JVM test — `consolidateForSearch` → search → consolidateEndpoints yields 3 clean suggestions for the 47 real Kelenföld records: no duplicates survive.
+- **Device verification**: `:app:assembleDevelopment` `app-arm64-v8a-development.apk` installed to emulator-5560; planner search "kelenf" → ONE "Kelenföld vasútállomás" entry with clean line badges; "vasut" → nearest stations distance-ranked. Raw-ID chips gone.
+- **Build-type trap (root cause of a false-negative during testing)**: this project's `debug` buildType is the release-optimized *distributed debug-channel* package (`hu.app.bmenetrend`, R8, isDebuggable=false — see `app/build.gradle.kts` buildTypes comment); the locally installed `.dev` package comes from the `development` buildType. Installing `assembleDebug` APKs creates/updates the unintended second package `hu.app.bmenetrend` instead of the dev app. For emulator verification use `:app:assembleDevelopment` + `app-build/outputs/apk/development/app-<abi>-development.apk` and package `hu.app.bmenetrend.dev`. A stray `hu.app.bmenetrend` install on the emulator was removed via `pm uninstall`.
+
 ### U1 fix: Gated Departure Row Recomposition (STATIC-VERIFIED)
 
 - **ViaBuszScreen.kt**: Hoisted `Duration.between(state.now, departure.expectedAt)` reads out of the per-item `LazyColumn` body into `departuresWithMinutes = remember(state.departures, nowMinuteEpoch)`, keyed on `nowMinuteEpoch = state.now.epochSecond / 60`.

@@ -242,4 +242,40 @@ class PlannerViewModelSearchSelectionTest {
         }
         assertEquals(listOf("beta"), model.state.value.suggestions.map { it.id })
     }
+
+    @Test fun hubStationConsolidationMergesMavAndVolanIntoSingleRailStation() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val model = createModel(app)
+
+        val mavStation = PlannerEndpoint(
+            id = "emma:mav:005510009",
+            name = "Budapest-Kelenföld",
+            detail = "",
+            position = GeoPoint(47.4647, 19.0215),
+            isStation = true,
+            transportMode = "RAIL",
+            providerIds = listOf("mav"),
+            routeIds = listOf("1:V2912_106", "S10", "Z30"),
+            sourceStopIds = listOf("emma:mav:005510009")
+        )
+        val volanStation = PlannerEndpoint(
+            id = "emma:hkir:773538",
+            name = "Budapest, Kelenföld vasútállomás",
+            detail = "",
+            position = GeoPoint(47.4641, 19.0229),
+            isStation = true,
+            transportMode = "BUS",
+            providerIds = listOf("volan"),
+            routeIds = listOf("hkir_V-R-200-686", "710", "720"),
+            sourceStopIds = listOf("emma:hkir:773538")
+        )
+
+        val consolidated = model.consolidateEndpoints(listOf(mavStation, volanStation))
+        assertEquals(1, consolidated.size)
+        val singleResult = consolidated.single()
+        assertEquals("Budapest-Kelenföld", singleResult.name)
+        assertEquals("RAIL", singleResult.transportMode)
+        assertTrue(singleResult.sourceStopIds.contains("emma:mav:005510009"))
+        assertTrue(singleResult.sourceStopIds.contains("emma:hkir:773538"))
+    }
 }

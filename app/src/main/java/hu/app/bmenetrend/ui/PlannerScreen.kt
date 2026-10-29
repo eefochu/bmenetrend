@@ -709,14 +709,21 @@ fun PlannerScreen(
                                             } else {
                                                 currentOrigin?.name ?: stringResource(R.string.planner_current)
                                             }
-                                            Text(
-                                                text = originText,
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                fontWeight = FontWeight.SemiBold,
-                                                color = MaterialTheme.colorScheme.onSurface,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
+                                            val originPlatform: String? = if (state.useLocation && (currentOrigin == null || currentOrigin.id == "current")) null
+                                            else (if (currentOrigin?.detail?.matches(Regex("^[A-Z0-9]{1,4}$")) == true) currentOrigin.detail else null)
+                                                ?: hu.app.bmenetrend.data.BkkPlatformIndex.getPlatformCode(currentOrigin?.id)
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                Text(
+                                                    text = originText,
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    color = MaterialTheme.colorScheme.onSurface,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis,
+                                                    modifier = Modifier.weight(1f, fill = false)
+                                                )
+                                                originPlatform?.let { PlatformBadge(it) }
+                                            }
                                         }
                                     }
 
@@ -770,6 +777,8 @@ fun PlannerScreen(
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                             if (currentDest != null) {
+                                                val destPlatform: String? = (if (currentDest.detail.matches(Regex("^[A-Z0-9]{1,4}$"))) currentDest.detail else null)
+                                                    ?: hu.app.bmenetrend.data.BkkPlatformIndex.getPlatformCode(currentDest.id)
                                                 Row(
                                                     verticalAlignment = Alignment.CenterVertically,
                                                     horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -786,8 +795,10 @@ fun PlannerScreen(
                                                         fontWeight = FontWeight.SemiBold,
                                                         color = MaterialTheme.colorScheme.onSurface,
                                                         maxLines = 1,
-                                                        overflow = TextOverflow.Ellipsis
+                                                        overflow = TextOverflow.Ellipsis,
+                                                        modifier = Modifier.weight(1f, fill = false)
                                                     )
+                                                    destPlatform?.let { PlatformBadge(it) }
                                                 }
                                             } else {
                                                 Row(
@@ -1045,10 +1056,15 @@ private fun EndpointField(label: Int, endpoint: PlannerEndpoint?, current: Boole
                 null, tint = MaterialTheme.colorScheme.primary)
             Column(Modifier.weight(1f)) {
                 Text(stringResource(label), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(if (current || endpoint?.id == "current") stringResource(R.string.planner_current)
-                    else endpoint?.name ?: stringResource(if (label == R.string.planner_to) R.string.planner_subtitle else R.string.planner_choose),
-                    style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                if (endpoint?.detail?.isNotBlank() == true) Text(endpoint.detail, style = MaterialTheme.typography.bodySmall,
+                val platformCode: String? = (if (endpoint?.detail?.matches(Regex("^[A-Z0-9]{1,4}$")) == true) endpoint.detail else null)
+                    ?: hu.app.bmenetrend.data.BkkPlatformIndex.getPlatformCode(endpoint?.id)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(if (current || endpoint?.id == "current") stringResource(R.string.planner_current)
+                        else endpoint?.name ?: stringResource(if (label == R.string.planner_to) R.string.planner_subtitle else R.string.planner_choose),
+                        style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                    platformCode?.let { PlatformBadge(it) }
+                }
+                if (endpoint?.detail?.isNotBlank() == true && platformCode == null) Text(endpoint.detail, style = MaterialTheme.typography.bodySmall,
                     maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Icon(Icons.Rounded.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -1187,9 +1203,10 @@ private fun PlannerSearch(
                     val vehicleStyle = remember(endpoint) { resolveEndpointVehicleStyle(endpoint) }
                     val isTrain = vehicleStyle == VehicleMarkerStyle.TRAIN
                     val routeBadges = remember(endpoint.routeIds) {
-                        endpoint.routeIds.map { routeId ->
-                            routeId.substringAfterLast(":")
-                        }.filter { it.isNotBlank() && it != "?" }.distinct().take(10)
+                        endpoint.routeIds.mapNotNull { routeId ->
+                            val candidate = routeId.substringAfterLast(":")
+                            if (StopClusters.isCleanRouteNumber(candidate)) candidate else null
+                        }.distinct().take(5)
                     }
                     val distance = remember(state.userLocation, endpoint.position) {
                         state.userLocation?.let { loc ->
@@ -1221,17 +1238,23 @@ private fun PlannerSearch(
                                 )
 
                                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                    Text(
-                                        text = endpoint.name,
-                                        style = MaterialTheme.typography.titleMedium.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 17.sp
-                                        ),
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    if (endpoint.detail.isNotBlank()) {
+                                    val platformCode: String? = (if (endpoint.detail.matches(Regex("^[A-Z0-9]{1,4}$"))) endpoint.detail else null)
+                                        ?: hu.app.bmenetrend.data.BkkPlatformIndex.getPlatformCode(endpoint.id)
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Text(
+                                            text = endpoint.name,
+                                            style = MaterialTheme.typography.titleMedium.copy(
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 17.sp
+                                            ),
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f, fill = false)
+                                        )
+                                        platformCode?.let { PlatformBadge(it) }
+                                    }
+                                    if (endpoint.detail.isNotBlank() && platformCode == null) {
                                         Text(
                                             text = endpoint.detail,
                                             style = MaterialTheme.typography.bodySmall,
@@ -1269,7 +1292,8 @@ private fun PlannerSearch(
                                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            routeBadges.take(6).forEach { badge ->
+                                            val maxBadges = 4
+                                            routeBadges.take(maxBadges).forEach { badge ->
                                                 val isRail = isTrain || badge.matches(Regex("^[GSZgsz]\\d.*")) || badge in setOf("EC","EN","IC","IR","RJ","RJX","EX","S","SZ","G","GY","Z")
                                                 val badgeBg = if (isRail) railLineColor(badge) else Color(vehicleStyle.color)
                                                 val badgeText = if (isRail) railLineTextColor(badge) else badgeTextColor(badgeBg)
@@ -1284,15 +1308,19 @@ private fun PlannerSearch(
                                                             fontSize = 12.sp,
                                                             fontWeight = FontWeight.Bold
                                                         ),
+                                                        maxLines = 1,
+                                                        softWrap = false,
                                                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                                     )
                                                 }
                                             }
-                                            if (routeBadges.size > 6) {
+                                            if (routeBadges.size > maxBadges) {
                                                 Text(
-                                                    "+${routeBadges.size - 6}",
+                                                    "+${routeBadges.size - maxBadges}",
                                                     style = MaterialTheme.typography.labelSmall,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    maxLines = 1,
+                                                    softWrap = false
                                                 )
                                             }
                                         }
@@ -1305,6 +1333,8 @@ private fun PlannerSearch(
                                             text = distance,
                                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                            softWrap = false,
                                             modifier = Modifier.padding(start = 8.dp)
                                         )
                                     }

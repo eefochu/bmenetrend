@@ -117,6 +117,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private var mapStopsJob: Job? = null
     private var mapStopsGeneration = 0
     private var loadedMapBounds: MapBounds? = null
+    private val loadedMapBoundsList = mutableListOf<MapBounds>()
     private var nearbyKey = emptyList<String>()
     private var nearbySelection = emptyList<NearbyStation>()
     private val nearbyBoards = linkedMapOf<String, EmmaStopsParser.Board>()
@@ -192,12 +193,6 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         }
         launch {
             while (isActive) {
-                refreshStopIndex()
-                delay(if (stopIndexFailed) 60_000 else 3_600_000)
-            }
-        }
-        launch {
-            while (isActive) {
                 if (mapVisible) refreshBoard()
                 delay(20_000)
             }
@@ -236,7 +231,6 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
 
     fun refreshFavorites() {
         ensureFavoriteRequest(force = true)
-        if (!state.value.stopIndexLoaded) viewModelScope.launch { refreshStopIndex() }
     }
 
     private fun favoriteStations(current: UiState): List<NearbyStation> {
@@ -331,7 +325,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         ensureNearbyRequest(force = true)
         ensureBoardRequest(force = true)
         ensureVehicleJourney(force = true)
-        if (!state.value.stopIndexLoaded) viewModelScope.launch { refreshStopIndex() }
+        mapBounds?.let { ensureMapStops(it) }
     }
 
     private suspend fun refreshEmmaData(force: Boolean = false) {
@@ -597,36 +591,53 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun ensureMapStops(bounds: MapBounds) {
-        if (!mapVisible || NetworkAccessPolicy.offline.value || state.value.stopIndexLoaded) return
-        // Avoid a second nationwide request while zoomed out; the index is already loading.
-        if (bounds.north - bounds.south !in 0.0..1.0 || bounds.east - bounds.west !in 0.0..1.5) return
-        val covered = loadedMapBounds
-        if (covered != null && bounds.south >= covered.south && bounds.north <= covered.north &&
-            bounds.west >= covered.west && bounds.east <= covered.east) return
+        if (!mapVisible || NetworkAccessPolicy.offline.value) return
+        // Do not query when zoomed far out where individual stops are not visible anyway
+        if (bounds.north - bounds.south !in 0.0..0.85 || bounds.east - bounds.west !in 0.0..1.2) return
+        val alreadyCovered = loadedMapBoundsList.any { covered ->
+            bounds.south >= covered.south && bounds.north <= covered.north &&
+            bounds.west >= covered.west && bounds.east <= covered.east
+        }
+        if (alreadyCovered) return
+
         mapStopsJob?.cancel()
         val generation = ++mapStopsGeneration
         val networkGeneration = NetworkAccessPolicy.generation
         val latMargin = (bounds.north - bounds.south) * .2
         val lonMargin = (bounds.east - bounds.west) * .2
-        val area = MapBounds((bounds.west - lonMargin).coerceAtLeast(16.1), (bounds.south - latMargin).coerceAtLeast(45.7),
-            (bounds.east + lonMargin).coerceAtMost(22.9), (bounds.north + latMargin).coerceAtMost(48.6))
+        val area = MapBounds(
+            (bounds.west - lonMargin).coerceAtLeast(16.1),
+            (bounds.south - latMargin).coerceAtLeast(45.7),
+            (bounds.east + lonMargin).coerceAtMost(22.9),
+            (bounds.north + latMargin).coerceAtMost(48.6)
+        )
         if (area.west >= area.east || area.south >= area.north) return
+
         mapStopsJob = viewModelScope.launch {
             try {
                 val catalogue = stopsRepository.mapArea(area)
-                if (generation != mapStopsGeneration || networkGeneration != NetworkAccessPolicy.generation || state.value.stopIndexLoaded) return@launch
+                if (generation != mapStopsGeneration || networkGeneration != NetworkAccessPolicy.generation) return@launch
+                if (loadedMapBoundsList.size >= 16) {
+                    loadedMapBoundsList.removeAt(0)
+                }
+                loadedMapBoundsList.add(area)
                 loadedMapBounds = area
                 mutableState.update { current ->
                     val merged = current.emmaStops.associateBy { it.id }.toMutableMap()
                     catalogue.stops.forEach { stop ->
                         if (merged[stop.id]?.routeIds.isNullOrEmpty()) merged[stop.id] = stop
                     }
-                    current.copy(emmaStops = merged.values.toList())
+                    val resultStops = if (merged.size > 2000) {
+                        val center = mapCenter
+                        merged.values.sortedBy { distanceMeters(it.position, center) }.take(1500)
+                    } else {
+                        merged.values.toList()
+                    }
+                    current.copy(emmaStops = resultStops)
                 }
                 recalculate()
             } catch (cancelled: CancellationException) { throw cancelled
             } catch (_: Exception) {
-                // The authoritative cached/national index continues independently.
             }
         }
     }
@@ -734,7 +745,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         savedBoardJob?.cancel()
         savedBoardKey = null
         savedBoardResult = null
-        mapStopsGeneration++; mapStopsJob?.cancel(); loadedMapBounds = null
+        mapStopsGeneration++; mapStopsJob?.cancel(); loadedMapBounds = null; loadedMapBoundsList.clear()
         placeSearchGeneration++; lineGeneration++; journeyGeneration++; nearbyGeneration++; favoriteGeneration++
         placeSearchJob?.cancel(); lineJob?.cancel(); journeyJob?.cancel(); nearbyJob?.cancel(); favoriteJob?.cancel(); boardJob?.cancel()
         otaJob?.cancel(); otaDownloadJob?.cancel()
@@ -757,7 +768,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             onlineCatalogue?.let { saved -> mutableState.update { it.copy(network = onlineNetwork ?: initialNetwork, emmaStops = saved.first, emmaRoutes = saved.second) } }
             recalculate()
             refresh()
-            viewModelScope.launch { refreshStopIndex() }
+            mapBounds?.let { ensureMapStops(it) }
             viewModelScope.launch { refreshLineCatalogue() }
         }
     }
@@ -845,23 +856,6 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         val snapshot = state.value
         viewModelScope.launch(Dispatchers.Default) {
             TransitSearch.indexStops(snapshot.network?.stops.orEmpty(), snapshot.emmaStops)
-        }
-    }
-
-    private suspend fun refreshStopIndex() {
-        if (NetworkAccessPolicy.offline.value) return
-        var published: EmmaStopsRepository.Index? = null
-        fun publish(index: EmmaStopsRepository.Index) {
-            if (published?.catalogue === index.catalogue && published?.stale == index.stale) return
-            published = index
-            publishStopIndex(index)
-        }
-        try {
-            publish(stopsRepository.index(onCached = ::publish))
-        } catch (cancelled: CancellationException) { throw cancelled
-        } catch (_: Exception) {
-            stopIndexFailed = true
-            mutableState.update { it.copy(stopStatus = getApplication<Application>().getString(R.string.emma_stops_unavailable)) }
         }
     }
 
@@ -1048,7 +1042,23 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         placeSearchJob = viewModelScope.launch {
             delay(250)
             try {
-                val places = placesRepository.search(query)
+                val placesAsync = async { placesRepository.search(query) }
+                val stationsAsync = async {
+                    runCatching { stopsRepository.search(query).stops }.getOrDefault(emptyList())
+                }
+                val stations = stationsAsync.await()
+                if (generation != placeSearchGeneration) return@launch
+                if (stations.isNotEmpty()) {
+                    mutableState.update { current ->
+                        val merged = current.emmaStops.associateBy { it.id }.toMutableMap()
+                        stations.forEach { stop ->
+                            if (merged[stop.id]?.routeIds.isNullOrEmpty()) merged[stop.id] = stop
+                        }
+                        current.copy(emmaStops = merged.values.toList())
+                    }
+                    recalculate()
+                }
+                val places = placesAsync.await()
                 if (generation == placeSearchGeneration) mutableState.update { it.copy(placeResults = places, placesLoading = false) }
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) {

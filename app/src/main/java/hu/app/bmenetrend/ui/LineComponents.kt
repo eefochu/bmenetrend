@@ -159,9 +159,15 @@ fun LineStopRow(
                 else vehicleIcon?.let { Image(rememberTransitIcon(it, 30.dp), stringResource(R.string.line_vehicle_here), Modifier.size(30.dp)) }
             }
             Column(Modifier.weight(1f).padding(start = 12.dp, top = 16.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(stop.name, style = MaterialTheme.typography.bodyLarge, fontWeight = if (highlighted) FontWeight.SemiBold else FontWeight.Normal,
-                    color = if (past) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface)
-                val subtitle = listOfNotNull(stop.platformCode?.let { stringResource(R.string.emma_platform, it) },
+                val resolvedPlatform = stop.platformCode?.ifBlank { null }
+                    ?: hu.app.bmenetrend.data.BkkPlatformIndex.getPlatformCode(stop.id)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(stop.name, style = MaterialTheme.typography.bodyLarge, fontWeight = if (highlighted) FontWeight.SemiBold else FontWeight.Normal,
+                        color = if (past) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f, fill = false))
+                    resolvedPlatform?.let { PlatformBadge(it) }
+                }
+                val subtitle = listOfNotNull(if (resolvedPlatform == null) stop.platformCode?.let { stringResource(R.string.emma_platform, it) } else null,
                     if (first) stringResource(R.string.ui_origin) else if (last) stringResource(R.string.ui_terminus) else null).joinToString(" · ")
                 if (subtitle.isNotBlank()) Text(subtitle, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }

@@ -897,6 +897,7 @@ private fun stopLabel(stop: TransitStop): String? = stop.platformCode?.let { str
 internal fun StopSearchRow(stop: TransitStop, state: UiState, favorite: Boolean, onStop: (String) -> Unit) {
     val isMulti = stop.isMultiStop || remember(stop.id, state.stops) { StopClusters.isMultiStop(stop.id, state.stops) }
     val displayName = StopClusters.stopDisplayName(stop.name)
+    val resolvedPlatform = stop.platformCode ?: hu.app.bmenetrend.data.BkkPlatformIndex.resolve(stop.id, null)
     val isDownloaded = stop.id in state.downloadedStationIds
     Row(
         Modifier.fillMaxWidth().clickable { onStop(stop.id) }.padding(horizontal = 22.dp, vertical = 14.dp),
@@ -916,9 +917,12 @@ internal fun StopSearchRow(stop: TransitStop, state: UiState, favorite: Boolean,
             )
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(displayName, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            val numbers = stop.routeIds.map { id -> state.findRoute(id)?.number ?: id }.distinct()
-            val boarding = if (isMulti) null else stopLabel(stop)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(displayName, Modifier.weight(1f, fill = false), style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                resolvedPlatform?.let { PlatformBadge(it) }
+            }
+            val numbers = stop.routeIds.mapNotNull { id -> state.findRoute(id)?.number ?: id.substringAfterLast(":").takeIf { hu.app.bmenetrend.data.StopClusters.isCleanRouteNumber(it) } }.distinct()
+            val boarding = if (isMulti || resolvedPlatform != null) null else stopLabel(stop)
             Text(listOfNotNull(providerNames(stop.providerIds), if (isMulti) null else transportLabel(stop.transportMode), boarding, numbers.joinToString(" · ").takeIf { it.isNotBlank() }).joinToString(" · "), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Icon(Icons.AutoMirrored.Rounded.ArrowForward, null, Modifier.size(19.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)

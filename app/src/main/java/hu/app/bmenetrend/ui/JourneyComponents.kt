@@ -182,9 +182,15 @@ private fun endpointName(endpoint: PlannerEndpoint) = if (endpoint.id == "curren
 private fun TimelinePoint(point: PlanPoint, time: Instant, start: Instant, name: String, top: Color?, bottom: Color?) {
     TimelineRow(top, bottom, point = true, clock = { ClockWithDate(time, start) }) {
         Column(Modifier.padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
-            point.platform?.let { Text(stringResource(R.string.emma_platform, it), style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            val resolvedPlatform = point.platform?.ifBlank { null }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f, fill = false))
+                resolvedPlatform?.let { PlatformBadge(it) }
+            }
+            if (resolvedPlatform == null && point.platform != null) {
+                Text(stringResource(R.string.emma_platform, point.platform), style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
     }
 }
@@ -241,7 +247,9 @@ private fun LegDescription(leg: PlanLeg) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         val color = leg.route?.let(::lineColor) ?: MaterialTheme.colorScheme.primary
                         Canvas(Modifier.size(8.dp)) { drawCircle(color) }
+                        val stopPlatform = stop.platform?.ifBlank { null }
                         Text(stop.name, style = MaterialTheme.typography.bodyMedium)
+                        stopPlatform?.let { PlatformBadge(it) }
                     }
                 } } }
             }
