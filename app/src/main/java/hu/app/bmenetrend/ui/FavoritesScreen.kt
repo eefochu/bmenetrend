@@ -1,5 +1,6 @@
 package hu.app.bmenetrend.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import hu.app.bmenetrend.R
@@ -120,7 +122,7 @@ private fun StationBadgeGrid(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        val columns=if(androidx.compose.ui.platform.LocalDensity.current.fontScale>1.3f) 3 else 4
+        val columns = if (androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.3f) 3 else 4
         badges.chunked(columns).forEach { rowBadges ->
             Row(
                 modifier = Modifier
@@ -137,32 +139,32 @@ private fun StationBadgeGrid(
                         base to text
                     }
 
-                    Box(Modifier.weight(1f).heightIn(min=48.dp).clickable { onBadgeClick(badge.id) },contentAlignment=Alignment.Center) {
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = bgColor,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min=28.dp)
-                    ) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier.padding(vertical=3.dp)
+                    Box(Modifier.weight(1f).heightIn(min = 48.dp).clickable { onBadgeClick(badge.id) }, contentAlignment = Alignment.Center) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = bgColor,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 28.dp)
                         ) {
-                            Text(
-                                text = badge.label,
-                                color = textColor,
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = (-0.3).sp,
-                                    lineHeight = 18.sp,
-                                ),
-                                fontFamily = OpenSans,
-                                maxLines = 1,
-                            )
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.padding(vertical = 3.dp)
+                            ) {
+                                Text(
+                                    text = badge.label,
+                                    color = textColor,
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = (-0.3).sp,
+                                        lineHeight = 18.sp,
+                                    ),
+                                    fontFamily = OpenSans,
+                                    maxLines = 1,
+                                )
+                            }
                         }
-                    }
                     }
                 }
                 repeat(columns - rowBadges.size) {
@@ -189,10 +191,10 @@ fun FavoritesScreen(
             .distinctUntilChanged().collect { visibleAction(it) }
     }
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
-        Box(Modifier.padding(horizontal=20.dp,vertical=20.dp)) {
-            TransitPageIntro(stringResource(R.string.favorites_title),null) {
-                FilledTonalIconButton(onClick=onRefresh,shape=TransitDesign.controlShape) {
-                    Icon(Icons.Rounded.Refresh,stringResource(R.string.favorites_refresh_lines))
+        Box(Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
+            TransitPageIntro(stringResource(R.string.favorites_title), null) {
+                FilledTonalIconButton(onClick = onRefresh, shape = TransitDesign.controlShape) {
+                    Icon(Icons.Rounded.Refresh, stringResource(R.string.favorites_refresh_lines))
                 }
             }
         }
@@ -206,7 +208,7 @@ fun FavoritesScreen(
             }
             if (state.favoriteStations.isEmpty()) item(key = "empty", contentType = "notice") {
                 Surface(shape = TransitDesign.panelShape, color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                    border=androidx.compose.foundation.BorderStroke(1.dp,MaterialTheme.colorScheme.outlineVariant.copy(alpha=.55f))) {
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .55f))) {
                     Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         Icon(Icons.Rounded.FavoriteBorder, null, Modifier.size(36.dp), tint = MaterialTheme.colorScheme.primary)
                         Text(stringResource(if (state.favorites.isEmpty()) R.string.favorites_empty else if (state.favoritesLoading) R.string.favorites_loading else R.string.favorites_index_unavailable),
@@ -218,15 +220,77 @@ fun FavoritesScreen(
                 val lines = remember(station.stop, station.platforms, state.routes) {
                     extractStationLines(station, state)
                 }
-                Surface(shape = TransitDesign.panelShape, color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                    border=androidx.compose.foundation.BorderStroke(1.dp,MaterialTheme.colorScheme.outlineVariant.copy(alpha=.55f))) {
-                    Column(Modifier.padding(bottom = 12.dp)) {
-                        Row(Modifier.padding(start = 16.dp, end = 4.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            TextButton(onClick = { onStop(station.stop.id) }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(vertical = 8.dp)) {
-                                Text(station.stop.name, Modifier.fillMaxWidth(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                var menuExpanded by remember { mutableStateOf(false) }
+                Surface(
+                    shape = TransitDesign.panelShape,
+                    color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .55f))
+                ) {
+                    Column(Modifier.padding(bottom = 14.dp)) {
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(start = 16.dp, end = 6.dp, top = 12.dp, bottom = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = station.stop.name,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { onStop(station.stop.id) },
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = (-0.2).sp
+                                ),
+                                color = Color.White,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            IconButton(
+                                onClick = { onRemove(station.stop.id) },
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Icon(
+                                    Icons.Rounded.DeleteOutline,
+                                    contentDescription = stringResource(R.string.ui_remove_favorite),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
+                                )
                             }
-                            IconButton(onClick = { onRemove(station.stop.id) }) {
-                                Icon(Icons.Rounded.Favorite, stringResource(R.string.ui_remove_favorite), tint = MaterialTheme.colorScheme.primary)
+                            Box {
+                                IconButton(
+                                    onClick = { menuExpanded = true },
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Rounded.MoreVert,
+                                        contentDescription = stringResource(R.string.search_show_more),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
+                                    )
+                                }
+                                DropdownMenu(
+                                    expanded = menuExpanded,
+                                    onDismissRequest = { menuExpanded = false },
+                                    shape = RoundedCornerShape(12.dp),
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.favorites_all_departures)) },
+                                        leadingIcon = { Icon(Icons.Rounded.Schedule, null) },
+                                        onClick = {
+                                            menuExpanded = false
+                                            onStop(station.stop.id)
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.ui_remove_favorite)) },
+                                        leadingIcon = { Icon(Icons.Rounded.DeleteOutline, null) },
+                                        onClick = {
+                                            menuExpanded = false
+                                            onRemove(station.stop.id)
+                                        }
+                                    )
+                                }
                             }
                         }
                         if (station.loading && lines.trainBadges.isEmpty() && lines.otherBadges.isEmpty()) {
@@ -275,9 +339,26 @@ fun FavoritesScreen(
                             )
                         }
 
-                        TextButton(onClick = { onStop(station.stop.id) }, modifier = Modifier.padding(start = 8.dp, top = 4.dp)) {
-                            Text(stringResource(R.string.favorites_all_departures))
-                            Spacer(Modifier.width(4.dp))
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedButton(
+                            onClick = { onStop(station.stop.id) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 4.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.85f)),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.35f),
+                                contentColor = Color.White
+                            ),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
+                        ) {
+                            Text(
+                                stringResource(R.string.favorites_all_departures),
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Spacer(Modifier.width(6.dp))
                             Icon(Icons.Rounded.ChevronRight, null, Modifier.size(18.dp))
                         }
                     }

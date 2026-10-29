@@ -59,4 +59,7 @@
     <string name="planner_bar_hint">Bars show walking, waiting and riding in each line’s color. Times include boarding and transfer allowances.</string>
     <string name="planner_show_stops">Show intermediate stops</string>
     <string name="planner_hide_stops">Hide intermediate stops</string>
+    <string name="planner_stations_header">Stops and stations</string>
+    <string name="planner_places_header">Places and addresses</string>
+    <string name="planner_view_departures">Departures</string>
 </resources>

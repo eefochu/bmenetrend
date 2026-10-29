@@ -22,6 +22,7 @@ data class PlannerState(
     val departure: Instant? = null,
     val offline: Boolean = false,
     val offlineValidUntil: String? = null,
+    val userLocation: GeoPoint? = null,
 )
 
 class PlannerViewModel internal constructor(
@@ -83,7 +84,10 @@ class PlannerViewModel internal constructor(
     }
     fun updateLocation(point: GeoPoint?) {
         location = point
-        if (point != null && state.value.useLocation) mutable.update { it.copy(origin = currentEndpoint(point), error = null) }
+        mutable.update {
+            val updated = if (point != null && it.useLocation) it.copy(origin = currentEndpoint(point), error = null) else it
+            updated.copy(userLocation = point)
+        }
     }
     private fun currentEndpoint(point: GeoPoint) = PlannerEndpoint("current", "", "", point)
     fun useCurrentLocation() {
@@ -106,7 +110,7 @@ class PlannerViewModel internal constructor(
         if (query.trim().length < 2) return
         searchJob = viewModelScope.launch {
             val stationResults = withContext(Dispatchers.Default) {
-                TransitSearch.stops(index, TransitSearch.query(query), location, emptySet()).take(6).map {
+                TransitSearch.stops(index, TransitSearch.query(query), location, emptySet()).take(10).map {
                     PlannerEndpoint.fromStop(it)
                 }
             }
@@ -118,8 +122,8 @@ class PlannerViewModel internal constructor(
             try {
                 // Local matches are ready immediately; debounce only the remote geocoder.
                 delay(400)
-                val results = places.search(query).take(6).map { PlannerEndpoint(it.id, it.name, it.address, it.position) }
-                if (generation == searchGeneration) mutable.update { it.copy(suggestions = (results + stationResults).distinctBy { it.id }, searching = false) }
+                val results = places.search(query).take(6).map { PlannerEndpoint(it.id, it.name, it.address, it.position, isStation = false) }
+                if (generation == searchGeneration) mutable.update { it.copy(suggestions = (stationResults + results).distinctBy { it.id }, searching = false) }
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) {
                 if (generation == searchGeneration) mutable.update { it.copy(searching = false, searchUnavailable = true) }
@@ -178,12 +182,13 @@ class PlannerViewModel internal constructor(
                 if (generation == planGeneration) mutable.update { it.copy(planning = false, result = result,
                     selectedId = null,
                     error = if (result.itineraries.isEmpty()) {
-                        if (result.partial) PlannerError.UNAVAILABLE else PlannerError.NO_ROUTE
+                        if (current.offline) PlannerError.NO_ROUTE
+                        else PlannerError.NO_ROUTE
                     } else null) }
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (_: hu.app.bmenetrend.offline.OfflineDateUnavailable) { if (generation == planGeneration) mutable.update { it.copy(planning = false, error = PlannerError.OFFLINE_DATE) } }
-            catch (_: hu.app.bmenetrend.offline.OfflineEndpointUnavailable) { if (generation == planGeneration) mutable.update { it.copy(planning = false, error = PlannerError.OFFLINE_ENDPOINT) } }
-            catch (_: Exception) { if (generation == planGeneration) mutable.update { it.copy(planning = false, error = PlannerError.UNAVAILABLE) } }
+            catch (_: Exception) {
+                if (generation == planGeneration) mutable.update { it.copy(planning = false, error = PlannerError.UNAVAILABLE) }
+            }
         }
     }
 }

@@ -102,16 +102,32 @@ class MainActivity : ComponentActivity() {
                     crashReports.clear()
                     pendingCrash = null
                 } }
-                MainNavigation(tab, { tab = it }, offline = state.offlineMode, onOfflineSettings = { tab = MainTab.MAP; offlineSettingsRequest++ }, planner = { PlannerScreen(planner, requestLocation) }, favorites = {
-                    FavoritesScreen(
-                        state = state,
-                        onStop = { model.selectStop(it); tab = MainTab.MAP },
-                        onStopRoute = { stopId, routeId -> model.selectStopRoute(stopId, routeId); tab = MainTab.MAP },
-                        onRemove = model::toggleFavorite,
-                        onRefresh = model::refreshFavorites,
-                        onVisible = model::setVisibleFavorites
-                    )
-                }, map = {
+                MainNavigation(
+                    tab,
+                    { tab = it },
+                    offline = state.offlineMode,
+                    onOfflineSettings = { tab = MainTab.MAP; offlineSettingsRequest++ },
+                    planner = {
+                        PlannerScreen(
+                            model = planner,
+                            onRequestLocation = requestLocation,
+                            onStopDepartures = { stopId ->
+                                model.selectStop(stopId)
+                                tab = MainTab.MAP
+                            }
+                        )
+                    },
+                    favorites = {
+                        FavoritesScreen(
+                            state = state,
+                            onStop = { model.selectStop(it); tab = MainTab.MAP },
+                            onStopRoute = { stopId, routeId -> model.selectStopRoute(stopId, routeId); tab = MainTab.MAP },
+                            onRemove = model::toggleFavorite,
+                            onRefresh = model::refreshFavorites,
+                            onVisible = model::setVisibleFavorites
+                        )
+                    },
+                    map = {
                 ViaBuszScreen(
                     state = state,
                     onStopSelected = model::selectStop,
@@ -237,32 +253,17 @@ class MainActivity : ComponentActivity() {
 
     @SuppressLint("MissingPermission")
     private fun startLocation(model: TransitViewModel): () -> Unit {
-        if (!hasLocationPermission()) return {}
         val manager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        val listener = object : LocationListener {
-            override fun onLocationChanged(location: Location) {
-                if (location.accuracy <= 3000 && location.latitude.isFinite() && location.longitude.isFinite()) {
-                    model.updateLocation(GeoPoint(location.latitude, location.longitude))
-                }
-            }
-            override fun onProviderDisabled(provider: String) {
-                if (!LocationManagerCompat.isLocationEnabled(manager)) model.locationMessage(getString(R.string.engine_location_disabled))
-            }
-            override fun onProviderEnabled(provider: String) = Unit
-            @Deprecated("Required for LocationListener on Android 8–10")
-            override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) = Unit
+        val listener = LocationListener { loc ->
+            model.updateLocation(GeoPoint(loc.latitude, loc.longitude))
         }
-        try {
-            if (!LocationManagerCompat.isLocationEnabled(manager)) model.locationMessage(getString(R.string.engine_location_disabled_browsing))
-            val providers = listOf(LocationManager.NETWORK_PROVIDER, LocationManager.GPS_PROVIDER).filter { it in manager.allProviders }
-            providers.mapNotNull { runCatching { manager.getLastKnownLocation(it) }.getOrNull() }
-                .filter { System.currentTimeMillis() - it.time in 0..120_000 }
-                .minByOrNull { it.accuracy }?.let(listener::onLocationChanged)
-            manager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000L, 5f, listener)
-            manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 2000L, 10f, listener)
-            return { manager.removeUpdates(listener) }
-        } catch (_: SecurityException) {
-            return {}
+        val provider = when {
+            manager.isProviderEnabled(LocationManager.GPS_PROVIDER) -> LocationManager.GPS_PROVIDER
+            manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER) -> LocationManager.NETWORK_PROVIDER
+            else -> LocationManager.PASSIVE_PROVIDER
         }
+        manager.requestLocationUpdates(provider, 2000L, 2f, listener)
+        manager.getLastKnownLocation(provider)?.let { listener.onLocationChanged(it) }
+        return { manager.removeUpdates(listener) }
     }
 }

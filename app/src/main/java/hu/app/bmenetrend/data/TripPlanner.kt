@@ -11,13 +11,28 @@ import java.time.format.DateTimeFormatter
 
 @Immutable
 data class PlannerEndpoint(
-    val id: String, val name: String, val detail: String, val position: GeoPoint,
+    val id: String,
+    val name: String,
+    val detail: String,
+    val position: GeoPoint,
     /** Platforms represented by the selected search result, not walking connections. */
     val sourceStopIds: List<String> = listOf(id),
+    val isStation: Boolean = false,
+    val routeIds: List<String> = emptyList(),
+    val providerIds: List<String> = emptyList(),
+    val transportMode: String? = null,
 ) {
     companion object {
         fun fromStop(stop: TransitStop) = PlannerEndpoint(
-            stop.id, stop.name, stop.platformCode.orEmpty(), stop.position, stop.sourceStopIds,
+            id = stop.id,
+            name = stop.name,
+            detail = stop.platformCode.orEmpty(),
+            position = stop.position,
+            sourceStopIds = stop.sourceStopIds,
+            isStation = true,
+            routeIds = stop.routeIds,
+            providerIds = stop.providerIds,
+            transportMode = stop.transportMode,
         )
     }
 }

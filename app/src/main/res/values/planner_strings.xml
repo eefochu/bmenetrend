@@ -59,4 +59,7 @@
     <string name="planner_bar_hint">A sávok a sétát, a várakozást és az utazást mutatják a járatok színeivel. Az idők a felszállási és átszállási tartalékot is tartalmazzák.</string>
     <string name="planner_show_stops">Köztes megállók megjelenítése</string>
     <string name="planner_hide_stops">Köztes megállók elrejtése</string>
+    <string name="planner_stations_header">Megállók és állomások</string>
+    <string name="planner_places_header">Címek és helyek</string>
+    <string name="planner_view_departures">Indulási tábla</string>
 </resources>
