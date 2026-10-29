@@ -26,7 +26,7 @@ data class PlannerEndpoint(
         fun fromStop(stop: TransitStop) = PlannerEndpoint(
             id = stop.id,
             name = stop.name,
-            detail = stop.platformCode.orEmpty(),
+            detail = BkkPlatformIndex.resolve(stop.id, stop.platformCode).orEmpty(),
             position = stop.position,
             sourceStopIds = stop.sourceStopIds,
             isStation = true,
@@ -193,7 +193,9 @@ object TripPlanner {
     private fun point(row: JSONObject): PlanPoint {
         val point = GeoPoint(row.getDouble("lat"), row.getDouble("lon"))
         require(point.lat.isFinite() && point.lon.isFinite() && point.lat in -90.0..90.0 && point.lon in -180.0..180.0)
-        return PlanPoint(row.text("name") ?: error("Unnamed point"), point, row.optJSONObject("stop")?.text("platformCode"))
+        val stopObj = row.optJSONObject("stop")
+        val platform = BkkPlatformIndex.resolve(stopObj?.text("gtfsId"), stopObj?.text("platformCode"))
+        return PlanPoint(row.text("name") ?: error("Unnamed point"), point, platform)
     }
     fun supported(p: GeoPoint) = p.lat.isFinite() && p.lon.isFinite() && p.lat in 45.7..48.6 && p.lon in 16.1..22.9
     private fun JSONObject.text(key: String) = optString(key).takeUnless { it.isBlank() || it == "null" }

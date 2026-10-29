@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import okhttp3.Interceptor
@@ -58,11 +59,28 @@ object NetworkAccessPolicy {
             override fun onLost(network: Network) = refresh()
             override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) = refresh()
         }
+        // Per-network tracking: the default-network callback alone can miss loss events
+        // (teardown races, airplane mode) leaving a stale "validated" judgement behind.
+        val allNetworks = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) = recheckAll(manager)
+            override fun onLost(network: Network) = recheckAll(manager)
+            override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) = recheckAll(manager)
+        }
+        manager.registerNetworkCallback(NetworkRequest.Builder()
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET).build(), allNetworks)
         manager.registerDefaultNetworkCallback(observer)
         callback = observer
-        val caps = manager.getNetworkCapabilities(manager.activeNetwork)
-        onConnectivityChanged(caps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true &&
-            caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED))
+        recheckAll(manager)
+    }
+
+    /** Any validated network (Wi-Fi, cellular or VPN) counts as usable online. */
+    private fun recheckAll(manager: ConnectivityManager) {
+        val usable = manager.allNetworks.any { network ->
+            val caps = manager.getNetworkCapabilities(network)
+            caps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true &&
+                caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+        }
+        onConnectivityChanged(usable)
     }
 
     @Synchronized internal fun onConnectivityChanged(available: Boolean) {

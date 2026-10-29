@@ -233,20 +233,29 @@ fun FavoritesScreen(
                                 .padding(start = 16.dp, end = 6.dp, top = 12.dp, bottom = 6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = station.stop.name,
+                            val stationPlatform = station.stop.platformCode?.ifBlank { null }
+                                ?: hu.app.bmenetrend.data.BkkPlatformIndex.getPlatformCode(station.stop.id)
+                            Row(
                                 modifier = Modifier
                                     .weight(1f)
                                     .clickable { onStop(station.stop.id) },
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = (-0.2).sp
-                                ),
-                                color = Color.White,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
-                            )
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = station.stop.name,
+                                    modifier = Modifier.weight(1f, fill = false),
+                                    style = MaterialTheme.typography.titleLarge.copy(
+                                        fontSize = 20.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = (-0.2).sp
+                                    ),
+                                    color = Color.White,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                stationPlatform?.let { PlatformBadge(it) }
+                            }
                             IconButton(
                                 onClick = { onRemove(station.stop.id) },
                                 modifier = Modifier.size(40.dp)

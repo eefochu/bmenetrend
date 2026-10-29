@@ -39,6 +39,7 @@ class PlannerViewModel internal constructor(
     private val offlinePlanner = hu.app.bmenetrend.offline.OfflineTripPlanner(offlineStore)
 
     private val places = PlacesRepository(application)
+    private val stopsRepository = EmmaStopsRepository(application)
     private val planner = HybridTripPlanner(backend)
     private var stopCatalogue = emptyList<TransitStop>()
     private val mutable = MutableStateFlow(PlannerState())
@@ -64,7 +65,6 @@ class PlannerViewModel internal constructor(
         }
     }
 
-
     fun updateStops(stops: List<TransitStop>, national: List<TransitStop> = emptyList()) {
         val local = if (hu.app.bmenetrend.offline.NetworkAccessPolicy.offline.value) emptyList() else stops
         if (indexedLocal === local && indexedNational === national) return
@@ -73,15 +73,15 @@ class PlannerViewModel internal constructor(
         indexJob?.cancel()
         indexJob = viewModelScope.launch {
             val prepared = withContext(Dispatchers.Default) {
-                val available = national.filterNot { it.station }
-                val catalogue = if (available.isEmpty()) local else local + available
-                catalogue to TransitSearch.indexStops(local, available)
+                val catalogue = if (national.isEmpty()) local else local + national
+                catalogue to TransitSearch.indexStops(local, national)
             }
             stopCatalogue = prepared.first
             index = prepared.second
             if (state.value.editing != null) search(state.value.query)
         }
     }
+
     fun updateLocation(point: GeoPoint?) {
         location = point
         mutable.update {
@@ -89,47 +89,178 @@ class PlannerViewModel internal constructor(
             updated.copy(userLocation = point)
         }
     }
+
     private fun currentEndpoint(point: GeoPoint) = PlannerEndpoint("current", "", "", point)
+
     fun useCurrentLocation() {
         invalidate()
         mutable.update { it.copy(origin = location?.let(::currentEndpoint), useLocation = true, editing = null,
             query = "", suggestions = emptyList(), error = if (location == null) PlannerError.LOCATION else null) }
         closeSearch()
     }
+
     fun edit(field: PlannerField) {
         mutable.update { it.copy(editing = field, query = "", suggestions = emptyList(), searchUnavailable = false) }
     }
+
     fun closeSearch() {
         searchGeneration++; searchJob?.cancel()
         mutable.update { it.copy(editing = null, searching = false) }
     }
+
+    internal fun consolidateEndpoints(endpoints: List<PlannerEndpoint>): List<PlannerEndpoint> {
+        if (endpoints.isEmpty()) return emptyList()
+        val stations = endpoints.filter { it.isStation }
+        val places = endpoints.filterNot { it.isStation }
+
+        val groups = stations.groupBy { StopClusters.cleanName(it.name) }
+        val consolidatedStations = mutableListOf<PlannerEndpoint>()
+
+        for ((_, nameGroup) in groups) {
+            if (nameGroup.size == 1) {
+                consolidatedStations.add(nameGroup[0])
+                continue
+            }
+            val visited = BooleanArray(nameGroup.size)
+            for (i in nameGroup.indices) {
+                if (visited[i]) continue
+                visited[i] = true
+                val seed = nameGroup[i]
+                val cluster = mutableListOf(seed)
+                for (j in i + 1 until nameGroup.size) {
+                    if (visited[j]) continue
+                    val other = nameGroup[j]
+                    val dist = StopClusters.distanceMeters(seed.position, other.position)
+                    if (dist <= StopClusters.MAX_HUB_DISTANCE_METERS) {
+                        visited[j] = true
+                        cluster.add(other)
+                    }
+                }
+                if (cluster.size == 1) {
+                    consolidatedStations.add(seed)
+                } else {
+                    val railEndpoint = cluster.firstOrNull {
+                        it.transportMode == "RAIL" || it.providerIds.contains("mav") ||
+                            it.name.contains("vasútállomás", ignoreCase = true) || it.name.contains("pályaudvar", ignoreCase = true)
+                    }
+                    val primary = railEndpoint ?: cluster.first()
+                    val bestName = cluster.map { it.name }
+                        .filterNot { it.contains("(") || it.contains("[") }
+                        .minByOrNull { it.length } ?: primary.name
+                    val isRail = cluster.any { it.transportMode == "RAIL" || it.providerIds.contains("mav") }
+
+                    consolidatedStations.add(
+                        primary.copy(
+                            name = bestName,
+                            transportMode = if (isRail) "RAIL" else primary.transportMode,
+                            sourceStopIds = cluster.flatMap { it.sourceStopIds }.distinct(),
+                            providerIds = cluster.flatMap { it.providerIds }.distinct(),
+                            routeIds = cluster.flatMap { it.routeIds }.distinct(),
+                            isStation = true
+                        )
+                    )
+                }
+            }
+        }
+
+        // Secondary pass for closely matching hub names
+        val finalStations = mutableListOf<PlannerEndpoint>()
+        val merged = BooleanArray(consolidatedStations.size)
+        for (i in consolidatedStations.indices) {
+            if (merged[i]) continue
+            merged[i] = true
+            val seed = consolidatedStations[i]
+            val cluster = mutableListOf(seed)
+            for (j in i + 1 until consolidatedStations.size) {
+                if (merged[j]) continue
+                val other = consolidatedStations[j]
+                if (StopClusters.areNamesCloselyMatching(seed.name, other.name) &&
+                    StopClusters.distanceMeters(seed.position, other.position) <= StopClusters.MAX_HUB_DISTANCE_METERS) {
+                    merged[j] = true
+                    cluster.add(other)
+                }
+            }
+            if (cluster.size == 1) {
+                finalStations.add(seed)
+            } else {
+                val railEndpoint = cluster.firstOrNull {
+                    it.transportMode == "RAIL" || it.providerIds.contains("mav") ||
+                        it.name.contains("vasútállomás", ignoreCase = true) || it.name.contains("pályaudvar", ignoreCase = true)
+                }
+                val primary = railEndpoint ?: cluster.first()
+                val bestName = cluster.map { it.name }
+                    .filterNot { it.contains("(") || it.contains("[") }
+                    .minByOrNull { it.length } ?: primary.name
+                val isRail = cluster.any { it.transportMode == "RAIL" || it.providerIds.contains("mav") }
+
+                finalStations.add(
+                    primary.copy(
+                        name = bestName,
+                        transportMode = if (isRail) "RAIL" else primary.transportMode,
+                        sourceStopIds = cluster.flatMap { it.sourceStopIds }.distinct(),
+                        providerIds = cluster.flatMap { it.providerIds }.distinct(),
+                        routeIds = cluster.flatMap { it.routeIds }.distinct(),
+                        isStation = true
+                    )
+                )
+            }
+        }
+
+        return finalStations + places
+    }
+
     fun search(query: String) {
         val generation = ++searchGeneration
         searchJob?.cancel()
         mutable.update { it.copy(query = query, suggestions = emptyList(), searching = query.trim().length >= 2, searchUnavailable = false) }
         if (query.trim().length < 2) return
         searchJob = viewModelScope.launch {
-            val stationResults = withContext(Dispatchers.Default) {
+            val localStationResults = withContext(Dispatchers.Default) {
                 TransitSearch.stops(index, TransitSearch.query(query), location, emptySet()).take(10).map {
                     PlannerEndpoint.fromStop(it)
                 }
             }
             if (generation != searchGeneration) return@launch
-            mutable.update { it.copy(suggestions = stationResults) }
+            val consolidatedLocal = consolidateEndpoints(localStationResults)
+            mutable.update { it.copy(suggestions = consolidatedLocal) }
             if (state.value.offline) {
                 mutable.update { it.copy(searching = false) }; return@launch
             }
             try {
-                // Local matches are ready immediately; debounce only the remote geocoder.
-                delay(400)
-                val results = places.search(query).take(6).map { PlannerEndpoint(it.id, it.name, it.address, it.position, isStation = false) }
-                if (generation == searchGeneration) mutable.update { it.copy(suggestions = (stationResults + results).distinctBy { it.id }, searching = false) }
+                // Local matches are ready immediately; debounce only remote geocoder and station search.
+                delay(300)
+                val remoteStationsAsync = async {
+                    runCatching {
+                        stopsRepository.search(query).stops.take(8).map { PlannerEndpoint.fromStop(it) }
+                    }.getOrDefault(emptyList())
+                }
+                val placesAsync = async {
+                    places.search(query).take(6).map { PlannerEndpoint(it.id, it.name, it.address, it.position, isStation = false) }
+                }
+                val remoteStations = remoteStationsAsync.await()
+                val stationResults = consolidateEndpoints(localStationResults + remoteStations)
+                if (generation == searchGeneration) {
+                    mutable.update { it.copy(suggestions = stationResults) }
+                }
+                val placesResults = placesAsync.await()
+                val filteredPlaces = placesResults.filter { place ->
+                    val cleanPlace = StopClusters.cleanName(place.name)
+                    stationResults.none { station ->
+                        (StopClusters.cleanName(station.name) == cleanPlace ||
+                            StopClusters.areNamesCloselyMatching(station.name, place.name)) &&
+                            StopClusters.distanceMeters(station.position, place.position) <= StopClusters.MAX_HUB_DISTANCE_METERS
+                    }
+                }
+                if (generation == searchGeneration) {
+                    mutable.update { it.copy(suggestions = stationResults + filteredPlaces, searching = false) }
+                }
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) {
                 if (generation == searchGeneration) mutable.update { it.copy(searching = false, searchUnavailable = true) }
             }
         }
     }
+
     fun choose(endpoint: PlannerEndpoint) {
         val field = state.value.editing ?: return
         invalidate()
@@ -137,21 +268,27 @@ class PlannerViewModel internal constructor(
             else it.copy(destination = endpoint) }
         closeSearch()
     }
+
     fun swap() {
         invalidate()
         mutable.update { it.copy(origin = it.destination, destination = it.origin, useLocation = false) }
     }
+
     private fun invalidate() {
         planGeneration++; planJob?.cancel()
         mutable.update { it.copy(result = null, planning = false, error = null, selectedId = null) }
     }
+
     fun cancelPlan() { invalidate() }
+
     fun selectItinerary(id: String?) { mutable.update { it.copy(selectedId = id) } }
+
     fun setDeparture(departure: Instant?) {
         if (departure == state.value.departure) return
         invalidate()
         mutable.update { it.copy(departure = departure) }
     }
+
     fun plan() {
         val current = state.value
         val origin = (if (current.useLocation) location?.let(::currentEndpoint) ?: current.origin else current.origin)

@@ -25,6 +25,13 @@ class EmmaStopsRepository(context: Context, private val graphql: EmmaGraphqlClie
         return withContext(Dispatchers.Default) { EmmaStopsParser.area(text) }
     }
 
+    /** On-demand server-side stop search by name without loading nationwide index. */
+    suspend fun search(name: String): EmmaStopsParser.Catalogue {
+        val variables = org.json.JSONObject().put("name", name)
+        val text = graphql.execute(EmmaStopsParser.SEARCH_QUERY, variables)
+        return withContext(Dispatchers.Default) { EmmaStopsParser.search(text) }
+    }
+
     suspend fun index(onCached: (Index) -> Unit = {}): Index = indexMutex.withLock {
         val now = Instant.now()
         var saved = memory ?: withContext(Dispatchers.IO) {

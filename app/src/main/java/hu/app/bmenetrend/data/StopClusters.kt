@@ -2,16 +2,20 @@ package hu.app.bmenetrend.data
 
 import java.text.Normalizer
 import java.util.Locale
-import kotlin.math.*
+import kotlin.math.asin
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 object StopClusters {
     const val MAX_PLATFORM_DISTANCE_METERS = 250.0
     const val MAX_CLUSTER_DIAMETER_METERS = 350.0
+    const val MAX_HUB_DISTANCE_METERS = 700.0
 
     private val marks = Regex("""\p{M}+""")
     private val parenRegex = Regex("""\([^)]*\)|\[[^\]]*\]""")
-    private val punctRegex = Regex("""[,\.\-\–\/\\:;]+""")
-    private val transitWordsRegex = Regex("""\b(m|metro|va|vasutallomas|pu|palyaudvar|autobusz-allomas|autobusz-palyaudvar|autobuszallomas|kocsiallas|vagany)\b""")
+    private val punctRegex = Regex("""[,\.\-\u2013\/\:;]+""")
+    private val transitWordsRegex = Regex("""\b(m|metro|va|vasutallomas|pu|palyaudvar|autobusz-allomas|autobusz-palyaudvar|autobuszallomas|kocsiallas|vagany|vb|volanbusz)\b""")
     private val adjectiveStemRegex = Regex("""\b([a-z]{3,})i\b""")
     private val cityPrefixRegex = Regex("""^(budapest|budaors|biatorbagy|paty|erd|solymar|szentendre|dunakeszi|godollo)\s+""")
 
@@ -32,6 +36,16 @@ object StopClusters {
         return s.ifEmpty { normalize(raw).replace(punctRegex, " ").replace(Regex("""\s+"""), " ").trim() }
     }
 
+    fun isCleanRouteNumber(value: String): Boolean {
+        val trimmed = value.trim()
+        if (trimmed.length !in 1..5) return false
+        if (trimmed.contains('_') || trimmed.contains(':') || trimmed.contains('/') || trimmed.contains('\\')) return false
+        val lower = trimmed.lowercase(Locale.ROOT)
+        if (lower.startsWith("hkir") || lower.startsWith("emma") || lower.startsWith("bkk") || lower.startsWith("mav") || lower.startsWith("volan")) return false
+        if (lower.startsWith("v29") || lower.startsWith("v28") || lower.startsWith("v-")) return false
+        return trimmed.matches(Regex("^[A-Za-z0-9]{1,5}$"))
+    }
+
     fun areNamesCloselyMatching(nameA: String, nameB: String): Boolean {
         val normA = normalize(nameA)
         val normB = normalize(nameB)
@@ -48,17 +62,22 @@ object StopClusters {
         }
 
         if (cleanA.length >= 5 && cleanB.length >= 5) {
-            if (cleanA.startsWith(cleanB) || cleanB.startsWith(cleanA)) return true
+            val shorter = if (cleanA.length <= cleanB.length) cleanA else cleanB
+            val longer = if (cleanA.length <= cleanB.length) cleanB else cleanA
+            if (longer.contains(shorter)) return true
         }
 
         return false
     }
 
     fun distanceMeters(a: GeoPoint, b: GeoPoint): Double {
-        val lat = Math.toRadians(b.lat - a.lat)
-        val lon = Math.toRadians(b.lon - a.lon)
-        val haversine = sin(lat / 2).pow(2) + cos(Math.toRadians(a.lat)) * cos(Math.toRadians(b.lat)) * sin(lon / 2).pow(2)
-        return 6_371_000 * 2 * atan2(sqrt(haversine.coerceIn(0.0, 1.0)), sqrt((1 - haversine).coerceIn(0.0, 1.0)))
+        val r = 6371000.0
+        val dLat = Math.toRadians(b.lat - a.lat)
+        val dLon = Math.toRadians(b.lon - a.lon)
+        val lat1 = Math.toRadians(a.lat)
+        val lat2 = Math.toRadians(b.lat)
+        val h = sin(dLat / 2) * sin(dLat / 2) + cos(lat1) * cos(lat2) * sin(dLon / 2) * sin(dLon / 2)
+        return 2 * r * asin(sqrt(h))
     }
 
     fun clusterFor(stopId: String, allStops: List<TransitStop>): List<TransitStop> {
@@ -67,29 +86,27 @@ object StopClusters {
     }
 
     fun clusterFor(target: TransitStop, allStops: List<TransitStop>): List<TransitStop> {
-        val maxLatDelta = 0.004 // ~400m
-        val maxLonDelta = 0.007 // ~400m
-        val candidates = allStops.filter { other ->
-            if (other.id == target.id) true
-            else if (abs(other.position.lat - target.position.lat) > maxLatDelta ||
-                abs(other.position.lon - target.position.lon) > maxLonDelta) false
-            else {
-                val sameParent = target.parentStationId != null && target.parentStationId == other.parentStationId
-                val nameMatches = areNamesCloselyMatching(target.name, other.name)
-                (sameParent || nameMatches) && distanceMeters(target.position, other.position) <= MAX_CLUSTER_DIAMETER_METERS
-            }
+        val cleanTargetName = cleanName(target.name)
+        return allStops.filter { other ->
+            if (other.id == target.id) return@filter true
+
+            val sameParent = target.parentStationId != null && target.parentStationId == other.parentStationId
+            if (sameParent) return@filter true
+
+            val cleanOtherName = cleanName(other.name)
+            val nameMatches = cleanTargetName == cleanOtherName || areNamesCloselyMatching(target.name, other.name)
+            if (!nameMatches) return@filter false
+
+            val dist = distanceMeters(target.position, other.position)
+            dist <= MAX_HUB_DISTANCE_METERS
         }
-        return if (candidates.isEmpty()) listOf(target) else candidates
     }
 
-    fun isMultiStop(stopId: String, allStops: List<TransitStop>): Boolean {
-        val stop = allStops.find { it.id == stopId } ?: return false
-        if (stop.isMultiStop) return true
-        return clusterFor(stop, allStops).size > 1
-    }
+    fun isMultiStop(stopId: String, allStops: List<TransitStop>): Boolean =
+        clusterFor(stopId, allStops).size > 1
 
     fun stopDisplayName(name: String): String = name
-        .replace(Regex("\\s*\\((?:több megálló|multiple stations)\\)",RegexOption.IGNORE_CASE),"").trim()
+        .replace(Regex("""\s*\((?:több megálló|multiple stations)\)""", RegexOption.IGNORE_CASE), "").trim()
 
     fun consolidateForSearch(stops: List<TransitStop>): List<TransitStop> {
         if (stops.isEmpty()) return emptyList()
@@ -131,10 +148,11 @@ object StopClusters {
     private fun createConsolidatedStop(cluster: List<TransitStop>): TransitStop {
         val primary = cluster.minByOrNull {
             when {
-                it.id.startsWith("homm:") || it.id.startsWith("viabusz:") || it.id.startsWith("kanyargo:") -> 0
-                it.providerId in setOf("viabusz", "kanyargo", "homm") -> 1
-                it.id.startsWith("emma:BKK:") -> 2
-                else -> 3
+                it.transportMode == "RAIL" || it.providerId == "mav" -> 0
+                it.id.startsWith("homm:") || it.id.startsWith("viabusz:") || it.id.startsWith("kanyargo:") -> 1
+                it.providerId in setOf("viabusz", "kanyargo", "homm") -> 2
+                it.id.startsWith("emma:BKK:") -> 3
+                else -> 4
             }
         } ?: cluster.first()
 
@@ -146,6 +164,7 @@ object StopClusters {
         val allProviderIds = cluster.flatMap { it.providerIds }.distinct()
         val allSourceStopIds = cluster.flatMap { it.sourceStopIds }.distinct()
         val allAliases = cluster.flatMap { listOf(it.name) + it.aliases }.distinct().filterNot { it == bestName }
+        val isRail = cluster.any { it.transportMode == "RAIL" || it.providerId == "mav" }
 
         return primary.copy(
             name = bestName,
@@ -156,6 +175,7 @@ object StopClusters {
             platformCode = null,
             station = true,
             isMultiStop = true,
+            transportMode = if (isRail) "RAIL" else primary.transportMode
         )
     }
 }
