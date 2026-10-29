@@ -114,6 +114,25 @@ class MainActivity : ComponentActivity() {
                             onStopDepartures = { stopId ->
                                 model.selectStop(stopId)
                                 tab = MainTab.MAP
+                            },
+                            onClose = { tab = MainTab.MAP },
+                            transitMapContent = { mapModifier, routeGeometry, destinationPlace, cameraRequest, isDotted ->
+                                val primaryColor = androidx.compose.material3.MaterialTheme.colorScheme.primary
+                                val accentArgb = remember(primaryColor) { primaryColor.toArgb() }
+                                NativeTransitMap(
+                                    network = state.network,
+                                    vehicles = emptyList(),
+                                    selectedStopId = null,
+                                    userLocation = state.userLocation,
+                                    modifier = mapModifier,
+                                    onStopSelected = {},
+                                    routeGeometry = routeGeometry,
+                                    routeColor = accentArgb,
+                                    selectedPlace = destinationPlace,
+                                    placeCameraRequest = cameraRequest,
+                                    dottedRoute = isDotted,
+                                    offline = state.offlineMode
+                                )
                             }
                         )
                     },

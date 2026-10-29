@@ -29,7 +29,16 @@ import hu.app.bmenetrend.R
 enum class MainTab { MAP, PLANNER, FAVORITES }
 
 @Composable
-fun MainNavigation(tab: MainTab, onTab: (MainTab)->Unit, map: @Composable ()->Unit, planner: @Composable ()->Unit, favorites: @Composable ()->Unit, offline: Boolean = false, onOfflineSettings: () -> Unit = {}) {
+fun MainNavigation(
+    tab: MainTab,
+    onTab: (MainTab)->Unit,
+    map: @Composable ()->Unit,
+    planner: @Composable ()->Unit,
+    favorites: @Composable ()->Unit,
+    offline: Boolean = false,
+    onOfflineSettings: () -> Unit = {},
+    hideBottomBarOnPlanner: Boolean = false
+) {
     val saved=rememberSaveableStateHolder()
     val rail=transitWindowWidth()>=840.dp
     val compact=LocalDensity.current.fontScale>1.3f
@@ -52,7 +61,7 @@ fun MainNavigation(tab: MainTab, onTab: (MainTab)->Unit, map: @Composable ()->Un
                     }
                 }
                 if (offline) TextButton(onClick = onOfflineSettings, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.offline_open_settings)) }
-                if(!rail) Surface(color=MaterialTheme.colorScheme.surfaceContainerLowest) {
+                if(!rail && (!hideBottomBarOnPlanner || tab != MainTab.PLANNER)) Surface(color=MaterialTheme.colorScheme.surfaceContainerLowest) {
                     Column {
                         HorizontalDivider(color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=.5f))
                         Row(Modifier.fillMaxWidth().navigationBarsPadding().selectableGroup().padding(horizontal=12.dp,vertical=6.dp)) {

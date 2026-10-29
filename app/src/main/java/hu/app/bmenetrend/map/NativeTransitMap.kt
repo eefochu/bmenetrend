@@ -53,6 +53,7 @@ import org.maplibre.android.maps.Style
 import org.maplibre.android.style.layers.LineLayer
 import org.maplibre.android.style.expressions.Expression
 import org.maplibre.android.style.layers.PropertyFactory
+import org.maplibre.android.style.layers.PropertyValue
 
 private data class StationHitTarget(val position: LatLng,val offset: StopMarkerLayout.Offset,val focused: Boolean)
 private data class StationScene(val groups: List<List<TransitStop>>,val offsets: Map<String,StopMarkerLayout.Offset>)
@@ -79,6 +80,7 @@ fun NativeTransitMap(
     routeGeometry: List<GeoPoint> = emptyList(),
     routeStops: List<TransitStop> = emptyList(),
     routeColor: Int = 0xFF199DCF.toInt(),
+    dottedRoute: Boolean = false,
     fitRouteRequest: Int = 0,
     selectedPlace: PlaceResult? = null,
     placeCameraRequest: Int = 0,
@@ -284,7 +286,7 @@ fun NativeTransitMap(
             onError(context.getString(R.string.engine_map_unavailable))
         } finally { active = false }
     }
-    LaunchedEffect(map, styleLoaded, paths, routeColor, darkTheme) {
+    LaunchedEffect(map, styleLoaded, paths, routeColor, darkTheme, dottedRoute) {
         val ready = map ?: return@LaunchedEffect
         if (!styleLoaded) return@LaunchedEffect
         val style = ready.style ?: return@LaunchedEffect
@@ -298,18 +300,53 @@ fun NativeTransitMap(
         val source = style.getSourceAs<GeoJsonSource>("selected-line")
         if (source != null) source.setGeoJson(collection) else {
             style.addSource(GeoJsonSource("selected-line", collection))
-            val casing = LineLayer("selected-line-casing", "selected-line").withProperties(
-                PropertyFactory.lineColor(if (darkTheme) "#17212D" else "#FFFFFF"), PropertyFactory.lineWidth(8f),
-                PropertyFactory.lineCap("round"), PropertyFactory.lineJoin("round"))
-            val line = LineLayer("selected-line-stroke", "selected-line").withProperties(
-                PropertyFactory.lineColor(routeColor), PropertyFactory.lineWidth(5f),
-                PropertyFactory.lineCap("round"), PropertyFactory.lineJoin("round"))
+            val casingProps = mutableListOf<PropertyValue<*>>(
+                PropertyFactory.lineColor(if (darkTheme) "#17212D" else "#FFFFFF"),
+                PropertyFactory.lineWidth(if (dottedRoute) 6f else 8f),
+                PropertyFactory.lineCap("round"),
+                PropertyFactory.lineJoin("round")
+            )
+            if (dottedRoute) casingProps.add(PropertyFactory.lineDasharray(arrayOf(2f, 2f)))
+            val casing = LineLayer("selected-line-casing", "selected-line").apply {
+                setProperties(*casingProps.toTypedArray())
+            }
+
+            val lineProps = mutableListOf<PropertyValue<*>>(
+                PropertyFactory.lineColor(routeColor),
+                PropertyFactory.lineWidth(if (dottedRoute) 4f else 5f),
+                PropertyFactory.lineCap("round"),
+                PropertyFactory.lineJoin("round")
+            )
+            if (dottedRoute) lineProps.add(PropertyFactory.lineDasharray(arrayOf(2f, 2f)))
+            val line = LineLayer("selected-line-stroke", "selected-line").apply {
+                setProperties(*lineProps.toTypedArray())
+            }
+
             val aboveRoute = style.getLayer("station-symbols")?.id ?: style.getLayer("vehicle-dots-rail")?.id ?: MapLibreConstants.LAYER_ID_ANNOTATIONS
             if (style.getLayer(aboveRoute) != null) style.addLayerBelow(casing, aboveRoute) else style.addLayer(casing)
             style.addLayerAbove(line, "selected-line-casing")
         }
-        style.getLayerAs<LineLayer>("selected-line-casing")?.setProperties(PropertyFactory.lineColor(if (darkTheme) "#17212D" else "#FFFFFF"))
-        style.getLayerAs<LineLayer>("selected-line-stroke")?.setProperties(PropertyFactory.lineColor(routeColor))
+        val casingLayer = style.getLayerAs<LineLayer>("selected-line-casing")
+        casingLayer?.setProperties(
+            PropertyFactory.lineColor(if (darkTheme) "#17212D" else "#FFFFFF"),
+            PropertyFactory.lineWidth(if (dottedRoute) 6f else 8f)
+        )
+        if (dottedRoute) {
+            casingLayer?.setProperties(PropertyFactory.lineDasharray(arrayOf(2f, 2f)))
+        } else {
+            casingLayer?.setProperties(PropertyFactory.lineDasharray(arrayOf(1f, 0f)))
+        }
+
+        val strokeLayer = style.getLayerAs<LineLayer>("selected-line-stroke")
+        strokeLayer?.setProperties(
+            PropertyFactory.lineColor(routeColor),
+            PropertyFactory.lineWidth(if (dottedRoute) 4f else 5f)
+        )
+        if (dottedRoute) {
+            strokeLayer?.setProperties(PropertyFactory.lineDasharray(arrayOf(2f, 2f)))
+        } else {
+            strokeLayer?.setProperties(PropertyFactory.lineDasharray(arrayOf(1f, 0f)))
+        }
     }
     LaunchedEffect(map, styleLoaded, lineFocus?.key, paths, focusStops, fitRouteRequest,
         selectedStopId, selectedPlace, placeCameraRequest, cameraRequest, bottomPaddingPx, size, browsingNearby, userLocation, locationCameraRequest) {
@@ -357,10 +394,12 @@ fun NativeTransitMap(
                     val latSouth = minOf(bounds.north, bounds.south)
                     val lonEast = maxOf(bounds.east, bounds.west)
                     val lonWest = minOf(bounds.east, bounds.west)
-                    val padding = (48 * context.resources.displayMetrics.density).toInt()
-                    if (latNorth - latSouth > 0.0001 && lonEast - lonWest > 0.0001 && padding * 2 < size.width && padding * 2 < size.height) {
+                    val horizontalPadding = (48 * context.resources.displayMetrics.density).toInt()
+                    val topPadding = (200 * context.resources.displayMetrics.density).toInt()
+                    val bottomPadding = (110 * context.resources.displayMetrics.density).toInt()
+                    if (latNorth - latSouth > 0.0001 && lonEast - lonWest > 0.0001 && horizontalPadding * 2 < size.width && (topPadding + bottomPadding) < size.height) {
                         ready.animateCamera(CameraUpdateFactory.newLatLngBounds(
-                            LatLngBounds.from(latNorth, lonEast, latSouth, lonWest), padding), 650)
+                            LatLngBounds.from(latNorth, lonEast, latSouth, lonWest), 0.0, 0.0, horizontalPadding, topPadding, horizontalPadding, bottomPadding), 650)
                         boundsAnimated = true
                     }
                 } catch (_: Exception) {
