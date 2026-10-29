@@ -187,6 +187,12 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         }
         launch {
             while (isActive) {
+                refreshStopIndex()
+                delay(if (stopIndexFailed) 60_000 else 3_600_000)
+            }
+        }
+        launch {
+            while (isActive) {
                 refreshLineCatalogue()
                 delay(if (lineCatalogueFailed) 60_000 else 3_600_000)
             }
@@ -230,6 +236,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun refreshFavorites() {
+        if (!state.value.stopIndexLoaded) viewModelScope.launch { refreshStopIndex() }
         ensureFavoriteRequest(force = true)
     }
 
@@ -320,6 +327,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
 
     fun refresh() {
         mapSettledJob?.cancel()
+        if (!state.value.stopIndexLoaded) viewModelScope.launch { refreshStopIndex() }
         viewModelScope.launch { refreshData(forceNetwork = true) }
         viewModelScope.launch { refreshEmmaData(force = true) }
         ensureNearbyRequest(force = true)
@@ -591,7 +599,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun ensureMapStops(bounds: MapBounds) {
-        if (!mapVisible || NetworkAccessPolicy.offline.value) return
+        if (!mapVisible || NetworkAccessPolicy.offline.value || state.value.stopIndexLoaded) return
         // Do not query when zoomed far out where individual stops are not visible anyway
         if (bounds.north - bounds.south !in 0.0..0.85 || bounds.east - bounds.west !in 0.0..1.2) return
         val alreadyCovered = loadedMapBoundsList.any { covered ->
@@ -616,7 +624,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         mapStopsJob = viewModelScope.launch {
             try {
                 val catalogue = stopsRepository.mapArea(area)
-                if (generation != mapStopsGeneration || networkGeneration != NetworkAccessPolicy.generation) return@launch
+                if (generation != mapStopsGeneration || networkGeneration != NetworkAccessPolicy.generation || state.value.stopIndexLoaded) return@launch
                 if (loadedMapBoundsList.size >= 16) {
                     loadedMapBoundsList.removeAt(0)
                 }
@@ -627,13 +635,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                     catalogue.stops.forEach { stop ->
                         if (merged[stop.id]?.routeIds.isNullOrEmpty()) merged[stop.id] = stop
                     }
-                    val resultStops = if (merged.size > 2000) {
-                        val center = mapCenter
-                        merged.values.sortedBy { distanceMeters(it.position, center) }.take(1500)
-                    } else {
-                        merged.values.toList()
-                    }
-                    current.copy(emmaStops = resultStops)
+                    current.copy(emmaStops = merged.values.toList())
                 }
                 recalculate()
             } catch (cancelled: CancellationException) { throw cancelled
@@ -770,6 +772,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             refresh()
             mapBounds?.let { ensureMapStops(it) }
             viewModelScope.launch { refreshLineCatalogue() }
+            viewModelScope.launch { refreshStopIndex() }
         }
     }
     private suspend fun loadOfflineCatalogue() {
@@ -833,6 +836,23 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         preferences.edit().putBoolean("emma_nationwide", enabled).apply()
         mutableState.update { it.copy(nationwideNetwork = enabled) }
         recalculate()
+    }
+
+    private suspend fun refreshStopIndex() {
+        if (NetworkAccessPolicy.offline.value) return
+        var published: EmmaStopsRepository.Index? = null
+        fun publish(index: EmmaStopsRepository.Index) {
+            if (published?.catalogue === index.catalogue && published?.stale == index.stale) return
+            published = index
+            publishStopIndex(index)
+        }
+        try {
+            publish(stopsRepository.index(onCached = ::publish))
+        } catch (cancelled: CancellationException) { throw cancelled
+        } catch (_: Exception) {
+            stopIndexFailed = true
+            mutableState.update { it.copy(stopStatus = getApplication<Application>().getString(R.string.emma_stops_unavailable)) }
+        }
     }
 
     private fun publishStopIndex(index: EmmaStopsRepository.Index) {

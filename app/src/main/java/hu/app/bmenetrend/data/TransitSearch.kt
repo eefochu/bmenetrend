@@ -159,9 +159,10 @@ object TransitSearch {
         val consolidated = StopClusters.consolidateForSearch(combined)
         val indexed = consolidated.map { stop ->
             val multiTokens = if (stop.isMultiStop) "tobbmegallo tobb megallo multiple stations multiplestations" else ""
+            val platform = stop.platformCode ?: BkkPlatformIndex.resolve(stop.id, null).orEmpty()
             StopEntry(
                 stop = stop,
-                text = normalize("${stop.name} ${stop.aliases.joinToString(" ")} ${stop.platformCode.orEmpty()} ${stop.sourceStopIds.joinToString(" ")} $multiTokens"),
+                text = normalize("${stop.name} ${stop.aliases.joinToString(" ")} $platform ${stop.sourceStopIds.joinToString(" ")} $multiTokens"),
                 name = normalize(stop.name),
                 isMultiStop = stop.isMultiStop,
             )

@@ -231,6 +231,21 @@ class RouteMapCardTest {
         compose.onNodeWithText("Volán",substring=true).assertDoesNotExist()
         compose.onNodeWithText(app.getString(R.string.emma_platform,"A"),substring=true).assertIsDisplayed()
         compose.onNodeWithText(app.getString(R.string.emma_mode_tram),substring=true).assertIsDisplayed()
+        compose.onNodeWithText("A").assertIsDisplayed()
+    }
+
+    @Test fun platformBadgeDisplaysNextToStationNameForNonTrains() {
+        val busStop = a.copy(id = "bus-1", name = "Test Stop", providerId = "hkir", providerIds = listOf("hkir"), transportMode = "BUS", platformCode = "A1")
+        val uiBus = state().copy(showNearby = false, selectedStopId = busStop.id, network = state().network!!.copy(stops = listOf(busStop)))
+        compose.setContent { ViaBuszTheme { ViaBuszScreen(uiBus, {}, {}, {}, {}, {}) } }
+        compose.onNodeWithText("A1").assertIsDisplayed()
+    }
+
+    @Test fun platformBadgeDoesNotDisplayNextToStationNameForTrains() {
+        val trainStop = a.copy(id = "train-1", name = "Nyugati pu.", providerId = "mav", providerIds = listOf("mav"), transportMode = "RAIL", platformCode = "14")
+        val uiTrain = state().copy(showNearby = false, selectedStopId = trainStop.id, network = state().network!!.copy(stops = listOf(trainStop)))
+        compose.setContent { ViaBuszTheme { ViaBuszScreen(uiTrain, {}, {}, {}, {}, {}) } }
+        compose.onNodeWithText("14").assertDoesNotExist()
     }
 
     @Test fun localAndCityServicesGetTheirOwnTypeInsteadOfRegionalLabels() {

@@ -109,7 +109,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import hu.app.bmenetrend.R
 import hu.app.bmenetrend.data.ArrivalKind
+import hu.app.bmenetrend.data.BkkPlatformIndex
 import hu.app.bmenetrend.data.Departure
+import hu.app.bmenetrend.data.RailSupport
 import hu.app.bmenetrend.data.StationTimetableRepository
 import hu.app.bmenetrend.data.StopClusters
 import hu.app.bmenetrend.data.TransitRoute
@@ -599,12 +601,23 @@ private fun StopPanel(
     val latestDepartureAction by rememberUpdatedState(onDeparture)
     val openDeparture = remember { { departure: Departure -> latestDepartureAction(departure) } }
     val routeById = remember(state.network?.routes, state.emmaRoutes) { state.routesById }
-    val platforms=state.selectedPlatforms
-    val stopTitle=stop?.let { StopClusters.stopDisplayName(it.name) }
+    val platforms = state.selectedPlatforms
+    val currentStop = stop ?: platforms.singleOrNull()
+    val isTrain = currentStop?.let {
+        RailSupport.isTrain(it.transportMode) || it.transportMode in setOf("RAIL", "TRAIN", "TRAMTRAIN") ||
+            (it.providerId == "mav" && it.transportMode != "SUBURBAN_RAILWAY" && it.transportMode != "BUS") ||
+            (it.providerIds.isNotEmpty() && it.providerIds.all { p -> p == "mav" } && it.transportMode != "SUBURBAN_RAILWAY" && it.transportMode != "BUS")
+    } ?: false
+    val platformBadgeCode = if (isTrain) null else (
+        if (platforms.size > 1 && state.selectedPlatformIds.size != 1) null
+        else (currentStop?.platformCode?.ifBlank { null }
+            ?: currentStop?.let { BkkPlatformIndex.resolve(it.id, null) })
+    )
+    val stopTitle = stop?.let { StopClusters.stopDisplayName(it.name) }
         ?: stringResource(if(state.loading) R.string.ui_loading_stops else R.string.ui_select_stop)
-    val clusterProviders=platforms.flatMap { it.providerIds }.distinct().ifEmpty { stop?.providerIds.orEmpty() }
-    val boardingInfo=if(platforms.size>1) null else (stop?.platformCode?.let { stringResource(R.string.emma_platform,it) }
-        ?: stop?.takeIf { it.id.startsWith("emma:") }?.let { stringResource(R.string.emma_stop_code,it.id.substringAfterLast(":")) })
+    val clusterProviders = platforms.flatMap { it.providerIds }.distinct().ifEmpty { stop?.providerIds.orEmpty() }
+    val boardingInfo = if (platforms.size > 1) null else (stop?.platformCode?.let { stringResource(R.string.emma_platform, it) }
+        ?: stop?.takeIf { it.id.startsWith("emma:") }?.let { stringResource(R.string.emma_stop_code, it.id.substringAfterLast(":")) })
     val timetableOnly = clusterProviders.isNotEmpty() && clusterProviders.all { it == "homm" }
     var showOfflineDialog by remember { mutableStateOf(false) }
 
@@ -705,8 +718,20 @@ private fun StopPanel(
                 IconButton(onClick=onCollapse) { Icon(Icons.Rounded.KeyboardArrowDown,
                     stringResource(if(isExpanded) R.string.ui_collapse_departures else R.string.ui_hide_departures)) }
             }
-            Text(stopTitle,Modifier.fillMaxWidth().clickable(enabled=!isExpanded,onClick=onToggleExpand),
-                style=MaterialTheme.typography.headlineSmall)
+            Row(
+                Modifier.fillMaxWidth().clickable(enabled = !isExpanded, onClick = onToggleExpand),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    stopTitle,
+                    Modifier.weight(1f, fill = false),
+                    style = MaterialTheme.typography.headlineSmall
+                )
+                platformBadgeCode?.let {
+                    PlatformBadge(it)
+                }
+            }
             if(stop!=null) Text(listOfNotNull(providerNames(clusterProviders),transportLabel(stop.transportMode),boardingInfo).joinToString(" · "),
                 Modifier.padding(top=5.dp,bottom=8.dp),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
         }

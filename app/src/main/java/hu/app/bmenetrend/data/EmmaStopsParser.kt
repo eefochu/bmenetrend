@@ -83,7 +83,7 @@ object EmmaStopsParser {
             val mode = row.text("vehicleMode") ?: serving.mapNotNull { it.transportMode }.distinct().singleOrNull()
             val provider = if (namespace == "mav") when {
                 source.startsWith("1:0036") && mode == "SUBURBAN_RAILWAY" || name.endsWith(" H") || serving.any { it.providerId == "hev" } -> "hev"
-                RailSupport.isTrain(mode) -> "mav"
+                RailSupport.isTrain(mode) || mode == "RAIL_REPLACEMENT_BUS" -> "mav"
                 else -> return@mapNotNull null
             } else namespace
             val station = row.text("locationType") == "STATION"
