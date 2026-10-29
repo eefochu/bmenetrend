@@ -109,4 +109,23 @@ class LocalTimetableRouterTest {
         val n = network().copy(trips = listOf(trip("via","a","b",420,430)))
         assertFalse(LocalTimetableRouter(n,ready).search(listOf(seed(a)),emptyMap()).containsKey("b"))
     }
+    @Test fun tripsAtTheExactEarliestBoardingInstantAreBothConsidered() {
+        val e = TransitStop("e", "E", GeoPoint(47.48, 18.8), listOf("viabusz"))
+        val f = TransitStop("f", "F", GeoPoint(47.50, 18.8), listOf("viabusz"))
+        val n = network().copy(stops = listOf(a,e,f),
+            routes = listOf(route("to-e", "viabusz", "a", "e"), route("to-f", "viabusz", "a", "f")),
+            trips = listOf(trip("to-e", "a", "e", 421, 430), trip("to-f", "a", "f", 421, 431)))
+        val reached = LocalTimetableRouter(n, ready).search(listOf(seed(a)), emptyMap())
+        assertEquals(1, reached.getValue("e").size)
+        assertEquals(1, reached.getValue("f").size)
+    }
+
+    @Test fun equalArrivalSeedsKeepTheShorterWalkInEitherOrder() {
+        val short = LocalPath("b", ready, listOf(WalkingLink(a.point(), b.point(), 0, 10.0).leg(ready)))
+        val long = LocalPath("b", ready, listOf(WalkingLink(a.point(), b.point(), 0, 20.0).leg(ready)))
+        for (seeds in listOf(listOf(long, short), listOf(short, long))) {
+            val path = LocalTimetableRouter(network(), ready).search(seeds, emptyMap()).getValue("b").single()
+            assertEquals(10.0, path.legs.filter { it.walking }.sumOf { it.distance }, 0.0)
+        }
+    }
 }

@@ -197,9 +197,10 @@ class MainActivity : ComponentActivity() {
                     val pattern = boarding?.pattern
                     val route = browsingRoute ?: state.boardingSelection?.routeId?.let(state::findRoute)
                     val focus = remember(vehicle?.id, vehicle?.routeId, boarding, state.network, state.emmaRoutes, state.lineDetails, state.vehicleJourney, state.emmaStops) {
-                        val routes=state.routes; val allStops=state.stops
-                        hu.app.bmenetrend.map.traceMapWork("BMenetrend.LineFocus") {
-                            LineMapFocus.create(vehicle,boarding,routes,state.lineDetails,state.vehicleJourney,allStops)
+                        if (vehicle == null && boarding == null) null else {
+                            hu.app.bmenetrend.map.traceMapWork("BMenetrend.LineFocus") {
+                                LineMapFocus.create(vehicle, boarding, state.routes, state.lineDetails, state.vehicleJourney, state.stops)
+                            }
                         }
                     }
                     val geometry = if (vehicle != null) state.vehicleJourney?.geometry.orEmpty().ifEmpty { focus?.paths?.firstOrNull().orEmpty() } else pattern?.geometry.orEmpty()

@@ -51,7 +51,10 @@ data class TransitNetwork(
     val providerWarnings: Map<String, String> = emptyMap(),
     /** Document verification is independent of whether an operator runs on the fetch date. */
     val verifiedProviderIds: Set<String> = emptySet(),
-)
+) {
+    // Timetable lookup belongs to the immutable network snapshot, not to each board refresh.
+    internal val departureIndex by lazy { DepartureIndex(this) }
+}
 
 @Immutable
 data class VehicleRouteEstimate(val routeId: String, val number: String)

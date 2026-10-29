@@ -9,9 +9,11 @@ import kotlin.math.sqrt
 
 object StopClusters {
     const val MAX_PLATFORM_DISTANCE_METERS = 250.0
-    const val MAX_CLUSTER_DIAMETER_METERS = 350.0
     const val MAX_HUB_DISTANCE_METERS = 700.0
 
+    private val whitespaceRegex = Regex("""\s+""")
+    private val routeNumberRegex = Regex("^[A-Za-z0-9]{1,5}$")
+    private val multiStopSuffixRegex = Regex("""\s*\((?:több megálló|multiple stations)\)""", RegexOption.IGNORE_CASE)
     private val marks = Regex("""\p{M}+""")
     private val parenRegex = Regex("""\([^)]*\)|\[[^\]]*\]""")
     private val punctRegex = Regex("""[,\.\-\u2013\/\:;]+""")
@@ -32,8 +34,8 @@ object StopClusters {
         s = s.replace(cityPrefixRegex, "")
         s = s.replace(transitWordsRegex, " ")
         s = s.replace(adjectiveStemRegex, "$1")
-        s = s.replace(Regex("""\s+"""), " ").trim()
-        return s.ifEmpty { normalize(raw).replace(punctRegex, " ").replace(Regex("""\s+"""), " ").trim() }
+        s = s.replace(whitespaceRegex, " ").trim()
+        return s.ifEmpty { normalize(raw).replace(punctRegex, " ").replace(whitespaceRegex, " ").trim() }
     }
 
     fun isCleanRouteNumber(value: String): Boolean {
@@ -43,7 +45,7 @@ object StopClusters {
         val lower = trimmed.lowercase(Locale.ROOT)
         if (lower.startsWith("hkir") || lower.startsWith("emma") || lower.startsWith("bkk") || lower.startsWith("mav") || lower.startsWith("volan")) return false
         if (lower.startsWith("v29") || lower.startsWith("v28") || lower.startsWith("v-")) return false
-        return trimmed.matches(Regex("^[A-Za-z0-9]{1,5}$"))
+        return trimmed.matches(routeNumberRegex)
     }
 
     fun areNamesCloselyMatching(nameA: String, nameB: String): Boolean {
@@ -93,12 +95,14 @@ object StopClusters {
             val sameParent = target.parentStationId != null && target.parentStationId == other.parentStationId
             if (sameParent) return@filter true
 
+            // Parent stations above are authoritative even when their platforms are far apart.
+            // Reject geographic non-candidates before the expensive name normalization.
+            if (!(distanceMeters(target.position, other.position) <= MAX_HUB_DISTANCE_METERS)) return@filter false
             val cleanOtherName = cleanName(other.name)
             val nameMatches = cleanTargetName == cleanOtherName || areNamesCloselyMatching(target.name, other.name)
             if (!nameMatches) return@filter false
 
-            val dist = distanceMeters(target.position, other.position)
-            dist <= MAX_HUB_DISTANCE_METERS
+            true
         }
     }
 
@@ -106,7 +110,7 @@ object StopClusters {
         clusterFor(stopId, allStops).size > 1
 
     fun stopDisplayName(name: String): String = name
-        .replace(Regex("""\s*\((?:több megálló|multiple stations)\)""", RegexOption.IGNORE_CASE), "").trim()
+        .replace(multiStopSuffixRegex, "").trim()
 
     fun consolidateForSearch(stops: List<TransitStop>): List<TransitStop> {
         if (stops.isEmpty()) return emptyList()

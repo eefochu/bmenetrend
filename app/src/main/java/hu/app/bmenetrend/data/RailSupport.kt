@@ -5,7 +5,7 @@ object RailSupport {
     private val line = Regex("(?:S|Z|G|EX|RE|R|TT)\\s?\\d{1,3}[A-Z]?", RegexOption.IGNORE_CASE)
     private val trainNumber = Regex("(?<![\\p{L}\\d])\\d{1,7}(?!\\d)")
     private val markup = Regex("""<[^>]+>|&(?:#\w+|\w+);""")
-    fun isTrain(mode: String?) = mode == "RAIL" || mode == "TRAMTRAIN"
+    fun isTrain(mode: String?) = mode == "RAIL" || mode == "TRAMTRAIN" || mode == "TRAIN"
     fun clean(value: String?): String? = value?.trim()?.takeUnless {
         it.isBlank() || markup.containsMatchIn(it) || it.any { c -> Character.getType(c) == Character.PRIVATE_USE.toInt() }
     }
