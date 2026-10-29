@@ -48,6 +48,8 @@ class PlannerViewModel internal constructor(
     private var planGeneration = 0
     private var index = emptyList<TransitSearch.StopEntry>()
     private var indexJob: Job? = null
+    private var indexedLocal: List<TransitStop>? = null
+    private var indexedNational: List<TransitStop>? = null
     private var location: GeoPoint? = null
 
     init {
@@ -64,11 +66,18 @@ class PlannerViewModel internal constructor(
 
     fun updateStops(stops: List<TransitStop>, national: List<TransitStop> = emptyList()) {
         val local = if (hu.app.bmenetrend.offline.NetworkAccessPolicy.offline.value) emptyList() else stops
-        val available = national.filterNot { it.station }
-        stopCatalogue = if (available.isEmpty()) local else local + available
+        if (indexedLocal === local && indexedNational === national) return
+        indexedLocal = local
+        indexedNational = national
         indexJob?.cancel()
         indexJob = viewModelScope.launch {
-            index = withContext(Dispatchers.Default) { TransitSearch.indexStops(local, available) }
+            val prepared = withContext(Dispatchers.Default) {
+                val available = national.filterNot { it.station }
+                val catalogue = if (available.isEmpty()) local else local + available
+                catalogue to TransitSearch.indexStops(local, available)
+            }
+            stopCatalogue = prepared.first
+            index = prepared.second
             if (state.value.editing != null) search(state.value.query)
         }
     }
@@ -96,7 +105,6 @@ class PlannerViewModel internal constructor(
         mutable.update { it.copy(query = query, suggestions = emptyList(), searching = query.trim().length >= 2, searchUnavailable = false) }
         if (query.trim().length < 2) return
         searchJob = viewModelScope.launch {
-            delay(400)
             val stationResults = withContext(Dispatchers.Default) {
                 TransitSearch.stops(index, TransitSearch.query(query), location, emptySet()).take(6).map {
                     PlannerEndpoint.fromStop(it)
@@ -108,6 +116,8 @@ class PlannerViewModel internal constructor(
                 mutable.update { it.copy(searching = false) }; return@launch
             }
             try {
+                // Local matches are ready immediately; debounce only the remote geocoder.
+                delay(400)
                 val results = places.search(query).take(6).map { PlannerEndpoint(it.id, it.name, it.address, it.position) }
                 if (generation == searchGeneration) mutable.update { it.copy(suggestions = (results + stationResults).distinctBy { it.id }, searching = false) }
             } catch (cancelled: CancellationException) { throw cancelled }

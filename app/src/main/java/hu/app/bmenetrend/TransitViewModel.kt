@@ -45,6 +45,16 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private var otaDownloadedUrl: String? = null
     private val repository = TransitRepository(application)
     private val stationTimetableRepository = StationTimetableRepository(application)
+    private data class SavedBoardKey(
+        val request: StopBoardScope.RequestKey,
+        val platforms: List<String>,
+        val revision: Int,
+        val timeBucket: Long,
+    )
+    private var savedBoardJob: Job? = null
+    private var savedBoardKey: SavedBoardKey? = null
+    private var savedBoardResult: Pair<SavedBoardKey, OfflineBoardResult?>? = null
+    private var savedBoardRevision = 0
     private val routeEstimator by lazy {
         ViabuszRouteEstimator(RouteRoads.decode(application.assets.open("viabusz-route-geometry.json").bufferedReader().use { it.readText() }))
     }
@@ -130,6 +140,13 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private var liveError = false
 
     init {
+        viewModelScope.launch {
+            stationTimetableRepository.initialize()
+            savedBoardRevision++
+            mutableState.update { it.copy(downloadedStationIds = stationTimetableRepository.downloadedStopIds(),
+                offlineStationTimetables = stationTimetableRepository.allMetadata()) }
+            recalculate()
+        }
         viewModelScope.launch {
             offlinePacks.state.collect { pack ->
                 mutableState.update { it.copy(offlinePack = pack) }
@@ -379,9 +396,40 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    /** Request saved fallback data without doing file reads/decompression during a UI refresh. */
+    private fun savedStationBoard(current: UiState, now: Instant): OfflineBoardResult? {
+        val selected = current.selectedStopId.takeUnless { current.showNearby }
+        val platforms = if (selected != null) current.selectedPlatforms.map { it.id } else emptyList()
+        if (selected == null || (selected !in current.downloadedStationIds && platforms.none { it in current.downloadedStationIds })) {
+            savedBoardJob?.cancel()
+            savedBoardKey = null
+            savedBoardResult = null
+            return null
+        }
+        val key = SavedBoardKey(current.boardRequestKey, platforms, savedBoardRevision, now.epochSecond / 5)
+        if (key != savedBoardKey) {
+            savedBoardJob?.cancel()
+            savedBoardKey = key
+            savedBoardJob = viewModelScope.launch {
+                val result = try { stationTimetableRepository.getOfflineBoard(selected, platforms, now, current.windowMinutes) }
+                catch (cancelled: CancellationException) { throw cancelled }
+                catch (_: Exception) { null }
+                if (savedBoardKey == key && !NetworkAccessPolicy.offline.value && state.value.boardRequestKey == key.request) {
+                    savedBoardResult = key to result
+                    recalculate()
+                }
+            }
+        }
+        return savedBoardResult?.takeIf { (previous, _) ->
+            previous.request == key.request && previous.platforms == key.platforms && previous.revision == key.revision &&
+                key.timeBucket - previous.timeBucket in 0..1
+        }?.second
+    }
+
     private fun recalculate() {
         if (NetworkAccessPolicy.offline.value) { recalculateOffline(); return }
         val now = Instant.now()
+        val savedBoard = savedStationBoard(state.value, now)
         val snapshot = live?.takeIf { Duration.between(it.fetchedAt, now).seconds in 0..45 }
         mutableState.update { current ->
             val selectedId = current.selectedStopId.takeUnless { current.showNearby }
@@ -398,7 +446,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             }.orEmpty()
 
             val offlineBoard = if (selectedId != null && (validBoard == null || boardFailure) && emmaDepartures.isEmpty()) {
-                stationTimetableRepository.getOfflineBoard(selectedId, cluster.map { it.id }, now, current.windowMinutes)
+                savedBoard?.takeIf { savedBoardResult?.first?.request == current.boardRequestKey }
             } else null
             val isOfflineActive = offlineBoard != null && (validBoard == null || boardFailure)
             if (offlineBoard != null) {
@@ -683,6 +731,9 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         }
     }
     private suspend fun applyOfflineMode(enabled: Boolean) {
+        savedBoardJob?.cancel()
+        savedBoardKey = null
+        savedBoardResult = null
         mapStopsGeneration++; mapStopsJob?.cancel(); loadedMapBounds = null
         placeSearchGeneration++; lineGeneration++; journeyGeneration++; nearbyGeneration++; favoriteGeneration++
         placeSearchJob?.cancel(); lineJob?.cancel(); journeyJob?.cancel(); nearbyJob?.cancel(); favoriteJob?.cancel(); boardJob?.cancel()
@@ -1129,6 +1180,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                     network = current.network,
                     now = Instant.now(),
                 )
+                savedBoardRevision++
                 mutableState.update { s ->
                     s.copy(
                         downloadingStationIds = s.downloadingStationIds - clusterIds,
@@ -1158,6 +1210,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     fun deleteStationTimetable(stopId: String) {
         viewModelScope.launch {
             stationTimetableRepository.deleteStationTimetable(stopId)
+            savedBoardRevision++
             mutableState.update { s ->
                 s.copy(
                     downloadedStationIds = stationTimetableRepository.downloadedStopIds(),
@@ -1171,6 +1224,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     fun clearAllStationTimetables() {
         viewModelScope.launch {
             stationTimetableRepository.clearAll()
+            savedBoardRevision++
             mutableState.update { s ->
                 s.copy(
                     downloadedStationIds = emptySet(),

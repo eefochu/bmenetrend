@@ -38,6 +38,7 @@ data class LineMapFocus(
             if (vehicle == null && boarding == null) return null
             val routeId = vehicle?.routeId ?: boarding?.routeId
             val route = routes.find { it.id == routeId }
+            val routeStopIds = route?.directions.orEmpty().flatMap { it.stopIds }.toHashSet()
             val provider = vehicle?.providerId ?: route?.providerId ?: return null
             val number = vehicle?.routeNumber ?: route?.number
             val mode = vehicle?.transportMode ?: route?.transportMode
@@ -61,7 +62,7 @@ data class LineMapFocus(
                         stops = matchingPattern.stops
                         paths = listOf(matchingPattern.geometry).filter { it.size >= 2 }
                     } else {
-                        val allStopsById = allStops.associateBy { it.id }
+                        val allStopsById = allStops.asSequence().filter { it.id in routeStopIds }.associateBy { it.id }
                         val matchingDirection = findMatchingDirection(vehicle, route?.directions.orEmpty(), allStopsById)
                         if (matchingDirection != null) {
                             stops = matchingDirection.stopIds.mapNotNull { allStopsById[it] }
@@ -80,7 +81,7 @@ data class LineMapFocus(
                     stops=selectedPattern.stops
                     paths=listOf(selectedPattern.geometry).filter { it.size>=2 }
                 } else if(selectedLocal!=null) {
-                    val byId=allStops.associateBy { it.id }
+                    val byId=allStops.asSequence().filter { it.id in routeStopIds }.associateBy { it.id }
                     stops=selectedLocal.stopIds.mapNotNull(byId::get)
                     paths=emptyList()
                 } else {
@@ -90,6 +91,7 @@ data class LineMapFocus(
                 }
             }
 
+            val selectedStopIds = stops.mapTo(HashSet()) { it.id }
             val directionKey = vehicle?.tripId ?: boarding?.pattern?.id ?: boarding?.localDirectionId ?: "all"
             return LineMapFocus(
                 key = "${routeId ?: "vehicle:${vehicle!!.id}"}:$directionKey",
@@ -102,8 +104,8 @@ data class LineMapFocus(
                 selectedVehicleId = vehicle?.id,
                 contextPaths = line?.patterns.orEmpty().map { it.geometry }.filter { it.size>=2 && it !in paths }.distinct(),
                 contextStops = (line?.patterns.orEmpty().flatMap { it.stops } + allStops.filter { stop ->
-                    routeId!=null && (routeId in stop.routeIds || route?.directions.orEmpty().any { stop.id in it.stopIds })
-                }).distinctBy { it.id }.filterNot { other -> stops.any { it.id==other.id } },
+                    routeId!=null && (routeId in stop.routeIds || stop.id in routeStopIds)
+                }).distinctBy { it.id }.filterNot { it.id in selectedStopIds },
             )
         }
 

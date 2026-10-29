@@ -74,6 +74,7 @@ class LineMapFocusTest {
     @Test fun noSelectionMeansNoFocus() {
         assertNull(LineMapFocus.create(null,null,emptyList(),emptyMap(),null,emptyList()))
     }
+
     @Test fun lineOverviewStillShowsBothDirectionsUntilOneIsChosen() {
         val focus=LineMapFocus.create(null,BoardingSelection(route.id,"Line overview"),listOf(route),
             mapOf(route.id to LineDetails(route,listOf(outbound,inbound))),null,listOf(a,b,c))!!
@@ -81,4 +82,74 @@ class LineMapFocusTest {
         assertEquals(setOf(a,b,c),focus.stops.toSet())
     }
 
+    @Test fun routeStopIdsAddContextStopsAndSelectedStopsAreDeduplicatedFromContext() {
+        val selected = stop("selected", 47.4)
+        val routeOnly = stop("route-only", 47.8).copy(routeIds = emptyList())
+        val routeWithStops = route.copy(directions = listOf(RouteDirection("d", "North", listOf(selected.id, routeOnly.id))))
+        val pattern = LinePattern("p", setOf("p"), "North", listOf(selected), listOf(selected.position, GeoPoint(47.41, 19.0)), 1, "0")
+        val focus = LineMapFocus.create(
+            vehicle = vehicle(destination = "North"),
+            boarding = null,
+            routes = listOf(routeWithStops),
+            details = mapOf(route.id to LineDetails(routeWithStops, listOf(pattern))),
+            journey = null,
+            allStops = listOf(selected, routeOnly),
+        )!!
+        assertTrue(focus.stops.any { it.id == selected.id })
+        assertTrue(focus.contextStops.any { it.id == routeOnly.id })
+        assertFalse(focus.contextStops.any { it.id == selected.id })
+    }
+
+    @Test fun lineFocusParityWithLargeIrrelevantCatalogue() {
+        val routeWithDirections = route.copy(
+            directions = listOf(
+                RouteDirection("out", "North", listOf(a.id, b.id)),
+                RouteDirection("in", "South", listOf(c.id, a.id))
+            )
+        )
+        val smallStops = listOf(a, b, c)
+
+        // 10,000 irrelevant stops simulating nationwide national catalogue
+        val irrelevantStops = (1..10_000).map { i ->
+            TransitStop(
+                id = "irrelevant-$i",
+                name = "Irrelevant Stop $i",
+                position = GeoPoint(46.0 + (i % 100) * 0.01, 18.0 + (i / 100) * 0.01),
+                routeIds = listOf("volan:other-route-$i"),
+                providerId = "volan",
+            )
+        }
+        val largeStops = smallStops + irrelevantStops
+
+        val details = mapOf(route.id to LineDetails(routeWithDirections, listOf(outbound, inbound)))
+
+        val focusSmall = LineMapFocus.create(
+            vehicle = vehicle(destination = "North"),
+            boarding = null,
+            routes = listOf(routeWithDirections),
+            details = details,
+            journey = null,
+            allStops = smallStops,
+        )!!
+
+        val focusLarge = LineMapFocus.create(
+            vehicle = vehicle(destination = "North"),
+            boarding = null,
+            routes = listOf(routeWithDirections),
+            details = details,
+            journey = null,
+            allStops = largeStops,
+        )!!
+
+        // Full parity checks
+        assertEquals("Focus stops must match exactly", focusSmall.stops.map { it.id }, focusLarge.stops.map { it.id })
+        assertEquals("Focus context stops must match exactly", focusSmall.contextStops.map { it.id }, focusLarge.contextStops.map { it.id })
+        assertEquals("Paths must match", focusSmall.paths, focusLarge.paths)
+        assertEquals("Display paths must match", focusSmall.displayPaths, focusLarge.displayPaths)
+        assertEquals("Focus key must match", focusSmall.key, focusLarge.key)
+
+        // Verify none of the 10,000 irrelevant stops leaked into any stop list
+        val largeStopIds = focusLarge.displayStops.map { it.id }.toSet()
+        assertFalse(largeStopIds.any { it.startsWith("irrelevant-") })
+    }
 }

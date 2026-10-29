@@ -1,5 +1,8 @@
 package hu.app.bmenetrend.data
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Before
@@ -186,5 +189,97 @@ class StationTimetableRepositoryTest {
         repository.clearAll()
         assertFalse(repository.isStationDownloaded("p2"))
         assertTrue(repository.getAllDownloadedStationMetadata().isEmpty())
+    }
+
+    @Test
+    fun `restart constructor does not read index from disk until initialize or access`() = runBlocking {
+        val now = Instant.now()
+        repository.saveStationTimetableDirect("s1", "Station 1", listOf("p1"), emptyList(), emptyList(), now)
+
+        // Create a new instance on the same directory
+        val restartedRepo = StationTimetableRepository(baseDirectory = rootDir)
+
+        // Check internal 'initialized' flag via reflection before calling any suspend method
+        val initField = StationTimetableRepository::class.java.getDeclaredField("initialized")
+        initField.isAccessible = true
+        val initializedBefore = initField.getBoolean(restartedRepo)
+        assertFalse("Constructor must be cheap and NOT read index immediately", initializedBefore)
+
+        // Synchronous access before initialize() reflects empty in-memory state
+        assertEquals(0, restartedRepo.totalStorageBytes())
+        assertFalse(restartedRepo.isStationDownloaded("p1"))
+
+        // Explicit initialize() loads the index off the main thread
+        restartedRepo.initialize()
+        val initializedAfter = initField.getBoolean(restartedRepo)
+        assertTrue("Repository must be marked initialized after calling initialize()", initializedAfter)
+        assertTrue("Stored metadata must be restored from disk", restartedRepo.isStationDownloaded("p1"))
+        assertEquals(1, restartedRepo.allMetadata().size)
+        assertTrue(restartedRepo.totalStorageBytes() > 0)
+    }
+
+    @Test
+    fun `cold disk read loads index and compressed timetable asynchronously without deadlock`() = runBlocking {
+        val now = Instant.parse("2026-10-26T12:00:00Z")
+        val route = TransitRoute(id = "r1", name = "Route 1", number = "1", directions = emptyList(), providerId = "bkk")
+        val dep = Departure(routeId = "r1", routeNumber = "1", destination = "Dest", stopId = "p1", scheduledAt = now.plusSeconds(300), expectedAt = now.plusSeconds(300), kind = ArrivalKind.SCHEDULED, directionId = "d1")
+        repository.saveStationTimetableDirect("cold-station", "Cold Station", listOf("p1"), listOf(route), listOf(dep), now)
+
+        // Fresh instance simulates cold start / process restart
+        val coldRepo = StationTimetableRepository(baseDirectory = rootDir)
+
+        // Calling loadOfflineData without prior initialize() must initialize and load without deadlock
+        val timetable = coldRepo.loadOfflineData("cold-station")
+        assertNotNull("Cold read must decompress and load timetable", timetable)
+        assertEquals("cold-station", timetable!!.stationId)
+        assertEquals(1, timetable.departures.size)
+
+        // Calling getOfflineBoard on another fresh instance must also initialize and return board
+        val boardRepo = StationTimetableRepository(baseDirectory = rootDir)
+        val board = boardRepo.getOfflineBoard("p1", listOf("p1"), now, 30)
+        assertNotNull(board)
+        assertEquals("Cold Station", board!!.stationName)
+        assertEquals(1, board.departures.size)
+    }
+
+    @Test
+    fun `concurrent save read and delete operations maintain cache safety`() = runBlocking(Dispatchers.IO) {
+        val now = Instant.parse("2026-10-26T12:00:00Z")
+        // Initialize base repository
+        repository.initialize()
+
+        val workers = (1..12).map { i ->
+            async {
+                val stationId = "station-$i"
+                val platformId = "p-$i"
+                val route = TransitRoute(id = "r$i", name = "Route $i", number = "$i", directions = emptyList(), providerId = "bkk")
+                val dep = Departure(routeId = "r$i", routeNumber = "$i", destination = "D$i", stopId = platformId, scheduledAt = now.plusSeconds(i * 60L), expectedAt = now.plusSeconds(i * 60L), kind = ArrivalKind.SCHEDULED, directionId = "d$i")
+
+                // Interleaved saves, reads, queries, and deletions
+                repository.saveStationTimetableDirect(stationId, "Station $i", listOf(platformId), listOf(route), listOf(dep), now)
+                val isSaved = repository.isStationDownloaded(platformId)
+                val board = repository.getOfflineBoard(platformId, listOf(platformId), now, 60)
+                val loaded = repository.loadOfflineData(stationId)
+
+                // Every saved station should be queryable
+                assertTrue(isSaved)
+                assertNotNull(board)
+                assertNotNull(loaded)
+
+                if (i % 2 == 0) {
+                    repository.deleteStationTimetable(platformId)
+                    assertFalse(repository.isStationDownloaded(platformId))
+                }
+            }
+        }
+        workers.awaitAll()
+
+        // 6 stations should remain (odd numbers)
+        val remaining = repository.allMetadata().values
+        assertEquals(6, remaining.size)
+        for (meta in remaining) {
+            val num = meta.stationId.removePrefix("station-").toInt()
+            assertTrue(num % 2 != 0)
+        }
     }
 }

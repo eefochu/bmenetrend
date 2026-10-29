@@ -64,8 +64,16 @@ class StationTimetableRepository(
     private val stopToStationMap = ConcurrentHashMap<String, String>()
     private val mutex = Mutex()
 
-    init {
-        loadIndex()
+    private var initialized = false
+
+    /** Constructor is cheap; all persisted index and compressed timetable reads are main-safe. */
+    suspend fun initialize() = withContext(Dispatchers.IO) {
+        mutex.withLock {
+            if (!initialized) {
+                loadIndex()
+                initialized = true
+            }
+        }
     }
 
     companion object {
@@ -100,7 +108,10 @@ class StationTimetableRepository(
 
     fun totalStorageBytes(): Long = stationMap.values.sumOf { it.fileSizeBytes }
 
-    internal fun loadOfflineData(stationId: String): StationTimetable? = getOrLoadTimetable(stationId)
+    internal suspend fun loadOfflineData(stationId: String): StationTimetable? = withContext(Dispatchers.IO) {
+        initialize()
+        mutex.withLock { getOrLoadTimetable(stationId) }
+    }
 
     private fun stationFile(stationId: String): File =
         File(timetableDirectory, "${safeKey(stationId)}.tt.gz")
@@ -173,6 +184,7 @@ class StationTimetableRepository(
         departures: List<Departure>,
         now: Instant = Instant.now(),
     ): OfflineStationMetadata = withContext(Dispatchers.IO) {
+        initialize()
         val allPlatforms = (platformIds + stationId).toSet()
         val timetable = StationTimetable(
             stationId = stationId,
@@ -215,6 +227,7 @@ class StationTimetableRepository(
         network: TransitNetwork?,
         now: Instant = Instant.now(),
     ): OfflineStationMetadata = withContext(Dispatchers.IO) {
+        initialize()
         val allPlatforms = platforms.ifEmpty { listOf(station) }
         val stationId = station.parentStationId ?: allPlatforms.minByOrNull { it.id }?.id ?: station.id
         val stationName = StopClusters.stopDisplayName(station.name)
@@ -273,7 +286,17 @@ class StationTimetableRepository(
         )
     }
 
-    fun getOfflineBoard(
+    suspend fun getOfflineBoard(
+        selectedId: String,
+        platformIds: List<String>,
+        now: Instant,
+        windowMinutes: Int,
+    ): OfflineBoardResult? = withContext(Dispatchers.IO) {
+        initialize()
+        mutex.withLock { buildOfflineBoard(selectedId, platformIds, now, windowMinutes) }
+    }
+
+    private fun buildOfflineBoard(
         selectedId: String,
         platformIds: List<String>,
         now: Instant,
@@ -328,6 +351,7 @@ class StationTimetableRepository(
     }
 
     suspend fun deleteStationTimetable(stopOrStationId: String) = withContext(Dispatchers.IO) {
+        initialize()
         val stationId = stopToStationMap[stopOrStationId] ?: stopOrStationId
         mutex.withLock {
             val meta = stationMap.remove(stationId)
@@ -341,6 +365,7 @@ class StationTimetableRepository(
     }
 
     suspend fun clearAll() = withContext(Dispatchers.IO) {
+        initialize()
         mutex.withLock {
             stationMap.clear()
             stopToStationMap.clear()
