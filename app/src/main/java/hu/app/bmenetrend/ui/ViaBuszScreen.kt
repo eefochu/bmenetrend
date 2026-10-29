@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
@@ -68,7 +69,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Surface
@@ -183,7 +183,7 @@ fun ViaBuszScreen(
             skipHiddenState = false,
         ),
     )
-    var shownStopToken by remember { mutableStateOf<Pair<String?, Int>?>(null) }
+    var shownStopToken by rememberSaveable { mutableStateOf<Pair<String?, Int>?>(null) }
     val selectedStop = remember(state.selectedStopId, state.network?.stops, state.emmaStops) {
         state.findStop(state.selectedStopId)
     }
@@ -295,12 +295,15 @@ fun ViaBuszScreen(
         }
     })
     BackHandler(enabled = searchOpen, onBack = navigateBack)
+    // A restored hidden sheet is not a new dismissal of an externally selected stop.
+    var sheetWasVisible by remember { mutableStateOf(sheet.currentValue != SheetValue.Hidden) }
     LaunchedEffect(sheet.currentValue) {
         if(sheet.currentValue == SheetValue.Hidden) { routeId=null; directionId=null }
-        if (sheet.currentValue == SheetValue.Hidden && (state.selectedVehicle != null || state.boardingSelection != null || !state.showNearby)) {
+        if (sheet.currentValue == SheetValue.Hidden && sheetWasVisible && (state.selectedVehicle != null || state.boardingSelection != null || !state.showNearby)) {
             onClearBoarding()
             onReturnToNearby()
         }
+        sheetWasVisible = sheet.currentValue != SheetValue.Hidden
     }
     LaunchedEffect(state.selectedVehicle?.id) {
         if (state.selectedVehicle != null) {
@@ -314,6 +317,8 @@ fun ViaBuszScreen(
             val token = state.selectedStopId to state.cameraRequest
             if (token != shownStopToken) {
                 routeId=null; directionId=null
+                searchOpen=false
+                showSettings=false; showAbout=false; showUpdates=false
                 sheet.partialExpand()
             }
             shownStopToken = token
@@ -882,23 +887,9 @@ private fun SearchAndRoutes(
 ) {
     var category by rememberSaveable { mutableStateOf(SearchCategory.ALL) }
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Column(Modifier.fillMaxSize().statusBarsPadding()) {
-            Row(Modifier.fillMaxWidth().padding(horizontal = 7.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { if (category != SearchCategory.ALL) category = SearchCategory.ALL else onBack() }) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.ui_back)) }
-                OutlinedTextField(
-                    value = query,
-                    onValueChange = onQueryChanged,
-                    singleLine = true,
-                    placeholder = { Text(stringResource(R.string.ui_search_field_hint)) },
-                    leadingIcon = { Icon(Icons.Rounded.Search, null) },
-                    trailingIcon = {
-                        if (query.isNotEmpty()) IconButton(onClick = { onQueryChanged("") }) { Icon(Icons.Rounded.Close, stringResource(R.string.ui_clear_search)) }
-                    },
-                    shape = RoundedCornerShape(28.dp),
-                    modifier = Modifier.weight(1f).padding(end = 9.dp),
-                )
-            }
-            CategorizedSearch(state, query, category, { category = it }, onRoute, onStop, onVehicle, onPlace, onSearchPlaces)
+        Column(Modifier.fillMaxSize().statusBarsPadding().imePadding()) {
+            TransitSearchInput(query, onQueryChanged, { if (category != SearchCategory.ALL) category = SearchCategory.ALL else onBack() })
+            CategorizedSearch(state, query, category, { category = it }, onRoute, onStop, onVehicle, onPlace, onSearchPlaces, onQueryChanged = onQueryChanged)
         }
     }
 }
@@ -920,38 +911,22 @@ private fun stopLabel(stop: TransitStop): String? = stop.platformCode?.let { str
 
 @Composable
 internal fun StopSearchRow(stop: TransitStop, state: UiState, favorite: Boolean, onStop: (String) -> Unit) {
-    val isMulti = stop.isMultiStop || remember(stop.id, state.stops) { StopClusters.isMultiStop(stop.id, state.stops) }
-    val displayName = StopClusters.stopDisplayName(stop.name)
+    // The search index already consolidates platforms and records multi-stop membership.
+    val isMulti = stop.isMultiStop
     val resolvedPlatform = stop.platformCode ?: hu.app.bmenetrend.data.BkkPlatformIndex.resolve(stop.id, null)
-    val isDownloaded = stop.id in state.downloadedStationIds
-    Row(
-        Modifier.fillMaxWidth().clickable { onStop(stop.id) }.padding(horizontal = 22.dp, vertical = 14.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
-            Icon(
-                when {
-                    favorite -> Icons.Rounded.Favorite
-                    isDownloaded -> Icons.Rounded.CloudDone
-                    else -> Icons.Rounded.LocationOn
-                },
-                null,
-                Modifier.padding(11.dp).size(21.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-        }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(displayName, Modifier.weight(1f, fill = false), style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                resolvedPlatform?.let { PlatformBadge(it) }
-            }
-            val numbers = stop.routeIds.mapNotNull { id -> state.findRoute(id)?.number ?: id.substringAfterLast(":").takeIf { hu.app.bmenetrend.data.StopClusters.isCleanRouteNumber(it) } }.distinct()
-            val boarding = if (isMulti || resolvedPlatform != null) null else stopLabel(stop)
-            Text(listOfNotNull(providerNames(stop.providerIds), if (isMulti) null else transportLabel(stop.transportMode), boarding, numbers.joinToString(" · ").takeIf { it.isNotBlank() }).joinToString(" · "), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        Icon(Icons.AutoMirrored.Rounded.ArrowForward, null, Modifier.size(19.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+    val numbers = remember(stop.routeIds, state.network?.routes, state.emmaRoutes) {
+        stop.routeIds.mapNotNull { id -> state.findRoute(id)?.number ?: id.substringAfterLast(":").takeIf(StopClusters::isCleanRouteNumber) }.distinct()
     }
+    val boarding = if (isMulti || resolvedPlatform != null) null else stopLabel(stop)
+    val detail = listOfNotNull(providerNames(stop.providerIds), if (isMulti) null else transportLabel(stop.transportMode), boarding,
+        numbers.take(6).joinToString(" · ").takeIf(String::isNotBlank)).joinToString(" · ")
+    SearchResultCard(StopClusters.stopDisplayName(stop.name), detail, { onStop(stop.id) },
+        leading = { TransitIconTile(when {
+            favorite -> Icons.Rounded.Favorite
+            stop.id in state.downloadedStationIds -> Icons.Rounded.CloudDone
+            else -> Icons.Rounded.LocationOn
+        }) },
+        badge = { resolvedPlatform?.let { PlatformBadge(it) } })
 }
 
 @Composable
@@ -1032,4 +1007,4 @@ internal fun providerName(providerId: String): String = stringResource(
 )
 
 @Composable
-private fun providerNames(providerIds: List<String>): String = providerIds.distinct().map { providerName(it) }.joinToString(" · ")
+internal fun providerNames(providerIds: List<String>): String = providerIds.distinct().map { providerName(it) }.joinToString(" · ")

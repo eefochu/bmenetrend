@@ -1,5 +1,6 @@
 package hu.app.bmenetrend.ui
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -147,21 +148,16 @@ class FavoritesScreenTest {
     }
 
     @Test
-    fun favoritesScreenRendersDistinctBadgesAndTriggersCallbacks() {
-        var clickedStopId: String? = null
-        var clickedRouteId: String? = null
-        var allDeparturesStopId: String? = null
+    fun favoritesScreenCardPartsSelectSameStopAndDeleteOnlyRemoves() {
+        val selectedStops = mutableListOf<String>()
+        val removedStops = mutableListOf<String>()
 
         compose.setContent {
             ViaBuszTheme {
                 FavoritesScreen(
                     state = uiState,
-                    onStop = { allDeparturesStopId = it },
-                    onStopRoute = { stop, route ->
-                        clickedStopId = stop
-                        clickedRouteId = route
-                    },
-                    onRemove = {},
+                    onStop = { selectedStops += it },
+                    onRemove = { removedStops += it },
                     onRefresh = {},
                     onVisible = {}
                 )
@@ -169,36 +165,27 @@ class FavoritesScreenTest {
         }
 
         compose.onNodeWithText(app.getString(R.string.favorites_window,DepartureTime.compact(uiState.windowMinutes,true))).assertDoesNotExist()
-
-        // Check station name header is displayed
         compose.onNodeWithText("Budapest-Kelenföld").assertIsDisplayed()
-
-        // Check line badges are displayed
         compose.onNodeWithText("S10").assertIsDisplayed()
         compose.onNodeWithText("IC").assertIsDisplayed()
-
-        // Check other lines section is displayed
         compose.onNodeWithText(app.getString(R.string.favorites_other_lines)).assertIsDisplayed()
         compose.onNodeWithText("762").assertIsDisplayed()
 
-        // Clicking a line badge should trigger onStopRoute
-        compose.onNodeWithText("S10").performClick()
-        compose.runOnIdle {
-            assertEquals(stationStop.id, clickedStopId)
-            assertEquals(trainRoute1.id, clickedRouteId)
+        listOf("S10", "IC", "762", "Budapest-Kelenföld", app.getString(R.string.favorites_all_departures)).forEach { text ->
+            compose.onNodeWithText(text).performClick()
+            compose.runOnIdle { assertEquals(listOf(stationStop.id), selectedStops) }
+            selectedStops.clear()
         }
 
-        // Clicking another line badge should trigger onStopRoute
-        compose.onNodeWithText("IC").performClick()
-        compose.runOnIdle {
-            assertEquals(stationStop.id, clickedStopId)
-            assertEquals(trainRoute2.id, clickedRouteId)
-        }
+        // Padding between controls must have the same action as the title and badges.
+        compose.onNodeWithTag("favorite:${stationStop.id}").performTouchInput { click(Offset(8f, center.y)) }
+        compose.runOnIdle { assertEquals(listOf(stationStop.id), selectedStops) }
+        selectedStops.clear()
 
-        // Clicking "Összes indulás" should trigger onStop
-        compose.onNodeWithText(app.getString(R.string.favorites_all_departures)).performClick()
+        compose.onNodeWithContentDescription(app.getString(R.string.ui_remove_favorite)).performClick()
         compose.runOnIdle {
-            assertEquals(stationStop.id, allDeparturesStopId)
+            assertEquals(listOf(stationStop.id), removedStops)
+            assertTrue(selectedStops.isEmpty())
         }
     }
 }

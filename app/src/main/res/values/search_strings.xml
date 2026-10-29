@@ -15,4 +15,10 @@
     <string name="search_close_place">Kiválasztott hely bezárása</string>
     <string name="search_places_privacy">A helykeresés a beírt keresést a Photon szolgáltatásnak küldi. A készülék helyzete nem kerül továbbításra.</string>
     <string name="search_places_source">Helyek: Photon / OpenStreetMap</string>
+    <string name="search_recommended">Talán ezt keresed</string>
+    <string name="search_input_hint">Megálló, hely vagy járat</string>
+    <string name="search_discover_title">Hová indulnál?</string>
+    <string name="search_discover_body">Keress röviden is. A „kelen” például Kelenföldet is megtalálja.</string>
+    <string name="search_examples">Próbáld ki</string>
+    <string name="search_favorites">Kedvenc megállóid</string>
 </resources>

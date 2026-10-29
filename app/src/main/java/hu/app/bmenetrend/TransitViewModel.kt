@@ -1121,31 +1121,6 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         ensureBoardRequest()
     }
 
-    fun selectStopRoute(stopId: String, routeId: String) {
-        closeVehicle()
-        manualStop = true
-        val current = state.value
-        val network = current.network
-        val canonicalId = network?.let { SharedStops.resolve(it, stopId) } ?: SharedStops.canonicalId(stopId)
-        val selectedIds = setOf(canonicalId)
-        val route = current.findRoute(routeId)
-        val badge = route?.let { RailSupport.canonicalBadge(it.number, it.name) }
-        val title = route?.name?.ifBlank { null } ?: badge ?: route?.number ?: routeId
-        loadLine(routeId)
-        mutableState.update { it.copy(
-            showNearby = false,
-            selectedStopId = canonicalId,
-            selectedPlatformIds = selectedIds,
-            selectedPlace = null,
-            cameraRequest = it.cameraRequest + 1,
-            boardingSelection = BoardingSelection(routeId, title, routeNumber = badge ?: route?.number),
-            trackedVehicle = null,
-            selectedVehicle = null,
-        ) }
-        recalculate()
-        ensureBoardRequest()
-    }
-
     fun recenter() {
         manualStop = false
         mutableState.update { it.copy(cameraRequest = it.cameraRequest + 1) }

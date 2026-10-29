@@ -86,10 +86,17 @@ class MainActivity : ComponentActivity() {
                     try { awaitCancellation() } finally { close() }
                 }
             }
-            LaunchedEffect(tab) { model.setMapVisible(tab == MainTab.MAP); model.setFavoritesVisible(tab == MainTab.FAVORITES) }
+            LaunchedEffect(tab) { model.setMapVisible(tab == MainTab.MAP || tab == MainTab.PLANNER); model.setFavoritesVisible(tab == MainTab.FAVORITES) }
             LaunchedEffect(state.userLocation) { planner.updateLocation(state.userLocation) }
             LaunchedEffect(tab, state.network?.stops, state.emmaStops) {
                 if (tab == MainTab.PLANNER) planner.updateStops(state.network?.stops.orEmpty(), state.emmaStops)
+            }
+            // Both map surfaces share catalogue updates and marker directions.
+            val stopBearings by produceState(
+                initialValue = emptyMap<String, List<Double>>(),
+                state.network, state.emmaStops, state.emmaRoutes, state.lineDetails, state.vehicleJourney
+            ) {
+                value = hu.app.bmenetrend.map.StopDirections.collectAsync(state.routes, state.stops, state.lineDetails.values, state.vehicleJourney)
             }
             val requestLocation: () -> Unit = {
                 locationAllowed = hasLocationPermission()
@@ -121,11 +128,23 @@ class MainActivity : ComponentActivity() {
                                 val accentArgb = remember(primaryColor) { primaryColor.toArgb() }
                                 NativeTransitMap(
                                     network = state.network,
-                                    vehicles = emptyList(),
+                                    vehicles = state.vehicles,
                                     selectedStopId = null,
                                     userLocation = state.userLocation,
                                     modifier = mapModifier,
-                                    onStopSelected = {},
+                                    onStopSelected = { id ->
+                                        state.findStop(id)?.let { stop ->
+                                            planner.edit(PlannerField.DESTINATION)
+                                            planner.choose(hu.app.bmenetrend.data.PlannerEndpoint.fromStop(stop))
+                                        }
+                                    },
+                                    onMapError = model::mapMessage,
+                                    additionalStops = state.emmaStops,
+                                    onMapZoomChanged = model::updateMapZoom,
+                                    onViewportChanged = model::updateMapArea,
+                                    stopBearings = stopBearings,
+                                    onVehicleSelected = { id -> model.selectVehicle(id); tab = MainTab.MAP },
+                                    browsingNearby = true,
                                     routeGeometry = routeGeometry,
                                     routeColor = accentArgb,
                                     selectedPlace = destinationPlace,
@@ -140,7 +159,6 @@ class MainActivity : ComponentActivity() {
                         FavoritesScreen(
                             state = state,
                             onStop = { model.selectStop(it); tab = MainTab.MAP },
-                            onStopRoute = { stopId, routeId -> model.selectStopRoute(stopId, routeId); tab = MainTab.MAP },
                             onRemove = model::toggleFavorite,
                             onRefresh = model::refreshFavorites,
                             onVisible = model::setVisibleFavorites
@@ -236,19 +254,6 @@ class MainActivity : ComponentActivity() {
                         } else {
                             model.selectStopGroup(ids)
                         }
-                    }
-                    val stopBearings by produceState(
-                        initialValue = emptyMap<String, List<Double>>(),
-                        state.network,
-                        state.emmaStops,
-                        state.emmaRoutes,
-                        state.lineDetails,
-                        state.vehicleJourney
-                    ) {
-                        val routes = state.routes; val allStops = state.stops
-                        val details = state.lineDetails.values
-                        val journey = state.vehicleJourney
-                        value = hu.app.bmenetrend.map.StopDirections.collectAsync(routes, allStops, details, journey)
                     }
                     NativeTransitMap(state.network, state.vehicles, state.selectedStopId.takeUnless { state.showNearby || browsingRoute!=null || state.selectedVehicle!=null }, state.userLocation, modifier, onMapStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, vehicle, routeGeometry = geometry, routeStops = stops, routeColor = color.toArgb(), fitRouteRequest = state.fitRouteRequest, selectedPlace = state.selectedPlace, placeCameraRequest = state.placeCameraRequest, lineFocus = focus, browsingNearby = state.showNearby, locationCameraRequest = state.locationCameraRequest, onViewportChanged = model::updateMapArea,stopBearings=stopBearings,onSharedStopSelected=onMapSharedStop,onMapClick=onDismissHighlight, offline = state.offlineMode)
                 }

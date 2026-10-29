@@ -1,7 +1,6 @@
 package hu.app.bmenetrend.ui
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -115,7 +115,6 @@ internal fun extractStationLines(station: NearbyStation, state: UiState): Statio
 @Composable
 private fun StationBadgeGrid(
     badges: List<StationBadgeItem>,
-    onBadgeClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -139,7 +138,7 @@ private fun StationBadgeGrid(
                         base to text
                     }
 
-                    Box(Modifier.weight(1f).heightIn(min = 48.dp).clickable { onBadgeClick(badge.id) }, contentAlignment = Alignment.Center) {
+                    Box(Modifier.weight(1f).heightIn(min = 48.dp), contentAlignment = Alignment.Center) {
                         Surface(
                             shape = RoundedCornerShape(6.dp),
                             color = bgColor,
@@ -179,7 +178,6 @@ private fun StationBadgeGrid(
 fun FavoritesScreen(
     state: UiState,
     onStop: (String) -> Unit,
-    onStopRoute: (String, String) -> Unit = { _, _ -> },
     onRemove: (String) -> Unit,
     onRefresh: () -> Unit,
     onVisible: (Set<String>) -> Unit
@@ -222,6 +220,8 @@ fun FavoritesScreen(
                 }
                 var menuExpanded by remember { mutableStateOf(false) }
                 Surface(
+                    onClick = { onStop(station.stop.id) },
+                    modifier = Modifier.testTag("favorite:${station.stop.id}"),
                     shape = TransitDesign.panelShape,
                     color = MaterialTheme.colorScheme.surfaceContainerLowest,
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .55f))
@@ -237,8 +237,7 @@ fun FavoritesScreen(
                                 ?: hu.app.bmenetrend.data.BkkPlatformIndex.getPlatformCode(station.stop.id)
                             Row(
                                 modifier = Modifier
-                                    .weight(1f)
-                                    .clickable { onStop(station.stop.id) },
+                                    .weight(1f),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
@@ -250,7 +249,7 @@ fun FavoritesScreen(
                                         fontWeight = FontWeight.Bold,
                                         letterSpacing = (-0.2).sp
                                     ),
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis
                                 )
@@ -309,7 +308,6 @@ fun FavoritesScreen(
                         if (lines.trainBadges.isNotEmpty()) {
                             StationBadgeGrid(
                                 badges = lines.trainBadges,
-                                onBadgeClick = { routeId -> onStopRoute(station.stop.id, routeId) },
                                 modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
                             )
                         }
@@ -326,7 +324,6 @@ fun FavoritesScreen(
                             }
                             StationBadgeGrid(
                                 badges = lines.otherBadges,
-                                onBadgeClick = { routeId -> onStopRoute(station.stop.id, routeId) },
                                 modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
                             )
                         }
@@ -358,7 +355,7 @@ fun FavoritesScreen(
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.85f)),
                             colors = ButtonDefaults.outlinedButtonColors(
                                 containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.35f),
-                                contentColor = Color.White
+                                contentColor = MaterialTheme.colorScheme.onSurface
                             ),
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
                         ) {
