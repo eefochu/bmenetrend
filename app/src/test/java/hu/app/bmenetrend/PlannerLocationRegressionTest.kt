@@ -68,7 +68,7 @@ class PlannerLocationRegressionTest {
     }
 
     @Test
-    fun initialPlannerShowsOnlyOneDestinationFieldWithoutOriginOrControls() {
+    fun initialPlannerShowsEndpointsFormWithDefaultCurrentLocationAndFindButton() {
         val model = createModel()
         compose.setContent {
             ViaBuszTheme {
@@ -82,22 +82,21 @@ class PlannerLocationRegressionTest {
         assertEquals("Hova szeretnél menni?", expectedPlaceholder)
         assertEquals("Hová?", expectedToLabel)
 
-        // Only ONE destination field is displayed with placeholder and label
+        // Both destination field and origin field are displayed
         compose.onAllNodesWithText(expectedPlaceholder).assertCountEquals(1)
         compose.onAllNodesWithText(expectedToLabel).assertCountEquals(1)
 
-        // No origin field ("Honnan?" / "Jelenlegi helyzetem")
-        compose.onAllNodesWithText(app.getString(R.string.planner_from)).assertCountEquals(0)
-        compose.onAllNodesWithText(app.getString(R.string.planner_current)).assertCountEquals(0)
+        // Origin field ("Honnan?" / "Jelenlegi pozícióm")
+        compose.onNodeWithText(app.getString(R.string.planner_from)).assertIsDisplayed()
+        compose.onNodeWithText(app.getString(R.string.planner_current)).assertIsDisplayed()
 
-        // No full form header ("Utazástervezés")
-        compose.onAllNodesWithText(app.getString(R.string.planner_title)).assertCountEquals(0)
+        // Full form header ("Utazástervezés")
+        compose.onNodeWithText(app.getString(R.string.planner_title)).assertIsDisplayed()
 
-        // No departure control, swap button, or find button
-        compose.onAllNodesWithText(app.getString(R.string.planner_find)).assertCountEquals(0)
-        compose.onAllNodesWithText(app.getString(R.string.planner_departure)).assertCountEquals(0)
-        compose.onAllNodesWithText(app.getString(R.string.planner_leave_now)).assertCountEquals(0)
-        compose.onAllNodesWithContentDescription(app.getString(R.string.planner_swap)).assertCountEquals(0)
+        // Departure control, swap button, and find button are present
+        compose.onNodeWithText(app.getString(R.string.planner_find)).assertIsDisplayed()
+        compose.onNodeWithText(app.getString(R.string.planner_leave_now)).assertIsDisplayed()
+        compose.onNodeWithContentDescription(app.getString(R.string.planner_swap)).assertIsDisplayed()
 
         // Tapping the destination field triggers destination search
         compose.onNodeWithText(expectedPlaceholder).performClick()
@@ -107,42 +106,41 @@ class PlannerLocationRegressionTest {
     @Test
     fun choosingDestinationOpensFullPlannerFormWithDefaultCurrentLocationOrigin() {
         val model = createModel()
+        val placeholder = app.getString(R.string.planner_subtitle)
+
         compose.setContent {
             ViaBuszTheme {
                 PlannerScreen(model) {}
             }
         }
 
-        // Tap initial field to open search
-        val placeholder = app.getString(R.string.planner_subtitle)
+        // Tap destination field to start search
         compose.onNodeWithText(placeholder).performClick()
         assertEquals(PlannerField.DESTINATION, model.state.value.editing)
 
-        // Choose destination
+        // Choose a destination
         val selectedDest = PlannerEndpoint("dest:deak", "Deák Ferenc tér M", "Budapest", GeoPoint(47.4980, 19.0540))
         model.choose(selectedDest)
 
         assertNull("Choosing destination must close search", model.state.value.editing)
         assertEquals(selectedDest, model.state.value.destination)
 
-        // Full planner form is now shown:
+        // Full planner form is shown:
         // Header title is present without duplicate subtitle
         compose.onNodeWithText(app.getString(R.string.planner_title)).assertIsDisplayed()
         compose.onAllNodesWithText(placeholder).assertCountEquals(0)
 
-        // Origin field appears with "Honnan?" and defaults to "Jelenlegi helyzetem"
+        // Origin field appears with "Honnan?" and defaults to "Jelenlegi pozícióm"
         compose.onNodeWithText(app.getString(R.string.planner_from)).assertIsDisplayed()
         compose.onNodeWithText(app.getString(R.string.planner_current)).assertIsDisplayed()
 
-        // Destination field shows the chosen destination
+        // Destination field displays selected destination name
         compose.onNodeWithText(app.getString(R.string.planner_to)).assertIsDisplayed()
         compose.onNodeWithText("Deák Ferenc tér M").assertIsDisplayed()
 
-        // Departure control, swap button, and Plan button are now present
-        compose.onNodeWithText(app.getString(R.string.planner_departure)).assertIsDisplayed()
+        // Departure control, swap button, and Plan button are present
         compose.onNodeWithText(app.getString(R.string.planner_leave_now)).assertIsDisplayed()
         compose.onNodeWithContentDescription(app.getString(R.string.planner_swap)).assertIsDisplayed()
-        compose.onNode(hasScrollAction()).performScrollToNode(hasText(app.getString(R.string.planner_find)))
         compose.onNodeWithText(app.getString(R.string.planner_find)).assertIsEnabled()
     }
 
