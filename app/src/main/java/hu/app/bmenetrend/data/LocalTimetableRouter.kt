@@ -12,7 +12,9 @@ data class WalkingLink(val from: PlanPoint, val to: PlanPoint, val seconds: Long
 }
 
 data class LocalPath(val stopId: String, val arrival: Instant, val legs: List<PlanLeg>) {
-    val boardings get() = legs.count { !it.walking && !it.stayOnBoard }
+    val boardings = legs.count { !it.walking && !it.stayOnBoard }
+    internal val restricted = legs.any { it.restrictedService }
+    internal val walkingDistance = legs.sumOf { if (it.walking) it.distance else 0.0 }
 }
 
 /** Earliest arrival with a label per boarding count; every reviewed local trip participates. */
@@ -45,38 +47,56 @@ class LocalTimetableRouter(private val network: TransitNetwork, private val read
     fun search(seeds: List<LocalPath>, transfers: Map<Pair<String, String>, WalkingLink>): Map<String, List<LocalPath>> {
         val queue = PriorityQueue(compareBy<LocalPath> { it.arrival }.thenBy { it.boardings })
         val best = mutableMapOf<Triple<String, Int, Boolean>, LocalPath>()
-        fun key(path: LocalPath) = Triple(path.stopId, path.boardings, path.legs.any { it.restrictedService })
+        fun key(path: LocalPath) = Triple(path.stopId, path.boardings, path.restricted)
         val walks = transfers.entries.groupBy { it.key.first }
-        fun offer(path: LocalPath) {
-            if (path.arrival > horizon || path.boardings > 5) return
-            val label = key(path)
+        // Compare cheap labels before allocating legs and intermediate stops for losing paths.
+        fun offer(stopId: String, arrival: Instant, boardingCount: Int, restricted: Boolean,
+                  walkingDistance: Double, build: () -> LocalPath) {
+            if (arrival > horizon || boardingCount > 5) return
+            val label = Triple(stopId, boardingCount, restricted)
             val previous = best[label]
-            if (previous != null && (previous.arrival < path.arrival || previous.arrival == path.arrival &&
-                    previous.legs.filter { it.walking }.sumOf { it.distance } <= path.legs.filter { it.walking }.sumOf { it.distance })) return
+            if (previous != null && (previous.arrival < arrival || previous.arrival == arrival &&
+                    previous.walkingDistance <= walkingDistance)) return
+            val path = build()
             best[label] = path
             queue.add(path)
         }
-        seeds.forEach(::offer)
+        for (seed in seeds) {
+            offer(seed.stopId, seed.arrival, seed.boardings, seed.restricted, seed.walkingDistance) { seed }
+        }
         while (queue.isNotEmpty()) {
             val path = queue.remove()
             if (best[key(path)] !== path) continue
             for (entry in walks[path.stopId].orEmpty()) {
-                offer(LocalPath(entry.key.second, path.arrival.plusSeconds(entry.value.seconds), path.legs + entry.value.leg(path.arrival)))
+                val arrival = path.arrival.plusSeconds(entry.value.seconds)
+                offer(entry.key.second, arrival, path.boardings, path.restricted, path.walkingDistance + entry.value.meters) {
+                    LocalPath(entry.key.second, arrival, path.legs + entry.value.leg(path.arrival))
+                }
             }
             if (path.boardings >= 5) continue
             val earliest = earliestBoarding(path)
-            for (boarding in boardings[path.stopId].orEmpty()) {
-                if (boarding.times[boarding.index] < earliest) continue
+            val departures = boardings[path.stopId].orEmpty()
+            var low = 0
+            var high = departures.size
+            while (low < high) {
+                val mid = (low + high) ushr 1
+                if (departures[mid].times[departures[mid].index] < earliest) low = mid + 1 else high = mid
+            }
+            for (boardingIndex in low until departures.size) {
+                val boarding = departures[boardingIndex]
                 val trip = boarding.trip
                 val route = routes.getValue(trip.routeId)
                 val direction = route.directions.first { it.id == trip.directionId }
                 val from = stops.getValue(path.stopId).point()
                 for (index in boarding.index + 1..trip.stopTimes.lastIndex) {
                     val to = stops.getValue(trip.stopTimes[index].stopId)
-                    val intermediate = trip.stopTimes.subList(boarding.index + 1, index).map { stops.getValue(it.stopId).point() }
-                    val ride = PlanLeg("BUS", boarding.times[boarding.index], boarding.times[index], 0.0, from, to.point(),
-                        route, direction.name, false, false, intermediate, restrictedService = direction.restrictedService)
-                    offer(LocalPath(to.id, ride.end, path.legs + ride))
+                    val arrival = boarding.times[index]
+                    offer(to.id, arrival, path.boardings + 1, path.restricted || direction.restrictedService, path.walkingDistance) {
+                        val intermediate = trip.stopTimes.subList(boarding.index + 1, index).map { stops.getValue(it.stopId).point() }
+                        val ride = PlanLeg("BUS", boarding.times[boarding.index], arrival, 0.0, from, to.point(),
+                            route, direction.name, false, false, intermediate, restrictedService = direction.restrictedService)
+                        LocalPath(to.id, arrival, path.legs + ride)
+                    }
                 }
             }
         }
@@ -104,7 +124,11 @@ class LocalTimetableRouter(private val network: TransitNetwork, private val read
         private fun earliestBoarding(path: LocalPath): Instant {
             val last = path.legs.indexOfLast { !it.walking }
             if (last < 0) return path.arrival.plusSeconds(TripPlanner.BOARD_SECONDS)
-            val walking = path.legs.drop(last + 1).sumOf { Duration.between(it.start, it.end).seconds }
+            var walking = 0L
+            for (index in last + 1 until path.legs.size) {
+                val leg = path.legs[index]
+                walking += Duration.between(leg.start, leg.end).seconds
+            }
             return maxOf(path.arrival, path.legs[last].end.plusSeconds(walking + TripPlanner.TRANSFER_SECONDS))
         }
     }
