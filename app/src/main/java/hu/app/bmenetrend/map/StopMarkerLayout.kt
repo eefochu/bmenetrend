@@ -25,6 +25,13 @@ object StopMarkerLayout {
     private const val REFERENCE_WORLD=512.0*65536 // fixed zoom 16, independent of camera/density
     data class Offset(val x: Double=0.0,val y: Double=0.0)
 
+    private val candidates = arrayOf(Offset()) + (1..4).flatMap { ring ->
+        (0 until 16).map { step ->
+            val angle = step * PI / 8 - PI / 2
+            Offset(cos(angle) * ring * MAX_OFFSET_DP / 4, sin(angle) * ring * MAX_OFFSET_DP / 4)
+        }
+    }.toTypedArray()
+
     // Native icon-size uses this same continuous zoom curve; every ordinary stop has equal size.
     val sizeStops=listOf(9.0 to 6.0,12.0 to 8.0,13.0 to 12.0,15.0 to DIAMETER_DP,19.0 to DIAMETER_DP)
     fun diameterDp(zoom: Double,highlighted: Boolean=false): Double {
@@ -43,29 +50,37 @@ object StopMarkerLayout {
                 (1-ln(tan(lat)+1/cos(lat))/PI)/2*REFERENCE_WORLD)
         }
         val spacing=DIAMETER_DP+2
-        val buckets=mutableMapOf<Pair<Int,Int>,MutableList<Pair<Double,Double>>>()
-        fun cell(x: Double,y: Double)=floor(x/spacing).toInt() to floor(y/spacing).toInt()
-        val candidates=listOf(Offset())+(1..4).flatMap { ring -> (0 until 16).map { step ->
-            val angle=step*PI/8-PI/2
-            Offset(cos(angle)*ring*MAX_OFFSET_DP/4,sin(angle)*ring*MAX_OFFSET_DP/4)
-        } }
+        val buckets = LongCellMap<MutableList<Pair<Double, Double>>>(nodes.size)
+        fun cellKey(x: Int, y: Int) = (x.toLong() shl 32) xor (y.toLong() and 0xffffffffL)
+        fun cell(x: Double, y: Double) = cellKey(floor(x / spacing).toInt(), floor(y / spacing).toInt())
+        fun place(x: Double, y: Double) {
+            val key = cell(x, y)
+            val bucket = buckets[key] ?: ArrayList<Pair<Double, Double>>().also { buckets[key] = it }
+            bucket.add(x to y)
+        }
+        val neighbours = ArrayList<Pair<Double, Double>>()
         // Incoming provider records are placed around existing markers, never displacing them.
         nodes.forEach { node -> previous[node.stop.id]?.let { offset ->
             val x=node.x+offset.x;val y=node.y+offset.y
-            buckets.getOrPut(cell(x,y)) { mutableListOf() }.add(x to y)
+            place(x, y)
         } }
         return nodes.associate { node ->
             previous[node.stop.id]?.let { return@associate node.stop.id to it }
-            val centre=cell(node.x,node.y)
-            val neighbours=buildList {
-                for(dx in -3..3) for(dy in -3..3) addAll(buckets[centre.first+dx to centre.second+dy].orEmpty())
+            val cx = floor(node.x / spacing).toInt()
+            val cy = floor(node.y / spacing).toInt()
+            neighbours.clear()
+            // A candidate moves at most 24px and overlaps only within another
+            // 24px. Cells three steps away cannot contribute any penalty.
+            for (dx in -2..2) for (dy in -2..2) {
+                buckets[cellKey(cx + dx, cy + dy)]?.let(neighbours::addAll)
             }
             fun overlap(offset: Offset)=neighbours.sumOf { (x,y) ->
                 max(0.0,spacing-hypot(node.x+offset.x-x,node.y+offset.y-y)).pow(2)
             }
             var offset=Offset()
             var penalty=overlap(offset)
-            if(penalty>.001) for(candidate in candidates.drop(1)) {
+            if(penalty>.001) for(candidateIndex in 1 until candidates.size) {
+                val candidate = candidates[candidateIndex]
                 val score=overlap(candidate)
                 if(score<penalty-.001 || abs(score-penalty)<.001 && hypot(candidate.x,candidate.y)<hypot(offset.x,offset.y)) {
                     offset=candidate;penalty=score
@@ -73,7 +88,7 @@ object StopMarkerLayout {
                 if(penalty<.001) break
             }
             val x=node.x+offset.x;val y=node.y+offset.y
-            buckets.getOrPut(cell(x,y)) { mutableListOf() }.add(x to y)
+            place(x, y)
             node.stop.id to offset
         }
     }

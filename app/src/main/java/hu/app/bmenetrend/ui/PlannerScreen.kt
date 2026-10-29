@@ -51,6 +51,15 @@ fun PlannerScreen(model: PlannerViewModel, onRequestLocation: () -> Unit) {
         }
         return
     }
+    if (state.destination == null) {
+        Column(
+            Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = 20.dp, vertical = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            EndpointField(R.string.planner_to, null, false) { model.edit(PlannerField.DESTINATION) }
+        }
+        return
+    }
     val now by produceState(Instant.now()) {
         while (true) { value = Instant.now(); delay(15_000) }
     }
@@ -66,7 +75,7 @@ fun PlannerScreen(model: PlannerViewModel, onRequestLocation: () -> Unit) {
     LazyColumn(Modifier.fillMaxSize().statusBarsPadding(), state = listState, contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item(key = "title", contentType = "title") {
-            TransitPageIntro(stringResource(R.string.planner_title),stringResource(R.string.planner_subtitle))
+            TransitPageIntro(stringResource(R.string.planner_title), null)
         }
         if (state.offline) item(key = "offline", contentType = "notice") {
             Text(stringResource(R.string.offline_valid_until, state.offlineValidUntil.orEmpty()), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
@@ -97,7 +106,10 @@ fun PlannerScreen(model: PlannerViewModel, onRequestLocation: () -> Unit) {
             DepartureControl(state.departure) { departurePicker = true }
         }
         item(key = "action", contentType = "action") {
-            Button(onClick = model::plan, enabled = state.origin != null && state.destination != null && !state.planning,
+            Button(onClick = {
+                if (state.useLocation && state.origin == null) onRequestLocation()
+                model.plan()
+            }, enabled = (state.useLocation || state.origin != null) && state.destination != null && !state.planning,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp), shape = TransitDesign.controlShape) {
                 if (state.planning) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
                 else Icon(Icons.Rounded.Route, null, Modifier.size(20.dp))
@@ -151,7 +163,8 @@ private fun EndpointField(label: Int, endpoint: PlannerEndpoint?, current: Boole
                 null, tint = MaterialTheme.colorScheme.primary)
             Column(Modifier.weight(1f)) {
                 Text(stringResource(label), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(if (endpoint?.id == "current") stringResource(R.string.planner_current) else endpoint?.name ?: stringResource(R.string.planner_choose),
+                Text(if (current || endpoint?.id == "current") stringResource(R.string.planner_current)
+                    else endpoint?.name ?: stringResource(if (label == R.string.planner_to) R.string.planner_subtitle else R.string.planner_choose),
                     style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 if (endpoint?.detail?.isNotBlank() == true) Text(endpoint.detail, style = MaterialTheme.typography.bodySmall,
                     maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant)

@@ -11,6 +11,11 @@ object EmmaStopsParser {
     const val ROUTE_FIELDS = "gtfsId shortName longName mode color"
     const val STOP_FIELDS = "gtfsId name lat lon vehicleMode platformCode locationType parentStation { gtfsId name } routes { $ROUTE_FIELDS }"
     const val INDEX_QUERY = "{stops {gtfsId name lat lon vehicleMode platformCode locationType parentStation {gtfsId name}}}"
+    val MAP_AREA_QUERY = """query MapStopsInArea(${'$'}south: Float!, ${'$'}west: Float!, ${'$'}north: Float!, ${'$'}east: Float!) {
+        stopsByBbox(minLat:${'$'}south,minLon:${'$'}west,maxLat:${'$'}north,maxLon:${'$'}east) {
+            gtfsId name lat lon vehicleMode platformCode locationType parentStation { gtfsId name }
+        }
+    }""".trimIndent()
     val AREA_QUERY = """query StopsInArea(${'$'}south: Float!, ${'$'}west: Float!, ${'$'}north: Float!, ${'$'}east: Float!) {
         stopsByBbox(minLat:${'$'}south,minLon:${'$'}west,maxLat:${'$'}north,maxLon:${'$'}east) { $STOP_FIELDS }
     }""".trimIndent()

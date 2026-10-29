@@ -5,7 +5,7 @@
     <string name="offline_coverage">Országos és helyi Volán-autóbuszok, BKK és a BKK-adatforrásban szereplő HÉV-járatok. A vasúti menetrend külön, engedélyezett GTFS-fájlból importálható.</string>
     <string name="offline_limits">Opcionális letöltés, legfeljebb 500 MB. Telepítéshez átmenetileg legalább 1,5 GB szabad hely szükséges. Menetrend szerinti, megállótól megállóig történő tervezés; kizárólag az adatforrásban megadott átszállásokkal. Nincs élő járműkövetés, késés és címkeresés. A beépített offline térkép leírása alább olvasható.</string>
     <string name="offline_mode">Offline mód</string>
-    <string name="offline_mode_hint">Az alkalmazás csak a letöltött adatokat használja. Online módba visszakapcsolva ismét az EMMA és az élő szolgáltatások működnek.</string>
+    <string name="offline_mode_hint">Internetkapcsolat nélkül az alkalmazás automatikusan a letöltött csomagra vált, majd a kapcsolat helyreállásakor visszatér online módba. A kézzel bekapcsolt offline mód bekapcsolva marad.</string>
     <string name="offline_download_first">Az offline mód bekapcsolásához előbb töltsd le a csomagot.</string>
     <string name="offline_wifi">Letöltés csak Wi-Fi-n</string>
     <string name="offline_download">Offline csomag letöltése</string>

@@ -5,7 +5,7 @@
     <string name="offline_coverage">Nationwide and local Volán buses, BKK and HÉV services included in the BKK feed. Rail timetables can be added by importing an authorized GTFS file.</string>
     <string name="offline_limits">Optional download, at most 500 MB. Installation temporarily needs at least 1.5 GB free. Scheduled stop-to-stop planning uses only source-provided transfer links. No live vehicles, delays or address search. The bundled offline map is described below.</string>
     <string name="offline_mode">Offline mode</string>
-    <string name="offline_mode_hint">The app uses downloaded data only. Switching back online restores EMMA and live services.</string>
+    <string name="offline_mode_hint">Without an internet connection, the app automatically uses the downloaded pack and returns online when connectivity is restored. Manually enabled offline mode stays enabled.</string>
     <string name="offline_download_first">Download the pack before enabling offline mode.</string>
     <string name="offline_wifi">Download on Wi-Fi only</string>
     <string name="offline_download">Download offline pack</string>

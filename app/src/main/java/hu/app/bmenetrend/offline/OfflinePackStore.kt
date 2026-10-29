@@ -56,11 +56,13 @@ class OfflinePackStore(context: Context) {
             pointer.failWrite(output); destination.delete(); throw e
         }
         root.listFiles()?.filter { it.extension == "db" && it != destination }?.forEach { it.delete() }
+        NetworkAccessPolicy.onPackAvailabilityChanged(true)
     }
 
     fun delete() = synchronized(lock) {
         pointer.delete()
         root.listFiles()?.filter { it.extension == "db" }?.forEach { it.delete() }
+        NetworkAccessPolicy.onPackAvailabilityChanged(false)
     }
     fun clearDownloads() { downloads.listFiles()?.forEach { it.delete() } }
 

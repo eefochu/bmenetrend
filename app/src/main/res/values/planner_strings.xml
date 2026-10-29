@@ -3,7 +3,7 @@
     <string name="planner_nav_map">Térkép</string>
     <string name="planner_nav_plan">Tervezés</string>
     <string name="planner_title">Utazástervezés</string>
-    <string name="planner_subtitle">Hová szeretnél eljutni?</string>
+    <string name="planner_subtitle">Hova szeretnél menni?</string>
     <string name="planner_from">Honnan?</string>
     <string name="planner_to">Hová?</string>
     <string name="planner_swap">Kiindulópont és cél felcserélése</string>
