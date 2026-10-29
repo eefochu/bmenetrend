@@ -42,7 +42,45 @@ android {
     }
     testOptions { unitTests.isIncludeAndroidResources = true }
     packaging { resources.excludes += setOf("META-INF/AL2.0", "META-INF/LGPL2.1", "META-INF/LICENSE*", "META-INF/NOTICE*") }
+    androidResources.noCompress += listOf("pmtiles")
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
+            isUniversalApk = true
+        }
+    }
     lint { abortOnError = true }
+}
+
+androidComponents {
+    onVariants { variant ->
+        val variantName = variant.name
+        val capitalized = variantName.replaceFirstChar { it.uppercase() }
+        val apkFolder = variant.artifacts.get(com.android.build.api.artifact.SingleArtifact.APK)
+        val universalApk = apkFolder.map { it.file("app-universal-$variantName.apk") }
+        val standardApk = apkFolder.map { it.file("app-$variantName.apk") }
+
+        val copyTask = tasks.register("copyUniversal${capitalized}Apk") {
+            inputs.file(universalApk)
+            outputs.file(standardApk)
+            dependsOn(tasks.matching { it.name == "package$capitalized" })
+            doLast {
+                val src = universalApk.get().asFile
+                val dst = standardApk.get().asFile
+                check(src.exists()) { "Universal APK not found: ${src.absolutePath}" }
+                src.copyTo(dst, overwrite = true)
+            }
+        }
+
+        tasks.matching { it.name == "assemble$capitalized" }.configureEach {
+            dependsOn(copyTask)
+        }
+        tasks.matching { it.name == "package$capitalized" }.configureEach {
+            finalizedBy(copyTask)
+        }
+    }
 }
 
 composeCompiler {

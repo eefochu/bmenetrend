@@ -100,10 +100,11 @@ class OfflinePackWorker(context: Context, parameters: WorkerParameters) : Corout
             }
             currentCoroutineContext().ensureActive()
             NetworkAccessPolicy.requireOnline()
-            val meta = OfflinePackMetadata(UUID.randomUUID().toString(), Instant.now(), first, until, staging.length(), completed, counts.first, counts.second, names, OfflinePackStore.digest(staging), imported?.length() ?: 0, warnings)
+            val sha256 = OfflinePackStore.digest(staging)
+            val meta = OfflinePackMetadata(UUID.randomUUID().toString(), Instant.now(), first, until, staging.length(), completed, counts.first, counts.second, names, sha256, imported?.length() ?: 0, warnings)
             publishImport(OfflineImportProgress(OfflineImportStep.ACTIVATING))
             currentCoroutineContext().ensureActive()
-            store.activate(staging, meta)
+            store.activate(staging, meta, verifiedDigest = sha256)
             // Default archives are temporary: the installed footprint also stays below 500 MB.
             sources.forEach { source ->
                 File(store.downloads, "${source.id}.zip").delete()

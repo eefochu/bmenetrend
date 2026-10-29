@@ -34,9 +34,11 @@ class OfflinePackStore(context: Context) {
         SQLiteDatabase.openDatabase(File(root, "${meta.id}.db").path, null, SQLiteDatabase.OPEN_READONLY).use { db -> block(db, meta) }
     }
 
-    fun activate(staging: File, metadata: OfflinePackMetadata) = synchronized(lock) {
+    fun activate(staging: File, metadata: OfflinePackMetadata, verifiedDigest: String? = null) = synchronized(lock) {
         require(staging.length() == metadata.installedBytes && metadata.retainedSourceBytes in 0..OFFLINE_MAX_BYTES && metadata.installedFootprintBytes in 1..OFFLINE_MAX_BYTES)
-        require(digest(staging) == metadata.sha256) { "Pack checksum mismatch" }
+        // verifiedDigest: digest of this exact file computed by the caller (single pass over a
+        // ~388 MB pack instead of one per verification site). When absent, recompute here.
+        require((verifiedDigest ?: digest(staging)) == metadata.sha256) { "Pack checksum mismatch" }
         SQLiteDatabase.openDatabase(staging.path, null, SQLiteDatabase.OPEN_READONLY).use { db ->
             require(db.version == OFFLINE_FORMAT)
             db.rawQuery("PRAGMA quick_check", null).use { require(it.moveToFirst() && it.getString(0) == "ok") }

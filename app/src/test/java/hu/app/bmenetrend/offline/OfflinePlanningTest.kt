@@ -2,6 +2,9 @@ package hu.app.bmenetrend.offline
 
 import android.content.Context
 import hu.app.bmenetrend.data.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.*
@@ -303,7 +306,10 @@ KEL_VOLAN,Kelenföld vasútállomás M,47.4635,19.0232
 KEL_BKK_1,Kelenföld vasútállomás M,47.4645,19.0229
 MORICZ,Móricz Zsigmond körtér M,47.4740,19.0460
 """
-        val routes = "route_id,route_short_name,route_long_name,route_type\n762,762,Budapest-Biatorbágy,3\nM4,M4,Metro 4,1\n"
+        val routes = """route_id,route_short_name,route_long_name,route_type
+762,762,Budapest-Biatorbágy,3
+M4,M4,Metro 4,1
+"""
         val trips = """route_id,service_id,trip_id,trip_headsign
 762,weekday,trip_volan,Kelenföld vasútállomás M
 M4,weekday,trip_bkk,Móricz Zsigmond körtér M
@@ -330,10 +336,216 @@ trip_bkk,09:42:00,09:42:00,MORICZ,2,0,0
         assertTrue("Without an explicit GTFS transfer or path between KEL_VOLAN and KEL_BKK_1, trip must not fabricate intermediate transfer", plan.itineraries.isEmpty())
     }
 
+    @Test fun routeSpecificForbiddenTransferIsRejected() {
+        val extraStops = """stop_id,stop_name,stop_lat,stop_lon
+A,Stop A,47.4000,19.0000
+B,Stop B,47.5000,19.0000
+C,Stop C,47.6000,19.0000
+"""
+        val extraRoutes = """route_id,route_short_name,route_long_name,route_type
+R_FORBIDDEN,10,Route 10,3
+R_ALLOWED,20,Route 20,3
+R_CONNECT,30,Route 30,3
+"""
+        val extraTrips = """route_id,service_id,trip_id,trip_headsign
+R_FORBIDDEN,weekday,trip_forbidden,Stop B
+R_ALLOWED,weekday,trip_allowed,Stop B
+R_CONNECT,weekday,trip_connect,Stop C
+"""
+        val extraStopTimes = """trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type
+trip_forbidden,08:00:00,08:00:00,A,1,0,0
+trip_forbidden,08:15:00,08:15:00,B,2,0,0
+trip_allowed,08:00:00,08:00:00,A,1,0,0
+trip_allowed,08:15:00,08:15:00,B,2,0,0
+trip_connect,08:25:00,08:25:00,B,1,0,0
+trip_connect,08:40:00,08:40:00,C,2,0,0
+"""
+        val transfers = """from_stop_id,to_stop_id,transfer_type,from_route_id,to_route_id
+B,B,3,R_FORBIDDEN,R_CONNECT
+"""
+        val file = fixture(transfer = transfers, extra = mapOf(
+            "stops.txt" to extraStops,
+            "routes.txt" to extraRoutes,
+            "trips.txt" to extraTrips,
+            "stop_times.txt" to extraStopTimes
+        ))
+        install(file)
+
+        val originA = endpoint("A", "Stop A", 47.4)
+        val destC = endpoint("C", "Stop C", 47.6)
+        val ready = time("07:55:00")
+        val plan = runBlocking { OfflineTripPlanner(store).plan(originA, destC, ready, ready) }
+        assertTrue("Must find connection via R_ALLOWED when R_FORBIDDEN is forbidden", plan.itineraries.isNotEmpty())
+        val firstLeg = plan.itineraries.first().legs.first()
+        assertEquals("20", firstLeg.route?.number)
+    }
+
+    @Test fun routeSpecificMinTransferDurationIsEnforced() {
+        val extraStops = """stop_id,stop_name,stop_lat,stop_lon
+A,Stop A,47.4000,19.0000
+B,Stop B,47.5000,19.0000
+C,Stop C,47.6000,19.0000
+"""
+        val extraRoutes = """route_id,route_short_name,route_long_name,route_type
+R_FAST,10,Route 10,3
+R_CONNECT,30,Route 30,3
+"""
+        val extraTrips = """route_id,service_id,trip_id,trip_headsign
+R_FAST,weekday,trip_fast,Stop B
+R_CONNECT,weekday,trip_connect,Stop C
+"""
+        val extraStopTimes = """trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type
+trip_fast,08:00:00,08:00:00,A,1,0,0
+trip_fast,08:15:00,08:15:00,B,2,0,0
+trip_connect,08:20:00,08:20:00,B,1,0,0
+trip_connect,08:35:00,08:35:00,C,2,0,0
+"""
+        val transfers = """from_stop_id,to_stop_id,transfer_type,min_transfer_time,from_route_id,to_route_id
+B,B,2,600,R_FAST,R_CONNECT
+"""
+        val file = fixture(transfer = transfers, extra = mapOf(
+            "stops.txt" to extraStops,
+            "routes.txt" to extraRoutes,
+            "trips.txt" to extraTrips,
+            "stop_times.txt" to extraStopTimes
+        ))
+        install(file)
+
+        val originA = endpoint("A", "Stop A", 47.4)
+        val destC = endpoint("C", "Stop C", 47.6)
+        val ready = time("07:55:00")
+        val plan = runBlocking { OfflineTripPlanner(store).plan(originA, destC, ready, ready) }
+        assertTrue("300s transfer gap must be rejected when route-specific rule requires 600s", plan.itineraries.isEmpty())
+    }
+
+    @Test fun transferAllowanceRemainderAccountsForWalking() {
+        val extraStops = """stop_id,stop_name,stop_lat,stop_lon
+A,Stop A,47.4000,19.0000
+B1,Stop B1,47.5000,19.0000
+B2,Stop B2,47.5010,19.0010
+C,Stop C,47.6000,19.0000
+"""
+        val extraRoutes = """route_id,route_short_name,route_long_name,route_type
+R1,1,Route 1,3
+R2,2,Route 2,3
+"""
+        val extraTrips = """route_id,service_id,trip_id,trip_headsign
+R1,weekday,trip_r1,Stop B1
+R2,weekday,trip_r2,Stop C
+"""
+        val extraStopTimes = """trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type
+trip_r1,08:00:00,08:00:00,A,1,0,0
+trip_r1,08:15:00,08:15:00,B1,2,0,0
+trip_r2,08:20:00,08:20:00,B2,1,0,0
+trip_r2,08:40:00,08:40:00,C,2,0,0
+"""
+        val pathways = """from_stop_id,to_stop_id,traversal_time,is_bidirectional
+B1,B2,120,1
+"""
+        val transfers = """from_stop_id,to_stop_id,transfer_type,min_transfer_time
+B1,B2,2,300
+"""
+        val file = fixture(transfer = transfers, extra = mapOf(
+            "stops.txt" to extraStops,
+            "routes.txt" to extraRoutes,
+            "trips.txt" to extraTrips,
+            "stop_times.txt" to extraStopTimes,
+            "pathways.txt" to pathways
+        ))
+        install(file)
+
+        val originA = endpoint("A", "Stop A", 47.4)
+        val destC = endpoint("C", "Stop C", 47.6)
+        val ready = time("07:55:00")
+        val plan = runBlocking { OfflineTripPlanner(store).plan(originA, destC, ready, ready) }
+        assertTrue("Trip departing at 08:20:00 after 120s walk and 300s total allowance must connect", plan.itineraries.isNotEmpty())
+    }
+
+    @Test fun overnightDepartureOnPriorServiceDayRetainsCorrectBounds() {
+        val extraStops = """stop_id,stop_name,stop_lat,stop_lon
+NIGHT_A,Night Origin,47.4000,19.0000
+NIGHT_B,Night Dest,47.5000,19.0000
+"""
+        val extraRoutes = "N900,900,Night Bus 900,3\n"
+        val extraTrips = "N900,weekday,trip_night,Night Dest\n"
+        val extraStopTimes = """trip_night,25:30:00,25:30:00,NIGHT_A,1,0,0
+trip_night,25:50:00,25:50:00,NIGHT_B,2,0,0
+"""
+        val file = fixture(extra = mapOf(
+            "stops.txt" to extraStops,
+            "routes.txt" to "route_id,route_short_name,route_long_name,route_type\n$extraRoutes",
+            "trips.txt" to "route_id,service_id,trip_id,trip_headsign\n$extraTrips",
+            "stop_times.txt" to "trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type\n$extraStopTimes"
+        ))
+        install(file, validUntil = date.plusDays(1))
+
+        val origin = endpoint("NIGHT_A", "Night Origin", 47.4)
+        val dest = endpoint("NIGHT_B", "Night Dest", 47.5)
+        val nextDayReady = OfflineTransitData.serviceInstant(date.plusDays(1), 3600)
+        val plan = runBlocking { OfflineTripPlanner(store).plan(origin, dest, nextDayReady, nextDayReady) }
+        assertTrue("Overnight trip departing at 25:30 on day 0 must be found when querying at 01:00 on day 1", plan.itineraries.isNotEmpty())
+        val leg = plan.itineraries.first().legs.first()
+        assertEquals("900", leg.route?.number)
+        assertEquals(OfflineTransitData.serviceInstant(date, 25 * 3600 + 30 * 60), leg.start)
+    }
+
+    @Test fun pickupDropoffRestrictionsExcludeUnboardableStops() {
+        val extraStops = """stop_id,stop_name,stop_lat,stop_lon
+A,Stop A,47.4000,19.0000
+B,Stop B,47.5000,19.0000
+C,Stop C,47.6000,19.0000
+"""
+        val extraRoutes = "100,100,Express,3\n"
+        val extraTrips = "100,weekday,trip_express,Stop C\n"
+        val extraStopTimes = """trip_express,08:00:00,08:00:00,A,1,0,0
+trip_express,08:20:00,08:20:00,B,2,1,1
+trip_express,08:40:00,08:40:00,C,3,0,0
+"""
+        val file = fixture(extra = mapOf(
+            "stops.txt" to extraStops,
+            "routes.txt" to "route_id,route_short_name,route_long_name,route_type\n$extraRoutes",
+            "trips.txt" to "route_id,service_id,trip_id,trip_headsign\n$extraTrips",
+            "stop_times.txt" to "trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type\n$extraStopTimes"
+        ))
+        install(file)
+
+        val originA = endpoint("A", "Stop A", 47.4)
+        val stopB = endpoint("B", "Stop B", 47.5)
+        val destC = endpoint("C", "Stop C", 47.6)
+        val ready = time("07:55:00")
+
+        val planToB = runBlocking { OfflineTripPlanner(store).plan(originA, stopB, ready, ready) }
+        assertTrue("Prohibited dropoff at B must not produce itineraries ending at B", planToB.itineraries.isEmpty())
+
+        val planFromB = runBlocking { OfflineTripPlanner(store).plan(stopB, destC, ready, ready) }
+        assertTrue("Prohibited pickup at B must not produce itineraries starting at B", planFromB.itineraries.isEmpty())
+
+        val planToC = runBlocking { OfflineTripPlanner(store).plan(originA, destC, ready, ready) }
+        assertTrue("Express trip A to C must be found", planToC.itineraries.isNotEmpty())
+        assertEquals("100", planToC.itineraries.first().legs.first().route?.number)
+    }
+
+    @Test fun coroutineCancellationAbortsPromptly() = runBlocking {
+        install(fixture())
+        val origin = endpoint("A", "Alpha", 47.4)
+        val dest = endpoint("C", "Gamma", 47.6)
+        val ready = time("07:58:00")
+        val job = launch(Dispatchers.Default) {
+            OfflineTripPlanner(store).plan(origin, dest, ready, ready)
+        }
+        job.cancel()
+        try {
+            job.join()
+            assertTrue(job.isCancelled)
+        } catch (_: CancellationException) {
+            // Cancelled cleanly
+        }
+    }
+
     @Test fun actualSelectionWithRealInstalledPackFindsRoute() = runBlocking {
         val packEnv = System.getenv("OFFLINE_INSTALLED_PACK")
         Assume.assumeTrue("Skipping real pack test: OFFLINE_INSTALLED_PACK env variable not set", !packEnv.isNullOrBlank())
-        val packFile = if (File(packEnv).exists()) File(packEnv) else File("/tmp/bmenetrend-offline-pack.db")
+        val packFile = if (File(packEnv!!).exists()) File(packEnv) else File("/tmp/bmenetrend-offline-pack.db")
         Assume.assumeTrue("Pack file does not exist: $packFile", packFile.exists())
         val packRoot = File(context.noBackupFilesDir, "offline-pack").apply { mkdirs() }
         val targetDb = File(packRoot, "c81352c5-f079-4497-bbb3-944b065621a1.db")
@@ -358,7 +570,7 @@ trip_bkk,09:42:00,09:42:00,MORICZ,2,0,0
         val destMatches = TransitSearch.stops(index, TransitSearch.query("Kelenföld vasútállomás M"), null, emptySet())
         val destEndpoint = PlannerEndpoint.fromStop(destMatches.first())
 
-        withTimeout(120_000L) {
+        withTimeout(240_000L) {
             // 1. Ready at 08:58 catches bus 08:59 (trip 10158, route 762)
             val departure0858 = OfflineTransitData.serviceInstant(LocalDate.of(2026, 10, 27), 8 * 3600 + 58 * 60)
             val plan0858 = OfflineTripPlanner(store).plan(originEndpoint, destEndpoint, departure0858, departure0858)
@@ -378,13 +590,62 @@ trip_bkk,09:42:00,09:42:00,MORICZ,2,0,0
             val reverseOrigin = destEndpoint
             val reverseDest = originEndpoint
             val reverseDeparture = OfflineTransitData.serviceInstant(LocalDate.of(2026, 10, 27), 15 * 3600)
-            val reverseStarted = System.nanoTime()
-            val reversePlan = OfflineTripPlanner(store).plan(reverseOrigin, reverseDest, reverseDeparture, reverseDeparture)
-            val reverseElapsedSec = (System.nanoTime() - reverseStarted) / 1e9
-            println("REVERSE_REAL_PACK elapsedSeconds=$reverseElapsedSec journeys=${reversePlan.itineraries.size}")
-            assertTrue("Expected reverse itineraries to be found", reversePlan.itineraries.isNotEmpty())
-            val reverseLeg = reversePlan.itineraries.first().legs.first()
+
+            // Multi-run matched warm benchmark: Frozen baseline (e60a444) vs R1 optimized
+            // Trimmed/bounded protocol: 1 warmup + 2 measured runs per engine (wall-clock-capped)
+            // 1. Frozen baseline benchmark (1 warmup, 2 measured runs)
+            val frozenPlanner = FrozenBaselineOfflineTripPlanner(store)
+            repeat(1) {
+                frozenPlanner.plan(reverseOrigin, reverseDest, reverseDeparture, reverseDeparture)
+            }
+            val frozenTimings = mutableListOf<Double>()
+            var frozenPlan: TripPlan? = null
+            repeat(2) {
+                val started = System.nanoTime()
+                val plan = frozenPlanner.plan(reverseOrigin, reverseDest, reverseDeparture, reverseDeparture)
+                frozenTimings += (System.nanoTime() - started) / 1e9
+                frozenPlan = plan
+            }
+            val frozenSorted = frozenTimings.sorted()
+            val frozenMin = frozenSorted.first()
+            val frozenMax = frozenSorted.last()
+            val frozenMedian = frozenSorted[frozenSorted.size / 2]
+            val frozenMean = frozenTimings.average()
+
+            // 2. R1 optimized benchmark (1 warmup, 2 measured runs)
+            val r1Planner = OfflineTripPlanner(store)
+            repeat(1) {
+                r1Planner.plan(reverseOrigin, reverseDest, reverseDeparture, reverseDeparture)
+            }
+            val r1Timings = mutableListOf<Double>()
+            var r1Plan: TripPlan? = null
+            repeat(2) {
+                val started = System.nanoTime()
+                val plan = r1Planner.plan(reverseOrigin, reverseDest, reverseDeparture, reverseDeparture)
+                r1Timings += (System.nanoTime() - started) / 1e9
+                r1Plan = plan
+            }
+            val r1Sorted = r1Timings.sorted()
+            val r1Min = r1Sorted.first()
+            val r1Max = r1Sorted.last()
+            val r1Median = r1Sorted[r1Sorted.size / 2]
+            val r1Mean = r1Timings.average()
+
+            val warmSpeedup = frozenMedian / r1Median
+            val reductionPct = (1.0 - r1Median / frozenMedian) * 100.0
+
+            println("FROZEN_BASELINE_WARM_BENCHMARK runs=2 warmup=1 timings=$frozenTimings min=${"%.4f".format(frozenMin)}s max=${"%.4f".format(frozenMax)}s median=${"%.4f".format(frozenMedian)}s mean=${"%.4f".format(frozenMean)}s journeys=${frozenPlan?.itineraries?.size}")
+            println("OPTIMIZED_R1_WARM_BENCHMARK runs=2 warmup=1 timings=$r1Timings min=${"%.4f".format(r1Min)}s max=${"%.4f".format(r1Max)}s median=${"%.4f".format(r1Median)}s mean=${"%.4f".format(r1Mean)}s journeys=${r1Plan?.itineraries?.size}")
+            println("MATCHED_WARM_SPEEDUP: ratio=${"%.2f".format(warmSpeedup)}x reduction=${"%.1f".format(reductionPct)}%")
+
+            assertTrue("Expected reverse itineraries to be found in R1", r1Plan?.itineraries?.isNotEmpty() == true)
+            assertTrue("Expected reverse itineraries to be found in Frozen baseline", frozenPlan?.itineraries?.isNotEmpty() == true)
+            val reverseLeg = r1Plan!!.itineraries.first().legs.first()
             assertEquals("762", reverseLeg.route?.number)
+            assertEquals(1, r1Plan!!.itineraries.size)
+            assertEquals("Itinerary count must match frozen baseline", frozenPlan!!.itineraries.size, r1Plan!!.itineraries.size)
+            assertEquals("Route number must match frozen baseline", frozenPlan!!.itineraries.first().legs.first().route?.number, reverseLeg.route?.number)
+            assertEquals("Itineraries must be identical", frozenPlan!!.itineraries, r1Plan!!.itineraries)
         }
     }
 
@@ -419,7 +680,7 @@ trip_bkk,09:42:00,09:42:00,MORICZ,2,0,0
         android.database.sqlite.SQLiteDatabase.openDatabase(stage.path, null, android.database.sqlite.SQLiteDatabase.OPEN_READONLY).use { db ->
             db.rawQuery("""SELECT sa.source_id,sa.name,sa.lat,sa.lon,sb.source_id,sb.name,sb.lat,sb.lon FROM stop_times a
                 JOIN stops sa ON sa.id=a.stop JOIN trips t ON t.id=a.trip JOIN service_days d ON d.service=t.service
-                JOIN stop_times b ON b.trip=a.trip AND b.seq>a.seq JOIN stops sb ON sb.id=b.stop
+                JOIN stop_times b ON b.trip=a.trip AND b.seq>a.seq JOIN stops sb ON sb.stop=b.stop
                 WHERE sa.name LIKE '%Kelenföld vasútállomás%' AND sb.name LIKE '%Biatorbágy%'
                 AND d.day=? AND a.departure>=25200 AND a.pickup!=1 AND b.dropoff!=1 LIMIT 1""", arrayOf(LocalDate.of(2026,10,27).toEpochDay().toString())).use { c ->
                 assertTrue("Expected a real Kelenföld–Biatorbágy bus", c.moveToFirst())

@@ -130,7 +130,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             offlinePacks.state.collect { pack ->
                 mutableState.update { it.copy(offlinePack = pack) }
-                if (state.value.offlineMode && pack.metadata?.id != offlineLoadedId) loadOfflineCatalogue()
+                if (state.value.offlineMode && pack.loaded && pack.metadata?.id != null && pack.metadata.id != offlineLoadedId) loadOfflineCatalogue()
             }
         }
         viewModelScope.launch {
@@ -622,7 +622,14 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
 
     fun setOfflineMode(enabled: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
-            if (!enabled || !offlinePacks.state.value.busy && offlinePacks.store.metadata() != null) NetworkAccessPolicy.setOffline(getApplication(), enabled)
+            if (!enabled) {
+                NetworkAccessPolicy.setOffline(getApplication(), false)
+                return@launch
+            }
+            val pack = offlinePacks.state.value
+            if (pack.loaded && !pack.busy && pack.metadata != null) {
+                NetworkAccessPolicy.setOffline(getApplication(), true)
+            }
         }
     }
     fun downloadOfflinePack(wifiOnly: Boolean) { offlinePacks.download(wifiOnly) }
