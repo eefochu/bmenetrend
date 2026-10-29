@@ -71,4 +71,39 @@ class PlannerBackendTest {
         assertTrue(result.links.isEmpty())
         assertTrue(result.partial)
     }
+
+    @Test fun plannerStopsUsesLightweightMapAreaQueryWithoutRoutes() = runBlocking {
+        val bounds = MapBounds(west = 19.04, south = 47.48, east = 19.08, north = 47.52)
+        val backend = backend { request ->
+            val query = request.getString("query")
+            val vars = request.getJSONObject("variables")
+
+            assertTrue("Query must use MapStopsInArea", query.contains("query MapStopsInArea"))
+            assertFalse("Lightweight query must not fetch nested routes", query.contains("routes {"))
+
+            assertEquals(bounds.south, vars.getDouble("south"), 0.0001)
+            assertEquals(bounds.north, vars.getDouble("north"), 0.0001)
+            assertEquals(bounds.west, vars.getDouble("west"), 0.0001)
+            assertEquals(bounds.east, vars.getDouble("east"), 0.0001)
+
+            val stopJson = JSONObject()
+                .put("gtfsId", "BKK:stop_1")
+                .put("name", "Planner Stop 1")
+                .put("lat", 47.50)
+                .put("lon", 19.05)
+                .put("vehicleMode", "BUS")
+                .put("platformCode", "1")
+                .put("locationType", "STOP")
+
+            JSONObject().put("data", JSONObject().put("stopsByBbox", JSONArray().put(stopJson)))
+        }
+
+        val stops = backend.stops(bounds)
+        assertEquals(1, stops.size)
+        val stop = stops.single()
+        assertEquals("emma:BKK:stop_1", stop.id)
+        assertEquals("Planner Stop 1", stop.name)
+        assertEquals(47.50, stop.position.lat, 0.0001)
+        assertEquals(19.05, stop.position.lon, 0.0001)
+    }
 }

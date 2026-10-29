@@ -80,14 +80,12 @@ object TransitSearch {
         return Query(normalized, tokens.filter { it !in aliases && it != provider }, modes, provider)
     }
 
-    @Volatile
-    private var lastRoutesRef: List<TransitRoute>? = null
-    @Volatile
-    private var cachedRouteEntries: List<RouteEntry>? = null
+    private data class RouteIndex(val source: List<TransitRoute>, val entries: List<RouteEntry>)
+    @Volatile private var cachedRoutes: RouteIndex? = null
 
     private fun getOrBuildRouteEntries(routes: List<TransitRoute>): List<RouteEntry> {
-        val cached = cachedRouteEntries
-        if (cached != null && routes === lastRoutesRef) return cached
+        val cached = cachedRoutes
+        if (cached != null && routes === cached.source) return cached.entries
         val entries = routes.map { route ->
             val mode = route.transportMode ?: if (route.providerId in setOf("volan", "viabusz", "kanyargo", "homm")) "BUS" else null
             RouteEntry(
@@ -99,8 +97,7 @@ object TransitSearch {
                 providerId = route.providerId,
             )
         }
-        lastRoutesRef = routes
-        cachedRouteEntries = entries
+        cachedRoutes = RouteIndex(routes, entries)
         return entries
     }
 
@@ -173,14 +170,12 @@ object TransitSearch {
         return indexed
     }
 
-    @Volatile
-    private var lastVehiclesRef: List<Vehicle>? = null
-    @Volatile
-    private var cachedVehicleEntries: List<VehicleEntry>? = null
+    private data class VehicleIndex(val source: List<Vehicle>, val entries: List<VehicleEntry>)
+    @Volatile private var cachedVehicles: VehicleIndex? = null
 
     private fun getOrBuildVehicleEntries(vehicles: List<Vehicle>): List<VehicleEntry> {
-        val cached = cachedVehicleEntries
-        if (cached != null && vehicles === lastVehiclesRef) return cached
+        val cached = cachedVehicles
+        if (cached != null && vehicles === cached.source) return cached.entries
         val entries = vehicles.map { vehicle ->
             val mode = vehicle.transportMode ?: "BUS"
             val text = normalize(listOfNotNull(vehicle.registration, vehicle.trainNumber, vehicle.serviceName, vehicle.id, vehicle.displayRouteNumber, vehicle.routeName, vehicle.destination, vehicle.providerId).joinToString(" "))
@@ -194,8 +189,7 @@ object TransitSearch {
                 cleanRegistration = normalize(vehicle.registration.orEmpty()).replace("-", ""),
             )
         }
-        lastVehiclesRef = vehicles
-        cachedVehicleEntries = entries
+        cachedVehicles = VehicleIndex(vehicles, entries)
         return entries
     }
 

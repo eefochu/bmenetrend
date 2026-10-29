@@ -38,7 +38,7 @@ internal class EmmaPlannerBackend(private val client: EmmaGraphqlClient) : Plann
     }
 
     override suspend fun stops(bounds: MapBounds): List<TransitStop> = budget.request {
-        val text = client.execute(EmmaStopsParser.AREA_QUERY, JSONObject().put("south", bounds.south)
+        val text = client.execute(EmmaStopsParser.MAP_AREA_QUERY, JSONObject().put("south", bounds.south)
             .put("north", bounds.north).put("west", bounds.west).put("east", bounds.east))
         withContext(Dispatchers.Default) { EmmaStopsParser.area(text).stops }
     }
