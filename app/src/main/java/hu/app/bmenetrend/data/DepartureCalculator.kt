@@ -8,11 +8,7 @@ internal class DepartureIndex(network: TransitNetwork) {
     data class Boarding(val route: TransitRoute, val direction: RouteDirection, val calendar: String, val minute: Int)
 
     val routes = network.routes.associateBy { it.id }
-    val stopIds: Map<String, String> = buildMap {
-        for (stop in network.stops) for (sourceId in stop.sourceStopIds) putIfAbsent(sourceId, stop.id)
-        // An exact platform ID takes precedence over another platform's source alias.
-        for (stop in network.stops) put(stop.id, stop.id)
-    }
+    val stopIds = network.stopIds
     val boardings: Map<String, List<Boarding>> = buildMap<String, MutableList<Boarding>> {
         for (trip in network.trips) {
             val route = routes[trip.routeId] ?: continue
@@ -39,16 +35,23 @@ object DepartureCalculator {
         val routes = index.routes
         val selectedId = index.stopIds[stopId] ?: stopId
         val startOfDay = today.atStartOfDay(ViabuszParser.zone)
+        // Evaluate only calendars used by this board, once per call (including null results).
+        val calendars = mutableMapOf<String, String?>()
         val scheduled = index.boardings[selectedId].orEmpty().mapNotNull { boarding ->
             val route = boarding.route
             val serviceDate = if (route.providerId in network.providerServiceDates) network.providerServiceDates[route.providerId] else network.serviceDate
             if (serviceDate != today) return@mapNotNull null
-            val activeCalendar = when (route.providerId) {
+            val calendarKey = when (route.providerId) {
+                "homm", "kanyargo" -> route.providerId
+                else -> if (boarding.calendar == "working_days") "working_days" else "viabusz"
+            }
+            if (!calendars.containsKey(calendarKey)) calendars[calendarKey] = when (calendarKey) {
                 "homm" -> HommCalendar.activeCalendar(today)
                 "kanyargo" -> KanyargoCalendar.activeCalendar(today)
-                else -> if (boarding.calendar == "working_days") "working_days".takeIf { ServiceCalendar.isConfirmedWorkingDay(today) }
-                    else ViabuszTimetableParser.activeCalendar(today)
+                "working_days" -> "working_days".takeIf { ServiceCalendar.isConfirmedWorkingDay(today) }
+                else -> ViabuszTimetableParser.activeCalendar(today)
             }
+            val activeCalendar = calendars[calendarKey]
             if (boarding.calendar != activeCalendar) return@mapNotNull null
             val direction = boarding.direction
             val departure = startOfDay.plusMinutes(boarding.minute.toLong()).toInstant()

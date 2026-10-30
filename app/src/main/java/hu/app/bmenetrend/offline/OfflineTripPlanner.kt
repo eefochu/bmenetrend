@@ -14,7 +14,8 @@ import java.util.PriorityQueue
 
 /** Round-based timetable routing. Every boardable trip is evaluated, including overtaking trips. */
 class OfflineTripPlanner(private val store: OfflinePackStore) {
-    suspend fun plan(origin: PlannerEndpoint, destination: PlannerEndpoint, requested: Instant, ready: Instant): TripPlan = withContext(Dispatchers.IO) {
+    suspend fun plan(origin: PlannerEndpoint, destination: PlannerEndpoint, requested: Instant, ready: Instant,
+                     localProviders: Set<String> = LocalPlanningService.providerIds): TripPlan = withContext(Dispatchers.IO) {
         val context = currentCoroutineContext()
         store.read { db, meta ->
             val date = ready.atZone(TripPlanner.zone).toLocalDate()
@@ -101,6 +102,7 @@ class OfflineTripPlanner(private val store: OfflinePackStore) {
                             while (boarding.moveToNext()) {
                                 context.ensureActive()
                                 val trip = boarding.getLong(0); val seq = boarding.getInt(1); val routeId = boarding.getLong(3)
+                                if (route(routeId).providerId in LocalPlanningService.providerIds && route(routeId).providerId !in localProviders) continue
                                 val departure = serviceInstant(serviceDay, boarding.getInt(2))
                                 var allowance = if (round == 0) TripPlanner.BOARD_SECONDS else TripPlanner.TRANSFER_SECONDS
                                 var forbidden = false

@@ -15,8 +15,7 @@ object SharedStops {
 
     /** Also works with an unmerged single-provider network used by import verification. */
     fun resolve(network: TransitNetwork, sourceId: String): String =
-        network.stops.firstOrNull { it.id == sourceId }?.id
-            ?: network.stops.firstOrNull { sourceId in it.sourceStopIds }?.id ?: sourceId
+        network.stopIds[sourceId] ?: sourceId
 
     fun merge(network: TransitNetwork): TransitNetwork {
         val stops = network.stops.groupBy { canonicalId(it.id) }.map { (id, members) ->
@@ -29,12 +28,20 @@ object SharedStops {
                 sourceStopIds = members.flatMap { it.sourceStopIds }.distinct(),
             )
         }
-        val routes = network.routes.map { route -> route.copy(directions = route.directions.map { direction ->
-            direction.copy(stopIds = direction.stopIds.map(::canonicalId))
-        }) }
-        val trips = network.trips.map { trip -> trip.copy(stopTimes = trip.stopTimes.map { time ->
-            time.copy(stopId = canonicalId(time.stopId))
-        }) }
+        val routes = network.routes.map { route ->
+            if (route.directions.none { direction -> direction.stopIds.any(aliases::containsKey) }) route
+            else route.copy(directions = route.directions.map { direction ->
+                if (direction.stopIds.none(aliases::containsKey)) direction
+                else direction.copy(stopIds = direction.stopIds.map(::canonicalId))
+            })
+        }
+        val trips = network.trips.map { trip ->
+            if (trip.stopTimes.none { it.stopId in aliases }) trip
+            else trip.copy(stopTimes = trip.stopTimes.map { time ->
+                val id = canonicalId(time.stopId)
+                if (id == time.stopId) time else time.copy(stopId = id)
+            })
+        }
         return network.copy(stops = stops, routes = routes, trips = trips)
     }
 }

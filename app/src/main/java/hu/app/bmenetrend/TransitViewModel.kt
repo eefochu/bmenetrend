@@ -245,7 +245,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             favoriteNetworkStops = current.network?.stops
             favoriteEmmaStops = current.emmaStops
             favoriteSelectionIds = current.favorites
-            favoriteSelection = FavoriteDepartures.stations(current.favorites, current.stops)
+            favoriteSelection = if (current.favorites.isEmpty()) emptyList()
+                else FavoriteDepartures.stations(current.favorites, current.stopsById)
         }
         return favoriteSelection.map { station ->
             val catalogued=favoriteLines[station.stop.id]?.catalogue?.stops?.singleOrNull()

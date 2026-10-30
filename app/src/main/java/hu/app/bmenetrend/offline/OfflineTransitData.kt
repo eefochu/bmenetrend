@@ -26,6 +26,8 @@ internal fun routeAppId(source: String): String = when (source.substringBefore('
     else -> "offline:$source"
 }
 
+private val routeHexColor = Regex("[0-9a-fA-F]{6}")
+
 class OfflineTransitData(private val store: OfflinePackStore) {
     fun catalogue(): Pair<List<TransitStop>, List<TransitRoute>> = store.read { db, _ ->
         val servingRoutes = mutableMapOf<Long, MutableList<String>>()
@@ -78,7 +80,7 @@ class OfflineTransitData(private val store: OfflinePackStore) {
     companion object {
         internal fun stop(c: Cursor): TransitStop = TransitStop(stopAppId(c.getString(1)), c.getString(2), GeoPoint(c.getDouble(3), c.getDouble(4)), emptyList(),
             providerId = c.getString(8), platformCode = c.getString(5).takeIf { it.isNotBlank() }, parentStationId = c.getString(6).takeIf { it.isNotBlank() }?.let(::stopAppId), station = c.getInt(7) == 1)
-        internal fun route(c: Cursor) = TransitRoute(routeAppId(c.getString(1)), c.getString(2), c.getString(3), emptyList(), c.getString(6), transportMode = c.getString(4), color = c.getString(5).takeIf { it.matches(Regex("[0-9a-fA-F]{6}")) })
+        internal fun route(c: Cursor) = TransitRoute(routeAppId(c.getString(1)), c.getString(2), c.getString(3), emptyList(), c.getString(6), transportMode = c.getString(4), color = c.getString(5).takeIf { it.matches(routeHexColor) })
         // GTFS service-day origin is local noon minus twelve hours, including DST transition days.
         internal fun serviceInstant(date: LocalDate, seconds: Int): Instant = date.atTime(12, 0).atZone(TripPlanner.zone).toInstant().minusSeconds(43_200).plusSeconds(seconds.toLong())
     }

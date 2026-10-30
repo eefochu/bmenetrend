@@ -525,6 +525,38 @@ trip_express,08:40:00,08:40:00,C,3,0,0
         assertEquals("100", planToC.itineraries.first().legs.first().route?.number)
     }
 
+    @Test fun disabledLocalProviderBoardingIsRejectedInOfflinePlanner() = runBlocking {
+        val viaSource = OfflineSource("viabusz", "ViaBusz buses", "https://example.org/gtfs.zip", "https://example.org/license")
+        val file = fixture()
+        val stage = store.staging()
+        GtfsImporter.create(stage).use { db ->
+            db.beginTransaction()
+            try {
+                val importer = GtfsImporter(db, date.minusDays(1), date.plusDays(1))
+                importer.import(file, viaSource)
+                importer.finish()
+                db.setTransactionSuccessful()
+            } finally {
+                db.endTransaction()
+            }
+        }
+        val meta = OfflinePackMetadata(java.util.UUID.randomUUID().toString(), Instant.now(), date, date, stage.length(), file.length(), 4, 3, listOf(viaSource.name), OfflinePackStore.digest(stage))
+        store.activate(stage, meta)
+
+        val origin = endpoint("A", "Alpha", 47.4, sourceStopIds = listOf("offline:viabusz:A"))
+        val dest = endpoint("B", "Beta", 47.5, sourceStopIds = listOf("offline:viabusz:B"))
+        val ready = time("07:55:00")
+
+        // 1. With default localProviders (includes "viabusz"), route is found
+        val enabledPlan = OfflineTripPlanner(store).plan(origin, dest, ready, ready, localProviders = LocalPlanningService.providerIds)
+        assertTrue("Enabled local provider must board trips", enabledPlan.itineraries.isNotEmpty())
+        assertEquals("1", enabledPlan.itineraries.first().legs.first().route?.number)
+
+        // 2. With "viabusz" disabled, route is rejected
+        val disabledPlan = OfflineTripPlanner(store).plan(origin, dest, ready, ready, localProviders = setOf("homm", "kanyargo"))
+        assertTrue("Disabled local provider must reject boardings", disabledPlan.itineraries.isEmpty())
+    }
+
     @Test fun coroutineCancellationAbortsPromptly() = runBlocking {
         install(fixture())
         val origin = endpoint("A", "Alpha", 47.4)

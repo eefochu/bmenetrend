@@ -92,6 +92,8 @@ fun NativeTransitMap(
     onSharedStopSelected: (List<String>)->Unit = { ids -> ids.firstOrNull()?.let(onStopSelected) },
     onMapClick: () -> Unit = {},
     offline: Boolean = false,
+    topPaddingPx: Int? = null,
+    routeOrigin: GeoPoint? = null,
 ) {
     val darkTheme = isSystemInDarkTheme()
     val styleUri = if (offline) { if (darkTheme) "asset://map/offline-dark.json" else "asset://map/offline.json" } else if (darkTheme) "asset://map/night.json" else "https://tiles.openfreemap.org/styles/positron"
@@ -145,6 +147,7 @@ fun NativeTransitMap(
     val vehicleIconKeys = remember(mapView) { mutableSetOf<String>() }
     var locationMarker by remember(mapView) { mutableStateOf<Marker?>(null) }
     var placeMarker by remember(mapView) { mutableStateOf<Marker?>(null) }
+    var originMarker by remember(mapView) { mutableStateOf<Marker?>(null) }
     val stopHitTargets = remember { mutableMapOf<String,StationHitTarget>() }
     val stopGroups = remember { mutableMapOf<String, List<TransitStop>>() }
     val iconCache = remember { mutableMapOf<String, Icon>() }
@@ -172,13 +175,12 @@ fun NativeTransitMap(
         mapView.getMapAsync { ready ->
             map = ready
             ready.uiSettings.apply {
-                isAttributionEnabled = true
+                isAttributionEnabled = false
                 isLogoEnabled = false
                 isCompassEnabled = true
                 val inset = (16 * context.resources.displayMetrics.density).toInt()
                 val topInset = (80 * context.resources.displayMetrics.density).toInt()
                 setCompassMargins(0, topInset, inset, 0)
-                setAttributionMargins(12, 0, 0, 12)
             }
             ready.cameraPosition = CameraPosition.Builder().target(LatLng(savedLat, savedLon)).zoom(savedZoom).build()
             ready.setMinZoomPreference(5.0)
@@ -193,17 +195,23 @@ fun NativeTransitMap(
                 onArea(viewport!!, GeoPoint(savedLat, savedLon))
             }
             ready.setMaxZoomPreference(19.0)
-            fun targets(): List<StopHitTesting.Target> = stopHitTargets.mapNotNull { (id,target) ->
-                val stop=stopGroups[id]?.firstOrNull { it.id==id } ?: return@mapNotNull null
-                val point=ready.projection.toScreenLocation(target.position)
-                val angle=Math.toRadians(ready.cameraPosition.bearing)
-                val density=context.resources.displayMetrics.density.toDouble()
-                val diameter=StopMarkerLayout.diameterDp(ready.cameraPosition.zoom,target.focused)
-                val scale=diameter/StopMarkerLayout.DIAMETER_DP*density
-                val dx=target.offset.x*scale;val dy=target.offset.y*scale
-                val x=point.x+dx*kotlin.math.cos(angle)+dy*kotlin.math.sin(angle)
-                val y=point.y-dx*kotlin.math.sin(angle)+dy*kotlin.math.cos(angle)
-                StopHitTesting.Target(stop,x,y,diameter*density/2)
+            fun targets(): List<StopHitTesting.Target> {
+                val camera = ready.cameraPosition
+                val projection = ready.projection
+                val angle = Math.toRadians(camera.bearing)
+                val cosine = kotlin.math.cos(angle)
+                val sine = kotlin.math.sin(angle)
+                val density = context.resources.displayMetrics.density.toDouble()
+                return stopHitTargets.mapNotNull { (id, target) ->
+                    val stop = stopGroups[id]?.firstOrNull { it.id == id } ?: return@mapNotNull null
+                    val point = projection.toScreenLocation(target.position)
+                    val diameter = StopMarkerLayout.diameterDp(camera.zoom, target.focused)
+                    val scale = diameter / StopMarkerLayout.DIAMETER_DP * density
+                    val dx = target.offset.x * scale
+                    val dy = target.offset.y * scale
+                    StopHitTesting.Target(stop, point.x + dx * cosine + dy * sine,
+                        point.y - dx * sine + dy * cosine, diameter * density / 2)
+                }
             }
             fun reveal(location: LatLng) {
                 ready.animateCamera(CameraUpdateFactory.newLatLngZoom(location,
@@ -219,12 +227,13 @@ fun NativeTransitMap(
                 }
                 val hits=targets()
                 val density=context.resources.displayMetrics.density.toDouble()
-                val candidate=StopHitTesting.candidates(hits,point.x.toDouble(),point.y.toDouble(),density).firstOrNull()
+                val hit=StopHitTesting.nearest(hits,point.x.toDouble(),point.y.toDouble(),density)
+                val candidate=hit?.stop
                 if(candidate==null) {
                     onMapClicked()
                     true
                 } else {
-                    if(StopHitTesting.needsZoom(hits,point.x.toDouble(),point.y.toDouble(),density,ready.cameraPosition.zoom)) reveal(location)
+                    if(StopHitTesting.needsZoom(hits,hit,density,ready.cameraPosition.zoom)) reveal(location)
                     else if(stopGroups[candidate.id].orEmpty().flatMap { it.providerIds }.distinct().size>1) onSharedSelect(listOf(candidate.id)+stopGroups[candidate.id].orEmpty().map { it.id }.filterNot { it==candidate.id })
                     else onSelect(candidate.id)
                     true
@@ -240,11 +249,6 @@ fun NativeTransitMap(
             mapView.onDestroy()
             if (offline) OfflineBasemap.release(context.applicationContext)
         }
-    }
-    LaunchedEffect(map, bottomPaddingPx, selectedPlace) {
-        val inset = (12 * context.resources.displayMetrics.density).toInt()
-        val bottom = maxOf(bottomPaddingPx, if (selectedPlace != null) (110 * context.resources.displayMetrics.density).toInt() else 0)
-        map?.uiSettings?.setAttributionMargins(inset, 0, 0, bottom + inset)
     }
     // Theme changes reload only the basemap, retaining camera and current selections.
     // Failed loads retry in the foreground using the currently selected theme.
@@ -274,7 +278,7 @@ fun NativeTransitMap(
                         }
                     }
                 }
-                loadStyle()
+                if (!styleLoaded) loadStyle()
                 while (isActive) {
                     delay(30_000)
                     if (!styleLoaded) loadStyle()
@@ -349,11 +353,11 @@ fun NativeTransitMap(
         }
     }
     LaunchedEffect(map, styleLoaded, lineFocus?.key, paths, focusStops, fitRouteRequest,
-        selectedStopId, selectedPlace, placeCameraRequest, cameraRequest, bottomPaddingPx, size, browsingNearby, userLocation, locationCameraRequest) {
+        selectedStopId, selectedPlace, placeCameraRequest, cameraRequest, bottomPaddingPx, topPaddingPx, size, browsingNearby, userLocation, locationCameraRequest) {
         val ready = map ?: return@LaunchedEffect
         if (!styleLoaded || size.width <= 0 || size.height <= 0) return@LaunchedEffect
         if (focused && previousFocusKey == null) previousCamera = ready.cameraPosition
-        val topInset = ((if (focused) 156 else 96) * context.resources.displayMetrics.density).toInt()
+        val topInset = topPaddingPx ?: ((if (focused) 156 else 96) * context.resources.displayMetrics.density).toInt()
         val bottomInset = minOf(bottomPaddingPx, (size.height - topInset - 140 * context.resources.displayMetrics.density).toInt().coerceAtLeast(0))
         ready.setPadding(0, topInset, 0, bottomInset)
         if (focused) {
@@ -395,11 +399,12 @@ fun NativeTransitMap(
                     val lonEast = maxOf(bounds.east, bounds.west)
                     val lonWest = minOf(bounds.east, bounds.west)
                     val horizontalPadding = (48 * context.resources.displayMetrics.density).toInt()
-                    val topPadding = (200 * context.resources.displayMetrics.density).toInt()
-                    val bottomPadding = (110 * context.resources.displayMetrics.density).toInt()
-                    if (latNorth - latSouth > 0.0001 && lonEast - lonWest > 0.0001 && horizontalPadding * 2 < size.width && (topPadding + bottomPadding) < size.height) {
+                    val topPadding = if (topPaddingPx != null) topInset + horizontalPadding else (200 * context.resources.displayMetrics.density).toInt()
+                    val bottomPadding = if (topPaddingPx != null) bottomInset + horizontalPadding else (110 * context.resources.displayMetrics.density).toInt()
+                    if ((latNorth > latSouth || lonEast > lonWest) && horizontalPadding * 2 < size.width && (topPadding + bottomPadding) < size.height) {
                         ready.animateCamera(CameraUpdateFactory.newLatLngBounds(
-                            LatLngBounds.from(latNorth, lonEast, latSouth, lonWest), 0.0, 0.0, horizontalPadding, topPadding, horizontalPadding, bottomPadding), 650)
+                            LatLngBounds.from(maxOf(latNorth, latSouth + 0.0001), maxOf(lonEast, lonWest + 0.0001), latSouth, lonWest),
+                            0.0, 0.0, horizontalPadding, topPadding, horizontalPadding, bottomPadding), 650)
                         boundsAnimated = true
                     }
                 } catch (_: Exception) {
@@ -554,8 +559,8 @@ fun NativeTransitMap(
             }
         } finally { pending.values.forEach(Bitmap::recycle) }
     }
-    // Only the two personal pins use legacy annotations, and never refresh on camera gestures or vehicle ticks.
-    LaunchedEffect(map, styleLoaded, selectedPlace, userLocation) {
+    // Personal and planner endpoint pins never refresh on camera gestures or vehicle ticks.
+    LaunchedEffect(map, styleLoaded, selectedPlace, userLocation, routeOrigin) {
         val nativeMap = map ?: return@LaunchedEffect
         if (!styleLoaded) return@LaunchedEffect
         val density = context.resources.displayMetrics.density
@@ -569,7 +574,7 @@ fun NativeTransitMap(
             canvas.drawCircle(size / 2f, size / 2f, size / 2f - 2 * density, paint)
             IconFactory.getInstance(context).fromBitmap(bitmap)
         }
-        fun placeIcon(): Icon = iconCache.getOrPut("place-pin-marker") {
+        fun endpointIcon(key: String, color: Int): Icon = iconCache.getOrPut(key) {
             val size = (34 * density).toInt().coerceAtLeast(1)
             val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(bitmap)
@@ -577,7 +582,7 @@ fun NativeTransitMap(
             val radius = size / 2f
             paint.color = android.graphics.Color.WHITE
             canvas.drawCircle(radius, radius, radius, paint)
-            paint.color = android.graphics.Color.parseColor("#D32F2F")
+            paint.color = color
             canvas.drawCircle(radius, radius, (radius - 2.5f * density).coerceAtLeast(1f), paint)
             paint.color = android.graphics.Color.WHITE
             canvas.drawCircle(radius, radius, (radius - 6f * density).coerceAtLeast(1f), paint)
@@ -590,11 +595,20 @@ fun NativeTransitMap(
             if (locationMarker == null) locationMarker = nativeMap.addMarker(MarkerOptions().position(position).title(context.getString(R.string.engine_you_are_here)).icon(locationIcon()))
             else if(locationMarker?.position!=position) locationMarker?.position=position
         }
+        if (routeOrigin == null) {
+            originMarker?.let(nativeMap::removeMarker); originMarker = null
+        } else {
+            val position = LatLng(routeOrigin.lat, routeOrigin.lon)
+            if (originMarker == null) originMarker = nativeMap.addMarker(MarkerOptions().position(position)
+                .title(context.getString(R.string.planner_from))
+                .icon(endpointIcon("origin-pin-marker", android.graphics.Color.rgb(117, 117, 117))))
+            else if (originMarker?.position != position) originMarker?.position = position
+        }
         if (selectedPlace == null) {
             placeMarker?.let(nativeMap::removeMarker); placeMarker = null
         } else {
             val position = LatLng(selectedPlace.position.lat, selectedPlace.position.lon)
-            val pIcon = placeIcon()
+            val pIcon = endpointIcon("place-pin-marker", android.graphics.Color.rgb(211, 47, 47))
             if (placeMarker == null) {
                 placeMarker = nativeMap.addMarker(
                     MarkerOptions()

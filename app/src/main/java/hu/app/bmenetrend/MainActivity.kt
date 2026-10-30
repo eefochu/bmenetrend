@@ -36,6 +36,8 @@ import hu.app.bmenetrend.ui.ViaBuszScreen
 import hu.app.bmenetrend.ui.ViaBuszTheme
 import hu.app.bmenetrend.ui.lineColor
 import androidx.compose.ui.graphics.toArgb
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.awaitCancellation
 import java.io.File
 import hu.app.bmenetrend.ui.CrashReportDialog
@@ -51,7 +53,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val crashReports = remember { CrashReports(File(filesDir, "last-crash.txt")) }
-            var pendingCrash by remember { mutableStateOf(crashReports.read()) }
+            var pendingCrash by remember { mutableStateOf<String?>(null) }
+            LaunchedEffect(crashReports) {
+                pendingCrash = withContext(Dispatchers.IO) { crashReports.read() }
+            }
             val model: TransitViewModel = viewModel()
             val planner: PlannerViewModel = viewModel()
             var offlineSettingsRequest by rememberSaveable { mutableIntStateOf(0) }
@@ -123,7 +128,7 @@ class MainActivity : ComponentActivity() {
                                 tab = MainTab.MAP
                             },
                             onClose = { tab = MainTab.MAP },
-                            transitMapContent = { mapModifier, routeGeometry, destinationPlace, cameraRequest, isDotted ->
+                            transitMapContent = { mapModifier, routeGeometry, destinationPlace, cameraRequest, isDotted, originPosition ->
                                 val primaryColor = androidx.compose.material3.MaterialTheme.colorScheme.primary
                                 val accentArgb = remember(primaryColor) { primaryColor.toArgb() }
                                 NativeTransitMap(
@@ -132,6 +137,7 @@ class MainActivity : ComponentActivity() {
                                     selectedStopId = null,
                                     userLocation = state.userLocation,
                                     modifier = mapModifier,
+                                    topPaddingPx = 0,
                                     onStopSelected = { id ->
                                         state.findStop(id)?.let { stop ->
                                             planner.edit(PlannerField.DESTINATION)
@@ -148,6 +154,7 @@ class MainActivity : ComponentActivity() {
                                     routeGeometry = routeGeometry,
                                     routeColor = accentArgb,
                                     selectedPlace = destinationPlace,
+                                    routeOrigin = originPosition,
                                     placeCameraRequest = cameraRequest,
                                     dottedRoute = isDotted,
                                     offline = state.offlineMode

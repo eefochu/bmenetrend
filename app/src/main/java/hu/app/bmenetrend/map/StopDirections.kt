@@ -67,12 +67,16 @@ object StopDirections {
             var cursor=0
             for(i in 0 until sequence.lastIndex) {
                 val stop=sequence[i]
-                val next=sequence.drop(i+1).firstOrNull { StopClusters.distanceMeters(stop.position,it.position)>8 } ?: continue
-                var target=next.position
+                var nextIndex = i + 1
+                while (nextIndex < sequence.size && !(StopClusters.distanceMeters(stop.position, sequence[nextIndex].position) > 8)) nextIndex++
+                if (nextIndex == sequence.size) continue
+                var target=sequence[nextIndex].position
                 if(geometry.size>=2) {
                     val index=(cursor until geometry.size).minByOrNull { StopClusters.distanceMeters(stop.position,geometry[it]) } ?: 0
                     cursor=index
-                    target=geometry.drop(index+1).firstOrNull { StopClusters.distanceMeters(stop.position,it)>12 } ?: target
+                    var targetIndex = index + 1
+                    while (targetIndex < geometry.size && !(StopClusters.distanceMeters(stop.position, geometry[targetIndex]) > 12)) targetIndex++
+                    if (targetIndex < geometry.size) target = geometry[targetIndex]
                 }
                 val heading=bearing(stop.position,target)
                 val headings=departureSamples.getOrPut(stop.id) { mutableListOf() }
@@ -80,12 +84,16 @@ object StopDirections {
             }
             if(sequence.size>=2) {
                 val term=sequence.last()
-                val prev=sequence.dropLast(1).findLast { StopClusters.distanceMeters(it.position,term.position)>8 }
+                var previousIndex = sequence.lastIndex - 1
+                while (previousIndex >= 0 && !(StopClusters.distanceMeters(sequence[previousIndex].position, term.position) > 8)) previousIndex--
+                val prev = sequence.getOrNull(previousIndex)
                 if(prev!=null) {
                     var source=prev.position
                     if(geometry.size>=2) {
                         val termIndex=geometry.indices.minByOrNull { StopClusters.distanceMeters(term.position,geometry[it]) } ?: geometry.lastIndex
-                        val geomPrev=geometry.take(termIndex).findLast { StopClusters.distanceMeters(it,term.position)>12 }
+                        var sourceIndex = termIndex - 1
+                        while (sourceIndex >= 0 && !(StopClusters.distanceMeters(geometry[sourceIndex], term.position) > 12)) sourceIndex--
+                        val geomPrev = geometry.getOrNull(sourceIndex)
                         if(geomPrev!=null) source=geomPrev
                     }
                     val heading=bearing(source,term.position)

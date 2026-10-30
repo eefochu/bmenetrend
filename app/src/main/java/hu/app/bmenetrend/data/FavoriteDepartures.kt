@@ -3,7 +3,11 @@ package hu.app.bmenetrend.data
 /** Saved station identities stay independent from distance and the current map viewport. */
 object FavoriteDepartures {
     fun stations(ids: Set<String>, stops: List<TransitStop>): List<NearbyStation> {
-        val byId = stops.associateBy { it.id }
+        if (ids.isEmpty()) return emptyList()
+        return stations(ids, stops.associateBy { it.id })
+    }
+
+    fun stations(ids: Set<String>, byId: Map<String, TransitStop>): List<NearbyStation> {
         return ids.mapNotNull { id ->
             val stop = byId[id] ?: return@mapNotNull null
             val platforms = listOf(stop)

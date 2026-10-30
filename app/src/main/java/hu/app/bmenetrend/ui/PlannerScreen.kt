@@ -1,6 +1,9 @@
 package hu.app.bmenetrend.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -30,6 +33,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.app.bmenetrend.R
 import hu.app.bmenetrend.PlannerViewModel
@@ -108,7 +114,8 @@ fun PlannerScreen(
         routeGeometry: List<GeoPoint>,
         destinationPlace: PlaceResult?,
         cameraRequest: Int,
-        isDotted: Boolean
+        isDotted: Boolean,
+        originPosition: GeoPoint?
     ) -> Unit)? = null,
     mapContent: (@Composable (Modifier) -> Unit)? = null,
 ) {
@@ -132,10 +139,14 @@ fun PlannerScreen(
         return
     }
 
-    val now by produceState(Instant.now()) {
-        while (true) { value = Instant.now(); delay(15_000) }
-    }
     val result = state.result
+    val clockActive = result?.itineraries?.isNotEmpty() == true
+    val clockOwner = LocalLifecycleOwner.current
+    val now by produceState(Instant.now(), clockActive, clockOwner) {
+        if (clockActive) clockOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            while (true) { value = Instant.now(); delay(15_000) }
+        }
+    }
     val selected = result?.itineraries?.firstOrNull { it.id == state.selectedId }
     if (result != null && selected != null) {
         JourneyDetail(result, selected, now) { model.selectItinerary(null) }
@@ -316,14 +327,14 @@ fun PlannerScreen(
                 }
 
                 if (result != null && result.itineraries.isNotEmpty()) {
-                    if (!state.planning && result.partial) item(key = "partial") {
+                    if (!state.planning && result.partial) item(key = "partial", contentType = "notice") {
                         Text(
                             stringResource(R.string.planner_partial),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    item(key = "results-title") {
+                    item(key = "results-title", contentType = "header") {
                         Text(
                             stringResource(R.string.planner_options),
                             style = MaterialTheme.typography.titleLarge,
@@ -336,12 +347,12 @@ fun PlannerScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    items(result.itineraries, key = { it.id }) { itinerary ->
+                    items(result.itineraries, key = { it.id }, contentType = { "itinerary" }) { itinerary ->
                         ItineraryCard(itinerary, itinerary == result.itineraries.first(), now) {
                             model.selectItinerary(itinerary.id)
                         }
                     }
-                    item(key = "source") {
+                    item(key = "source", contentType = "notice") {
                         Text(
                             stringResource(R.string.planner_source),
                             style = MaterialTheme.typography.bodySmall,
@@ -397,20 +408,13 @@ fun PlannerScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.surface)
         ) {
-            // Live map background with route preview line & destination highlight
-            if (transitMapContent != null) {
-                transitMapContent(
-                    Modifier.fillMaxSize().testTag("planner-map"),
-                    previewGeometry,
-                    previewPlace,
-                    previewCameraRequest,
-                    currentDest != null
-                )
-            } else {
-                mapContent?.invoke(Modifier.fillMaxSize())
-            }
-
             PlannerMapOverlay(
+                mapContent = { modifier ->
+                    if (transitMapContent != null) transitMapContent(modifier.testTag("planner-map"),
+                        previewGeometry, previewPlace, previewCameraRequest, currentDest != null, originPos)
+                    else mapContent?.invoke(modifier)
+                },
+                onLocalProvider = model::setLocalProvider,
                 state = state,
                 onOrigin = { model.edit(PlannerField.ORIGIN) },
                 onDestination = { model.edit(PlannerField.DESTINATION) },
@@ -430,23 +434,27 @@ fun PlannerScreen(
     }
 }
 
-/** Bound the form, never the map. The card can scroll on short screens and at large text sizes. */
+/** The map has its own measured viewport; controls never cover route bounds. */
 @Composable
 internal fun PlannerMapOverlay(
     state: PlannerState,
     onOrigin: () -> Unit, onDestination: () -> Unit, onSwap: () -> Unit,
     onDeparture: () -> Unit, onFind: () -> Unit, onClose: (() -> Unit)? = null,
+    onLocalProvider: (String, Boolean) -> Unit = { _, _ -> },
+    mapContent: @Composable (Modifier) -> Unit = {},
 ) {
     val wide = transitWindowWidth() >= 600.dp
-    Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(16.dp),
-        verticalArrangement = Arrangement.SpaceBetween) {
-        Surface(modifier = Modifier.widthIn(max = if (wide) 400.dp else 560.dp).fillMaxWidth()
-            .weight(1f, fill = false).padding(bottom = 12.dp).testTag("planner-controls-card"),
+    var servicesOpen by rememberSaveable { mutableStateOf(false) }
+    val maxCardHeight = (LocalConfiguration.current.screenHeightDp * .48f).dp
+    if (servicesOpen) LocalPlanningServicesDialog(state.localProviders, onLocalProvider) { servicesOpen = false }
+    val controls: @Composable () -> Unit = {
+        Surface(modifier = Modifier.widthIn(max = if (wide) 360.dp else 560.dp).fillMaxWidth()
+            .heightIn(max = if (wide) 600.dp else maxCardHeight).testTag("planner-controls-card"),
             shape = TransitDesign.panelShape, color = MaterialTheme.colorScheme.surfaceContainerLow,
             shadowElevation = 3.dp) {
-            Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(Modifier.verticalScroll(rememberScrollState()).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.planner_title), Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
+                    Text(stringResource(R.string.planner_title), Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
                     if (onClose != null) IconButton(onClick = onClose, modifier = Modifier.size(48.dp)) {
                         Icon(Icons.Rounded.Close, stringResource(R.string.ui_close))
                     }
@@ -461,17 +469,64 @@ internal fun PlannerMapOverlay(
                         Icon(Icons.Rounded.SwapVert, stringResource(R.string.planner_swap))
                     }
                 }
-                TextButton(onClick = onDeparture, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                    Icon(Icons.Rounded.Schedule, null, Modifier.size(20.dp))
-                    Text(if (state.departure == null) stringResource(R.string.planner_leave_now) else departureLabel(state.departure),
-                        Modifier.weight(1f).padding(horizontal = 12.dp), style = MaterialTheme.typography.bodyMedium)
-                    Icon(Icons.Rounded.ExpandMore, null, Modifier.size(20.dp))
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(onClick = onDeparture, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
+                        Icon(Icons.Rounded.Schedule, null, Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(if (state.departure == null) stringResource(R.string.planner_leave_now) else departureLabel(state.departure),
+                            style = MaterialTheme.typography.labelLarge)
+                    }
+                    TextButton(onClick = { servicesOpen = true }, modifier = Modifier.heightIn(min = 48.dp).testTag("planner-local-services")) {
+                        Row(horizontalArrangement = Arrangement.spacedBy((-4).dp)) {
+                            LocalPlanningService.entries.forEach { TransitVehicleIcon(it.providerId, size = 24.dp) }
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.planner_local_services_count, state.localProviders.size), style = MaterialTheme.typography.labelLarge)
+                    }
                 }
                 if (wide) PlannerFindButton(state.planning, onFind)
             }
         }
-        if (!wide) PlannerFindButton(state.planning, onFind, Modifier.widthIn(max = 560.dp).fillMaxWidth())
     }
+    if (wide) {
+        Row(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
+            Column(Modifier.width(384.dp).fillMaxHeight().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                controls()
+                MapAttribution()
+            }
+            mapContent(Modifier.weight(1f).fillMaxHeight())
+        }
+    } else {
+        Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
+            Box(Modifier.fillMaxWidth().padding(12.dp), contentAlignment = Alignment.TopCenter) { controls() }
+            MapAttribution(Modifier.align(Alignment.CenterHorizontally).padding(start = 16.dp, end = 16.dp, bottom = 8.dp))
+            Box(Modifier.weight(1f).fillMaxWidth()) { mapContent(Modifier.fillMaxSize()) }
+            PlannerFindButton(state.planning, onFind, Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp))
+        }
+    }
+}
+
+@Composable
+internal fun LocalPlanningServicesDialog(selected: Set<String>, onProvider: (String, Boolean) -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.planner_local_services)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.planner_local_services_detail), style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.height(16.dp))
+                LocalPlanningService.entries.forEach { service ->
+                    val checked = service.providerId in selected
+                    Row(Modifier.fillMaxWidth().toggleable(checked, role = Role.Checkbox,
+                        onValueChange = { onProvider(service.providerId, it) }).padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        TransitVehicleIcon(service.providerId, size = 40.dp)
+                        Text(service.displayName, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                        Checkbox(checked, onCheckedChange = null)
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.planner_local_services_done)) } })
 }
 
 @Composable
@@ -487,7 +542,7 @@ private fun PlannerFindButton(planning: Boolean, onClick: () -> Unit, modifier: 
 @Composable
 private fun EndpointField(label: Int, endpoint: PlannerEndpoint?, current: Boolean, onClick: () -> Unit) {
     Surface(onClick = onClick, color = MaterialTheme.colorScheme.surfaceContainerLowest, shape = TransitDesign.controlShape) {
-        Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Icon(if (current) Icons.Rounded.MyLocation else if (label == R.string.planner_from) Icons.Rounded.TripOrigin else Icons.Rounded.LocationOn,
                 null, tint = MaterialTheme.colorScheme.primary)
             Column(Modifier.weight(1f)) {
@@ -604,12 +659,11 @@ private fun PlannerSearchResult(endpoint: PlannerEndpoint, location: GeoPoint?, 
     val detail = listOfNotNull(if (endpoint.isStation) providerNames(endpoint.providerIds) else endpoint.detail,
         if (endpoint.isStation) transportLabel(endpoint.transportMode) else null, distance).filter(String::isNotBlank).joinToString(" · ")
     SearchResultCard(endpoint.name, detail, onChoose,
-        leading = { TransitIconTile(when (endpoint.transportMode) {
-            "RAIL", "SUBWAY", "SUBURBAN_RAILWAY", "TRAMTRAIN" -> Icons.Rounded.Train
-            "TRAM" -> Icons.Rounded.Tram
-            "BUS", "COACH", "TROLLEYBUS" -> Icons.Rounded.DirectionsBus
-            else -> Icons.Rounded.LocationOn
-        }) },
+        leading = {
+            if (endpoint.isStation && (endpoint.transportMode != null || endpoint.providerIds.any { it in LocalPlanningService.providerIds }))
+                TransitVehicleIcon(endpoint.providerIds.firstOrNull().orEmpty(), endpoint.transportMode, 40.dp)
+            else TransitIconTile(Icons.Rounded.LocationOn)
+        },
         badge = { platform?.let { PlatformBadge(it) } },
         supporting = {
             if (routes.isNotEmpty()) FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {

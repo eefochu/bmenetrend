@@ -8,4 +8,9 @@
     <string name="emma_mode_hev">HÉV</string>
     <string name="emma_provider_hev">MÁV-HÉV</string>
     <string name="hev_line_badge">%1$s HÉV</string>
+    <string name="map_attribution_online">OpenFreeMap · © OpenMapTiles · © OpenStreetMap</string>
+    <string name="map_attribution_offline">© OpenStreetMap · Geofabrik</string>
+    <string name="map_credits_title">Térképforrások és licencek</string>
+    <string name="map_credits_data">Térképadatok: © OpenStreetMap közreműködők, ODbL 1.0. Online csempék: OpenFreeMap, OpenMapTiles séma (CC BY 4.0). Offline kivonat: Geofabrik, 2026-10-25. Térképmotor: MapLibre Native (BSD 2-Clause).</string>
+    <string name="map_info">Térképinfó</string>
 </resources>

@@ -20,6 +20,8 @@ object ServiceCalendar {
         // Add 2027 only after checking its official annual decree; not by copying 2026.
     )
     private val fixedHolidays = days("--01-01", "--03-15", "--05-01", "--08-20", "--10-23", "--11-01", "--12-25", "--12-26")
+    // Only the explicitly reviewed years are retained; arbitrary queried years cannot grow a cache.
+    private val reviewedHolidays = reviewedYears.keys.associateWith(::publicHolidays)
 
     fun publicHolidays(year: Int): Set<LocalDate> {
         val easter = easterSunday(year)
@@ -31,8 +33,8 @@ object ServiceCalendar {
     fun isConfirmedWorkingDay(date: LocalDate): Boolean {
         val transfers = reviewedYears[date.year] ?: return false
         val day = MonthDay.from(date)
-        return date !in publicHolidays(date.year) && day !in transfers.restDays &&
-            (day in transfers.workingDays || date.dayOfWeek !in setOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY))
+        return date !in reviewedHolidays.getValue(date.year) && day !in transfers.restDays &&
+            (day in transfers.workingDays || date.dayOfWeek != DayOfWeek.SATURDAY && date.dayOfWeek != DayOfWeek.SUNDAY)
     }
 
     fun serviceDate(date: LocalDate, label: String): LocalDate? =

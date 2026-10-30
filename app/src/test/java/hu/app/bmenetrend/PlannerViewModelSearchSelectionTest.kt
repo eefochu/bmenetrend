@@ -278,4 +278,63 @@ class PlannerViewModelSearchSelectionTest {
         assertTrue(singleResult.sourceStopIds.contains("emma:mav:005510009"))
         assertTrue(singleResult.sourceStopIds.contains("emma:hkir:773538"))
     }
+
+    @Test fun setLocalProviderTogglesProvidersAndInvalidatesInFlightAndCompletedPlans(): Unit = runBlocking {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val slowBackend = object : PlannerBackend {
+            override suspend fun routes(from: PlannerEndpoint, to: PlannerEndpoint, ready: Instant, busesOnly: Boolean): List<TripItinerary> {
+                delay(10_000)
+                return emptyList()
+            }
+            override suspend fun walking(pairs: List<Pair<PlanPoint, PlanPoint>>, ready: Instant) = WalkingResult(emptyMap())
+        }
+        val factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return PlannerViewModel(app, slowBackend) {
+                    TransitNetwork(emptyList(), emptyList(), emptyList(), Instant.now(), "fixture")
+                } as T
+            }
+        }
+        val model = ViewModelProvider(viewModelStore, factory)[PlannerViewModel::class.java]
+
+        // 1. Initial default state
+        assertEquals(LocalPlanningService.providerIds, model.state.value.localProviders)
+
+        // 2. Set origin and destination
+        val origin = PlannerEndpoint("orig", "Origin", "", GeoPoint(47.46, 19.02))
+        val dest = PlannerEndpoint("dest", "Destination", "", GeoPoint(47.49, 19.05))
+        model.edit(PlannerField.ORIGIN)
+        model.choose(origin)
+        model.edit(PlannerField.DESTINATION)
+        model.choose(dest)
+
+        // 3. Start planning -> planning state becomes true
+        model.plan()
+        withTimeout(1_000) {
+            while (!model.state.value.planning) delay(10)
+        }
+        assertTrue(model.state.value.planning)
+
+        // 4. setLocalProvider while plan is in flight -> must invalidate
+        model.setLocalProvider("viabusz", false)
+
+        // Planning must immediately be invalidated (planning = false)
+        assertFalse("In-flight plan should be cancelled and planning set to false", model.state.value.planning)
+        assertFalse("Disabled provider must be removed from localProviders", "viabusz" in model.state.value.localProviders)
+        assertNull("Result should be cleared on invalidation", model.state.value.result)
+
+        // 5. Calling with unchanged state should be a no-op
+        model.setLocalProvider("viabusz", false)
+        assertFalse("viabusz" in model.state.value.localProviders)
+
+        // 6. Calling with unknown provider should be a no-op
+        model.setLocalProvider("unknown_provider", true)
+        assertFalse("unknown_provider" in model.state.value.localProviders)
+
+        // 7. Re-enabling provider updates state
+        model.setLocalProvider("viabusz", true)
+        assertTrue("viabusz" in model.state.value.localProviders)
+        assertEquals(LocalPlanningService.providerIds, model.state.value.localProviders)
+    }
 }

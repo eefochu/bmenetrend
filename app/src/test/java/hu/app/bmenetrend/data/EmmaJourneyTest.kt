@@ -107,6 +107,40 @@ class EmmaJourneyTest {
         assertEquals(VehicleMarkerStyle.TRAIN, VehicleMarkerStyle.forVehicle(vehicle("bkk", "SUBWAY")))
         assertEquals(VehicleMarkerStyle.TRAIN, VehicleMarkerStyle.forVehicle(vehicle("mav", "RAIL")))
         assertEquals(VehicleMarkerStyle.VIABUSZ_BUS, VehicleMarkerStyle.forVehicle(vehicle("viabusz", null)))
+        assertEquals(VehicleMarkerStyle.VIABUSZ_BUS, VehicleMarkerStyle.forVehicle(vehicle("viabusz", "BUS")))
+        assertEquals(VehicleMarkerStyle.HOMM_BUS, VehicleMarkerStyle.forVehicle(vehicle("homm", null)))
+        assertEquals(VehicleMarkerStyle.HOMM_BUS, VehicleMarkerStyle.forVehicle(vehicle("homm", "BUS")))
+        assertEquals(VehicleMarkerStyle.KANYARGO_BUS, VehicleMarkerStyle.forVehicle(vehicle("kanyargo", null)))
+        assertEquals(VehicleMarkerStyle.KANYARGO_BUS, VehicleMarkerStyle.forVehicle(vehicle("kanyargo", "BUS")))
+
+        // Transport mode priority (train, tram, trolleybus) over operator
+        assertEquals(VehicleMarkerStyle.TRAIN, VehicleMarkerStyle.forVehicle(vehicle("homm", "RAIL")))
+        assertEquals(VehicleMarkerStyle.TRAIN, VehicleMarkerStyle.forVehicle(vehicle("kanyargo", "SUBWAY")))
+        assertEquals(VehicleMarkerStyle.TRAIN, VehicleMarkerStyle.forVehicle(vehicle("viabusz", "TRAIN")))
+        assertEquals(VehicleMarkerStyle.TRAM, VehicleMarkerStyle.forVehicle(vehicle("homm", "TRAM")))
+        assertEquals(VehicleMarkerStyle.TRAM, VehicleMarkerStyle.forVehicle(vehicle("kanyargo", "TRAM")))
+        assertEquals(VehicleMarkerStyle.TROLLEY, VehicleMarkerStyle.forVehicle(vehicle("homm", "TROLLEYBUS")))
+        assertEquals(VehicleMarkerStyle.TROLLEY, VehicleMarkerStyle.forVehicle(vehicle("kanyargo", "TROLLEYBUS")))
+
+        // forTransport mapping & mode priority
+        assertEquals(VehicleMarkerStyle.HOMM_BUS, VehicleMarkerStyle.forTransport("homm", "BUS"))
+        assertEquals(VehicleMarkerStyle.HOMM_BUS, VehicleMarkerStyle.forTransport("homm", null))
+        assertEquals(VehicleMarkerStyle.KANYARGO_BUS, VehicleMarkerStyle.forTransport("kanyargo", "BUS"))
+        assertEquals(VehicleMarkerStyle.KANYARGO_BUS, VehicleMarkerStyle.forTransport("kanyargo", null))
+        assertEquals(VehicleMarkerStyle.VIABUSZ_BUS, VehicleMarkerStyle.forTransport("viabusz", "BUS"))
+        assertEquals(VehicleMarkerStyle.VIABUSZ_BUS, VehicleMarkerStyle.forTransport("viabusz", null))
+        assertEquals(VehicleMarkerStyle.TRAIN, VehicleMarkerStyle.forTransport("homm", "RAIL"))
+        assertEquals(VehicleMarkerStyle.TRAIN, VehicleMarkerStyle.forTransport("kanyargo", "SUBURBAN_RAILWAY"))
+        assertEquals(VehicleMarkerStyle.TRAM, VehicleMarkerStyle.forTransport("homm", "TRAM"))
+        assertEquals(VehicleMarkerStyle.TROLLEY, VehicleMarkerStyle.forTransport("kanyargo", "TROLLEYBUS"))
+
+        // Operator resources and hex colors
+        assertEquals(hu.app.bmenetrend.R.drawable.vehicle_homm_bus, VehicleMarkerStyle.HOMM_BUS.drawableRes)
+        assertEquals(hu.app.bmenetrend.R.drawable.vehicle_kanyargo_bus, VehicleMarkerStyle.KANYARGO_BUS.drawableRes)
+        assertEquals(hu.app.bmenetrend.R.drawable.vehicle_viabusz_bus, VehicleMarkerStyle.VIABUSZ_BUS.drawableRes)
+        assertEquals(0xFFBF5700.toInt(), VehicleMarkerStyle.HOMM_BUS.color)
+        assertEquals(0xFF6750A4.toInt(), VehicleMarkerStyle.KANYARGO_BUS.color)
+        assertEquals(0xFF205C48.toInt(), VehicleMarkerStyle.VIABUSZ_BUS.color)
     }
     @Test fun returnTripUsesItsLastStopEvenWhenRouteNameAndHeadsignPointTheOtherWay() {
         val root=response()

@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import hu.app.bmenetrend.R
@@ -31,13 +32,17 @@ import hu.app.bmenetrend.data.Vehicle
 import hu.app.bmenetrend.map.VehicleMarkerStyle
 import hu.app.bmenetrend.map.MetroLineStyle
 
+private val railG = Regex("^G\\d.*")
+private val railS = Regex("^S\\d.*")
+private val railZ = Regex("^Z\\d.*")
+
 fun railLineColor(number: String): Color {
     val clean = number.trim().uppercase(java.util.Locale.ROOT)
     return when {
         clean.startsWith("IR") -> Color(0xFF008001) // InterRegio: #008001
-        clean.matches(Regex("^G\\d.*")) || clean == "G" -> Color(0xFFA9CD45) // G-s: #A9CD45
-        clean.matches(Regex("^S\\d.*")) -> Color(0xFF00AFEF) // sXX: #00AFEF
-        clean.matches(Regex("^Z\\d.*")) || clean == "Z" -> Color(0xFFFECD28) // Z-s: #FECD28
+        clean.matches(railG) || clean == "G" -> Color(0xFFA9CD45) // G-s: #A9CD45
+        clean.matches(railS) -> Color(0xFF00AFEF) // sXX: #00AFEF
+        clean.matches(railZ) || clean == "Z" -> Color(0xFFFECD28) // Z-s: #FECD28
         else -> Color(0xFF2E5EA7) // EC, EN, Ex, IC, S, Sz, Gy, rjx, etc.: #2E5EA7
     }
 }
@@ -233,4 +238,11 @@ fun VehicleServiceBadge(vehicle: Vehicle, number: String? = vehicle.displayRoute
             style = MaterialTheme.typography.labelMedium, maxLines = 1,
             color = if (MaterialTheme.colorScheme.surface.luminance() < .5f) Color(0xFFFFD54F) else Color(0xFF795600))
     }
+}
+
+/** Operator artwork shared by map-related controls, search and local planning options. */
+@Composable
+internal fun TransitVehicleIcon(provider: String, mode: String? = "BUS", size: Dp = 36.dp) {
+    Image(rememberTransitIcon(VehicleMarkerStyle.forTransport(provider, mode).drawableRes, size),
+        null, Modifier.size(size))
 }

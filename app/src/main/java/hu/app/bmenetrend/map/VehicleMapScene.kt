@@ -78,7 +78,8 @@ internal object VehicleMapScene {
         val canvas = Canvas(bitmap)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply { color = Color.WHITE }
         canvas.drawCircle(54f, 54f, 54f, paint)
-        if (marker == VehicleMarkerStyle.VIABUSZ_BUS) {
+        if (marker == VehicleMarkerStyle.VIABUSZ_BUS || marker == VehicleMarkerStyle.HOMM_BUS ||
+            marker == VehicleMarkerStyle.KANYARGO_BUS) {
             context.getDrawable(marker.drawableRes)?.mutate()?.apply {
                 setBounds(3, 3, 105, 105)
                 draw(canvas)

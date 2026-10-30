@@ -1,6 +1,8 @@
 package hu.app.bmenetrend
 
 import android.app.Application
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.cancel
 import androidx.test.core.app.ApplicationProvider
 import hu.app.bmenetrend.data.*
 import hu.app.bmenetrend.offline.NetworkAccessPolicy
@@ -277,17 +279,38 @@ class TransitViewModelOnlineMapStopsTest {
                     .body(bboxResponse().toResponseBody()).build()
             }.build()
 
+            // A missing pack intentionally restores online mode; install a real catalogue
+            // so this test exercises the offline guard rather than the missing-pack fallback.
+            val store = hu.app.bmenetrend.offline.OfflinePackStore(app)
+            val stage = store.staging()
+            hu.app.bmenetrend.offline.GtfsImporter.create(stage).use { db ->
+                db.execSQL("INSERT INTO stops VALUES (1,'bkk:fixture','Fixture','fixture',47.5,19.0,'','',0,'bkk')")
+                db.execSQL("INSERT INTO routes VALUES (1,'bkk:fixture','1','Fixture','BUS','199DCF','bkk')")
+                db.execSQL("INSERT INTO trips VALUES (1,'bkk:fixture',1,1,'Fixture','0',0)")
+                db.execSQL("CREATE TABLE stop_routes(stop INTEGER,route INTEGER,PRIMARY KEY(stop,route)) WITHOUT ROWID")
+            }
+            val today = java.time.LocalDate.now()
+            store.activate(stage, hu.app.bmenetrend.offline.OfflinePackMetadata(
+                "map-guard-fixture", java.time.Instant.now(), today.minusDays(1), today.plusDays(1),
+                stage.length(), 1000, 1, 1, listOf("Fixture"), hu.app.bmenetrend.offline.OfflinePackStore.digest(stage)))
             val repo = EmmaStopsRepository(app, EmmaGraphqlClient(mockClient))
             val viewModel = TransitViewModel(app)
             injectRepository(viewModel, repo)
 
-            // Turn on offline mode
-            NetworkAccessPolicy.setOffline(app, true)
+            try {
+                // Turn on offline mode
+                NetworkAccessPolicy.setOffline(app, true)
 
-            viewModel.updateMapArea(MapBounds(19.04, 47.48, 19.08, 47.52), GeoPoint(47.50, 19.06))
-            ShadowLooper.idleMainLooper()
+                viewModel.updateMapArea(MapBounds(19.04, 47.48, 19.08, 47.52), GeoPoint(47.50, 19.06))
+                ShadowLooper.idleMainLooper()
 
-            assertEquals("When offline, ensureMapStops must NOT dispatch network queries", 0, mapAreaCalls.get())
+                assertTrue("Fixture must keep offline mode active", NetworkAccessPolicy.offline.value)
+                assertEquals("When offline, ensureMapStops must NOT dispatch network queries", 0, mapAreaCalls.get())
+            } finally {
+                viewModel.viewModelScope.cancel()
+                NetworkAccessPolicy.setOffline(app, false)
+                store.delete()
+            }
         }
     }
 
