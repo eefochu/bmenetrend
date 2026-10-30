@@ -3,6 +3,11 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
 }
+
+val isBuildingBundle = gradle.startParameter.taskNames.any {
+    it.contains("bundle", ignoreCase = true) || it.contains("buildrelease", ignoreCase = true)
+}
+
 android {
     namespace = "hu.app.bmenetrend"
     compileSdk = 36
@@ -45,7 +50,7 @@ android {
     androidResources.noCompress += listOf("pmtiles")
     splits {
         abi {
-            isEnable = true
+            isEnable = !isBuildingBundle
             reset()
             include("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
             isUniversalApk = true
