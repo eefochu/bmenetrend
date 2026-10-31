@@ -12,6 +12,17 @@ class LineAppearanceTest {
         assertEquals(Color(0xFFE31B23), lineColor("bkk", "TROLLEYBUS"))
         assertEquals(Color(0xFFF9B900), lineColor("volan", "COACH"))
         assertEquals(Color(0xFF205C48), lineColor("viabusz", null))
+        assertEquals(Color(0xFF205C48), lineColor("viabusz", "BUS"))
+        assertEquals(Color(0xFFBF5700), lineColor("homm", null))
+        assertEquals(Color(0xFFBF5700), lineColor("homm", "BUS"))
+        assertEquals(Color(0xFF6750A4), lineColor("kanyargo", null))
+        assertEquals(Color(0xFF6750A4), lineColor("kanyargo", "BUS"))
+
+        // Mode priority over operator
+        assertEquals(Color(0xFFFFD800), lineColor("homm", "TRAM"))
+        assertEquals(Color(0xFFFFD800), lineColor("kanyargo", "TRAM"))
+        assertEquals(Color(0xFFE31B23), lineColor("homm", "TROLLEYBUS"))
+        assertEquals(Color(0xFF0066AA), lineColor("kanyargo", "RAIL"))
     }
     @Test fun metroUsesValidatedIndividualLineColour() {
         assertEquals(Color(0xFF008D5E), lineColor("bkk", "SUBWAY", "008D5E"))

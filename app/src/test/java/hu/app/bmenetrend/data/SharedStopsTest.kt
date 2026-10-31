@@ -75,4 +75,30 @@ class SharedStopsTest {
         val board = DepartureCalculator.departures(network, live, "1", now, 30)
         assertEquals("1", board.single { it.kind == ArrivalKind.LIVE }.stopId)
     }
+
+    @Test fun `resolution prefers exact IDs then the first alias and follows network copies`() {
+        fun stop(id: String, vararg sources: String) = TransitStop(id, id, GeoPoint(47.0, 19.0),
+            emptyList(), sourceStopIds = sources.toList())
+        val network = TransitNetwork(listOf(stop("first", "exact", "shared"), stop("second", "shared"),
+            stop("exact")), emptyList(), emptyList(), Instant.EPOCH, "test")
+        assertEquals("exact", SharedStops.resolve(network, "exact"))
+        assertEquals("first", SharedStops.resolve(network, "shared"))
+        assertEquals("unknown", SharedStops.resolve(network, "unknown"))
+        val changed = network.copy(stops = listOf(stop("replacement", "shared")))
+        assertEquals("replacement", SharedStops.resolve(changed, "shared"))
+        assertEquals("first", SharedStops.resolve(network, "shared"))
+    }
+
+    @Test fun `canonicalization reuses unaffected timetable objects and only rewrites aliases`() {
+        val network = source("network.json")
+        val untouched = network.trips.first()
+        val affected = untouched.copy(id = "alias-trip", stopTimes = listOf(StopTime("kanyargo:30", 300),
+            StopTime("not-an-alias", 310), StopTime("kanyargo:29", 320)))
+        val result = SharedStops.merge(network.copy(trips = listOf(untouched, affected)))
+        assertSame(untouched, result.trips[0])
+        network.routes.zip(result.routes).forEach { (before, after) -> assertSame(before, after) }
+        assertEquals(listOf("1", "not-an-alias", "1"), result.trips[1].stopTimes.map { it.stopId })
+        assertEquals(listOf(300, 310, 320), result.trips[1].stopTimes.map { it.minuteOfDay })
+        assertSame(affected.stopTimes[1], result.trips[1].stopTimes[1])
+    }
 }

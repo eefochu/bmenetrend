@@ -39,8 +39,9 @@ data class StationLines(
     val otherBadges: List<StationBadgeItem>,
 )
 
+private val tokenRegex = Regex("([a-zA-Z]+|\\d+)")
+
 internal fun naturalCompare(a: String, b: String): Int {
-    val tokenRegex = Regex("([a-zA-Z]+|\\d+)")
     val tokensA = tokenRegex.findAll(a).map { it.value }.toList()
     val tokensB = tokenRegex.findAll(b).map { it.value }.toList()
     for (i in 0 until minOf(tokensA.size, tokensB.size)) {

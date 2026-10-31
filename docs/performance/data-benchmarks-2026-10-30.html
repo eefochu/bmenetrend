@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body { margin: 0; font-family: var(--font-sans); color: var(--foreground); }
+h3 { font-size: 17px; margin: 0 0 8px; }
+p { font-size: 12px; line-height: 1.5; color: var(--muted-foreground); margin: 0 0 18px; }
+section { margin: 22px 0; }
+h4 { font-size: 13px; font-weight: 600; margin: 0 0 10px; }
+.row { display: grid; grid-template-columns: 44px minmax(0,1fr) 100px; gap: 8px; align-items: center; margin: 8px 0; font-size: 12px; }
+.track { height: 14px; background: var(--secondary); border-radius: 3px; }
+.bar { height: 14px; border-radius: 3px; min-width: 2px; }
+.before { background: var(--chart-2); }
+.after { background: var(--chart-1); }
+.number { font-family: var(--font-mono); font-size: 11px; text-align: right; }
+.ratio { color: var(--muted-foreground); font-weight: 400; }
+</style>
+</head>
+<body>
+<main aria-label="Before and after host JVM data-path timings">
+<h3>Data-path CPU time: before and after</h3>
+<p>Warm host JVM · median milliseconds per operation · lower is better</p>
+<section aria-label="Network canonicalization decreased from 0.09676 to 0.08949 milliseconds">
+<h4>Merge local networks · 189 source stops, 284 trips <span class="ratio">· 1.08×</span></h4>
+<div class="row"><span>Before</span><div class="track"><div class="bar before" style="width:100%"></div></div><span class="number">0.09676 ms</span></div>
+<div class="row"><span>After</span><div class="track"><div class="bar after" style="width:92.48%"></div></div><span class="number">0.08949 ms</span></div>
+</section>
+<section aria-label="Resolve 190 stop identifiers decreased from 0.02804 to 0.00133 milliseconds">
+<h4>Resolve 190 stop IDs · warm index <span class="ratio">· 21.04×</span></h4>
+<div class="row"><span>Before</span><div class="track"><div class="bar before" style="width:100%"></div></div><span class="number">0.02804 ms</span></div>
+<div class="row"><span>After</span><div class="track"><div class="bar after" style="width:4.75%"></div></div><span class="number">0.00133 ms</span></div>
+</section>
+<section aria-label="365 working-day checks decreased from 0.11544 to 0.00410 milliseconds">
+<h4>Working-day checks · all 365 dates in 2026 <span class="ratio">· 28.15×</span></h4>
+<div class="row"><span>Before</span><div class="track"><div class="bar before" style="width:100%"></div></div><span class="number">0.11544 ms</span></div>
+<div class="row"><span>After</span><div class="track"><div class="bar after" style="width:3.55%"></div></div><span class="number">0.00410 ms</span></div>
+</section>
+<p>Each pair uses its own zero-to-baseline scale. 2,000 warmup pairs, nine alternating samples. Bundled local-network fixtures; warm lookup excludes index construction. Exploratory JVM measurements, not Android startup, frame time, or overall app speed.</p>
+</main>
+</body>
+</html>

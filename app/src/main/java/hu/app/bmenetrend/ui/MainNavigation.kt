@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,6 +15,7 @@ import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -82,7 +84,13 @@ private fun TransitNavigationItem(item: MainTab,selected: Boolean,onClick: ()->U
     val label=stringResource(when(item) { MainTab.MAP->R.string.planner_nav_map;MainTab.PLANNER->R.string.planner_nav_plan;MainTab.FAVORITES->R.string.favorites_nav })
     val fill by animateColorAsState(if(selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLowest,
         tween(160),label="navigation selection")
-    Column(modifier.heightIn(min=64.dp).semantics { if(compact) contentDescription=label }.selectable(selected,onClick=onClick,role=Role.Tab).padding(vertical=4.dp),
+    Column(modifier.heightIn(min=64.dp).semantics { if(compact) contentDescription=label }.selectable(
+        selected=selected,
+        interactionSource=remember { MutableInteractionSource() },
+        indication=null,
+        onClick=onClick,
+        role=Role.Tab
+    ).padding(vertical=4.dp),
         horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(4.dp)) {
         Surface(color=fill,shape=RoundedCornerShape(if(selected) 12.dp else 20.dp)) {
             Icon(when(item) { MainTab.MAP->Icons.Rounded.Map;MainTab.PLANNER->Icons.Rounded.Route;MainTab.FAVORITES->Icons.Rounded.Favorite },null,

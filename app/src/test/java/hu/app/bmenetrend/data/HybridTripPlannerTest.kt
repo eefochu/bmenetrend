@@ -144,4 +144,89 @@ class HybridTripPlannerTest {
         // unrestricted request. The independent bus-only request must still run.
         assertEquals(listOf(false, true), calls.filter { it.first == a.position to c.position }.map { it.second }.sorted())
     }
+
+    @Test fun disablingViabuszExcludesViabuszLegsFromJourney() = runTest {
+        val backend = FakeBackend()
+        val result = HybridTripPlanner(backend).plan(
+            a.endpoint(), e.endpoint(), ready, ready, catalogue, { network() },
+            localProviders = setOf("homm", "kanyargo")
+        )
+        assertTrue(result.itineraries.none { itinerary ->
+            itinerary.legs.any { it.route?.providerId == "viabusz" }
+        })
+    }
+
+    @Test fun disablingHommExcludesHommFromMixedLocalLegsAndFullJourney() = runTest {
+        val backend = FakeBackend()
+        // Mixed local journey from c to e without national leg
+        val defaultMixed = HybridTripPlanner(backend).plan(
+            c.endpoint(), e.endpoint(), ready, ready, catalogue, { network() }
+        )
+        val defaultJourney = defaultMixed.itineraries.first()
+        assertEquals(listOf("homm", "kanyargo"), defaultJourney.legs.filterNot { it.walking }.map { it.route!!.providerId })
+
+        // When HOMM is disabled, it must be excluded from mixed local routing
+        val disabledMixed = HybridTripPlanner(backend).plan(
+            c.endpoint(), e.endpoint(), ready, ready, catalogue, { network() },
+            localProviders = setOf("viabusz", "kanyargo")
+        )
+        assertTrue(disabledMixed.itineraries.none { itinerary ->
+            itinerary.legs.any { it.route?.providerId == "homm" }
+        })
+
+        // Also excluded from full combined journey
+        val fullResult = HybridTripPlanner(backend).plan(
+            a.endpoint(), e.endpoint(), ready, ready, catalogue, { network() },
+            localProviders = setOf("viabusz", "kanyargo")
+        )
+        assertTrue(fullResult.itineraries.none { itinerary ->
+            itinerary.legs.any { it.route?.providerId == "homm" }
+        })
+    }
+
+    @Test fun disablingKanyargoExcludesKanyargoFromMixedLocalLegsAndFullJourney() = runTest {
+        val backend = FakeBackend()
+        // Mixed local journey from c to e when kanyargo is disabled
+        val disabledMixed = HybridTripPlanner(backend).plan(
+            c.endpoint(), e.endpoint(), ready, ready, catalogue, { network() },
+            localProviders = setOf("viabusz", "homm")
+        )
+        assertTrue(disabledMixed.itineraries.none { itinerary ->
+            itinerary.legs.any { it.route?.providerId == "kanyargo" }
+        })
+
+        // Also excluded from full combined journey
+        val fullResult = HybridTripPlanner(backend).plan(
+            a.endpoint(), e.endpoint(), ready, ready, catalogue, { network() },
+            localProviders = setOf("viabusz", "homm")
+        )
+        assertTrue(fullResult.itineraries.none { itinerary ->
+            itinerary.legs.any { it.route?.providerId == "kanyargo" }
+        })
+    }
+
+    @Test fun emptyLocalProvidersSkipsNetworkLoaderWhilePreservingNationalDirect() = runTest {
+        val backend = FakeBackend()
+        var networkLoaded = false
+        val result = HybridTripPlanner(backend).plan(
+            b.endpoint(), c.endpoint(), ready, ready, catalogue,
+            loadNetwork = {
+                networkLoaded = true
+                network()
+            },
+            localProviders = emptySet()
+        )
+        assertFalse("Network loader should not be called when localProviders is empty", networkLoaded)
+        val journey = result.itineraries.first()
+        assertEquals(listOf("volan"), journey.legs.filterNot { it.walking }.map { it.route!!.providerId })
+        assertFalse(result.partial)
+    }
+
+    @Test fun enabledDefaultCombinedUsesAllAvailableLocalProviders() = runTest {
+        val backend = FakeBackend()
+        val result = HybridTripPlanner(backend).plan(a.endpoint(), e.endpoint(), ready, ready, catalogue, { network() })
+        val journey = result.itineraries.first()
+        val providers = journey.legs.filterNot { it.walking }.mapNotNull { it.route?.providerId }
+        assertTrue(providers.containsAll(listOf("viabusz", "volan", "homm", "kanyargo")))
+    }
 }

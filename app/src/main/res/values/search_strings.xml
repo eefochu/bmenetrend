@@ -21,4 +21,8 @@
     <string name="search_discover_body">Keress röviden is. A „kelen” például Kelenföldet is megtalálja.</string>
     <string name="search_examples">Próbáld ki</string>
     <string name="search_favorites">Kedvenc megállóid</string>
+    <string name="planner_local_services">Helyi járatok</string>
+    <string name="planner_local_services_count">Helyi (%1$d)</string>
+    <string name="planner_local_services_detail">Az EMMA országos útvonalai mellett ezeknek a szolgáltatóknak az ellenőrzött helyi menetrendjeit is használjuk. Átszállással kombinált útvonalakat is keresünk.</string>
+    <string name="planner_local_services_done">Kész</string>
 </resources>

@@ -90,12 +90,13 @@ data class UiState(
     val offlineStationTimetables: Map<String, OfflineStationMetadata> = emptyMap(),
     val isOfflineTimetableActive: Boolean = false,
 ) {
-    val stops: List<TransitStop> by lazy(LazyThreadSafetyMode.NONE) {
-        val netStops = network?.stops
-        if (netStops.isNullOrEmpty()) emmaStops
-        else if (emmaStops.isEmpty()) netStops
-        else netStops + emmaStops
+    private val stopCatalogue by lazy(LazyThreadSafetyMode.NONE) {
+        TransitCatalogueIndexes.stops(network?.stops.orEmpty(), emmaStops)
     }
+    private val routeCatalogue by lazy(LazyThreadSafetyMode.NONE) {
+        TransitCatalogueIndexes.routes(network?.routes.orEmpty(), emmaRoutes)
+    }
+    val stops: List<TransitStop> get() = stopCatalogue.values
 
     val selectedPlatforms: List<TransitStop> by lazy(LazyThreadSafetyMode.NONE) {
         hu.app.bmenetrend.data.StopBoardScope.platforms(selectedStopId,selectedPlatformIds,stops)
@@ -103,26 +104,9 @@ data class UiState(
     val boardRequestKey: hu.app.bmenetrend.data.StopBoardScope.RequestKey get() =
         hu.app.bmenetrend.data.StopBoardScope.requestKey(selectedStopId,selectedPlatformIds,windowMinutes)
 
-    val routes: List<TransitRoute> by lazy(LazyThreadSafetyMode.NONE) {
-        val netRoutes = network?.routes
-        if (netRoutes.isNullOrEmpty()) emmaRoutes
-        else if (emmaRoutes.isEmpty()) netRoutes
-        else netRoutes + emmaRoutes
-    }
-
-    val routesById: Map<String, TransitRoute> by lazy(LazyThreadSafetyMode.NONE) {
-        val map = HashMap<String, TransitRoute>((network?.routes?.size ?: 0) + emmaRoutes.size)
-        network?.routes?.forEach { map[it.id] = it }
-        emmaRoutes.forEach { map[it.id] = it }
-        map
-    }
-
-    val stopsById: Map<String, TransitStop> by lazy(LazyThreadSafetyMode.NONE) {
-        val map = HashMap<String, TransitStop>((network?.stops?.size ?: 0) + emmaStops.size)
-        network?.stops?.forEach { map[it.id] = it }
-        emmaStops.forEach { map[it.id] = it }
-        map
-    }
+    val routes: List<TransitRoute> get() = routeCatalogue.values
+    val routesById: Map<String, TransitRoute> get() = routeCatalogue.byId
+    val stopsById: Map<String, TransitStop> get() = stopCatalogue.byId
 
     fun findRoute(id: String?): TransitRoute? = if (id != null) routesById[id] else null
     fun findStop(id: String?): TransitStop? = if (id != null) stopsById[id] else null

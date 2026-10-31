@@ -21,4 +21,8 @@
     <string name="search_discover_body">Short names work too. Try “kelen” to find Kelenföld.</string>
     <string name="search_examples">Try a search</string>
     <string name="search_favorites">Your favourite stations</string>
+    <string name="planner_local_services">Local services</string>
+    <string name="planner_local_services_count">Local (%1$d)</string>
+    <string name="planner_local_services_detail">Include these operators’ verified local timetables alongside national EMMA routes, including journeys with connections.</string>
+    <string name="planner_local_services_done">Done</string>
 </resources>

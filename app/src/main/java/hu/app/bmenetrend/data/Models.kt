@@ -52,6 +52,13 @@ data class TransitNetwork(
     /** Document verification is independent of whether an operator runs on the fetch date. */
     val verifiedProviderIds: Set<String> = emptySet(),
 ) {
+    internal val stopIds: Map<String, String> by lazy {
+        buildMap {
+            for (stop in stops) for (sourceId in stop.sourceStopIds) putIfAbsent(sourceId, stop.id)
+            // Exact platform IDs override source aliases; duplicate aliases keep their first platform.
+            for (stop in stops) put(stop.id, stop.id)
+        }
+    }
     // Timetable lookup belongs to the immutable network snapshot, not to each board refresh.
     internal val departureIndex by lazy { DepartureIndex(this) }
 }

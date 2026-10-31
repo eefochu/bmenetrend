@@ -16,6 +16,7 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,6 +46,8 @@ fun SettingsPage(
     onOfflineDelete: () -> Unit = {},
     onOfflineImport: (android.net.Uri) -> Unit = {},
 ) {
+    var mapCredits by rememberSaveable { mutableStateOf(false) }
+    if (mapCredits) MapCreditsDialog { mapCredits = false }
     BackHandler(onBack=onBack)
     Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
@@ -115,6 +118,9 @@ fun SettingsPage(
                             }
                         }
                     }
+                }
+                OutlinedButton(onClick={ mapCredits = true },shape=TransitDesign.controlShape,modifier=Modifier.fillMaxWidth().heightIn(min=48.dp)) {
+                    Text(stringResource(R.string.map_credits_title))
                 }
                 OutlinedButton(onClick=onAbout,shape=TransitDesign.controlShape,modifier=Modifier.fillMaxWidth().heightIn(min=56.dp)) {
                     Icon(Icons.Rounded.Info,null,Modifier.size(20.dp));Spacer(Modifier.width(12.dp));Text(stringResource(R.string.ota_about_title))

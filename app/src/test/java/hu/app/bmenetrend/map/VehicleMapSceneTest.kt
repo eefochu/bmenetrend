@@ -270,4 +270,88 @@ class VehicleMapSceneTest {
             assertTrue("Pending bitmaps must be recycled after cancellation cleanup", bitmap.isRecycled)
         }
     }
+
+    @Test
+    fun actualMapPrepareWithHommAndKanyargoVectorsRendersDistinctKeysAndColors() = runBlocking {
+        val homm = vehicle("v-homm", "288", "BUS", provider = "homm", lat = 47.45, lon = 18.90)
+        val kanyargo = vehicle("v-kanyargo", "1", "BUS", provider = "kanyargo", lat = 47.46, lon = 18.91)
+        val viabusz = vehicle("v-viabusz", "11", "BUS", provider = "viabusz", lat = 47.47, lon = 18.92)
+        val pending = linkedMapOf<String, Bitmap>()
+
+        val json = VehicleMapScene.prepare(
+            context = app,
+            vehicles = listOf(homm, kanyargo, viabusz),
+            focus = null,
+            selectedId = null,
+            cachedIcons = emptySet(),
+            pending = pending,
+        )
+
+        try {
+            val collection = FeatureCollection.fromJson(json)
+            assertNotNull(collection)
+            val features = collection.features()!!
+            assertEquals(3, features.size)
+
+            val hommIconKey = features[0].getStringProperty("icon")
+            val hommDotKey = features[0].getStringProperty("dot")
+            val kanyargoIconKey = features[1].getStringProperty("icon")
+            val kanyargoDotKey = features[1].getStringProperty("dot")
+            val viabuszIconKey = features[2].getStringProperty("icon")
+            val viabuszDotKey = features[2].getStringProperty("dot")
+
+            assertEquals("vehicle-HOMM_BUS-null-null", hommIconKey)
+            assertEquals("vehicle-HOMM_BUS-null-null-dot", hommDotKey)
+            assertEquals("vehicle-KANYARGO_BUS-null-null", kanyargoIconKey)
+            assertEquals("vehicle-KANYARGO_BUS-null-null-dot", kanyargoDotKey)
+            assertEquals("vehicle-VIABUSZ_BUS-null-null", viabuszIconKey)
+            assertEquals("vehicle-VIABUSZ_BUS-null-null-dot", viabuszDotKey)
+
+            // Distinct keys across all 3 local bus styles
+            val allKeys = setOf(hommIconKey, hommDotKey, kanyargoIconKey, kanyargoDotKey, viabuszIconKey, viabuszDotKey)
+            assertEquals("All 3 local operators must have distinct icon and dot keys", 6, allKeys.size)
+
+            // Pending bitmap verification
+            assertTrue(pending.containsKey(hommIconKey))
+            assertTrue(pending.containsKey(hommDotKey))
+            assertTrue(pending.containsKey(kanyargoIconKey))
+            assertTrue(pending.containsKey(kanyargoDotKey))
+            assertTrue(pending.containsKey(viabuszIconKey))
+            assertTrue(pending.containsKey(viabuszDotKey))
+
+            // Dimensions and density
+            val hommBmp = pending.getValue(hommIconKey)
+            val kanyargoBmp = pending.getValue(kanyargoIconKey)
+            val viabuszBmp = pending.getValue(viabuszIconKey)
+
+            assertEquals(108, hommBmp.width); assertEquals(108, hommBmp.height)
+            assertEquals(108, kanyargoBmp.width); assertEquals(108, kanyargoBmp.height)
+            assertEquals(108, viabuszBmp.width); assertEquals(108, viabuszBmp.height)
+
+            val hommDotBmp = pending.getValue(hommDotKey)
+            val kanyargoDotBmp = pending.getValue(kanyargoDotKey)
+            val viabuszDotBmp = pending.getValue(viabuszDotKey)
+
+            assertEquals(18, hommDotBmp.width); assertEquals(18, hommDotBmp.height)
+            assertEquals(18, kanyargoDotBmp.width); assertEquals(18, kanyargoDotBmp.height)
+            assertEquals(18, viabuszDotBmp.width); assertEquals(18, viabuszDotBmp.height)
+
+            // Dot outer ring is white
+            assertEquals(Color.WHITE, hommDotBmp.getPixel(9, 1))
+            assertEquals(Color.WHITE, kanyargoDotBmp.getPixel(9, 1))
+            assertEquals(Color.WHITE, viabuszDotBmp.getPixel(9, 1))
+
+            // Dot center colors use marker.color (HOMM: #BF5700, KanyarGO: #6750A4, ViaBusz: #205C48)
+            assertEquals(0xFFBF5700.toInt(), hommDotBmp.getPixel(9, 9))
+            assertEquals(0xFF6750A4.toInt(), kanyargoDotBmp.getPixel(9, 9))
+            assertEquals(0xFF205C48.toInt(), viabuszDotBmp.getPixel(9, 9))
+
+            // Native graphics sampled background pixels: top center of circle above bus body (54, 14)
+            assertEquals(0xFFBF5700.toInt(), hommBmp.getPixel(54, 14))
+            assertEquals(0xFF6750A4.toInt(), kanyargoBmp.getPixel(54, 14))
+            assertEquals(0xFF205C48.toInt(), viabuszBmp.getPixel(54, 14))
+        } finally {
+            pending.values.forEach(Bitmap::recycle)
+        }
+    }
 }

@@ -328,9 +328,11 @@ fun ViaBuszScreen(
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Box(Modifier.fillMaxSize()) {
             val screenHeight = LocalConfiguration.current.screenHeightDp.dp
-            val overviewCount=selectedRoute?.let { route ->
-                state.lineDetails[route.id]?.patterns?.groupBy { it.familyKey }?.size ?: route.directions.size.takeIf { it>0 } ?: 2
-            } ?: 0
+            val overviewPatterns = selectedRoute?.let { state.lineDetails[it.id]?.patterns }
+            val overviewCount = remember(overviewPatterns, selectedRoute?.directions) {
+                if (selectedRoute == null) 0 else overviewPatterns?.mapTo(HashSet()) { it.familyKey }?.size
+                    ?: selectedRoute.directions.size.takeIf { it > 0 } ?: 2
+            }
             val peekHeight = if(selectedRoute!=null && !searchOpen && directionId==null)
                 minOf(screenHeight*.55f,(168+96*overviewCount.coerceIn(1,3)).dp)
             else (screenHeight * 0.36f).coerceIn(220.dp, 340.dp)
@@ -433,7 +435,7 @@ fun ViaBuszScreen(
                     if (state.selectedVehicle != null || state.trackedVehicle != null || state.boardingSelection != null || selectedRoute != null) {
                         FilledTonalButton(
                             onClick = dismissHighlight,
-                            modifier = Modifier.align(Alignment.TopStart).statusBarsPadding().padding(start = 16.dp, top = 86.dp),
+                            modifier = Modifier.align(Alignment.TopStart).statusBarsPadding().padding(start = 16.dp, top = 120.dp),
                         ) {
                             Icon(Icons.Rounded.Close, null, Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
@@ -452,6 +454,7 @@ fun ViaBuszScreen(
                             onSearch = openSearch,
                             onSettings = { showSettings = true },
                         )
+                        MapAttribution(Modifier.widthIn(max = 560.dp).padding(horizontal = 24.dp))
                     }
 
                     // Floating MyLocation button above the bottom sheet

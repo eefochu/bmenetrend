@@ -37,17 +37,17 @@ fun EmmaLineBrowser(
     }
     val color = lineColor(route)
     LazyColumn(contentPadding = PaddingValues(bottom = 32.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())) {
-        if(showHeader) item {
+        if(showHeader) item(key="header",contentType="header") {
             Row(Modifier.padding(horizontal=20.dp,vertical=12.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(12.dp)) {
                 LineBadge(route)
                 Text(serviceTypeLabel(route.providerId,route.transportMode),style=MaterialTheme.typography.titleSmall)
             }
         }
-        if(pattern!=null) item {
+        if(pattern!=null) item(key="pattern-header",contentType="pattern-header") {
             RouteDirectionRow(route,pattern.headsign,pattern.stops.firstOrNull()?.name)
             val variants=details?.patterns?.filter { it.familyKey==pattern.familyKey }.orEmpty()
             if(variants.size>1) LazyRow(contentPadding=PaddingValues(horizontal=20.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-                items(variants,key={it.id}) { variant ->
+                items(variants,key={it.id},contentType={"variant-chip"}) { variant ->
                     FilterChip(selected=variant.id==pattern.id,onClick={onDirection(variant.id)},label={
                         Text(variant.stops.firstOrNull()?.name.orEmpty(),Modifier.widthIn(max=220.dp),maxLines=2)
                     })
@@ -56,14 +56,14 @@ fun EmmaLineBrowser(
             Text(pluralStringResource(R.plurals.emma_journey_stops,pattern.stops.size,pattern.stops.size),
                 Modifier.padding(horizontal=22.dp,vertical=8.dp),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        if (state.loadingLineId == route.id) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
-        if (state.lineErrorId == route.id) item {
+        if (state.loadingLineId == route.id) item(key="loading",contentType="progress") { LinearProgressIndicator(Modifier.fillMaxWidth()) }
+        if (state.lineErrorId == route.id) item(key="error",contentType="notice") {
             Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(stringResource(R.string.line_load_error))
                 OutlinedButton(onClick = onRetry) { Text(stringResource(R.string.emma_vehicle_refresh)) }
             }
         }
-        if (details != null && details.patterns.isEmpty()) item { Text(stringResource(R.string.line_no_directions), Modifier.padding(22.dp)) }
+        if (details != null && details.patterns.isEmpty()) item(key="empty",contentType="notice") { Text(stringResource(R.string.line_no_directions), Modifier.padding(22.dp)) }
         if (pattern == null && details != null) {
             items(primaryVariants, key = { it.id }, contentType = { "line_variant" }) { variant ->
                 RouteDirectionRow(details.route,variant.headsign,variant.stops.firstOrNull()?.name,onClick={onDirection(variant.id)})

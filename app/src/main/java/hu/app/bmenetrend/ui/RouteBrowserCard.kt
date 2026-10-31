@@ -38,17 +38,17 @@ internal fun RouteBrowserCard(state: UiState,route: TransitRoute,directionId: St
             val direction=route.directions.firstOrNull { it.id==directionId }
             LazyColumn(contentPadding=PaddingValues(bottom=24.dp)) {
                 if(direction==null) {
-                    if(route.directions.isEmpty()) item { EmptyState(stringResource(R.string.ui_no_directions_title),stringResource(R.string.ui_no_directions_body),Icons.Rounded.Info) }
-                    items(route.directions,key={it.id}) { variant ->
+                    if(route.directions.isEmpty()) item(key="empty",contentType="notice") { EmptyState(stringResource(R.string.ui_no_directions_title),stringResource(R.string.ui_no_directions_body),Icons.Rounded.Info) }
+                    items(route.directions,key={it.id},contentType={"direction"}) { variant ->
                         RouteDirectionRow(route,variant.name,variant.stopIds.firstOrNull()?.let { state.findStop(it)?.name },onClick={onDirection(variant.id)})
                         if(variant.restrictedService) Text(stringResource(R.string.ui_registration_required),Modifier.padding(horizontal=22.dp),style=MaterialTheme.typography.bodySmall)
                     }
                 } else {
-                    item {
+                    item(key="direction-header",contentType="direction-header") {
                         RouteDirectionRow(route,direction.name,direction.stopIds.firstOrNull()?.let { state.findStop(it)?.name })
                         if(direction.restrictedService) Text(stringResource(R.string.ui_registration_required),Modifier.padding(horizontal=22.dp,vertical=8.dp),style=MaterialTheme.typography.bodySmall)
                     }
-                    itemsIndexed(direction.stopIds,key={i,id -> "$i-$id"}) { i,id ->
+                    itemsIndexed(direction.stopIds,key={i,id -> "$i-$id"},contentType={_,_->"stop"}) { i,id ->
                         state.findStop(id)?.let { stop -> LineStopRow(stop,i==0,i==direction.stopIds.lastIndex,lineColor(route),{onBoard(route.id,direction.id,id)}) }
                     }
                 }

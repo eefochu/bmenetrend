@@ -26,6 +26,7 @@ internal class HybridTripPlanner(
     suspend fun plan(
         origin: PlannerEndpoint, destination: PlannerEndpoint, requested: Instant, ready: Instant,
         nationalStops: List<TransitStop>, loadNetwork: suspend () -> TransitNetwork,
+        localProviders: Set<String> = LocalPlanningService.providerIds,
         onProgress: (TripPlan) -> Unit = {},
     ): TripPlan = withContext(dispatcher) { coroutineScope {
         val journeys = mutableListOf<TripItinerary>()
@@ -47,6 +48,11 @@ internal class HybridTripPlanner(
         val direct = listOf(false, true).map { bus -> async {
             remote(origin, destination, ready, bus).also { journeys += it; onProgress(result()) }
         } }
+        if (localProviders.isEmpty()) {
+            direct.awaitAll()
+            check(nationalSucceeded) { "Planning services unavailable" }
+            return@coroutineScope result()
+        }
         val local = async {
             try { loadNetwork() }
             catch (cancelled: CancellationException) { throw cancelled }
@@ -62,11 +68,11 @@ internal class HybridTripPlanner(
         val nearby = network.stops.filter { stop ->
             minOf(distance(stop.position, origin.position), distance(stop.position, destination.position)) <= ACCESS_METERS
         }
-        val neededProviders = nearby.flatMap { it.providerIds }.toSet()
+        val neededProviders = nearby.flatMap { it.providerIds }.toSet().intersect(localProviders)
         if (neededProviders.any { provider -> !ServiceCalendar.isYearReviewed(day.year) ||
                 day > java.time.LocalDate.of(2026, 12, 31) || provider !in network.verifiedProviderIds &&
                 listOf(day, day.plusDays(1)).any { LocalTimetableRouter.calendar(provider, it) != null } }) partial = true
-        val active = network.routes.filter { route -> route.providerId in network.verifiedProviderIds &&
+        val active = network.routes.filter { route -> route.providerId in localProviders && route.providerId in network.verifiedProviderIds &&
             listOf(day, day.plusDays(1)).any { LocalTimetableRouter.calendar(route.providerId, it) != null } }.map { it.id }.toSet()
         val activeStops = network.stops.filter { stop -> stop.routeIds.any { it in active } }
         val access = activeStops.filter { distance(it.position, origin.position) <= ACCESS_METERS }
@@ -91,7 +97,7 @@ internal class HybridTripPlanner(
             walking.links[a.position to b.position]?.let { (a.id to b.id) to it }
         }.toMap()
         val egressLinks = egress.mapNotNull { stop -> walking.links[stop.position to destination.position]?.let { stop.id to it } }.toMap()
-        val router = withContext(worker) { LocalTimetableRouter(network, ready) }
+        val router = withContext(worker) { LocalTimetableRouter(network.copy(verifiedProviderIds = network.verifiedProviderIds.intersect(localProviders)), ready) }
         val seeds = access.mapNotNull { stop -> walking.links[origin.position to stop.position]?.let { walk ->
             LocalPath(stop.id, ready.plusSeconds(walk.seconds), listOf(walk.leg(ready)))
         } }

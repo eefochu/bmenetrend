@@ -5,10 +5,12 @@ import hu.app.bmenetrend.data.Vehicle
 
 /** Transport mode takes priority over route colours, which vary between individual lines. */
 enum class VehicleMarkerStyle {
-    VOLAN_BUS, VIABUSZ_BUS, BKK_BUS, TROLLEY, TRAM, TRAIN;
+    VOLAN_BUS, VIABUSZ_BUS, HOMM_BUS, KANYARGO_BUS, BKK_BUS, TROLLEY, TRAM, TRAIN;
     val color: Int get() = when (this) {
         VOLAN_BUS -> 0xFFF9B900.toInt()
         VIABUSZ_BUS -> 0xFF205C48.toInt()
+        HOMM_BUS -> 0xFFBF5700.toInt()
+        KANYARGO_BUS -> 0xFF6750A4.toInt()
         BKK_BUS -> 0xFF199DCF.toInt()
         TROLLEY -> 0xFFE31B23.toInt()
         TRAM -> 0xFFFFD800.toInt()
@@ -17,6 +19,8 @@ enum class VehicleMarkerStyle {
     val drawableRes: Int get() = when (this) {
         VOLAN_BUS -> R.drawable.vehicle_volan_bus
         VIABUSZ_BUS -> R.drawable.vehicle_viabusz_bus
+        HOMM_BUS -> R.drawable.vehicle_homm_bus
+        KANYARGO_BUS -> R.drawable.vehicle_kanyargo_bus
         BKK_BUS -> R.drawable.vehicle_bkk_bus
         TROLLEY -> R.drawable.vehicle_trolley
         TRAM -> R.drawable.vehicle_tram
@@ -31,6 +35,8 @@ enum class VehicleMarkerStyle {
             else -> when (providerId) {
                 "volan" -> VOLAN_BUS
                 "viabusz" -> VIABUSZ_BUS
+                "homm" -> HOMM_BUS
+                "kanyargo" -> KANYARGO_BUS
                 else -> BKK_BUS
             }
         }
