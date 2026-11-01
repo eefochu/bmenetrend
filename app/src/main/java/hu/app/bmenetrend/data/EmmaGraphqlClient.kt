@@ -34,15 +34,28 @@ class EmmaGraphqlClient(private val client: OkHttpClient = defaultHttpClient(), 
                         }
                         if (networkGeneration != hu.app.bmenetrend.offline.NetworkAccessPolicy.generation) throw IOException("Network mode changed")
                         if (continuation.isActive) continuation.resume(text)
-                    } catch (error: Exception) { continuation.resumeWithException(error) }
+                    } catch (error: Exception) { if (continuation.isActive) continuation.resumeWithException(error) }
                 }
             })
         }
     }
     companion object {
         internal val sharedBackoff = EmmaRequestBackoff()
-        fun defaultHttpClient(): OkHttpClient = hu.app.bmenetrend.offline.NetworkAccessPolicy.protect(OkHttpClient.Builder().connectTimeout(8, TimeUnit.SECONDS)
-            .readTimeout(10, TimeUnit.SECONDS).callTimeout(15, TimeUnit.SECONDS).build())
+        // Repositories and MapLibre share connections, TLS sessions and dispatcher threads.
+        // Callers needing different timeouts use newBuilder(), which retains these pools.
+        private val sharedHttpClient by lazy {
+            hu.app.bmenetrend.offline.NetworkAccessPolicy.protect(OkHttpClient.Builder().connectTimeout(8, TimeUnit.SECONDS)
+                .readTimeout(10, TimeUnit.SECONDS).callTimeout(15, TimeUnit.SECONDS).build())
+        }
+        fun defaultHttpClient(): OkHttpClient = sharedHttpClient
+        private val sharedPlannerHttpClient by lazy {
+            // Share sockets/TLS, but keep live-map traffic out of routing's queue.
+            defaultHttpClient().newBuilder().dispatcher(Dispatcher().apply {
+                maxRequests = 4
+                maxRequestsPerHost = 4
+            }).readTimeout(25, TimeUnit.SECONDS).callTimeout(30, TimeUnit.SECONDS).build()
+        }
+        fun plannerHttpClient(): OkHttpClient = sharedPlannerHttpClient
         fun data(text: String): JSONObject = JSONObject(text).let {
             require((it.optJSONArray("errors")?.length() ?: 0) == 0) { "EMMA GraphQL error" }
             it.getJSONObject("data")

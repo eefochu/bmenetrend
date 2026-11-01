@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import hu.app.bmenetrend.data.*
 import hu.app.bmenetrend.ui.AccentColor
+import hu.app.bmenetrend.ui.ThemeMode
 import hu.app.bmenetrend.ui.UiState
 import hu.app.bmenetrend.offline.*
 import kotlinx.coroutines.withContext
@@ -35,9 +36,11 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     val offlinePacks = OfflinePackRepository(application, viewModelScope)
     private val offlineData = OfflineTransitData(offlinePacks.store)
     private var offlineBoardJob: Job? = null
+    private var offlineBoardPending = false
     private var offlineLoadedId: String? = null
     private var onlineLineCatalogue = emptyList<TransitRoute>()
     private var onlineNetwork: TransitNetwork? = null
+    private var onlineStopIndexLoaded = false
     private var onlineCatalogue: Pair<List<TransitStop>, List<TransitRoute>>? = null
     private val otaRepository = OtaRepository(application)
     private var otaJob: Job? = null
@@ -76,21 +79,26 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private var lineGeneration = 0
     private val boardMutex = Mutex()
     private var board: EmmaStopsParser.Board? = null
+    private val recentBoards = object : LinkedHashMap<StopBoardScope.RequestKey, EmmaStopsParser.Board>(8, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<StopBoardScope.RequestKey, EmmaStopsParser.Board>?): Boolean = size > 8
+    }
     private var boardJob: Job? = null
     private var boardKey: StopBoardScope.RequestKey? = null
     private var boardLoading = false
     private var boardFailure = false
     private var stopIndexFailed = false
     private var stopRoutes = emptyList<TransitRoute>()
-    private val initialNetwork = repository.bundledNetwork()
+    private var initialNetwork: TransitNetwork? = null
+    private var bundledEmmaRoutes = emptyList<EmmaParser.Route>()
+    private var bundledCatalogue = emptyList<TransitRoute>()
+    private val liveRouteCatalogue = LiveRouteCatalogue()
     private val mutableState = MutableStateFlow(UiState(
         network = initialNetwork,
-        emmaRoutes = emmaRepository.catalogue,
         lineCatalogueLoading = true,
-        selectedStopId = initialNetwork.stops.firstOrNull { it.id == "1" }?.id ?: initialNetwork.stops.firstOrNull()?.id,
         favorites = preferences.getStringSet("favorites", emptySet())?.map(SharedStops::canonicalId)?.toSet().orEmpty(),
         customAccentArgb = preferences.getInt("custom_accent_argb", 0xFF6750A4.toInt()),
         accentColor = AccentColor.fromKey(preferences.getString("accent_color", "system")),
+        themeMode = ThemeMode.fromKey(preferences.getString("theme_mode", "system")),
         nationwideNetwork = preferences.getBoolean("emma_nationwide", true),
         windowMinutes = preferences.getInt("window", 120).takeIf { it in DepartureTime.windows } ?: 120,
         otaChannel = UpdateChannel.fromKey(preferences.getString("ota_channel", "stable")),
@@ -141,6 +149,27 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private var liveError = false
 
     init {
+        // Paint the shell and accept input before reading/parsing bundled timetables.
+        viewModelScope.launch {
+            val prepared = withContext(Dispatchers.IO) {
+                Triple(repository.bundledNetwork(), emmaRepository.routes, emmaRepository.catalogue)
+            }
+            initialNetwork = prepared.first
+            bundledEmmaRoutes = prepared.second
+            bundledCatalogue = prepared.third
+            mutableState.update { current ->
+                if (current.offlineMode || current.network != null) current
+                else current.copy(network = prepared.first, loading = false,
+                    selectedStopId = current.selectedStopId ?: prepared.first.stops.firstOrNull { it.id == "1" }?.id
+                        ?: prepared.first.stops.firstOrNull()?.id)
+            }
+            recalculate()
+            ensureBoardRequest()
+            ensureNearbyRequest()
+            ensureFavoriteRequest()
+            val snapshot = state.value
+            withContext(Dispatchers.Default) { TransitSearch.indexStops(snapshot.network?.stops.orEmpty(), snapshot.emmaStops) }
+        }
         viewModelScope.launch {
             stationTimetableRepository.initialize()
             savedBoardRevision++
@@ -151,16 +180,18 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             offlinePacks.state.collect { pack ->
                 mutableState.update { it.copy(offlinePack = pack) }
-                if (state.value.offlineMode && pack.loaded && pack.metadata?.id != null && pack.metadata.id != offlineLoadedId) loadOfflineCatalogue()
+                if (state.value.offlineMode && pack.loaded && pack.metadata?.id != offlineLoadedId) loadOfflineCatalogue()
             }
         }
         viewModelScope.launch {
             NetworkAccessPolicy.offline.collect { enabled -> applyOfflineMode(enabled) }
         }
-        if (!NetworkAccessPolicy.offline.value) checkForUpdates(isAutoCheck = true)
-        viewModelScope.launch(Dispatchers.Default) {
-            TransitSearch.indexStops(initialNetwork.stops, emptyList())
+        viewModelScope.launch {
+            NetworkAccessPolicy.internetAvailable.collect { available ->
+                mutableState.update { it.copy(internetAvailable = available) }
+            }
         }
+        if (!NetworkAccessPolicy.offline.value) checkForUpdates(isAutoCheck = true)
     }
 
     /** Owned by the activity's STARTED lifecycle; all polling stops in the background. */
@@ -464,7 +495,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 Duration.between(it.fetchedAt, now).seconds in 0..120
             }
             val emmaVehicles = emma?.vehicles.orEmpty().let {
-                if (current.nationwideNetwork) it else EmmaParser.localVehicles(it, emmaRepository.routes)
+                if (current.nationwideNetwork) it else EmmaParser.localVehicles(it, bundledEmmaRoutes)
             }
             val vehicles = (snapshot?.vehicles.orEmpty() + emmaVehicles).filter {
                 Duration.between(it.observedAt, now).seconds in -30..180
@@ -521,7 +552,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 vehicles = vehicles,
                 selectedVehicle = current.selectedVehicle?.let { selected -> vehicles.find { it.id == selected.id } ?: selected.copy(routeEstimate = null) },
                 trackedVehicle = current.trackedVehicle?.let { tracked -> vehicles.find { it.id == tracked.id } ?: tracked.copy(routeEstimate = null) },
-                emmaRoutes = EmmaParser.routeCatalogue(vehicles.filter { it.providerId in setOf("volan", "bkk", "hev", "mav") }, (stopRoutes + lineCatalogue + emmaRepository.catalogue).distinctBy { it.id }),
+                emmaRoutes = liveRouteCatalogue.update(vehicles.filter { it.providerId in setOf("volan", "bkk", "hev", "mav") }, stopRoutes, lineCatalogue, bundledCatalogue),
                 emmaStatus = emmaMessage,
                 liveStopMinutes = snapshot?.arrivals.orEmpty()
                     .filter {
@@ -589,7 +620,9 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         if (!state.value.showNearby) return
         mapSettledJob?.cancel()
         mapSettledJob = viewModelScope.launch {
-            delay(1200)
+            // Camera updates already arrive on idle. Coalesce rapid idle callbacks
+            // without making every nearby board wait another 1.2 seconds.
+            delay(150)
             val prev = lastSettledCenter
             val dist = if (prev != null) distanceMeters(prev, center) else Double.MAX_VALUE
             if (dist > 30.0 || nearbySelection.isEmpty()) {
@@ -667,7 +700,6 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         val stations = nearbySelection.toList()
         nearbyFailed = emptySet()
         nearbyJob = viewModelScope.launch {
-            delay(600)
             val semaphore = kotlinx.coroutines.sync.Semaphore(3)
             val results = coroutineScope {
                 stations.map { station -> async {
@@ -752,7 +784,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         placeSearchGeneration++; lineGeneration++; journeyGeneration++; nearbyGeneration++; favoriteGeneration++
         placeSearchJob?.cancel(); lineJob?.cancel(); journeyJob?.cancel(); nearbyJob?.cancel(); favoriteJob?.cancel(); boardJob?.cancel()
         otaJob?.cancel(); otaDownloadJob?.cancel()
-        board = null; boardKey = null; nearbyBoards.clear(); favoriteLines.clear()
+        board = null; boardKey = null; recentBoards.clear(); nearbyBoards.clear(); favoriteLines.clear()
         boardLoading = false; nearbyLoading = false; favoriteLoading = false
         live = null; emmaLive = null
         mutableState.update { it.copy(offlineMode = enabled, vehicles = emptyList(), selectedVehicle = null, trackedVehicle = null,
@@ -761,6 +793,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         if (enabled) {
             onlineLineCatalogue = lineCatalogue
             onlineNetwork = state.value.network
+            onlineStopIndexLoaded = state.value.stopIndexLoaded
             onlineCatalogue = state.value.emmaStops to state.value.emmaRoutes
             loadOfflineCatalogue()
         } else {
@@ -768,7 +801,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             offlineLoadedId = null
             lineCatalogue = onlineLineCatalogue
             stopRoutes = emptyList()
-            onlineCatalogue?.let { saved -> mutableState.update { it.copy(network = onlineNetwork ?: initialNetwork, emmaStops = saved.first, emmaRoutes = saved.second) } }
+            onlineCatalogue?.let { saved -> mutableState.update { it.copy(network = onlineNetwork ?: initialNetwork, emmaStops = saved.first, emmaRoutes = saved.second,
+                stopIndexLoaded = onlineStopIndexLoaded, stopStatus = null, lineCatalogueStatus = null) } }
             recalculate()
             refresh()
             mapBounds?.let { ensureMapStops(it) }
@@ -777,26 +811,43 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         }
     }
     private suspend fun loadOfflineCatalogue() {
+        offlineBoardJob?.cancel()
+        offlineBoardJob = null
+        offlineBoardPending = false
         val generation = NetworkAccessPolicy.generation
-        val catalogue = withContext(Dispatchers.IO) { runCatching { offlineData.catalogue() }.getOrNull() }
+        val catalogue = withContext(Dispatchers.IO) { runCatching { offlineData.catalogueSnapshot() }.getOrNull() }
+        if (!NetworkAccessPolicy.offline.value || generation != NetworkAccessPolicy.generation) return
         if (catalogue == null) {
-            withContext(Dispatchers.IO) { NetworkAccessPolicy.setOffline(getApplication(), false) }
-            mutableState.update { it.copy(offlinePack = it.offlinePack.copy(phase = OfflinePackPhase.FAILED, error = "import")) }
+            offlineLoadedId = null
+            lineCatalogue = emptyList()
+            val message = getApplication<Application>().getString(R.string.offline_pack_missing)
+            mutableState.update { it.copy(network = TransitNetwork(emptyList(), emptyList(), emptyList(), Instant.now(), "offline"),
+                emmaStops = emptyList(), emmaRoutes = emptyList(), departures = emptyList(), nearbyStations = emptyList(), favoriteStations = emptyList(),
+                stopIndexLoaded = true, stopStatus = message, lineCatalogueLoading = false, lineCatalogueStatus = message,
+                nearbyLoading = false, favoritesLoading = false, loading = false, refreshing = false,
+                departureStatus = message, status = message, isOfflineTimetableActive = true) }
             return
         }
-        if (!NetworkAccessPolicy.offline.value || generation != NetworkAccessPolicy.generation) return
-        offlineLoadedId = offlinePacks.state.value.metadata?.id
-        lineCatalogue = catalogue.second
-        mutableState.update { it.copy(network = TransitNetwork(emptyList(), emptyList(), emptyList(), Instant.now(), "offline"), emmaStops = catalogue.first, emmaRoutes = catalogue.second, stopIndexLoaded = true, stopStatus = null,
+        val observedId = state.value.offlinePack.metadata?.id
+        if (observedId != null && observedId != catalogue.metadata.id) return
+        offlineLoadedId = catalogue.metadata.id
+        lineCatalogue = catalogue.routes
+        mutableState.update { it.copy(network = TransitNetwork(emptyList(), emptyList(), emptyList(), Instant.now(), "offline"), emmaStops = catalogue.stops, emmaRoutes = catalogue.routes, stopIndexLoaded = true, stopStatus = null,
             lineCatalogueLoading = false, lineCatalogueStatus = null, loading = false, refreshing = false) }
         recalculateOffline()
     }
     private fun recalculateOffline() {
-        if (!NetworkAccessPolicy.offline.value || offlineBoardJob?.isActive == true) return
+        if (!NetworkAccessPolicy.offline.value || offlineLoadedId == null) return
+        if (offlineBoardJob?.isActive == true) {
+            offlineBoardPending = true
+            return
+        }
+        offlineBoardPending = false
         val current = state.value
         val generation = NetworkAccessPolicy.generation
         val key = current.boardRequestKey
         offlineBoardJob = viewModelScope.launch {
+            try {
             val now = Instant.now()
             val expired = current.offlinePack.metadata?.validUntil?.let { now.atZone(budapest).toLocalDate() > it } == true
             val offlineStatus = getApplication<Application>().getString(if (expired) R.string.offline_expired else R.string.offline_scheduled)
@@ -805,9 +856,10 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             val nearby = NearbyDepartures.select(all, anchor, mapBounds)
             val favorites = FavoriteDepartures.stations(current.favorites, all)
             val result = withContext(Dispatchers.IO) {
-                fun rows(ids: List<String>) = runCatching { offlineData.board(ids, now, current.windowMinutes) }.getOrDefault(emptyList())
-                Triple(rows(current.selectedPlatforms.map { it.id }), nearby.map { it.copy(departures = rows(it.platforms.map { p -> p.id })) },
-                    favorites.map { it.copy(departures = rows(it.platforms.map { p -> p.id })) })
+                val scopes = listOf(current.selectedPlatforms.map { it.id }) + nearby.map { it.platforms.map { p -> p.id } } + favorites.map { it.platforms.map { p -> p.id } }
+                val boards = runCatching { offlineData.boards(scopes, now, current.windowMinutes) }.getOrElse { scopes.map { emptyList() } }
+                Triple(boards.first(), nearby.mapIndexed { index, station -> station.copy(departures = boards[index + 1]) },
+                    favorites.mapIndexed { index, station -> station.copy(departures = boards[index + 1 + nearby.size]) })
             }
             if (generation == NetworkAccessPolicy.generation && key == state.value.boardRequestKey) mutableState.update {
                 it.copy(now = now, departures = result.first.let { rows -> it.boardingSelection?.let { selection -> rows.filter(selection::matches) } ?: rows },
@@ -816,6 +868,15 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                     departureStatus = offlineStatus, status = offlineStatus,
                     isOfflineTimetableActive = true, emmaStatus = getApplication<Application>().getString(R.string.offline_live_unavailable),
                     boardUpdatedAt = null, loading = false, refreshing = false)
+            }
+            } finally {
+                if (offlineBoardJob === coroutineContext[Job]) {
+                    offlineBoardJob = null
+                    if (offlineBoardPending) {
+                        offlineBoardPending = false
+                        recalculateOffline()
+                    }
+                }
             }
         }
     }
@@ -830,6 +891,12 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     fun setAccentColor(accent: AccentColor) {
         preferences.edit().putString("accent_color", accent.key).apply()
         mutableState.update { it.copy(accentColor = accent) }
+    }
+
+    fun setThemeMode(mode: ThemeMode) {
+        if (state.value.themeMode == mode) return
+        preferences.edit().putString("theme_mode", mode.key).apply()
+        mutableState.update { it.copy(themeMode = mode) }
     }
 
     fun setNationwideNetwork(enabled: Boolean) {
@@ -892,8 +959,17 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         if (!force && key == boardKey) return
         boardKey = key
         boardJob?.cancel()
-        board = null
+        // Revisiting an exact station/platform/window selection can display its
+        // still-fresh board immediately. Forced refresh always bypasses this path.
+        board = if (force) null else recentBoards[key]?.takeIf {
+            Duration.between(it.fetchedAt, Instant.now()).seconds in 0..19
+        }
         boardFailure = false
+        if (board != null) {
+            boardLoading = false
+            recalculate()
+            return
+        }
         val selectedId = key.stopId
         val emmaStops = if (selectedId != null) {
             state.value.selectedPlatforms.filter { it.id.startsWith("emma:") }
@@ -931,6 +1007,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                     } else {
                         board = EmmaStopsParser.combineBoards(stopId, results)
                         boardFailure = results.size < emmaStops.size
+                        if (!boardFailure) recentBoards[requestKey] = requireNotNull(board)
                         val routes = results.flatMap { it.catalogue.routes }.distinctBy { it.id }
                         stopRoutes = (stopRoutes + routes).distinctBy { it.id }
                         val newStopsMap = results.flatMap { it.catalogue.stops }.associateBy { it.id }
@@ -1058,12 +1135,17 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         val generation = ++placeSearchGeneration
         placeSearchJob?.cancel()
         val shouldSearch = enabled && !NetworkAccessPolicy.offline.value && query.trim().length >= 2
-        mutableState.update { it.copy(placeQuery = query, placeResults = emptyList(), placesLoading = shouldSearch, placesUnavailable = false) }
+        val cachedPlaces = if (shouldSearch) placesRepository.cached(query) else null
+        mutableState.update { it.copy(placeQuery = query, placeResults = cachedPlaces.orEmpty(), placesLoading = shouldSearch && cachedPlaces == null, placesUnavailable = false) }
         if (!shouldSearch) return
         placeSearchJob = viewModelScope.launch {
             delay(250)
             try {
-                val placesAsync = async { placesRepository.search(query) }
+                // A cached/fast geocoder response must not wait for station search.
+                val placesAsync = async {
+                    val places = placesRepository.search(query)
+                    if (generation == placeSearchGeneration) mutableState.update { it.copy(placeResults = places, placesLoading = false) }
+                }
                 val stationsAsync = async {
                     runCatching { stopsRepository.search(query).stops }.getOrDefault(emptyList())
                 }
@@ -1079,8 +1161,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                     }
                     recalculate()
                 }
-                val places = placesAsync.await()
-                if (generation == placeSearchGeneration) mutableState.update { it.copy(placeResults = places, placesLoading = false) }
+                placesAsync.await()
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) {
                 if (generation == placeSearchGeneration) mutableState.update { it.copy(placesLoading = false, placesUnavailable = true) }

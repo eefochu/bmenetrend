@@ -8,10 +8,9 @@ import hu.app.bmenetrend.data.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import java.time.Instant
-import java.util.concurrent.TimeUnit
 
 enum class PlannerField { ORIGIN, DESTINATION }
-enum class PlannerError { UNAVAILABLE, NO_ROUTE, SAME_PLACE, LOCATION, OUTSIDE_AREA, DEPARTURE_PASSED, OFFLINE_DATE, OFFLINE_ENDPOINT }
+enum class PlannerError { UNAVAILABLE, NO_ROUTE, SAME_PLACE, LOCATION, OUTSIDE_AREA, DEPARTURE_PASSED, OFFLINE_DATE, OFFLINE_ENDPOINT, OFFLINE_PACK }
 @Immutable
 data class PlannerState(
     val origin: PlannerEndpoint? = null, val destination: PlannerEndpoint? = null,
@@ -29,12 +28,11 @@ data class PlannerState(
 
 class PlannerViewModel internal constructor(
     application: Application,
-    backend: PlannerBackend,
+    private val backend: PlannerBackend,
     private val loadNetwork: suspend () -> TransitNetwork,
 ) : AndroidViewModel(application) {
     constructor(application: Application) : this(application,
-        EmmaPlannerBackend(EmmaGraphqlClient(EmmaGraphqlClient.defaultHttpClient().newBuilder()
-            .readTimeout(25, TimeUnit.SECONDS).callTimeout(30, TimeUnit.SECONDS).build())),
+        EmmaPlannerBackend(EmmaGraphqlClient(EmmaGraphqlClient.plannerHttpClient())),
         TransitRepository(application)::planningNetwork)
 
     private val offlineStore = hu.app.bmenetrend.offline.OfflinePackStore(application)
@@ -48,6 +46,8 @@ class PlannerViewModel internal constructor(
     val state: StateFlow<PlannerState> = mutable
     private var searchJob: Job? = null
     private var planJob: Job? = null
+    private var warmupJob: Job? = null
+    private var warmupStarted = false
     private var searchGeneration = 0
     private var planGeneration = 0
     private var index = emptyList<TransitSearch.StopEntry>()
@@ -55,11 +55,13 @@ class PlannerViewModel internal constructor(
     private var indexedLocal: List<TransitStop>? = null
     private var indexedNational: List<TransitStop>? = null
     private var location: GeoPoint? = null
+    private var offlinePackId: String? = null
 
     init {
         viewModelScope.launch {
             hu.app.bmenetrend.offline.NetworkAccessPolicy.offline.collect { enabled ->
                 invalidate()
+                backend.clearRouteCache()
                 closeSearch()
                 val metadata = withContext(Dispatchers.IO) { offlineStore.metadata() }
                 mutable.update { it.copy(offline = enabled, offlineValidUntil = metadata?.validUntil?.toString()) }
@@ -92,6 +94,12 @@ class PlannerViewModel internal constructor(
         }
     }
 
+    fun updateOfflinePack(metadata: hu.app.bmenetrend.offline.OfflinePackMetadata?) {
+        if (state.value.offline && offlinePackId != metadata?.id) invalidate()
+        offlinePackId = metadata?.id
+        mutable.update { it.copy(offlineValidUntil = metadata?.validUntil?.toString()) }
+    }
+
     private fun currentEndpoint(point: GeoPoint) = PlannerEndpoint("current", "", "", point)
 
     fun useCurrentLocation() {
@@ -102,12 +110,15 @@ class PlannerViewModel internal constructor(
     }
 
     fun edit(field: PlannerField) {
+        warmupJob?.cancel()
+        warmupStarted = false
         mutable.update { it.copy(editing = field, query = "", suggestions = emptyList(), recommendation = null, searchUnavailable = false) }
     }
 
     fun closeSearch() {
         searchGeneration++; searchJob?.cancel()
         mutable.update { it.copy(editing = null, searching = false, recommendation = null) }
+        warmOnlinePlan()
     }
 
     internal fun consolidateEndpoints(endpoints: List<PlannerEndpoint>): List<PlannerEndpoint> {
@@ -223,7 +234,9 @@ class PlannerViewModel internal constructor(
                 Triple(literal, consolidateEndpoints(literal), StationRecommendations.stops(index, parsed, location, emptySet()).firstOrNull()?.let(PlannerEndpoint::fromStop))
             }
             if (generation != searchGeneration) return@launch
-            mutable.update { it.copy(suggestions = consolidatedLocal, recommendation = recommendation) }
+            val cachedPlaces = if (state.value.offline) emptyList() else places.cached(query).orEmpty().take(6)
+                .map { PlannerEndpoint(it.id, it.name, it.address, it.position, isStation = false) }
+            mutable.update { it.copy(suggestions = consolidatedLocal + cachedPlaces, recommendation = recommendation) }
             if (state.value.offline) {
                 mutable.update { it.copy(searching = false) }; return@launch
             }
@@ -236,17 +249,20 @@ class PlannerViewModel internal constructor(
                     }.getOrDefault(emptyList())
                 }
                 val placesAsync = async {
-                    places.search(query).take(6).map { PlannerEndpoint(it.id, it.name, it.address, it.position, isStation = false) }
+                    val results = places.search(query).take(6).map { PlannerEndpoint(it.id, it.name, it.address, it.position, isStation = false) }
+                    if (generation == searchGeneration) mutable.update {
+                        it.copy(suggestions = it.suggestions.filter { endpoint -> endpoint.isStation } + results)
+                    }
                 }
                 val remoteStations = remoteStationsAsync.await()
                 val stationResults = withContext(Dispatchers.Default) { consolidateEndpoints(localStationResults + remoteStations) }
                 if (generation == searchGeneration) {
-                    mutable.update { it.copy(suggestions = stationResults) }
+                    mutable.update { it.copy(suggestions = stationResults + it.suggestions.filterNot { endpoint -> endpoint.isStation }) }
                 }
-                val placesResults = placesAsync.await()
+                placesAsync.await()
                 // Places remain available below the station recommendation, even at the same address.
                 if (generation == searchGeneration) {
-                    mutable.update { it.copy(suggestions = stationResults + placesResults, searching = false) }
+                    mutable.update { it.copy(searching = false) }
                 }
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) {
@@ -266,9 +282,11 @@ class PlannerViewModel internal constructor(
     fun swap() {
         invalidate()
         mutable.update { it.copy(origin = it.destination, destination = it.origin, useLocation = false) }
+        warmOnlinePlan()
     }
 
-    private fun invalidate() {
+    private fun invalidate(cancelWarmup: Boolean = true) {
+        if (cancelWarmup) { warmupJob?.cancel(); warmupStarted = false }
         planGeneration++; planJob?.cancel()
         mutable.update { it.copy(result = null, planning = false, error = null, selectedId = null) }
     }
@@ -281,15 +299,43 @@ class PlannerViewModel internal constructor(
         if (departure == state.value.departure) return
         invalidate()
         mutable.update { it.copy(departure = departure) }
+        warmOnlinePlan()
     }
 
     fun setLocalProvider(providerId: String, enabled: Boolean) {
         if (providerId !in LocalPlanningService.providerIds || (providerId in state.value.localProviders) == enabled) return
         invalidate()
         mutable.update { it.copy(localProviders = if (enabled) it.localProviders + providerId else it.localProviders - providerId) }
+        warmOnlinePlan()
     }
 
-    fun plan() {
+    /** Prepare online national results while the completed form is on screen. */
+    private fun warmOnlinePlan() {
+        warmupJob?.cancel()
+        warmupStarted = false
+        val current = state.value
+        if (current.offline || hu.app.bmenetrend.offline.NetworkAccessPolicy.offline.value || current.editing != null || current.planning) return
+        val origin = if (current.useLocation) location?.let(::currentEndpoint) ?: current.origin else current.origin
+        val destination = current.destination ?: return
+        if (origin == null || !TripPlanner.supported(origin.position) || !TripPlanner.supported(destination.position) ||
+            StopClusters.distanceMeters(origin.position, destination.position) < 25) return
+        val requested = Instant.now()
+        val ready = current.departure ?: requested.plusSeconds(TripPlanner.PREPARATION_SECONDS)
+        if (ready < requested) return
+        warmupJob = viewModelScope.launch {
+            delay(250)
+            warmupStarted = true
+            supervisorScope {
+                listOf(false, true).map { bus -> async {
+                    try { backend.routes(origin, destination, ready, bus) }
+                    catch (cancelled: CancellationException) { throw cancelled }
+                    catch (_: Exception) { /* Submission can retry a failed prefetch. */ }
+                } }.awaitAll()
+            }
+        }
+    }
+
+    fun plan(force: Boolean = false) {
         val current = state.value
         val origin = (if (current.useLocation) location?.let(::currentEndpoint) ?: current.origin else current.origin)
         if (origin == null) {
@@ -297,7 +343,10 @@ class PlannerViewModel internal constructor(
             return
         }
         val destination = current.destination ?: return
-        invalidate()
+        // Keep an HTTP prefetch already in progress, but cancel a timer that has
+        // not started: the foreground submission will start its own calls now.
+        invalidate(cancelWarmup = force || !warmupStarted)
+        if (force) backend.clearRouteCache()
         if (!TripPlanner.supported(origin.position) || !TripPlanner.supported(destination.position)) {
             mutable.update { it.copy(error = PlannerError.OUTSIDE_AREA) }; return
         }
@@ -317,14 +366,20 @@ class PlannerViewModel internal constructor(
                     if (generation == planGeneration) mutable.update { it.copy(result = partial) }
                 }
                 if (generation == planGeneration) mutable.update { it.copy(planning = false, result = result,
-                    selectedId = null,
+                    selectedId = it.selectedId?.takeIf { id -> result.itineraries.any { route -> route.id == id } },
                     error = if (result.itineraries.isEmpty()) {
                         if (current.offline) PlannerError.NO_ROUTE
                         else PlannerError.NO_ROUTE
                     } else null) }
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (_: Exception) {
-                if (generation == planGeneration) mutable.update { it.copy(planning = false, error = PlannerError.UNAVAILABLE) }
+            catch (error: Exception) {
+                val reason = when (error) {
+                    is hu.app.bmenetrend.offline.OfflineDateUnavailable -> PlannerError.OFFLINE_DATE
+                    is hu.app.bmenetrend.offline.OfflineEndpointUnavailable -> PlannerError.OFFLINE_ENDPOINT
+                    is hu.app.bmenetrend.offline.OfflinePackUnavailable -> PlannerError.OFFLINE_PACK
+                    else -> PlannerError.UNAVAILABLE
+                }
+                if (generation == planGeneration) mutable.update { it.copy(planning = false, error = reason) }
             }
         }
     }

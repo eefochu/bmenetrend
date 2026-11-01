@@ -47,7 +47,7 @@ class OfflinePlanningTest {
         }
     }
 
-    private fun install(file: File, validUntil: LocalDate = date, onProgress: suspend (OfflineImportProgress) -> Unit = {}): OfflinePackMetadata = runBlocking {
+    private fun install(file: File, validUntil: LocalDate = date, source: OfflineSource = this.source, onProgress: suspend (OfflineImportProgress) -> Unit = {}): OfflinePackMetadata = runBlocking {
         val stage = store.staging()
         GtfsImporter.create(stage).use { db ->
             db.beginTransaction()
@@ -104,6 +104,34 @@ class OfflinePlanningTest {
         assertTrue(rows.all { it.kind == ArrivalKind.SCHEDULED })
     }
 
+    @Test fun batchedBoardsKeepExactWindowAndLineDetailsKeepDistinctPatterns() {
+        install(fixture())
+        val data = OfflineTransitData(store)
+        val scopes = listOf(listOf("emma:hkir:A"), listOf("emma:hkir:B"), listOf("emma:hkir:A"))
+        val rows = data.boards(scopes, time("08:01:00"), 20)
+        assertEquals(listOf(time("08:05:00")), rows[0].map { it.expectedAt })
+        assertEquals(listOf(time("08:15:00"), time("08:20:00")), rows[1].map { it.expectedAt })
+        assertSame(rows[0], rows[2])
+        val details = data.line("volan:hkir:R")!!
+        assertEquals(1, details.patterns.size)
+        assertEquals(listOf("emma:hkir:A", "emma:hkir:B"), details.patterns.single().stops.map { it.id })
+        assertNull(data.line("volan:hkir:missing"))
+    }
+
+    @Test fun parentStationBoardsExpandOnlyItsExplicitChildrenWithoutDuplicates() {
+        install(fixture(extra = mapOf("stops.txt" to """stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station
+P,Station,47.4,19.0,1,
+A,Alpha,47.4,19.0,0,P
+B,Beta,47.5,19.0,0,
+C,Gamma,47.6,19.0,0,
+D,Other platform,47.5,19.0001,0,
+""")))
+        val rows = OfflineTransitData(store).board(listOf("emma:hkir:P", "emma:hkir:A"), time("07:59:00"), 60)
+        assertEquals(listOf(time("08:00:00"), time("08:05:00")), rows.map { it.expectedAt })
+        assertTrue(rows.all { it.stopId == "emma:hkir:A" })
+        assertEquals(2, OfflineTransitData(store).board(listOf("emma:hkir:P"), time("07:59:00"), 60).size)
+    }
+
     @Test fun untrustedPackCannotReplaceInstalledPack() {
         val previous = install(fixture())
         val corrupt = store.staging().apply { writeText("corrupt") }
@@ -137,7 +165,7 @@ class OfflinePlanningTest {
         assertTrue(updates.any { it.step == OfflineImportStep.STOP_TIMES && it.records == 6L && it.fraction == 1f })
         assertTrue(updates.any { it.step == OfflineImportStep.VALIDATING && it.records == 6L })
         assertTrue(updates.any { it.step == OfflineImportStep.CATALOGUE })
-        assertEquals(6, updates.count { it.step == OfflineImportStep.INDEXING })
+        assertEquals(7, updates.count { it.step == OfflineImportStep.INDEXING })
         assertEquals(OfflineImportStep.OPTIMIZING, updates.last().step)
     }
 
@@ -685,6 +713,7 @@ trip_express,08:40:00,08:40:00,C,3,0,0
         // Opt-in integration run, independent of normal deterministic tests.
         Assume.assumeTrue(System.getenv("OFFLINE_REAL_FEEDS") == "1")
         val root = File("/tmp/bmenetrend-offline-feeds")
+        val first = System.getenv("OFFLINE_FEED_DATE")?.let(LocalDate::parse) ?: LocalDate.now(TripPlanner.zone)
         val stage = store.staging()
         val started = System.nanoTime()
         onOfflineDatabaseThread {
@@ -699,7 +728,7 @@ trip_express,08:40:00,08:40:00,C,3,0,0
                             lastStep = progress.step
                         }
                     }
-                    val importer = GtfsImporter(db, LocalDate.of(2026, 10, 24), LocalDate.of(2026, 11, 24), report)
+                    val importer = GtfsImporter(db, first.minusDays(2), first.plusDays(30), report)
                     importer.import(File(root, "volan.zip"), OfflineSource.defaults[0])
                     importer.import(File(root, "bkk.zip"), OfflineSource.defaults[1])
                     importer.finish(); db.setTransactionSuccessful()
@@ -712,18 +741,22 @@ trip_express,08:40:00,08:40:00,C,3,0,0
         android.database.sqlite.SQLiteDatabase.openDatabase(stage.path, null, android.database.sqlite.SQLiteDatabase.OPEN_READONLY).use { db ->
             db.rawQuery("""SELECT sa.source_id,sa.name,sa.lat,sa.lon,sb.source_id,sb.name,sb.lat,sb.lon FROM stop_times a
                 JOIN stops sa ON sa.id=a.stop JOIN trips t ON t.id=a.trip JOIN service_days d ON d.service=t.service
-                JOIN stop_times b ON b.trip=a.trip AND b.seq>a.seq JOIN stops sb ON sb.stop=b.stop
+                JOIN stop_times b ON b.trip=a.trip AND b.seq>a.seq JOIN stops sb ON sb.id=b.stop
                 WHERE sa.name LIKE '%Kelenföld vasútállomás%' AND sb.name LIKE '%Biatorbágy%'
-                AND d.day=? AND a.departure>=25200 AND a.pickup!=1 AND b.dropoff!=1 LIMIT 1""", arrayOf(LocalDate.of(2026,10,27).toEpochDay().toString())).use { c ->
+                AND d.day=? AND a.departure>=25200 AND a.pickup!=1 AND b.dropoff!=1 LIMIT 1""", arrayOf(first.toEpochDay().toString())).use { c ->
                 assertTrue("Expected a real Kelenföld–Biatorbágy bus", c.moveToFirst())
                 endpoints = PlannerEndpoint(stopAppId(c.getString(0)), c.getString(1), "", GeoPoint(c.getDouble(2),c.getDouble(3))) to
                     PlannerEndpoint(stopAppId(c.getString(4)), c.getString(5), "", GeoPoint(c.getDouble(6),c.getDouble(7)))
             }
         }
-        val meta = OfflinePackMetadata(java.util.UUID.randomUUID().toString(), Instant.now(), LocalDate.of(2026,10,26), LocalDate.of(2026,11,24),stage.length(),167_000_000,1,1,listOf("Volán","BKK"),OfflinePackStore.digest(stage))
+        val meta = OfflinePackMetadata(java.util.UUID.randomUUID().toString(), Instant.now(), first, first.plusDays(29),stage.length(),167_000_000,1,1,listOf("Volán","BKK"),OfflinePackStore.digest(stage))
+        System.getenv("OFFLINE_EXPORT_PACK")?.let { path ->
+            stage.copyTo(File(path), overwrite = true)
+            File("$path.json").writeText(meta.json().toString())
+        }
         store.activate(stage,meta)
         endpoints?.let { (a,b) ->
-            val start = Instant.parse("2026-10-27T06:00:00Z")
+            val start = first.atTime(7, 0).atZone(TripPlanner.zone).toInstant()
             val routingStarted = System.nanoTime()
             try {
                 val plan = kotlinx.coroutines.withTimeout(30_000) { OfflineTripPlanner(store).plan(a,b,start,start) }
@@ -731,5 +764,97 @@ trip_express,08:40:00,08:40:00,C,3,0,0
                 assertTrue(plan.itineraries.isNotEmpty())
             } catch (_: kotlinx.coroutines.TimeoutCancellationException) { fail("Real offline route exceeded 30 seconds") }
         }
+    }
+
+    @Test fun offlineFixtureRetainsTramTrolleyBusTypesAndParentServiceMetadata() {
+        val stops = """stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station,platform_code
+STATION,Central Hub,47.4,19.0,1,,
+TRAM_P,Central Hub,47.401,19.001,0,STATION,1
+TROLLEY_P,Central Hub,47.402,19.002,0,STATION,2
+BUS_P,Central Hub,47.403,19.003,0,STATION,3
+OUTER,Outer Terminus,47.5,19.0,0,,
+"""
+        val routes = """route_id,route_short_name,route_long_name,route_type
+R_TRAM,47,Tram 47,0
+R_TROLLEY,72,Trolley 72,11
+R_BUS,9,Bus 9,3
+"""
+        val trips = """route_id,service_id,trip_id,trip_headsign
+R_TRAM,weekday,trip_tram,Out
+R_TROLLEY,weekday,trip_trolley,Out
+R_BUS,weekday,trip_bus,Out
+"""
+        val stopTimes = """trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type
+trip_tram,08:00:00,08:00:00,TRAM_P,1,0,0
+trip_tram,08:20:00,08:20:00,OUTER,2,0,0
+trip_trolley,08:05:00,08:05:00,TROLLEY_P,1,0,0
+trip_trolley,08:25:00,08:25:00,OUTER,2,0,0
+trip_bus,08:10:00,08:10:00,BUS_P,1,0,0
+trip_bus,08:30:00,08:30:00,OUTER,2,0,0
+"""
+        val file = fixture(extra = mapOf(
+            "stops.txt" to stops,
+            "routes.txt" to routes,
+            "trips.txt" to trips,
+            "stop_times.txt" to stopTimes
+        ))
+        install(file)
+
+        val (allStops, allRoutes) = OfflineTransitData(store).catalogue()
+        val stopMap = allStops.associateBy { it.id }
+
+        val tramPlatform = stopMap.getValue("emma:hkir:TRAM_P")
+        val trolleyPlatform = stopMap.getValue("emma:hkir:TROLLEY_P")
+        val busPlatform = stopMap.getValue("emma:hkir:BUS_P")
+        val parentStation = stopMap.getValue("emma:hkir:STATION")
+
+        assertEquals("TRAM", tramPlatform.transportMode)
+        assertEquals("TROLLEYBUS", trolleyPlatform.transportMode)
+        assertEquals("BUS", busPlatform.transportMode)
+
+        assertEquals("emma:hkir:STATION", tramPlatform.parentStationId)
+        assertEquals("emma:hkir:STATION", trolleyPlatform.parentStationId)
+        assertEquals("emma:hkir:STATION", busPlatform.parentStationId)
+
+        assertEquals("1", tramPlatform.platformCode)
+        assertEquals("2", trolleyPlatform.platformCode)
+        assertEquals("3", busPlatform.platformCode)
+
+        assertTrue(parentStation.station)
+        assertEquals("TRAM", parentStation.transportMode)
+        assertTrue(parentStation.routeIds.containsAll(listOf("volan:hkir:R_TRAM", "volan:hkir:R_TROLLEY", "volan:hkir:R_BUS")))
+        assertEquals(3, allRoutes.size)
+    }
+
+    @Test fun bkkH5FixtureClassifiedAndColouredCorrectly() {
+        val stops = """stop_id,stop_name,stop_lat,stop_lon
+H5_A,Batthyány tér H,47.506,19.039
+H5_B,Szentendre H,47.667,19.075
+"""
+        val routes = "H5,H5,Szentendre,2\n"
+        val trips = "H5,weekday,trip_h5,Szentendre\n"
+        val stopTimes = """trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type
+trip_h5,08:00:00,08:00:00,H5_A,1,0,0
+trip_h5,08:40:00,08:40:00,H5_B,2,0,0
+"""
+        val file = fixture(extra = mapOf(
+            "stops.txt" to stops,
+            "routes.txt" to "route_id,route_short_name,route_long_name,route_type\n$routes",
+            "trips.txt" to "route_id,service_id,trip_id,trip_headsign\n$trips",
+            "stop_times.txt" to stopTimes
+        ))
+        install(file, source = OfflineSource.defaults[1])
+
+        val (allStops, allRoutes) = OfflineTransitData(store).catalogue()
+        val h5Route = allRoutes.single { it.number == "H5" }
+        assertEquals("SUBURBAN_RAILWAY", h5Route.transportMode)
+        assertEquals("7B116B", h5Route.color)
+
+        val stopA = allStops.single { it.id == "emma:BKK:H5_A" }
+        assertEquals("SUBURBAN_RAILWAY", stopA.transportMode)
+        assertEquals(listOf(h5Route.id), stopA.routeIds)
+
+        val palette = hu.app.bmenetrend.map.StopMarkerColors.palette(listOf(stopA), allRoutes.associateBy { it.id })
+        assertEquals(listOf(0xFF7B116B.toInt()), palette)
     }
 }

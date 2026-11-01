@@ -15,11 +15,12 @@ android {
         applicationId = "hu.app.bmenetrend"
         minSdk = 26
         targetSdk = 36
-        versionCode = 8
-        versionName = "0.4.0"
+        versionCode = 9
+        versionName = "0.5.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures { compose = true; buildConfig = true }
+    testBuildType = "development"
     // Hungarian Material resources must also be delivered to non-Hungarian devices.
     bundle { language { enableSplit = false } }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
@@ -50,7 +51,11 @@ android {
     androidResources.noCompress += listOf("pmtiles")
     splits {
         abi {
-            isEnable = !isBuildingBundle
+            // AGP requires one resource package for AABs when shrinking resources.
+            // Build APK splits and bundles in separate Gradle invocations.
+            isEnable = gradle.startParameter.taskNames.none {
+                it.substringAfterLast(':').startsWith("bundle", ignoreCase = true)
+            }
             reset()
             include("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
             isUniversalApk = true
@@ -116,5 +121,9 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
     testImplementation("org.robolectric:robolectric:4.17")
     testImplementation("androidx.compose.ui:ui-test-junit4")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("com.google.errorprone:error_prone_annotations:2.30.0")
+    androidTestImplementation("junit:junit:4.13.2")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+    "developmentImplementation"("androidx.compose.ui:ui-test-manifest")
 }

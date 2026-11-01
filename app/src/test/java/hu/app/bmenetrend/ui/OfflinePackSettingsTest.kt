@@ -34,6 +34,17 @@ class OfflinePackSettingsTest {
         compose.onNode(hasText("Offline mód") and hasClickAction()).performClick()
         assertTrue(enabled); assertEquals(0, downloads)
     }
+
+    @Test fun disconnectedModeExplainsFallbackAndCannotBeSwitchedOnline() {
+        var toggled = false
+        compose.setContent { ViaBuszTheme { androidx.compose.foundation.layout.Column {
+            OfflinePackSettings(UiState(offlineMode = true, internetAvailable = false, offlinePack = OfflinePackState(meta, OfflinePackPhase.READY)),
+                { toggled = true }, {}, {}, {}, {})
+        } } }
+        compose.onNode(hasText("Offline mód") and hasClickAction()).assertIsNotEnabled()
+        compose.onNodeWithText("Nincs internetelérés. A letöltött menetrendcsomag továbbra is használható.").assertExists()
+        assertFalse(toggled)
+    }
     @Test fun processingDoesNotPresentFrozenDownloadBytesAsInstallationProgress() {
         compose.setContent { ViaBuszTheme { androidx.compose.foundation.layout.Column {
             OfflinePackSettings(UiState(offlineMode = false, offlinePack = OfflinePackState(phase = OfflinePackPhase.IMPORTING,

@@ -30,7 +30,7 @@ class OfflinePackStore(context: Context) {
         }
     }
     fun <T> read(block: (SQLiteDatabase, OfflinePackMetadata) -> T): T = synchronized(lock) {
-        val meta = metadata() ?: error("Offline pack is not installed")
+        val meta = metadata() ?: throw OfflinePackUnavailable()
         SQLiteDatabase.openDatabase(File(root, "${meta.id}.db").path, null, SQLiteDatabase.OPEN_READONLY).use { db -> block(db, meta) }
     }
 
@@ -39,6 +39,9 @@ class OfflinePackStore(context: Context) {
         // verifiedDigest: digest of this exact file computed by the caller (single pass over a
         // ~388 MB pack instead of one per verification site). When absent, recompute here.
         require((verifiedDigest ?: digest(staging)) == metadata.sha256) { "Pack checksum mismatch" }
+        // Bulk import uses synchronous=OFF only while staging is disposable.
+        // Flush the completed database before publishing a durable active pointer.
+        java.io.FileOutputStream(staging, true).use { it.fd.sync() }
         SQLiteDatabase.openDatabase(staging.path, null, SQLiteDatabase.OPEN_READONLY).use { db ->
             require(db.version == OFFLINE_FORMAT)
             db.rawQuery("PRAGMA quick_check", null).use { require(it.moveToFirst() && it.getString(0) == "ok") }

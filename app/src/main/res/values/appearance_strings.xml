@@ -1,4 +1,8 @@
 <resources>
+    <string name="theme_title">Megjelenés</string>
+    <string name="theme_system">Rendszerbeállítás</string>
+    <string name="theme_light">Világos mód</string>
+    <string name="theme_dark">Sötét mód</string>
     <string name="accent_title">Kiemelőszín</string>
     <string name="accent_hint">Válaszd ki az alkalmazás színeit. A Rendszer beállítás Android 12-től a háttérkép színeit követi.</string>
     <string name="accent_system">Rendszer</string>

@@ -24,29 +24,27 @@ class OfflinePackRepository(private val context: Context, scope: CoroutineScope)
     private val stateLock = Any()
     private var mutationEpoch = 0L
     private var deleting = false
+    private var importingCustom = false
 
     init {
         scope.launch {
             work.getWorkInfosByTagFlow(OfflinePackWorker.TAG).collectLatest { all ->
                 val emissionEpoch = synchronized(stateLock) {
-                    if (deleting) return@collectLatest
+                    if (deleting || importingCustom) return@collectLatest
                     mutationEpoch
                 }
                 val selectedId = preferences.getString("work_id", null)
-                val info = all.firstOrNull { it.state == WorkInfo.State.RUNNING } ?: all.firstOrNull { it.id.toString() == selectedId }
+                val downloadId = preferences.getString("download_work_id", null)
+                val failedDownload = all.firstOrNull { it.id.toString() == downloadId && it.state == WorkInfo.State.FAILED }
+                val info = all.firstOrNull { it.state == WorkInfo.State.RUNNING } ?: failedDownload ?: all.firstOrNull { it.id.toString() == selectedId }
                 val meta = withContext(Dispatchers.IO) { store.metadata() }
                 synchronized(stateLock) {
-                    if (deleting || emissionEpoch != mutationEpoch) return@collectLatest
+                    if (deleting || importingCustom || emissionEpoch != mutationEpoch) return@collectLatest
                     val currentPhase = mutable.value.phase
-                    val phase = when {
-                        currentPhase == OfflinePackPhase.IMPORTING && (info == null || info.state.isFinished) -> OfflinePackPhase.IMPORTING
-                        currentPhase == OfflinePackPhase.DOWNLOADING && (info == null || info.state.isFinished) -> OfflinePackPhase.DOWNLOADING
-                        info == null -> if (meta == null) OfflinePackPhase.MISSING else OfflinePackPhase.READY
-                        !info.state.isFinished -> if (info.state == WorkInfo.State.RUNNING && info.progress.getString("phase") == "IMPORTING") OfflinePackPhase.IMPORTING else OfflinePackPhase.DOWNLOADING
-                        info.state == WorkInfo.State.FAILED -> OfflinePackPhase.FAILED
-                        meta != null -> OfflinePackPhase.READY
-                        else -> OfflinePackPhase.MISSING
-                    }
+                    // Ignore the brief pre-enqueue emission, but always consume terminal
+                    // states. Keeping IMPORTING for a finished worker left Settings stuck.
+                    if (info == null && selectedId != null && (currentPhase == OfflinePackPhase.IMPORTING || currentPhase == OfflinePackPhase.DOWNLOADING)) return@collectLatest
+                    val phase = offlinePackPhase(info?.state, info?.progress?.getString("phase") == "IMPORTING", meta != null)
                     val step = info?.progress?.getString("import_step")?.let { runCatching { OfflineImportStep.valueOf(it) }.getOrNull() }
                     val detail = step?.let { OfflineImportProgress(it, info?.progress?.getLong("import_records", 0) ?: 0, info?.progress?.getLong("import_completed", 0) ?: 0, info?.progress?.getLong("import_total", 0) ?: 0) }
                     mutable.value = mutable.value.copy(
@@ -66,15 +64,12 @@ class OfflinePackRepository(private val context: Context, scope: CoroutineScope)
 
     fun download(wifiOnly: Boolean) {
         if (!state.value.loaded || state.value.busy || NetworkAccessPolicy.offline.value) return
-        val request = OneTimeWorkRequestBuilder<OfflinePackWorker>().addTag(OfflinePackWorker.TAG).setConstraints(Constraints.Builder()
-            .setRequiredNetworkType(if (wifiOnly) NetworkType.UNMETERED else NetworkType.CONNECTED).setRequiresStorageNotLow(true).build()).build()
         synchronized(stateLock) {
             if (deleting) return
             ++mutationEpoch
             mutable.value = state.value.copy(phase = OfflinePackPhase.DOWNLOADING, error = null, wifiOnly = wifiOnly, importProgress = null)
         }
-        preferences.edit().putString("work_id", request.id.toString()).apply()
-        work.enqueueUniqueWork(OfflinePackWorker.WORK_NAME, ExistingWorkPolicy.KEEP, request)
+        enqueueDownload(context, wifiOnly)
     }
 
     fun setAutomaticUpdates(enabled: Boolean) {
@@ -112,7 +107,7 @@ class OfflinePackRepository(private val context: Context, scope: CoroutineScope)
                 store.clearDownloads()
                 hu.app.bmenetrend.map.OfflineBasemap.deleteWorkingCopy(context.applicationContext)
             }
-            preferences.edit().remove("work_id").apply()
+            preferences.edit().remove("work_id").remove("download_work_id").apply()
         } finally {
             synchronized(stateLock) {
                 deleting = false
@@ -127,6 +122,7 @@ class OfflinePackRepository(private val context: Context, scope: CoroutineScope)
             check(state.value.loaded && !state.value.busy && !NetworkAccessPolicy.offline.value)
             synchronized(stateLock) {
                 if (deleting) return@withLock
+                importingCustom = true
                 ++mutationEpoch
                 mutable.value = state.value.copy(phase = OfflinePackPhase.IMPORTING, source = "GTFS", error = null)
             }
@@ -148,6 +144,7 @@ class OfflinePackRepository(private val context: Context, scope: CoroutineScope)
                 synchronized(stateLock) {
                     if (!deleting) {
                         ++mutationEpoch
+                        importingCustom = false
                         mutable.value = state.value.copy(phase = if (state.value.metadata == null) OfflinePackPhase.MISSING else OfflinePackPhase.READY)
                     }
                 }
@@ -156,11 +153,48 @@ class OfflinePackRepository(private val context: Context, scope: CoroutineScope)
                 synchronized(stateLock) {
                     if (!deleting) {
                         ++mutationEpoch
+                        importingCustom = false
                         mutable.value = state.value.copy(phase = OfflinePackPhase.FAILED, error = "import")
                     }
                 }
                 throw error
-            } finally { staged.delete() }
+            } finally {
+                synchronized(stateLock) { importingCustom = false }
+                staged.delete()
+            }
         }
     }
+
+    companion object {
+        internal fun downloadRequests(wifiOnly: Boolean): Pair<OneTimeWorkRequest, OneTimeWorkRequest> {
+            val download = OneTimeWorkRequestBuilder<OfflinePackWorker>().addTag(OfflinePackWorker.TAG)
+                .setInputData(workDataOf("stage" to "download"))
+                // CONNECTED also requires Android's VALIDATED bit on API 26+.
+                // For mobile-enabled downloads the app's verified connectivity
+                // policy owns this check; otherwise usable captive-check-blocked
+                // networks can leave a request queued forever.
+                .setConstraints(Constraints.Builder().setRequiredNetworkType(if (wifiOnly) NetworkType.UNMETERED else NetworkType.NOT_REQUIRED)
+                    .setRequiresStorageNotLow(true).build())
+                .setBackoffCriteria(BackoffPolicy.LINEAR, 10, java.util.concurrent.TimeUnit.SECONDS).build()
+            val index = OneTimeWorkRequestBuilder<OfflinePackWorker>().addTag(OfflinePackWorker.TAG)
+                .setInputData(workDataOf("stage" to "index"))
+                .setConstraints(Constraints.Builder().setRequiresStorageNotLow(true).build()).build()
+            return download to index
+        }
+
+        internal fun enqueueDownload(context: Context, wifiOnly: Boolean) {
+            val (download, index) = downloadRequests(wifiOnly)
+            context.getSharedPreferences("offline", 0).edit().putString("work_id", index.id.toString())
+                .putString("download_work_id", download.id.toString()).apply()
+            WorkManager.getInstance(context).beginUniqueWork(OfflinePackWorker.WORK_NAME, ExistingWorkPolicy.KEEP, download)
+                .then(index).enqueue()
+        }
+    }
+}
+
+internal fun offlinePackPhase(work: WorkInfo.State?, importing: Boolean, installed: Boolean): OfflinePackPhase = when {
+    work == WorkInfo.State.FAILED -> OfflinePackPhase.FAILED
+    work != null && !work.isFinished -> if (work == WorkInfo.State.RUNNING && importing) OfflinePackPhase.IMPORTING else OfflinePackPhase.DOWNLOADING
+    installed -> OfflinePackPhase.READY
+    else -> OfflinePackPhase.MISSING
 }

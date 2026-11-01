@@ -7,12 +7,14 @@
     <string name="offline_mode">Offline mód</string>
     <string name="offline_mode_hint">Internetkapcsolat nélkül az alkalmazás automatikusan a letöltött csomagra vált, majd a kapcsolat helyreállásakor visszatér online módba. A kézzel bekapcsolt offline mód bekapcsolva marad.</string>
     <string name="offline_download_first">Az offline mód bekapcsolásához előbb töltsd le a csomagot.</string>
+    <string name="offline_pack_missing">Nincs telepített offline menetrendcsomag. Csatlakozz az internethez, és töltsd le a Beállításokban.</string>
+    <string name="offline_automatic">Nincs internetelérés. A letöltött menetrendcsomag továbbra is használható.</string>
     <string name="offline_wifi">Letöltés csak Wi-Fi-n</string>
     <string name="offline_download">Offline csomag letöltése</string>
     <string name="offline_update">Csomag frissítése</string>
     <string name="offline_cancel">Mégse</string>
     <string name="offline_delete">Offline csomag törlése</string>
-    <string name="offline_delete_hint">A csomag és a letöltött forrásfájlok törlődnek. Az offline mód kikapcsol. A kedvenceid megmaradnak. A helyi térképmásolat a térkép bezárása után törlődik; a beépített térkép az alkalmazás része marad.</string>
+    <string name="offline_delete_hint">A csomag és a letöltött forrásfájlok törlődnek. Új csomag letöltéséig az offline menetrendek nem lesznek elérhetők. A kedvenceid megmaradnak. A helyi térképmásolat a térkép bezárása után törlődik; a beépített térkép az alkalmazás része marad.</string>
     <string name="offline_import">Saját GTFS-fájl hozzáadása</string>
     <string name="offline_imported_feed">Importált GTFS-menetrend</string>
     <string name="offline_preparing">Letöltés előkészítése</string>

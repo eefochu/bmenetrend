@@ -1,12 +1,27 @@
 package hu.app.bmenetrend.map
 
 import hu.app.bmenetrend.data.TransitStop
+import hu.app.bmenetrend.data.TransitRoute
+import hu.app.bmenetrend.data.HevSupport
 import kotlin.math.*
 
 object StopMarkerColors {
-    fun palette(stops: List<TransitStop>): List<Int> = stops.flatMap { stop ->
-        stop.providerIds.map { StopMarkerLayout.color(it,stop.transportMode) }
+    fun palette(stops: List<TransitStop>, routes: Map<String, TransitRoute> = emptyMap()): List<Int> = stops.flatMap { stop ->
+        val serving = stop.routeIds.mapNotNull(routes::get)
+        if (serving.isEmpty()) stop.providerIds.map { StopMarkerLayout.color(it, stop.transportMode) }
+        else serving.map(::serviceColor) + stop.providerIds.filter { provider -> serving.none { it.providerId == provider } }
+            .map { StopMarkerLayout.color(it, stop.transportMode) }
     }.distinct().sorted()
+
+    private val hexColor = Regex("[a-fA-F0-9]{6}")
+    private fun serviceColor(route: TransitRoute): Int {
+        MetroLineStyle.forLine(route.number, route.transportMode)?.let { return it.color }
+        if (route.transportMode == "SUBURBAN_RAILWAY") {
+            val color = route.color?.takeIf(hexColor::matches) ?: HevSupport.number(route.number, route.name)?.let(HevSupport::color)
+            if (color != null) return (0xFF000000L or color.toLong(16)).toInt()
+        }
+        return StopMarkerLayout.color(route.providerId, route.transportMode)
+    }
 
     data class Sector(val color: Int,val points: List<StopDirections.Point>)
 

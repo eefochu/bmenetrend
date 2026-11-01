@@ -1,5 +1,9 @@
 # Highlighting performance investigation — 2026-10-26
 
+For the later physical-device investigation, see [Huawei P20 performance, 2026-11-01](PERFORMANCE_HUAWEI_2026-11-01.md).
+
+For the online routing fix and emulator verification, see [Trip planner performance, 2026-11-01](TRIP_PLANNER_PERFORMANCE.md).
+
 The timings below describe revision `8d4da3c` (PR #17). A subsequent station-layout change replaces its four-dp viewport fitting with cached, camera-independent offsets and equal-size rings; it does not reuse these results as a new frame-rate claim.
 
 This is a targeted release/R8 emulator investigation, following the Android performance skills. The user requested emulator checks. It is not a physical-device Macrobenchmark result or a claim that phone jank is solved.

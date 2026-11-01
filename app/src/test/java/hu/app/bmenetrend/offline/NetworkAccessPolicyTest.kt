@@ -166,30 +166,58 @@ class NetworkAccessPolicyTest {
     }
 
     @Test
-    fun missingPackPreventsFakeOfflineMode() {
+    fun missingPackEntersDisconnectedModeUntilInternetReturns() {
         store.delete()
         assertNull(store.metadata())
         NetworkAccessPolicy.initialize(context)
         NetworkAccessPolicy.onConnectivityChanged(false)
 
-        // Without pack data, offline mode must not be entered
+        // Lack of validated internet activates offline mode even without an installed pack
+        assertTrue(NetworkAccessPolicy.offline.value)
+
+        // Automatic mode returns online on internet recovery
+        NetworkAccessPolicy.onConnectivityChanged(true)
         assertFalse(NetworkAccessPolicy.offline.value)
     }
 
     @Test
-    fun packActivationWhileDisconnectedTriggersFallbackAndDeletionClearsIt() {
+    fun packChangesDoNotOverrideMissingInternet() {
         store.delete()
         NetworkAccessPolicy.initialize(context)
         NetworkAccessPolicy.onConnectivityChanged(false)
-        assertFalse(NetworkAccessPolicy.offline.value)
+        assertTrue(NetworkAccessPolicy.offline.value)
 
-        // Activating a pack while disconnected must trigger automatic offline fallback
+        // Activating a pack while disconnected maintains offline mode
         installDummyPack()
         assertTrue(NetworkAccessPolicy.offline.value)
 
-        // Deleting the pack while disconnected must clear offline mode
+        // Deleting the pack while disconnected must not pretend connectivity is restored
         store.delete()
+        assertTrue(NetworkAccessPolicy.offline.value)
+
+        // Automatic mode returns online on internet recovery
+        NetworkAccessPolicy.onConnectivityChanged(true)
         assertFalse(NetworkAccessPolicy.offline.value)
+    }
+
+    @Test
+    fun clearingManualPreferenceDuringNoInternetStaysOfflineUntilRecovery() {
+        NetworkAccessPolicy.setOffline(context, true)
+        assertTrue(NetworkAccessPolicy.offline.value)
+        assertTrue(context.getSharedPreferences("offline", 0).getBoolean("enabled", false))
+
+        NetworkAccessPolicy.onConnectivityChanged(false)
+        assertTrue(NetworkAccessPolicy.offline.value)
+
+        // Clearing manual preference while disconnected must not enable network
+        NetworkAccessPolicy.setOffline(context, false)
+        assertFalse(context.getSharedPreferences("offline", 0).getBoolean("enabled", false))
+        assertTrue(NetworkAccessPolicy.offline.value)
+
+        // Automatic mode returns online on internet recovery
+        NetworkAccessPolicy.onConnectivityChanged(true)
+        assertFalse(NetworkAccessPolicy.offline.value)
+        assertFalse(context.getSharedPreferences("offline", 0).getBoolean("enabled", false))
     }
 
     @Test
@@ -241,7 +269,7 @@ class NetworkAccessPolicyTest {
         val prevCallback = callbackField.get(NetworkAccessPolicy)
         callbackField.set(NetworkAccessPolicy, null)
         try {
-            NetworkAccessPolicy.monitorConnectivity(context)
+            NetworkAccessPolicy.monitorConnectivity(context) { false }
             val observer = callbackField.get(NetworkAccessPolicy) as ConnectivityManager.NetworkCallback
             assertNotNull(observer)
 
@@ -255,7 +283,94 @@ class NetworkAccessPolicyTest {
             NetworkAccessPolicy.onConnectivityChanged(true)
             assertFalse(NetworkAccessPolicy.offline.value)
         } finally {
+            (callbackField.get(NetworkAccessPolicy) as? ConnectivityManager.NetworkCallback)?.let {
+                it.onUnavailable()
+                manager.unregisterNetworkCallback(it)
+            }
             callbackField.set(NetworkAccessPolicy, prevCallback)
+        }
+    }
+
+    @Test fun captiveNetworkAndDefaultNetworkHandoverUseCallbackCapabilities() {
+        val manager = context.getSystemService(ConnectivityManager::class.java)
+        val field = NetworkAccessPolicy::class.java.getDeclaredField("callback").apply { isAccessible = true }
+        val previous = field.get(NetworkAccessPolicy)
+        field.set(NetworkAccessPolicy, null)
+        try {
+            NetworkAccessPolicy.monitorConnectivity(context) { false }
+            val callback = field.get(NetworkAccessPolicy) as ConnectivityManager.NetworkCallback
+            val wifi = ShadowNetwork.newInstance(100)
+            val mobile = ShadowNetwork.newInstance(101)
+            val captive = ShadowNetworkCapabilities.newInstance().also {
+                Shadows.shadowOf(it).addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            }
+            val validated = ShadowNetworkCapabilities.newInstance().also {
+                Shadows.shadowOf(it).addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                Shadows.shadowOf(it).addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+            }
+            callback.onAvailable(wifi)
+            callback.onCapabilitiesChanged(wifi, captive)
+            assertTrue("Connected Wi-Fi without internet must use offline mode", NetworkAccessPolicy.offline.value)
+            callback.onAvailable(mobile)
+            callback.onCapabilitiesChanged(mobile, validated)
+            assertFalse("Validated mobile data must restore online mode", NetworkAccessPolicy.offline.value)
+            callback.onLost(wifi)
+            assertFalse("An old network loss cannot override the new default network", NetworkAccessPolicy.offline.value)
+            callback.onLost(mobile)
+            assertTrue(NetworkAccessPolicy.offline.value)
+        } finally {
+            (field.get(NetworkAccessPolicy) as? ConnectivityManager.NetworkCallback)?.let {
+                it.onUnavailable()
+                manager.unregisterNetworkCallback(it)
+            }
+            field.set(NetworkAccessPolicy, previous)
+        }
+    }
+
+    @Test fun verifiedProviderRecoversUnvalidatedInternetButManualModeSuppressesProbes() {
+        val manager = context.getSystemService(ConnectivityManager::class.java)
+        Shadows.shadowOf(manager).clearAllNetworks()
+        val field = NetworkAccessPolicy::class.java.getDeclaredField("callback").apply { isAccessible = true }
+        val previous = field.get(NetworkAccessPolicy)
+        field.set(NetworkAccessPolicy, null)
+        val attempts = java.util.concurrent.atomic.AtomicInteger()
+        val verified = kotlinx.coroutines.CompletableDeferred<Boolean>()
+        NetworkAccessPolicy.setOffline(context, true)
+        try {
+            NetworkAccessPolicy.monitorConnectivity(context) {
+                attempts.incrementAndGet()
+                verified.await()
+            }
+            val observer = field.get(NetworkAccessPolicy) as ConnectivityManager.NetworkCallback
+            val network = ShadowNetwork.newInstance(103)
+            val capabilities = ShadowNetworkCapabilities.newInstance().also {
+                Shadows.shadowOf(it).addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            }
+            observer.onAvailable(network)
+            observer.onCapabilitiesChanged(network, capabilities)
+            assertEquals("Manual offline must not start an HTTP health check", 0, attempts.get())
+            NetworkAccessPolicy.setOffline(context, false)
+            fun awaitCondition(condition: () -> Boolean) {
+                val deadline = System.nanoTime() + 3_000_000_000L
+                while (!condition() && System.nanoTime() < deadline) Thread.sleep(5)
+                assertTrue(condition())
+            }
+            awaitCondition { attempts.get() == 1 }
+            assertTrue(NetworkAccessPolicy.offline.value)
+            verified.complete(true)
+            awaitCondition { !NetworkAccessPolicy.offline.value }
+            NetworkAccessPolicy.setOffline(context, true)
+            assertTrue(NetworkAccessPolicy.offline.value)
+            assertEquals(1, attempts.get())
+            observer.onLost(network)
+            NetworkAccessPolicy.setOffline(context, false)
+            assertTrue("No network must override an old successful probe", NetworkAccessPolicy.offline.value)
+        } finally {
+            (field.get(NetworkAccessPolicy) as? ConnectivityManager.NetworkCallback)?.let {
+                it.onUnavailable()
+                manager.unregisterNetworkCallback(it)
+            }
+            field.set(NetworkAccessPolicy, previous)
         }
     }
 }

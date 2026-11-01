@@ -20,6 +20,7 @@ import java.time.Instant
 @Immutable
 data class UiState(
     val offlineMode: Boolean = hu.app.bmenetrend.offline.NetworkAccessPolicy.offline.value,
+    val internetAvailable: Boolean = hu.app.bmenetrend.offline.NetworkAccessPolicy.internetAvailable.value,
     val offlinePack: hu.app.bmenetrend.offline.OfflinePackState = hu.app.bmenetrend.offline.OfflinePackState(),
     val showNearby: Boolean = true,
     val nearbyStations: List<hu.app.bmenetrend.data.NearbyStation> = emptyList(),
@@ -73,6 +74,7 @@ data class UiState(
     val lineCatalogueStatus: String? = null,
     val nationwideNetwork: Boolean = true,
     val accentColor: AccentColor = AccentColor.SYSTEM,
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val customAccentArgb: Int = 0xFF6750A4.toInt(),
     val emmaStatus: String? = null,
     val cameraRequest: Int = 0,

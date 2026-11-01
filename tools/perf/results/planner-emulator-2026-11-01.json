@@ -1,0 +1,52 @@
+{
+  "date": "2026-11-01",
+  "device": "Medium_Phone Android 16 emulator, arm64-v8a",
+  "physical_device_used": false,
+  "apk_sha256": "8fd2cc2fa8e75781e5763fcbea52b86274f13ed4030f54d6b913644aa22d7f8d",
+  "method": "One accessibility-visible sample per scenario; includes driver overhead. Different service/cache states; not a controlled before/after benchmark or a physical-device measurement. Online mode; explicit station endpoints.",
+  "samples": [
+    {
+      "origin": "Herceghalom",
+      "destination": "Budapest-Nyugati",
+      "first_itinerary_seconds": 0.997,
+      "measurement": "Accessibility visibility after Device-panel submission; includes automation overhead",
+      "status": "itinerary",
+      "scenario": "Prior release, fresh submission"
+    },
+    {
+      "origin": "Herceghalom",
+      "destination": "Budapest-Nyugati",
+      "first_itinerary_seconds": 0.875,
+      "measurement": "Accessibility visibility after Device-panel submission; includes automation overhead",
+      "status": "itinerary",
+      "scenario": "Final release, fresh submission"
+    },
+    {
+      "origin": "Herceghalom",
+      "destination": "Budapest-Nyugati",
+      "first_itinerary_seconds": 0.546,
+      "measurement": "Accessibility visibility after Device-panel submission; includes automation overhead",
+      "status": "itinerary",
+      "scenario": "Final release, reselected form with prefetch"
+    },
+    {
+      "origin": "Budapest-Kelenföld",
+      "destination": "Budapest-Keleti",
+      "first_itinerary_seconds": 0.579,
+      "measurement": "Accessibility visibility after Device-panel submission; includes automation overhead",
+      "status": "itinerary",
+      "scenario": "Final release, newly selected endpoints with prefetch"
+    }
+  ],
+  "checks": {
+    "user_route_details": "Herceghalom -> Budapest-Nyugati details opened",
+    "forced_refresh": "Herceghalom -> Budapest-Nyugati returned an itinerary after refresh",
+    "other_route": "Budapest-Kelenföld -> Budapest-Keleti returned itineraries",
+    "tests": 534,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 2,
+    "lintRelease": "passed",
+    "assembleRelease": "passed"
+  }
+}

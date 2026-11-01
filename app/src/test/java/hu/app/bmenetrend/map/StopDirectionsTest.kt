@@ -71,4 +71,49 @@ class StopDirectionsTest {
         assertEquals(38.0,two.first().points[1].y,.00001)
         assertEquals(62.0,two.first().points[two.first().points.lastIndex-1].y,.00001)
     }
+    @Test fun mixedBkkTramAndBusPlusVolanSplitColoursAndDeduplication() {
+        val tram1 = TransitRoute("t1", "4", "4", emptyList(), "bkk", transportMode = "TRAM")
+        val tram2 = TransitRoute("t2", "6", "6", emptyList(), "bkk", transportMode = "TRAM")
+        val bus1 = TransitRoute("b1", "7", "7", emptyList(), "bkk", transportMode = "BUS")
+        val bus2 = TransitRoute("b2", "8", "8", emptyList(), "bkk", transportMode = "BUS")
+        val volanBus = TransitRoute("v1", "762", "762", emptyList(), "volan", transportMode = "BUS")
+        val routes = listOf(tram1, tram2, bus1, bus2, volanBus).associateBy { it.id }
+
+        val stopAll = stop("mixed", 47.5).copy(
+            routeIds = listOf("t1", "t2", "b1", "b2", "v1"),
+            providerIds = listOf("bkk", "volan")
+        )
+        val expected = listOf(0xFF199DCF.toInt(), 0xFFF9B900.toInt(), 0xFFFFD800.toInt()).sorted()
+        assertEquals(expected, StopMarkerColors.palette(listOf(stopAll), routes))
+
+        val stopUncovered = stop("uncovered", 47.5).copy(
+            routeIds = listOf("t1", "b1"),
+            providerIds = listOf("bkk", "volan")
+        )
+        assertEquals(expected, StopMarkerColors.palette(listOf(stopUncovered), routes))
+    }
+    @Test fun metroPerLineAndHevColoursWithUnknownRouteFallback() {
+        val m1 = TransitRoute("m1", "M1", "M1", emptyList(), "bkk", transportMode = "SUBWAY")
+        val m2 = TransitRoute("m2", "2", "M2", emptyList(), "bkk", transportMode = "SUBWAY")
+        val m3 = TransitRoute("m3", "M3", "M3", emptyList(), "bkk", transportMode = "SUBWAY")
+        val m4 = TransitRoute("m4", "4", "M4", emptyList(), "bkk", transportMode = "SUBWAY")
+        val mUnknown = TransitRoute("mX", "M9", "M9", emptyList(), "bkk", transportMode = "SUBWAY")
+        val hev5 = TransitRoute("h5", "H5", "H5", emptyList(), "bkk", transportMode = "SUBURBAN_RAILWAY")
+        val hev6Explicit = TransitRoute("h6", "H6", "H6", emptyList(), "hev", transportMode = "SUBURBAN_RAILWAY", color = "824B00")
+        val suburbanUnknown = TransitRoute("sub", "S30", "S30", emptyList(), "mav", transportMode = "SUBURBAN_RAILWAY")
+        val routes = listOf(m1, m2, m3, m4, mUnknown, hev5, hev6Explicit, suburbanUnknown).associateBy { it.id }
+
+        assertEquals(listOf(0xFFFFD800.toInt()), StopMarkerColors.palette(listOf(stop("s1", 47.5).copy(routeIds = listOf("m1"))), routes))
+        assertEquals(listOf(0xFFE41B13.toInt()), StopMarkerColors.palette(listOf(stop("s2", 47.5).copy(routeIds = listOf("m2"))), routes))
+        assertEquals(listOf(0xFF075DA4.toInt()), StopMarkerColors.palette(listOf(stop("s3", 47.5).copy(routeIds = listOf("m3"))), routes))
+        assertEquals(listOf(0xFF46A43B.toInt()), StopMarkerColors.palette(listOf(stop("s4", 47.5).copy(routeIds = listOf("m4"))), routes))
+        assertEquals(listOf(0xFF0066AA.toInt()), StopMarkerColors.palette(listOf(stop("sX", 47.5).copy(routeIds = listOf("mX"))), routes))
+
+        assertEquals(listOf(0xFF7B116B.toInt()), StopMarkerColors.palette(listOf(stop("sh5", 47.5).copy(routeIds = listOf("h5"))), routes))
+        assertEquals(listOf(0xFF824B00.toInt()), StopMarkerColors.palette(listOf(stop("sh6", 47.5).copy(providerId = "hev", providerIds = listOf("hev"), routeIds = listOf("h6"))), routes))
+        assertEquals(listOf(0xFF267D44.toInt()), StopMarkerColors.palette(listOf(stop("sub", 47.5).copy(providerId = "mav", providerIds = listOf("mav"), routeIds = listOf("sub"))), routes))
+
+        val unmapped = stop("unmapped", 47.5).copy(routeIds = listOf("missing"), providerIds = listOf("volan"), transportMode = "BUS")
+        assertEquals(listOf(0xFFF9B900.toInt()), StopMarkerColors.palette(listOf(unmapped), routes))
+    }
 }
