@@ -10,8 +10,8 @@ android {
         applicationId = "hu.app.bmenetrend"
         minSdk = 26
         targetSdk = 36
-        versionCode = 8
-        versionName = "0.4.0"
+        versionCode = 9
+        versionName = "0.5.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures { compose = true; buildConfig = true }
@@ -46,7 +46,11 @@ android {
     androidResources.noCompress += listOf("pmtiles")
     splits {
         abi {
-            isEnable = true
+            // AGP requires one resource package for AABs when shrinking resources.
+            // Build APK splits and bundles in separate Gradle invocations.
+            isEnable = gradle.startParameter.taskNames.none {
+                it.substringAfterLast(':').startsWith("bundle", ignoreCase = true)
+            }
             reset()
             include("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
             isUniversalApk = true
