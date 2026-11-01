@@ -3,6 +3,11 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
 }
+
+val isBuildingBundle = gradle.startParameter.taskNames.any {
+    it.contains("bundle", ignoreCase = true) || it.contains("buildrelease", ignoreCase = true)
+}
+
 android {
     namespace = "hu.app.bmenetrend"
     compileSdk = 36
