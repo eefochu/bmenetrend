@@ -259,7 +259,13 @@ class TransitViewModelOnlineMapStopsTest {
             // Rapid Pan 2 immediately after
             viewModel.updateMapArea(MapBounds(19.04, 47.50, 19.08, 47.54), GeoPoint(47.52, 19.06))
 
-            delay(250)
+            // Wait for the latest worker parse and its Main-dispatcher publication;
+            // a fixed sleep races the background parser under full-suite load.
+            val deadline = System.currentTimeMillis() + 5_000
+            while (viewModel.state.value.emmaStops.none { it.id.contains("47.492") } && System.currentTimeMillis() < deadline) {
+                ShadowLooper.idleMainLooper()
+                delay(5)
+            }
             ShadowLooper.idleMainLooper()
 
             // Only the second pan's results should be in emmaStops

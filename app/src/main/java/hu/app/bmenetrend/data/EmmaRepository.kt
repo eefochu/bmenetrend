@@ -6,8 +6,9 @@ import kotlinx.coroutines.CancellationException
 import java.time.Instant
 
 class EmmaRepository(context: Context) {
-    val routes = EmmaParser.catalogue(context.assets.open("volan-routes.json").bufferedReader().use { it.readText() })
-    val catalogue = routes.map { TransitRoute("volan:${it.sourceId}", it.number, it.name, emptyList(), "volan", it.url) }
+    private val appContext = context.applicationContext
+    val routes: List<EmmaParser.Route> by lazy { EmmaParser.catalogue(appContext.assets.open("volan-routes.json").bufferedReader().use { it.readText() }) }
+    val catalogue: List<TransitRoute> by lazy { routes.map { TransitRoute("volan:${it.sourceId}", it.number, it.name, emptyList(), "volan", it.url) } }
     private val feed = EmmaFeedClient()
     data class Result(val vehicles: List<Vehicle>, val messageResource: Int, val fetchedAt: Instant)
 

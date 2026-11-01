@@ -250,15 +250,32 @@ class GtfsImporter(private val db: SQLiteDatabase, private val from: LocalDate, 
 
     companion object {
         fun seconds(value: String): Int? {
-            val p = value.trim().split(':').map { it.toIntOrNull() ?: return null }
-            if (p.size != 3 || p[0] !in 0..71 || p[1] !in 0..59 || p[2] !in 0..59) return null
-            return p[0] * 3600 + p[1] * 60 + p[2]
+            val text = value.trim()
+            var part = 0
+            var number = 0
+            var digits = 0
+            var total = 0
+            for (c in text) {
+                if (c == ':') {
+                    if (digits == 0 || part >= 2 || number > if (part == 0) 71 else 59) return null
+                    total = total * 60 + number
+                    number = 0; digits = 0; part++
+                } else {
+                    if (c !in '0'..'9') return null
+                    number = number * 10 + (c - '0')
+                    if (number > 71) return null
+                    digits++
+                }
+            }
+            if (part != 2 || digits == 0 || number > 59) return null
+            return total * 60 + number
         }
         fun create(file: File): SQLiteDatabase = SQLiteDatabase.openOrCreateDatabase(file, null).apply {
             // Staging build: journal to memory and skip fsyncs. A torn staging file is disposable
             // (staging() deletes it; activation only promotes a verified digest + quick_check pass).
             // This removes rollback-journal double-writes and full-durability syncs from the bulk load.
             rawQuery("PRAGMA journal_mode=MEMORY", null).use { it.moveToFirst() }; execSQL("PRAGMA synchronous=OFF"); version = OFFLINE_FORMAT
+            execSQL("PRAGMA cache_size=-32768")
             execSQL("CREATE TABLE stops(id INTEGER PRIMARY KEY,source_id TEXT UNIQUE NOT NULL,name TEXT NOT NULL,search TEXT NOT NULL,lat REAL NOT NULL,lon REAL NOT NULL,platform TEXT,parent TEXT,station INTEGER,feed TEXT)")
             execSQL("CREATE TABLE routes(id INTEGER PRIMARY KEY,source_id TEXT UNIQUE NOT NULL,number TEXT,name TEXT,mode TEXT,color TEXT,feed TEXT)")
             execSQL("CREATE TABLE services(id INTEGER PRIMARY KEY,source_id TEXT UNIQUE NOT NULL)")
@@ -295,6 +312,7 @@ class GtfsImporter(private val db: SQLiteDatabase, private val from: LocalDate, 
             val indexes = listOf(
                 "CREATE INDEX boarding ON stop_times(stop,departure,trip)",
                 "CREATE INDEX trip_service ON trips(service)",
+                "CREATE INDEX trips_route ON trips(route)",
                 "CREATE INDEX service_date ON service_days(day,service)",
                 "CREATE INDEX transfers_from ON transfers(from_stop)",
                 "CREATE INDEX paths_from ON paths(from_stop)",

@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="offline_pack_missing">No offline timetable pack is installed. Connect to the internet and download it in Settings.</string>
+    <string name="offline_automatic">No internet access. The downloaded timetable pack remains available.</string>
     <string name="offline_title">Offline use</string>
     <string name="offline_pack_title">Hungary offline timetable pack</string>
     <string name="offline_coverage">Nationwide and local Volán buses, BKK and HÉV services included in the BKK feed. Rail timetables can be added by importing an authorized GTFS file.</string>
@@ -12,7 +14,7 @@
     <string name="offline_update">Update pack</string>
     <string name="offline_cancel">Cancel</string>
     <string name="offline_delete">Delete offline pack</string>
-    <string name="offline_delete_hint">The pack and downloaded source files will be deleted. Offline mode will be disabled. Favorites are kept. The local map working copy is removed after the map closes; the bundled map remains part of the app.</string>
+    <string name="offline_delete_hint">The pack and downloaded source files will be deleted. Offline timetables will be unavailable until a new pack is downloaded. Favorites are kept. The local map working copy is removed after the map closes; the bundled map remains part of the app.</string>
     <string name="offline_import">Add a GTFS file</string>
     <string name="offline_imported_feed">Imported GTFS timetable</string>
     <string name="offline_preparing">Preparing download</string>

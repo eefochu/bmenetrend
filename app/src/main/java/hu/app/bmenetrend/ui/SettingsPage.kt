@@ -45,6 +45,7 @@ fun SettingsPage(
     onAutomaticOfflineUpdates: (Boolean) -> Unit = {},
     onOfflineDelete: () -> Unit = {},
     onOfflineImport: (android.net.Uri) -> Unit = {},
+    onThemeMode: (ThemeMode) -> Unit = {},
 ) {
     var mapCredits by rememberSaveable { mutableStateOf(false) }
     if (mapCredits) MapCreditsDialog { mapCredits = false }
@@ -54,6 +55,23 @@ fun SettingsPage(
             TransitPageHeader(stringResource(R.string.volan_settings),onBack)
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal=adaptivePageGutter()),
                 verticalArrangement=Arrangement.spacedBy(16.dp)) {
+                TransitSectionTitle(stringResource(R.string.theme_title))
+                Surface(shape = TransitDesign.groupShape, color = MaterialTheme.colorScheme.surfaceContainerLowest) {
+                    Column(Modifier.selectableGroup()) {
+                        ThemeMode.entries.forEach { mode ->
+                            Row(
+                                Modifier.fillMaxWidth().heightIn(min = 56.dp)
+                                    .selectable(state.themeMode == mode, role = Role.RadioButton, onClick = { onThemeMode(mode) })
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                Text(stringResource(mode.labelRes), Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+                                RadioButton(selected = state.themeMode == mode, onClick = null)
+                            }
+                        }
+                    }
+                }
                 OfflinePackSettings(state, onOfflineMode, onOfflineDownload, onOfflineCancel, onOfflineDelete, onOfflineImport, onAutomaticOfflineUpdates)
                 TransitSectionTitle(stringResource(R.string.accent_title))
                 Text(stringResource(R.string.accent_hint),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)

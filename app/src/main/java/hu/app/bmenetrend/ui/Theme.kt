@@ -13,6 +13,8 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
@@ -118,18 +120,22 @@ internal fun accentColorScheme(accent: AccentColor, dark: Boolean, customArgb: I
     )
 }
 
+internal val LocalDarkTheme = staticCompositionLocalOf { false }
+
 @Composable
-fun ViaBuszTheme(accent: AccentColor = AccentColor.SYSTEM, customArgb: Int = 0xFF6750A4.toInt(), content: @Composable () -> Unit) {
-    val darkTheme = isSystemInDarkTheme()
+fun ViaBuszTheme(accent: AccentColor = AccentColor.SYSTEM, customArgb: Int = 0xFF6750A4.toInt(), themeMode: ThemeMode = ThemeMode.SYSTEM, content: @Composable () -> Unit) {
+    val darkTheme = themeMode.isDark(isSystemInDarkTheme())
     val context = LocalContext.current
     val colors = if (accent != AccentColor.SYSTEM) accentColorScheme(accent, darkTheme, customArgb)
     else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
     } else if (darkTheme) DarkColors else LightColors
-    MaterialTheme(
-        colorScheme = colors,
-        shapes = TransitShapes,
-        typography = TransitTypography,
-        content = content,
-    )
+    CompositionLocalProvider(LocalDarkTheme provides darkTheme) {
+        MaterialTheme(
+            colorScheme = colors,
+            shapes = TransitShapes,
+            typography = TransitTypography,
+            content = content,
+        )
+    }
 }

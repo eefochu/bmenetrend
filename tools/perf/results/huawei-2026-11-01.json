@@ -1,0 +1,164 @@
+{
+  "device": {
+    "model": "HUAWEI CLT-L09",
+    "platform": "Android 10",
+    "physical": true,
+    "power": "USB",
+    "battery_temperature_c": 30.0
+  },
+  "build": {
+    "variant": "release",
+    "r8": true,
+    "resource_shrinking": true,
+    "compilation": "default installed state; no forced AOT"
+  },
+  "startup": {
+    "metric": "Android am_activity_launch_time / TTID",
+    "process": "cold",
+    "os_caches": "retained",
+    "iterations_per_build": 10,
+    "baseline": {
+      "package": "hu.app.bmenetrend",
+      "serial": "LCL0218325001083",
+      "metric": "Android event TTID, process cold, OS caches retained, default installed compilation state",
+      "samples_ms": [
+        1057,
+        932,
+        920,
+        922,
+        957,
+        921,
+        982,
+        948,
+        953,
+        968
+      ],
+      "median_ms": 950.5
+    },
+    "optimized": {
+      "package": "hu.app.bmenetrend",
+      "serial": "LCL0218325001083",
+      "metric": "Android event TTID, process cold, OS caches retained, default installed compilation state",
+      "samples_ms": [
+        972,
+        916,
+        894,
+        900,
+        906,
+        905,
+        881,
+        893,
+        855,
+        894
+      ],
+      "median_ms": 897.0
+    },
+    "optimized_snapshot": {
+      "package": "hu.app.bmenetrend",
+      "serial": "LCL0218325001083",
+      "metric": "Android event TTID, process cold, OS caches retained, default installed compilation state",
+      "samples_ms": [
+        1083,
+        792,
+        757,
+        686,
+        605,
+        709,
+        582,
+        700,
+        718,
+        590
+      ],
+      "median_ms": 704.5
+    }
+  },
+  "navigation": {
+    "scenario": "five empty map search open/close cycles, SwiftKey keyboard, agent-device settle",
+    "scope": "exploratory single gfxinfo capture per build; network/map/keyboard state varies",
+    "baseline": {
+      "frames": 114,
+      "janky_frames": 47,
+      "janky_percent": 41.23,
+      "p50_ms": 13,
+      "p90_ms": 69,
+      "p95_ms": 93,
+      "p99_ms": 150
+    },
+    "optimized": {
+      "frames": 120,
+      "janky_frames": 44,
+      "janky_percent": 36.67,
+      "p50_ms": 13,
+      "p90_ms": 48,
+      "p95_ms": 61,
+      "p99_ms": 73
+    },
+    "optimized_build": "diagnostic snapshot; source-matched but distinct binary, exploratory only"
+  },
+  "validation": {
+    "classes": 83,
+    "tests": 524,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 2,
+    "tasks": [
+      ":app:testDevelopmentUnitTest",
+      ":app:lintRelease",
+      ":app:assembleRelease"
+    ],
+    "release_arm64_sha256": "78536a20ac56f36342a50d6432cacd337be83108da5489365a97886d8a8465fa"
+  },
+  "matched_full_aot_startup": {
+    "baseline": {
+      "package": "hu.app.bmenetrend",
+      "serial": "LCL0218325001083",
+      "metric": "Android event TTID, process cold, OS caches retained, cmd package compile -f -m speed",
+      "samples_ms": [
+        998,
+        720,
+        696,
+        771,
+        722,
+        776,
+        758,
+        764,
+        744,
+        767
+      ],
+      "median_ms": 761.0
+    },
+    "optimized": {
+      "package": "hu.app.bmenetrend",
+      "serial": "LCL0218325001083",
+      "metric": "Android event TTID, process cold, OS caches retained, cmd package compile -f -m speed",
+      "samples_ms": [
+        792,
+        698,
+        727,
+        723,
+        730,
+        722,
+        731,
+        734,
+        724,
+        704
+      ],
+      "median_ms": 725.5
+    }
+  },
+  "installed_compilation": "full AOT speed, final shared-checkout release APK",
+  "matched_full_aot_navigation": {
+    "status": "incomplete",
+    "baseline": {
+      "frames": 147.0,
+      "janky_frames": 55.0,
+      "janky_percent": 37.41,
+      "p50_ms": 13.0,
+      "p90_ms": 57.0,
+      "p95_ms": 69.0,
+      "p99_ms": 1000.0
+    },
+    "optimized": null,
+    "reason": "agent-device daemon request timed out opening final APK; no final comparison claimed"
+  }
+}

@@ -8,9 +8,15 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.delay
 import org.json.JSONObject
 import java.time.Duration
 import java.time.Instant
+import java.io.IOException
+import java.io.InterruptedIOException
 
 internal typealias WalkKey = Pair<GeoPoint, GeoPoint>
 internal data class WalkingResult(val links: Map<WalkKey, WalkingLink>, val partial: Boolean = false)
@@ -19,6 +25,7 @@ internal interface PlannerBackend {
     suspend fun routes(from: PlannerEndpoint, to: PlannerEndpoint, ready: Instant, busesOnly: Boolean = false): List<TripItinerary>
     suspend fun walking(pairs: List<Pair<PlanPoint, PlanPoint>>, ready: Instant): WalkingResult
     suspend fun stops(bounds: MapBounds): List<TransitStop> = emptyList()
+    fun clearRouteCache() {}
 }
 
 /** Bound HTTP work separately from the number of walking aliases being routed. */
@@ -31,8 +38,18 @@ internal class PlannerRequestBudget {
 }
 
 /** Shared budget for national searches and small, aliased street-walking batches. */
-internal class EmmaPlannerBackend(private val client: EmmaGraphqlClient) : PlannerBackend {
+internal class EmmaPlannerBackend(private val client: EmmaGraphqlClient, private val clock: () -> Instant = Instant::now) : PlannerBackend {
     private val budget = PlannerRequestBudget()
+    private data class RouteKey(val from: GeoPoint, val to: GeoPoint, val busesOnly: Boolean)
+    private class RouteRequest(val ready: Instant, val started: Instant) {
+        val result = CompletableDeferred<List<TripItinerary>>()
+        var completed: Instant? = null
+    }
+    private val routeRequests = object : LinkedHashMap<RouteKey, RouteRequest>(16, .75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<RouteKey, RouteRequest>?) = size > 16
+    }
+
+    override fun clearRouteCache() = synchronized(routeRequests) { routeRequests.clear() }
     private val walks = object : LinkedHashMap<WalkKey, WalkingLink?>(512, .75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<WalkKey, WalkingLink?>?) = size > 1_024
     }
@@ -43,9 +60,58 @@ internal class EmmaPlannerBackend(private val client: EmmaGraphqlClient) : Plann
         withContext(Dispatchers.Default) { EmmaStopsParser.area(text).stops }
     }
 
-    override suspend fun routes(from: PlannerEndpoint, to: PlannerEndpoint, ready: Instant, busesOnly: Boolean): List<TripItinerary> = budget.request {
-        val text = client.execute(TripPlanner.query(busesOnly), TripPlanner.variables(from, to, ready))
-        withContext(Dispatchers.Default) { TripPlanner.parse(text, from, to, ready, ready).itineraries }
+    override suspend fun routes(from: PlannerEndpoint, to: PlannerEndpoint, ready: Instant, busesOnly: Boolean): List<TripItinerary> {
+        val key = RouteKey(from.position, to.position, busesOnly)
+        while (true) {
+            val now = clock()
+            val (entry, owner) = synchronized(routeRequests) {
+                val previous = routeRequests[key]
+                val reusable = previous != null && !previous.result.isCancelled &&
+                    Duration.between(previous.ready, ready).toMillis() in 0..10_000 &&
+                    Duration.between(previous.completed ?: previous.started, now).toMillis() in
+                        0..(if (previous.completed == null) 30_000L else 10_000L)
+                if (reusable) requireNotNull(previous) to false
+                else RouteRequest(ready, now).also { routeRequests[key] = it } to true
+            }
+            if (owner) {
+                try {
+                    val rows = budget.request { fetchRoutes(from, to, ready, busesOnly) }
+                    synchronized(routeRequests) { entry.completed = clock() }
+                    entry.result.complete(rows)
+                } catch (failure: Throwable) {
+                    synchronized(routeRequests) { if (routeRequests[key] === entry) routeRequests.remove(key) }
+                    entry.result.completeExceptionally(failure)
+                    throw failure
+                }
+            }
+            val rows = try { entry.result.await() } catch (cancelled: CancellationException) {
+                // A cancelled prefetch owns its HTTP call, not the foreground caller.
+                currentCoroutineContext().ensureActive()
+                synchronized(routeRequests) { if (routeRequests[key] === entry) routeRequests.remove(key) }
+                continue
+            }
+            val usable = if (entry.ready == ready) rows else rows.filter { TripPlanner.feasible(it.legs, ready) }
+            if (usable.isNotEmpty() || rows.isEmpty() && entry.ready == ready) return usable
+            // A later "now" can invalidate a cached boarding/walk. Query again at the
+            // requested time rather than shifting source leg times or returning no route.
+            synchronized(routeRequests) { if (routeRequests[key] === entry) routeRequests.remove(key) }
+        }
+    }
+
+    private suspend fun fetchRoutes(from: PlannerEndpoint, to: PlannerEndpoint, ready: Instant, busesOnly: Boolean): List<TripItinerary> {
+        for (attempt in 0..1) {
+            try {
+                val text = client.execute(TripPlanner.query(busesOnly), TripPlanner.variables(from, to, ready))
+                return withContext(Dispatchers.Default) { TripPlanner.parse(text, from, to, ready, ready).itineraries }
+            } catch (cancelled: CancellationException) { throw cancelled
+            } catch (failure: IOException) {
+                val retry = attempt == 0 && failure !is EmmaCooldownException && failure !is InterruptedIOException &&
+                    (failure !is EmmaHttpException || failure.status in setOf(502, 504) && failure.retryAt == null)
+                if (!retry) throw failure
+                delay(150)
+            }
+        }
+        error("Unreachable routing retry")
     }
 
     override suspend fun walking(pairs: List<Pair<PlanPoint, PlanPoint>>, ready: Instant): WalkingResult = coroutineScope {

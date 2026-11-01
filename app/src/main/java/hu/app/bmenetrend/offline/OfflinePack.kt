@@ -61,3 +61,4 @@ data class OfflinePackState(
 
 class OfflineDateUnavailable : IllegalArgumentException("Date outside downloaded timetable")
 class OfflineEndpointUnavailable : IllegalArgumentException("Select a downloaded boarding stop")
+class OfflinePackUnavailable : IllegalStateException("Offline pack is not installed")

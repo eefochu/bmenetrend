@@ -1,0 +1,70 @@
+{
+  "date": "2026-11-01",
+  "device": "Medium_Phone Android 16 arm64-v8a emulator",
+  "variant": "development, debuggable, R8 disabled",
+  "measurement": "Android instrumentation; one observation per scenario. No physical-device measurement. No competing Gradle build during timed instrumentation.",
+  "full_fresh_download": {
+    "download_to_ready_ms": 50067,
+    "download_and_local_sources_ms": 9200,
+    "index_and_activation_ms": 40867,
+    "source_bytes": 164467027,
+    "database_bytes": 382255104,
+    "installed_footprint_bytes": 452558978,
+    "sources": [
+      "Volán – országos és helyi autóbuszok",
+      "BKK – Budapest",
+      "viabusz",
+      "kanyargo",
+      "homm"
+    ],
+    "valid_from": "2026-11-01",
+    "valid_until": "2026-11-30",
+    "warnings": [],
+    "database_sha256": "ad0b937d2e474a6784d9a1744bf8035cb8182d9c8ad6ddd2e93928ced75361bd"
+  },
+  "isolated_two_feed_import_and_functionality": {
+    "import_ms": 44108,
+    "ready_ms": 44766,
+    "catalogue_ms": 566,
+    "search_index_and_two_queries_ms": 2049,
+    "three_departure_boards_ms": 1,
+    "line_details_ms": 6,
+    "trip_plan_ms": 34,
+    "database_bytes": 345780224,
+    "route": "Kelenföld -> Biatorbágy (exact bus stop endpoints)",
+    "http_blocked_for_functional_checks": true,
+    "light_and_dark_offline_map_styles_verified": true
+  },
+  "feed_archives": [
+    {
+      "source": "volan",
+      "bytes": 102127745,
+      "sha256": "fcecb2b68d7e2befc3f833ed4fe8a63853ceefa9014024e86b973834057dc05c"
+    },
+    {
+      "source": "bkk",
+      "bytes": 62339282,
+      "sha256": "e24b5b8146685305f8eef41c25973c1b629fd0ab229e703a5c91b1202598725c"
+    }
+  ],
+  "validation": {
+    "unit_tests": 547,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 2,
+    "lintRelease": "passed",
+    "assembleRelease": "passed",
+    "screen_view_models": "passed: offline search/selection, planning, catalogue and favourites",
+    "view_model_instrumentation_seconds": 3.472
+  },
+  "limitations": [
+    "One emulator run is not a latency percentile or a guarantee under one minute for all devices or networks.",
+    "End-to-end total includes the official network download, source verification, indexing, checksum, flush and activation. It excludes building/installing the app and the initial connectivity health check.",
+    "Timetables and source-provided transfer links only; live vehicles/delays and arbitrary-address walking are not supplied by a static pack. Mainline rail data requires an additional feed."
+  ],
+  "release_apk": {
+    "file": "app/build/outputs/apk/release/app-arm64-v8a-release.apk",
+    "sha256": "64d74eaf0ee793e0e35308445f1893e7342d86172b4398615525ba668c615e06",
+    "bytes": 50788709
+  }
+}

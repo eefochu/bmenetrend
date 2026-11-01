@@ -22,6 +22,9 @@ class PlacesRepository(context: Context) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<PlaceResult>>?): Boolean = size > 64
     }
 
+    /** Immediate hits for search-as-you-type; never performs disk/network work. */
+    fun cached(raw: String): List<PlaceResult>? = synchronized(memoryCache) { memoryCache[PlaceSearch.query(raw)] }
+
     suspend fun search(raw: String): List<PlaceResult> = mutex.withLock {
         val query = PlaceSearch.query(raw)
         val memoryHit = synchronized(memoryCache) { memoryCache[query] }

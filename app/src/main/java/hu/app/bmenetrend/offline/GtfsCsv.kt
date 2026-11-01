@@ -49,6 +49,22 @@ internal class GtfsCsv(reader: Reader) : AutoCloseable {
         var quoted = false
         var any = false
         while (true) {
+            // Most GTFS fields are unquoted. Append contiguous slices rather than
+            // calling Reader/readChar/StringBuilder.append for every character.
+            if (!quoted && pushed < 0 && position < limit) {
+                val start = position
+                while (position < limit) {
+                    val c = buffer[position]
+                    if (c == ',' || c == '\r' || c == '\n' || c == '"') break
+                    position++
+                }
+                if (position > start) {
+                    field.append(buffer, start, position - start)
+                    require(field.length < 1_000_000) { "Oversized GTFS field" }
+                    any = true
+                    if (position == limit) continue
+                }
+            }
             val code = readChar()
             if (code == -1) {
                 ended = true

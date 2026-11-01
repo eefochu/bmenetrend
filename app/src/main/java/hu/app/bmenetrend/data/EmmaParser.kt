@@ -109,11 +109,16 @@ object EmmaParser {
             val existing = routes[id]
             val name = existing?.name?.takeIf { it.isNotBlank() && it != existing.number }
                 ?: vehicle.routeName ?: vehicle.destination.orEmpty()
-            routes[id] = existing?.copy(name = name.ifBlank { existing.name },
-                transportMode = existing.transportMode ?: vehicle.transportMode, color = existing.color ?: vehicle.markerColor)
-                ?: TransitRoute(id, vehicle.routeNumber ?: "?", name, emptyList(), vehicle.providerId,
-                    transportMode = vehicle.transportMode, color = vehicle.markerColor)
+            routes[id] = if (existing != null) {
+                val resolvedName = name.ifBlank { existing.name }
+                val mode = existing.transportMode ?: vehicle.transportMode
+                val color = existing.color ?: vehicle.markerColor
+                if (existing.name == resolvedName && existing.transportMode == mode && existing.color == color) existing
+                else existing.copy(name = resolvedName, transportMode = mode, color = color)
+            } else TransitRoute(id, vehicle.routeNumber ?: "?", name, emptyList(), vehicle.providerId,
+                transportMode = vehicle.transportMode, color = vehicle.markerColor)
         }
-        return routes.values.toList()
+        val result = routes.values.toList()
+        return if (result == local) local else result
     }
 }

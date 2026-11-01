@@ -43,13 +43,15 @@ fun OfflinePackSettings(state: UiState, onMode: (Boolean) -> Unit, onDownload: (
                 Text(stringResource(R.string.offline_updated, meta.builtAt.atZone(java.time.ZoneId.of("Europe/Budapest")).toLocalDate().toString()), style = MaterialTheme.typography.bodySmall)
                 if (java.time.LocalDate.now(java.time.ZoneId.of("Europe/Budapest")) > meta.validUntil) Text(stringResource(R.string.offline_expired), color = MaterialTheme.colorScheme.error)
             }
-            Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).toggleable(state.offlineMode, enabled = pack.metadata != null && !pack.busy, role = Role.Switch, onValueChange = onMode),
+            val canChangeMode = state.internetAvailable && pack.metadata != null && !pack.busy
+            Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).toggleable(state.offlineMode, enabled = canChangeMode, role = Role.Switch, onValueChange = onMode),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(stringResource(R.string.offline_mode), Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
-                Switch(state.offlineMode, null, enabled = pack.metadata != null && !pack.busy)
+                Switch(state.offlineMode, null, enabled = canChangeMode)
             }
             Text(stringResource(if (pack.metadata == null) R.string.offline_download_first else R.string.offline_mode_hint), style = MaterialTheme.typography.bodySmall)
-            if (!state.offlineMode) {
+            if (!state.internetAvailable) Text(stringResource(if (pack.metadata == null) R.string.offline_pack_missing else R.string.offline_automatic), style = MaterialTheme.typography.bodyMedium)
+            if (!state.offlineMode || pack.busy) {
                 Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).toggleable(wifiOnly, enabled = !pack.busy, role = Role.Checkbox, onValueChange = { wifiOnly = it }), verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(wifiOnly, null, enabled = !pack.busy)
                     Text(stringResource(R.string.offline_wifi), Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)

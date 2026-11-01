@@ -4,15 +4,21 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
-import android.net.NetworkRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.*
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
+import okhttp3.Request
+import okhttp3.Call
+import okhttp3.Callback
 import java.io.IOException
 import java.util.Collections
 import java.util.WeakHashMap
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
+import kotlin.coroutines.resume
 
 /** Initialized by Application before any repository, worker or map can issue a request. */
 object NetworkAccessPolicy {
@@ -21,10 +27,12 @@ object NetworkAccessPolicy {
     private val clients = Collections.newSetFromMap(WeakHashMap<OkHttpClient, Boolean>())
     @Volatile private var epoch = 0L
     val generation: Long get() = epoch
-    private var manualOffline = false
-    private var packAvailable = false
-    private var internetAvailable = true
+    @Volatile private var manualOffline = false
+    private val connectivity = MutableStateFlow(true)
+    val internetAvailable = connectivity.asStateFlow()
     private var callback: ConnectivityManager.NetworkCallback? = null
+    private var refreshConnectivity: (() -> Unit)? = null
+    private val connectivityScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     fun initialize(context: Context) {
         val requested = context.getSharedPreferences("offline", 0).getBoolean("enabled", false)
@@ -32,71 +40,119 @@ object NetworkAccessPolicy {
         val installed = OfflinePackStore(context).metadata() != null
         synchronized(this) {
             manualOffline = requested && installed
-            packAvailable = installed
-            internetAvailable = true
+            if (callback == null) connectivity.value = true
             publishMode()
         }
         if (requested && !installed) context.getSharedPreferences("offline", 0).edit().putBoolean("enabled", false).apply()
     }
 
-    @Synchronized fun setOffline(context: Context, enabled: Boolean) {
-        context.getSharedPreferences("offline", 0).edit().putBoolean("enabled", enabled).commit()
-        manualOffline = enabled
-        publishMode()
+    fun setOffline(context: Context, enabled: Boolean) {
+        synchronized(this) {
+            context.getSharedPreferences("offline", 0).edit().putBoolean("enabled", enabled).apply()
+            manualOffline = enabled
+            publishMode()
+        }
+        refreshConnectivity?.invoke()
     }
 
     /** Application-lifetime observer: Wi-Fi, cellular and VPN are usable when validated. */
-    @Synchronized fun monitorConnectivity(context: Context) {
+    fun monitorConnectivity(context: Context) = monitorConnectivity(context, ::verifyInternet)
+
+    @Synchronized internal fun monitorConnectivity(context: Context, verify: suspend (Network) -> Boolean) {
         if (callback != null) return
         val manager = context.getSystemService(ConnectivityManager::class.java) ?: return
         val observer = object : ConnectivityManager.NetworkCallback() {
-            private fun refresh() {
-                val caps = manager.getNetworkCapabilities(manager.activeNetwork)
-                onConnectivityChanged(caps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true &&
-                    caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED))
+            @Volatile private var current = manager.activeNetwork
+            @Volatile private var internet = false
+            @Volatile private var validated = false
+            private val probe = AtomicReference<Job?>()
+
+            fun recheck() {
+                probe.getAndSet(null)?.cancel()
+                val network = current ?: return
+                if (!internet || validated || manualOffline) return
+                val job = connectivityScope.launch(start = CoroutineStart.LAZY) {
+                    while (isActive && current == network && internet && !validated && !manualOffline) {
+                        val reachable = try { verify(network) }
+                        catch (cancelled: CancellationException) { throw cancelled }
+                        catch (_: Exception) { false }
+                        if (current == network && internet && !validated && !manualOffline) onConnectivityChanged(reachable)
+                        delay(30_000)
+                    }
+                }
+                probe.getAndSet(job)?.cancel()
+                job.start()
             }
-            override fun onAvailable(network: Network) = refresh()
-            override fun onLost(network: Network) = refresh()
-            override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) = refresh()
+
+            override fun onAvailable(network: Network) {
+                if (current != network) {
+                    probe.getAndSet(null)?.cancel()
+                    current = network
+                    internet = false
+                    validated = false
+                }
+            }
+            override fun onLost(network: Network) {
+                if (current == network || current == null) {
+                    current = null
+                    internet = false
+                    probe.getAndSet(null)?.cancel()
+                    onConnectivityChanged(false)
+                }
+            }
+            override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) {
+                // Consume the callback's capabilities, rather than racing a second
+                // Binder query against network teardown or Wi-Fi/cellular handover.
+                if (current == network) {
+                    current = network
+                    val hasInternet = caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                    val isValidated = usable(caps)
+                    val changed = hasInternet != internet || isValidated != validated
+                    internet = hasInternet
+                    validated = isValidated
+                    if (isValidated || !hasInternet) onConnectivityChanged(isValidated)
+                    else if (changed) onConnectivityChanged(false)
+                    if (changed) recheck()
+                }
+            }
+            override fun onUnavailable() {
+                current = null
+                internet = false
+                probe.getAndSet(null)?.cancel()
+                onConnectivityChanged(false)
+            }
         }
-        // Per-network tracking: the default-network callback alone can miss loss events
-        // (teardown races, airplane mode) leaving a stale "validated" judgement behind.
-        val allNetworks = object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) = recheckAll(manager)
-            override fun onLost(network: Network) = recheckAll(manager)
-            override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) = recheckAll(manager)
-        }
-        manager.registerNetworkCallback(NetworkRequest.Builder()
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET).build(), allNetworks)
+        val initial = manager.activeNetwork
+        val capabilities = manager.getNetworkCapabilities(initial)
+        onConnectivityChanged(usable(capabilities))
+        if (initial != null && capabilities != null) observer.onCapabilitiesChanged(initial, capabilities)
         manager.registerDefaultNetworkCallback(observer)
         callback = observer
-        recheckAll(manager)
+        refreshConnectivity = observer::recheck
     }
 
-    /** Any validated network (Wi-Fi, cellular or VPN) counts as usable online. */
-    private fun recheckAll(manager: ConnectivityManager) {
-        val usable = manager.allNetworks.any { network ->
-            val caps = manager.getNetworkCapabilities(network)
-            caps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true &&
-                caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
-        }
-        onConnectivityChanged(usable)
-    }
+    private fun usable(caps: NetworkCapabilities?) =
+        caps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true &&
+            caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
 
     @Synchronized internal fun onConnectivityChanged(available: Boolean) {
-        internetAvailable = available
+        connectivity.value = available
         publishMode()
     }
 
     /** Called after pack activation/deletion; never does database or file work. */
-    @Synchronized internal fun onPackAvailabilityChanged(available: Boolean) {
-        packAvailable = available
-        if (!available) manualOffline = false
-        publishMode()
+    internal fun onPackAvailabilityChanged(available: Boolean) {
+        val changed = synchronized(this) {
+            val changed = !available && manualOffline
+            if (!available) manualOffline = false
+            publishMode()
+            changed
+        }
+        if (changed) refreshConnectivity?.invoke()
     }
 
     private fun publishMode() {
-        val enabled = manualOffline || (!internetAvailable && packAvailable)
+        val enabled = manualOffline || !connectivity.value
         if (mutable.value != enabled) epoch++
         val changed = mutable.value != enabled
         mutable.value = enabled
@@ -119,5 +175,39 @@ object NetworkAccessPolicy {
             throw IOException("Network mode changed")
         }
         response
+    }
+
+    /** Only for an unvalidated default network, never during manual offline mode.
+     * HEAD + TLS + expected ZIP content type avoids mistaking a captive portal for
+     * internet. Both providers are tried; no timetable payload is downloaded here.
+     */
+    private val probeClient by lazy {
+        OkHttpClient.Builder().followRedirects(false).followSslRedirects(false)
+            .connectTimeout(3, TimeUnit.SECONDS).readTimeout(3, TimeUnit.SECONDS).callTimeout(4, TimeUnit.SECONDS).build()
+    }
+
+    private suspend fun verifyInternet(network: Network): Boolean {
+        val client = probeClient.newBuilder().socketFactory(network.socketFactory)
+            .dns(object : okhttp3.Dns {
+                override fun lookup(hostname: String) = network.getAllByName(hostname).toList()
+            })
+            .build()
+        for (source in OfflineSource.defaults.asReversed()) {
+            currentCoroutineContext().ensureActive()
+            val reachable = suspendCancellableCoroutine { continuation ->
+                val call = client.newCall(Request.Builder().url(source.url).head().build())
+                continuation.invokeOnCancellation { call.cancel() }
+                call.enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) { if (continuation.isActive) continuation.resume(false) }
+                    override fun onResponse(call: Call, response: Response) {
+                        val usable = response.use { it.code == 200 && it.header("Content-Type").orEmpty().substringBefore(';') in
+                            setOf("application/zip", "application/x-zip-compressed", "application/octet-stream") }
+                        if (continuation.isActive) continuation.resume(usable)
+                    }
+                })
+            }
+            if (reachable) return true
+        }
+        return false
     }
 }

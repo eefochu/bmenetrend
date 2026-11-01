@@ -1,4 +1,8 @@
 <resources>
+    <string name="theme_title">Appearance</string>
+    <string name="theme_system">Follow system</string>
+    <string name="theme_light">Light mode</string>
+    <string name="theme_dark">Dark mode</string>
     <string name="accent_title">Accent colour</string>
     <string name="accent_hint">Choose your app colours. System follows your wallpaper on Android 12 or newer.</string>
     <string name="accent_system">System</string>

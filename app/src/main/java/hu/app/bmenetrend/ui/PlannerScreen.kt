@@ -202,7 +202,7 @@ fun PlannerScreen(
                     },
                     actions = {
                         IconButton(
-                            onClick = { model.plan() },
+                            onClick = { model.plan(force = true) },
                             enabled = !state.planning
                         ) {
                             Icon(
@@ -226,7 +226,8 @@ fun PlannerScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 if (state.offline) item(key = "offline", contentType = "notice") {
-                    Text(stringResource(R.string.offline_valid_until, state.offlineValidUntil.orEmpty()), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                    Text(if (state.offlineValidUntil == null) stringResource(R.string.offline_pack_missing)
+                        else stringResource(R.string.offline_valid_until, state.offlineValidUntil.orEmpty()), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
                     Text(stringResource(R.string.offline_endpoint_unavailable), style = MaterialTheme.typography.bodySmall)
                 }
 
@@ -315,6 +316,7 @@ fun PlannerScreen(
                                         PlannerError.NO_ROUTE -> R.string.planner_no_route
                                         PlannerError.OFFLINE_DATE -> R.string.offline_date_unavailable
                                         PlannerError.OFFLINE_ENDPOINT -> R.string.offline_endpoint_unavailable
+                                        PlannerError.OFFLINE_PACK -> R.string.offline_pack_missing
                                         PlannerError.UNAVAILABLE -> R.string.planner_unavailable
                                     }
                                 ),

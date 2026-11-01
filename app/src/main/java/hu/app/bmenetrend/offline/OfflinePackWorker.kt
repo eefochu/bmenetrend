@@ -9,6 +9,9 @@ import androidx.core.app.NotificationCompat
 import androidx.work.*
 import hu.app.bmenetrend.R
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
@@ -34,22 +37,34 @@ class OfflinePackWorker(context: Context, parameters: WorkerParameters) : Corout
         var staging: File? = null
         var importing = false
         try {
-            NetworkAccessPolicy.initialize(applicationContext)
-            if (inputData.getBoolean("automatic", false) && (NetworkAccessPolicy.offline.value || store.metadata()?.builtAt?.let { java.time.Duration.between(it, Instant.now()).toHours() < 20 } == true)) return@withContext Result.success()
-            NetworkAccessPolicy.requireOnline()
+            if (inputData.getBoolean("automatic", false)) {
+                if (!NetworkAccessPolicy.offline.value && store.metadata()?.builtAt?.let { java.time.Duration.between(it, Instant.now()).toHours() < 20 } != true &&
+                    WorkManager.getInstance(applicationContext).getWorkInfosForUniqueWork(WORK_NAME).get().none { !it.state.isFinished }) {
+                    OfflinePackRepository.enqueueDownload(applicationContext, true)
+                }
+                return@withContext Result.success()
+            }
+            if (inputData.getString("stage") != "index" && NetworkAccessPolicy.offline.value) return@withContext Result.retry()
             setForeground(notification(applicationContext.getString(R.string.offline_preparing)))
             require(store.downloads.usableSpace >= 1_500_000_000L) { "storage" }
             val sources = OfflineSource.defaults
-            var completed = 0L
-            for (source in sources) {
-                NetworkAccessPolicy.requireOnline()
-                val file = File(store.downloads, "${source.id}.zip")
-                download(source, file, completed)
-                completed += file.length()
-                require(completed <= OFFLINE_MAX_BYTES) { "size" }
-            }
             val imported = File(store.downloads, "custom.zip").takeIf { it.isFile }
-            if (imported != null) completed += imported.length()
+            if (inputData.getString("stage") != "index") {
+                NetworkAccessPolicy.requireOnline()
+                val totals = DownloadTotals(imported?.length() ?: 0)
+                coroutineScope {
+                    val local = async {
+                        val network = hu.app.bmenetrend.data.TransitRepository(applicationContext).planningNetwork()
+                        File(store.downloads, "local-network.json").writeText(hu.app.bmenetrend.data.NetworkJson.encode(network))
+                    }
+                    sources.map { source -> async { download(source, File(store.downloads, "${source.id}.zip"), totals) } }.awaitAll()
+                    local.await()
+                }
+                if (inputData.getString("stage") == "download") return@withContext Result.success()
+            }
+            // This stage has no network constraint: all inputs were downloaded and
+            // checked by its predecessor, so losing connectivity cannot abort indexing.
+            val completed = sources.sumOf { File(store.downloads, "${it.id}.zip").length() } + (imported?.length() ?: 0)
             require(completed <= OFFLINE_MAX_BYTES) { "size" }
             progress("IMPORTING", completed, completed, applicationContext.getString(R.string.offline_installing))
             importing = true
@@ -78,8 +93,9 @@ class OfflinePackWorker(context: Context, parameters: WorkerParameters) : Corout
                             importer.import(imported, custom); names += custom.name
                         }
                         activeSource = ""
-                        publishImport(OfflineImportProgress(OfflineImportStep.LOCAL_SOURCES))
-                        val local = hu.app.bmenetrend.data.TransitRepository(applicationContext).planningNetwork()
+                        val local = File(store.downloads, "local-network.json").takeIf { it.isFile }
+                            ?.let { hu.app.bmenetrend.data.NetworkJson.decode(it.readText()) }
+                            ?: hu.app.bmenetrend.data.TransitNetwork(emptyList(), emptyList(), emptyList(), Instant.now(), "offline")
                         names += importer.importLocal(local)
                         currentCoroutineContext().ensureActive()
                         warnings += importer.warnings
@@ -99,7 +115,6 @@ class OfflinePackWorker(context: Context, parameters: WorkerParameters) : Corout
                 stops to trips
             }
             currentCoroutineContext().ensureActive()
-            NetworkAccessPolicy.requireOnline()
             val sha256 = OfflinePackStore.digest(staging)
             val meta = OfflinePackMetadata(UUID.randomUUID().toString(), Instant.now(), first, until, staging.length(), completed, counts.first, counts.second, names, sha256, imported?.length() ?: 0, warnings)
             publishImport(OfflineImportProgress(OfflineImportStep.ACTIVATING))
@@ -110,10 +125,13 @@ class OfflinePackWorker(context: Context, parameters: WorkerParameters) : Corout
                 File(store.downloads, "${source.id}.zip").delete()
                 File(store.downloads, "${source.id}.zip.etag").delete()
             }
+            File(store.downloads, "local-network.json").delete()
             Result.success()
         } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
         catch (error: Exception) {
-            if (importing) OfflineSource.defaults.forEach { source ->
+            if (!importing && NetworkAccessPolicy.offline.value) return@withContext Result.retry()
+            android.util.Log.w("OfflinePackWorker", "Offline pack preparation failed", error)
+            if (importing && (error is java.util.zip.ZipException || error.message?.contains("Corrupted GTFS") == true)) OfflineSource.defaults.forEach { source ->
                 File(store.downloads, "${source.id}.zip").delete()
                 File(store.downloads, "${source.id}.zip.etag").delete()
             }
@@ -131,12 +149,12 @@ class OfflinePackWorker(context: Context, parameters: WorkerParameters) : Corout
         setForeground(notification(listOf(label, stage).filter { it.isNotBlank() }.joinToString(" · ")))
     }
 
-    private suspend fun download(source: OfflineSource, file: File, completed: Long) {
+    private suspend fun download(source: OfflineSource, file: File, totals: DownloadTotals) {
         // Only interrupted installs retain complete default archives; successful installs delete
         // them. Retry the same recent snapshot without downloading it again, including providers
         // without ETags. Each parsed entry is CRC-checked before activation.
         if (file.isFile && System.currentTimeMillis() - file.lastModified() in 0..21_600_000L) {
-            require(file.length() + completed <= OFFLINE_MAX_BYTES) { "size" }
+            totals.update(source.id, file.length(), file.length())
             val complete = runCatching { java.util.zip.ZipFile(file).use { it.getEntry("stops.txt") != null && it.getEntry("stop_times.txt") != null } }.getOrDefault(false)
             if (complete) return
             file.delete()
@@ -149,13 +167,15 @@ class OfflinePackWorker(context: Context, parameters: WorkerParameters) : Corout
         client.newCall(head).execute().use { response ->
             if (response.isSuccessful) {
                 val length = response.header("Content-Length")?.toLongOrNull()
-                require(length == null || length + completed <= OFFLINE_MAX_BYTES) { "size" }
+                if (length != null) totals.update(source.id, 0, length)
                 val etag = response.header("ETag")?.takeUnless { it.startsWith("W/") }
                 if (partial.isFile && length == partial.length() && etag != null && validator.readTextOrNull() == etag) {
                     java.util.zip.ZipFile(partial).use { require(it.getEntry("stop_times.txt") != null) }
-                    check(partial.renameTo(file)); return
+                    check(partial.renameTo(file)); totals.update(source.id, file.length(), file.length()); return
                 }
-                if (file.isFile && length == file.length() && etag != null && validator.readTextOrNull() == etag) return
+                if (file.isFile && length == file.length() && etag != null && validator.readTextOrNull() == etag) {
+                    totals.update(source.id, file.length(), file.length()); return
+                }
             }
         }
         val previousTag = validator.readTextOrNull()
@@ -173,7 +193,7 @@ class OfflinePackWorker(context: Context, parameters: WorkerParameters) : Corout
                 if (append) require(response.header("Content-Range")?.startsWith("bytes $offset-") == true) { "Invalid resumed download" }
                 val start = if (append) offset else 0L
                 val length = body.contentLength()
-                require(length < 0 || start + length + completed <= OFFLINE_MAX_BYTES) { "size" }
+                totals.update(source.id, start, if (length < 0) 0 else start + length)
                 val etag = response.header("ETag")?.takeUnless { it.startsWith("W/") }
                 if (etag == null) validator.delete() else validator.writeText(etag)
                 var bytes = start
@@ -186,11 +206,11 @@ class OfflinePackWorker(context: Context, parameters: WorkerParameters) : Corout
                             NetworkAccessPolicy.requireOnline()
                             val n = input.read(buffer); if (n < 0) break
                             bytes += n
-                            require(bytes + completed <= OFFLINE_MAX_BYTES) { "size" }
+                            val aggregate = totals.update(source.id, bytes, if (length > 0) start + length else 0)
                             output.write(buffer, 0, n)
                             val now = android.os.SystemClock.elapsedRealtime()
                             if (now - lastProgress > 750) {
-                                progress("DOWNLOADING", completed + bytes, if (length > 0) completed + start + length else 0, source.name)
+                                progress("DOWNLOADING", aggregate.first, aggregate.second, source.name)
                                 lastProgress = now
                             }
                         }
@@ -200,6 +220,8 @@ class OfflinePackWorker(context: Context, parameters: WorkerParameters) : Corout
                 require(bytes > 0 && (length < 0 || bytes == start + length)) { "Incomplete GTFS download" }
                 java.util.zip.ZipFile(partial).use { require(it.getEntry("stops.txt") != null && it.getEntry("stop_times.txt") != null) }
                 check(partial.renameTo(file)) { "Cannot store GTFS archive" }
+                val aggregate = totals.update(source.id, bytes, bytes)
+                progress("DOWNLOADING", aggregate.first, aggregate.second, source.name)
             }
         } finally { cancellation?.dispose() }
     }
@@ -218,6 +240,21 @@ class OfflinePackWorker(context: Context, parameters: WorkerParameters) : Corout
         const val AUTO_WORK_NAME = "offline-hungary-pack-update"
         const val TAG = "offline-pack"
         internal val workMutex = kotlinx.coroutines.sync.Mutex()
+    }
+}
+
+/** Shared accounting keeps parallel transfers within the combined storage budget. */
+internal class DownloadTotals(private val retained: Long) {
+    private val received = mutableMapOf<String, Long>()
+    private val lengths = mutableMapOf<String, Long>()
+    @Synchronized fun update(source: String, bytes: Long, total: Long): Pair<Long, Long> {
+        require(bytes >= 0 && total >= 0)
+        received[source] = bytes
+        lengths[source] = total
+        val downloaded = retained + received.values.sum()
+        val expected = retained + lengths.values.sum()
+        require(downloaded <= OFFLINE_MAX_BYTES && expected <= OFFLINE_MAX_BYTES) { "size" }
+        return downloaded to if (lengths.size == OfflineSource.defaults.size && lengths.values.all { it > 0 }) expected else 0
     }
 }
 private fun File.readTextOrNull(): String? = if (isFile) readText().takeIf { it.isNotBlank() } else null

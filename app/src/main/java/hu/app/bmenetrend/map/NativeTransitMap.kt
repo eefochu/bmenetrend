@@ -8,7 +8,7 @@ import android.graphics.Paint
 import android.graphics.PointF
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.foundation.isSystemInDarkTheme
+import hu.app.bmenetrend.ui.LocalDarkTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
@@ -26,6 +26,7 @@ import hu.app.bmenetrend.data.MapBounds
 import hu.app.bmenetrend.data.GeoPoint
 import hu.app.bmenetrend.data.TransitStop
 import hu.app.bmenetrend.data.TransitNetwork
+import hu.app.bmenetrend.data.TransitRoute
 import hu.app.bmenetrend.data.Vehicle
 import hu.app.bmenetrend.data.PlaceResult
 import org.maplibre.android.MapLibre
@@ -94,8 +95,9 @@ fun NativeTransitMap(
     offline: Boolean = false,
     topPaddingPx: Int? = null,
     routeOrigin: GeoPoint? = null,
+    routeCatalogue: Map<String, TransitRoute> = emptyMap(),
 ) {
-    val darkTheme = isSystemInDarkTheme()
+    val darkTheme = LocalDarkTheme.current
     val styleUri = if (offline) { if (darkTheme) "asset://map/offline-dark.json" else "asset://map/offline.json" } else if (darkTheme) "asset://map/night.json" else "https://tiles.openfreemap.org/styles/positron"
     val context = LocalContext.current
     val owner = LocalLifecycleOwner.current
@@ -426,7 +428,7 @@ fun NativeTransitMap(
         }
     }
     key(mapView) { AndroidView(factory = { mapView }, modifier = modifier.onSizeChanged { size = it }) }
-    LaunchedEffect(map,styleLoaded,viewport,zoom,stationScene,highlightedIds,focused,routeColor,selectedStopId,stopBearings,darkTheme) {
+    LaunchedEffect(map,styleLoaded,viewport,zoom,stationScene,highlightedIds,focused,routeColor,selectedStopId,stopBearings,darkTheme,routeCatalogue) {
         val nativeMap=map ?: return@LaunchedEffect
         if(!styleLoaded) return@LaunchedEffect
         val scene=stationScene ?: return@LaunchedEffect
@@ -462,7 +464,7 @@ fun NativeTransitMap(
                                 if(angles.none { StopDirections.difference(it,value)<35 }) angles.add(value)
                                 angles
                             }.takeIf { it.size<=2 }.orEmpty().map { ((kotlin.math.round(it/5)*5).toInt()+360)%360 }.distinct().sorted() else emptyList()
-                        val sprite=StationSprite(StopMarkerColors.palette(members),sizeDp,focused,selected,darkTheme,routeColor,directions)
+                        val sprite=StationSprite(StopMarkerColors.palette(members,routeCatalogue),sizeDp,focused,selected,darkTheme,routeColor,directions)
                         sprites[sprite.key]=sprite
                         val offset=if(focused) StopMarkerLayout.Offset() else scene.offsets.getValue(stop.id)
                         val position=LatLng(stop.position.lat,stop.position.lon)

@@ -72,23 +72,25 @@ class EmmaStopsRepository(context: Context, private val graphql: EmmaGraphqlClie
     private val lineMemory = object : LinkedHashMap<String, Lines>(16, 0.75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Lines>?): Boolean = size > 64
     }
-    private val linesMutex=Mutex()
+    // A slow station must not serialize every other favorite. Fixed stripes bound
+    // lock retention while keeping same-station cache fills single-flight.
+    private val linesMutexes = Array(64) { Mutex() }
     private val linesDirectory=File(context.filesDir,"emma-station-lines-v1")
 
     /** Static serving routes have a daily cache and never depend on the selected departure window. */
-    suspend fun servingLines(stopId: String,force: Boolean=false): Lines = linesMutex.withLock {
+    suspend fun servingLines(stopId: String,force: Boolean=false): Lines = linesMutexes[(stopId.hashCode() and Int.MAX_VALUE) % linesMutexes.size].withLock {
         val now=Instant.now()
         val key=java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(stopId.toByteArray(Charsets.UTF_8))
         val cache=File(linesDirectory,"$key.json")
-        val saved=lineMemory[stopId] ?: withContext(Dispatchers.IO) {
+        val saved=synchronized(lineMemory) { lineMemory[stopId] } ?: withContext(Dispatchers.IO) {
             runCatching { if(cache.isFile) Lines(EmmaStopsParser.servingLines(cache.readText(),stopId),Instant.ofEpochMilli(cache.lastModified())) else null }.getOrNull()
         }
-        if (saved != null) lineMemory[stopId] = saved
+        if (saved != null) synchronized(lineMemory) { lineMemory[stopId] = saved }
         if(!force && saved!=null && Duration.between(saved.fetchedAt,now).seconds in 0..86_399) return@withLock saved
         try {
             val text=graphql.execute(EmmaStopsParser.LINES_QUERY,org.json.JSONObject().put("id",EmmaStopsParser.sourceId(stopId)))
             val result=withContext(Dispatchers.Default) { Lines(EmmaStopsParser.servingLines(text,stopId),now) }
-            lineMemory[stopId]=result
+            synchronized(lineMemory) { lineMemory[stopId]=result }
             withContext(Dispatchers.IO) { runCatching {
                 linesDirectory.mkdirs()
                 val temporary=File(linesDirectory,"$key.tmp")
