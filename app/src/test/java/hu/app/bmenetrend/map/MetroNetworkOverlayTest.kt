@@ -38,12 +38,22 @@ class MetroNetworkOverlayTest {
         assertTrue("Route geometry must retain real curves", lines.all { (it.geometry() as LineString).coordinates().size > 10 })
         assertEquals(setOf("#FFD800", "#E41B13", "#075DA4", "#46A43B"), lines.map { it.getStringProperty("color") }.toSet())
         val stations = features.filter { it.geometry() is Point }
-        assertEquals("One overview marker per source parent station", 48, stations.size)
+        assertEquals("Every real platform gets a separate overview marker", 103, stations.size)
         val platforms = stations.flatMap(MetroNetworkOverlay::stopIds)
         assertEquals(103, platforms.size)
         assertEquals(platforms.size, platforms.toSet().size)
         assertTrue(platforms.all { it.startsWith("emma:BKK:") })
-        assertTrue("Interchanges retain all source lines", stations.any { it.getProperty("lines").asJsonArray.size() == 3 })
+        assertTrue(stations.all { MetroNetworkOverlay.stopIds(it).size == 1 })
+        val byStation = stations.groupBy { it.getStringProperty("station") }
+        assertEquals(48, byStation.size)
+        val deak = byStation.values.single { group -> group.map { it.getStringProperty("line") }.toSet().size == 3 }
+        assertEquals(6, deak.size)
+        assertEquals(setOf("#FFD800", "#E41B13", "#075DA4"), deak.map { it.getStringProperty("color") }.toSet())
+        assertEquals("Both directions of each line remain distinct", listOf(2, 2, 2),
+            deak.groupBy { it.getStringProperty("line") }.values.map { it.size }.sorted())
+        assertEquals("Every dot has a separate screen position at an interchange", 6,
+            deak.map { it.getProperty("offset").toString() }.toSet().size)
+        assertTrue(stations.all { it.getNumberProperty("slot").toInt() in MetroNetworkOverlay.stationLayers.indices })
     }
 
     @Test fun cityOverviewKeepsVehiclesAndOrdinaryStopsHiddenUntilCloserZoom() {

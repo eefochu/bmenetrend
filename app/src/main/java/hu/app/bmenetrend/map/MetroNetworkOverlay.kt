@@ -19,6 +19,7 @@ internal object MetroNetworkOverlay {
     const val ASSET = "map/budapest-metro.geojson"
     const val SOURCE = "budapest-metro"
     const val STATIONS = "metro-overview-stations"
+    val stationLayers = Array(10) { if (it == 0) STATIONS else "$STATIONS-$it" }
     const val LINES_MIN_ZOOM = 8.5f
     const val STATIONS_MIN_ZOOM = 10f
     const val PLATFORMS_MIN_ZOOM = 14f
@@ -31,11 +32,7 @@ internal object MetroNetworkOverlay {
     internal fun prepare(text: String): String {
         val collection = FeatureCollection.fromJson(text)
         collection.features().orEmpty().forEach { feature ->
-            val lines = if (feature.getStringProperty("kind") == "line") listOf(feature.getStringProperty("line"))
-                else feature.getProperty("lines").asJsonArray.map { it.asString }
-            require(lines.isNotEmpty())
-            val colors = lines.map { requireNotNull(MetroLineStyle.forLine(it, "SUBWAY")).color }.distinct()
-            val color = if (colors.size == 1) colors.single() else 0xFF37474F.toInt()
+            val color = requireNotNull(MetroLineStyle.forLine(feature.getStringProperty("line"), "SUBWAY")).color
             feature.addStringProperty("color", String.format(Locale.ROOT, "#%06X", color and 0xffffff))
         }
         return collection.toJson()
@@ -71,18 +68,29 @@ internal object MetroNetworkOverlay {
                 PropertyFactory.lineColor(Expression.get("color")), PropertyFactory.lineWidth(width(0f)),
                 PropertyFactory.lineCap("round"), PropertyFactory.lineJoin("round"))
                 .apply { minZoom = LINES_MIN_ZOOM })
-            val stations = CircleLayer(STATIONS, SOURCE).withFilter(Expression.eq(Expression.get("kind"), Expression.literal("station")))
-                .withProperties(PropertyFactory.circleColor("#FFFFFF"), PropertyFactory.circleStrokeColor(Expression.get("color")),
-                    PropertyFactory.circleStrokeWidth(2.5f), PropertyFactory.circleRadius(Expression.interpolate(
-                        Expression.linear(), Expression.zoom(), Expression.stop(10, 4.5f),
-                        Expression.stop(12, 6.5f), Expression.stop(14, 8f))))
-                .apply { minZoom = STATIONS_MIN_ZOOM; maxZoom = PLATFORMS_MIN_ZOOM }
-            // Stations always mask the route strokes, including a currently selected route.
-            style.addLayerAbove(stations, style.getLayer("selected-line-stroke")?.id ?: "metro-overview-lines")
+            var belowStations = style.getLayer("selected-line-stroke")?.id ?: "metro-overview-lines"
+            // Every real platform keeps its own line color and tap target. Small screen
+            // offsets expose both directions, with separate rows for interchange lines.
+            stationLayers.forEachIndexed { slot, id ->
+                val stations = CircleLayer(id, SOURCE).withFilter(Expression.all(
+                    Expression.eq(Expression.get("kind"), Expression.literal("station")),
+                    Expression.eq(Expression.get("slot"), Expression.literal(slot))))
+                    .withProperties(PropertyFactory.circleColor("#FFFFFF"), PropertyFactory.circleStrokeColor(Expression.get("color")),
+                        PropertyFactory.circleStrokeWidth(2.5f), PropertyFactory.circleRadius(Expression.interpolate(
+                            Expression.linear(), Expression.zoom(), Expression.stop(10, 4.5f),
+                            Expression.stop(12, 6.5f), Expression.stop(14, 8f))),
+                        PropertyFactory.circleTranslate(arrayOf(if (slot % 2 == 0) -11f else 11f, (slot / 2 - 2) * 11f)),
+                        PropertyFactory.circleTranslateAnchor("viewport"))
+                    .apply { minZoom = STATIONS_MIN_ZOOM; maxZoom = PLATFORMS_MIN_ZOOM }
+                style.addLayerAbove(stations, belowStations)
+                belowStations = id
+            }
 
         }
         style.getLayerAs<LineLayer>("metro-overview-casing")?.setProperties(PropertyFactory.lineColor(if (dark) "#111D2C" else "#FFFFFF"))
-        style.getLayerAs<CircleLayer>(STATIONS)?.setProperties(PropertyFactory.visibility(if (focused) "none" else "visible"))
+        stationLayers.forEach { id ->
+            style.getLayerAs<CircleLayer>(id)?.setProperties(PropertyFactory.visibility(if (focused) "none" else "visible"))
+        }
 
     }
 }

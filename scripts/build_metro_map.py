@@ -44,11 +44,19 @@ def build(archive: Path, output: Path):
             groups[stop["parent_station"] or stop_id].append(stop_id)
         for station_id, platform_ids in sorted(groups.items()):
             station = stops[station_id]
-            features.append({"type": "Feature", "properties": {
-                "kind": "station", "name": station["stop_name"],
-                "stop-ids": ["emma:BKK:" + stop_id for stop_id in platform_ids],
-                "lines": sorted(set.union(*(stop_lines[stop_id] for stop_id in platform_ids)))},
-                "geometry": {"type": "Point", "coordinates": [float(station["stop_lon"]), float(station["stop_lat"])]}})
+            lines = sorted(set.union(*(stop_lines[stop_id] for stop_id in platform_ids)))
+            for line_index, line in enumerate(lines):
+                line_platforms = sorted(stop_id for stop_id in platform_ids if line in stop_lines[stop_id])
+                assert len(line_platforms) <= 2, (station_id, line, line_platforms)
+                row = 2 * line_index - (len(lines) - 1)
+                for side, stop_id in enumerate(line_platforms):
+                    stop = stops[stop_id]
+                    features.append({"type": "Feature", "properties": {
+                        "kind": "station", "name": stop["stop_name"], "station": station_id,
+                        "stop-ids": ["emma:BKK:" + stop_id], "line": line,
+                        "slot": (row + 2) * 2 + side,
+                        "offset": [-11 if side == 0 else 11, row * 11]},
+                        "geometry": {"type": "Point", "coordinates": [float(stop["stop_lon"]), float(stop["stop_lat"])]}})
         result = {"type": "FeatureCollection", "source": "BKK GTFS", "sourceUrl": "https://go.bkk.hu/api/static/v1/public-gtfs/budapest_gtfs.zip",
             "licenseUrl": "https://bkk.hu/fejlesztoknek/", "sourceSha256": hashlib.sha256(archive.read_bytes()).hexdigest(), "features": features}
         output.parent.mkdir(parents=True, exist_ok=True)

@@ -45,7 +45,7 @@ class OfflineBasemapTest {
             context.assets.open("map/offline.json").use { it.available().toLong() } +
             context.assets.open("map/offline-dark.json").use { it.available().toLong() } +
             context.assets.open(MetroNetworkOverlay.ASSET).use { it.available().toLong() }
-        assertEquals(35_484_525L, OfflineBasemapAssets.BUNDLED_BYTES)
+        assertEquals(35_498_283L, OfflineBasemapAssets.BUNDLED_BYTES)
         assertEquals(34_857_842L, OfflineBasemapAssets.ARCHIVE_BYTES)
         assertEquals(bundled, OfflineBasemapAssets.BUNDLED_BYTES)
 

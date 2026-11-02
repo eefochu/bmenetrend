@@ -234,14 +234,16 @@ fun NativeTransitMap(
                     onVehicle(vehicle)
                     return@addOnMapClickListener true
                 }
-                // Large overview dots represent a source station and all its platforms.
+                // Overview dots select individual source metro platforms, including interchanges.
                 val touchRadius = 22f * context.resources.displayMetrics.density
                 val metroStation = ready.queryRenderedFeatures(RectF(point.x - touchRadius, point.y - touchRadius,
-                    point.x + touchRadius, point.y + touchRadius), MetroNetworkOverlay.STATIONS)
+                    point.x + touchRadius, point.y + touchRadius), *MetroNetworkOverlay.stationLayers)
                     .minByOrNull { feature ->
                         val coordinate = feature.geometry() as Point
                         val screen = ready.projection.toScreenLocation(LatLng(coordinate.latitude(), coordinate.longitude()))
-                        kotlin.math.hypot((screen.x - point.x).toDouble(), (screen.y - point.y).toDouble())
+                        val offset = feature.getProperty("offset").asJsonArray
+                        kotlin.math.hypot(screen.x + offset[0].asDouble * context.resources.displayMetrics.density - point.x,
+                            screen.y + offset[1].asDouble * context.resources.displayMetrics.density - point.y)
                     }
                 if (metroStation != null) {
                     val ids = MetroNetworkOverlay.stopIds(metroStation)
