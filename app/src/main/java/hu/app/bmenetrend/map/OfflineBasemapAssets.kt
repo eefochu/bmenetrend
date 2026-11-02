@@ -5,6 +5,6 @@ package hu.app.bmenetrend.map
 object OfflineBasemapAssets {
     const val ARCHIVE_BYTES = 34857842L
     const val ARCHIVE_SHA256 = "8c8d5d0e8024ee6bb1b1a6930f7197f4a0903f059f8ee757f9d4a6079facbf88"
-    const val BUNDLED_BYTES = 35446032L
+    const val BUNDLED_BYTES = 35498283L
     const val INSTALLED_BYTES = BUNDLED_BYTES + ARCHIVE_BYTES
 }

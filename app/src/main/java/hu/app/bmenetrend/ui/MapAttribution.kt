@@ -42,6 +42,7 @@ internal fun MapCreditsDialog(onDismiss: () -> Unit) {
                     "OpenStreetMap · ODbL 1.0" to "https://www.openstreetmap.org/copyright",
                     "OpenMapTiles · CC BY 4.0" to "https://openmaptiles.org/",
                     "OpenFreeMap" to "https://openfreemap.org/",
+                    "BKK · M1–M4" to "https://bkk.hu/fejlesztoknek/",
                     "Geofabrik" to "https://www.geofabrik.de/data/download.html",
                     "MapLibre Native · BSD 2-Clause" to "https://github.com/maplibre/maplibre-native/blob/main/LICENSE.md"
                 ).forEach { (label, url) ->

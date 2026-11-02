@@ -118,7 +118,7 @@ class GtfsImporter(private val db: SQLiteDatabase, private val from: LocalDate, 
             val insertRoute = db.compileStatement("INSERT INTO routes(source_id,number,name,mode,color,feed) VALUES(?,?,?,?,?,?)")
             rows("routes.txt", required = true) { r ->
                 val type = r.getValue("route_type").toInt()
-                val mode = when { type == 0 || type in 900..999 -> "TRAM"; type == 1 || type in 400..499 -> "SUBWAY"; type == 2 || type in 100..199 -> "RAIL"; type == 4 || type in 1000..1099 -> "FERRY"; type == 11 || type in 800..899 -> "TROLLEYBUS"; type == 3 || type in 200..299 || type in 700..799 -> "BUS"; type == 5 -> "CABLE_CAR"; type == 6 -> "GONDOLA"; type == 7 -> "FUNICULAR"; else -> error("Unsupported GTFS route type: $type") }
+                val mode = when { source.id == "mav" && type == 900 -> "TRAMTRAIN"; type == 0 || type in 900..999 -> "TRAM"; type == 1 || type in 400..499 -> "SUBWAY"; type == 2 || type in 100..199 -> "RAIL"; type == 4 || type in 1000..1099 -> "FERRY"; type == 11 || type in 800..899 -> "TROLLEYBUS"; type == 3 || type in 200..299 || type in 700..799 -> "BUS"; type == 5 -> "CABLE_CAR"; type == 6 -> "GONDOLA"; type == 7 -> "FUNICULAR"; else -> error("Unsupported GTFS route type: $type") }
                 listOf(key(r.getValue("route_id")), r["route_short_name"].orEmpty().ifBlank { r["route_long_name"].orEmpty() }, r["route_long_name"].orEmpty(), mode, r["route_color"].orEmpty(), source.id)
                     .forEachIndexed { i, s -> insertRoute.bindString(i + 1, s) }
                 routes[r.getValue("route_id")] = insertRoute.executeInsert()

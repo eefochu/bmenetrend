@@ -38,4 +38,16 @@ class OfflinePackPipelineTest {
             fail("Combined input size must be bounded")
         } catch (_: IllegalArgumentException) { }
     }
+
+    @Test fun threeSourcesDownloadAccountingEnforcesTheCombinedBudget() {
+        val sources = OfflineSource.defaults + OfflineSource.emmaRail
+        val progress = DownloadTotals(10, sources.size)
+        assertEquals(100L to 0L, progress.update("volan", 90, 100))
+        assertEquals(150L to 0L, progress.update("bkk", 50, 200))
+        assertEquals(180L to 360L, progress.update("mav", 30, 50))
+        try {
+            progress.update("mav", OFFLINE_MAX_BYTES, OFFLINE_MAX_BYTES)
+            fail("Combined input size must be bounded")
+        } catch (_: IllegalArgumentException) { }
+    }
 }

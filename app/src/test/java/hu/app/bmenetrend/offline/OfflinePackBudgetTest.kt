@@ -16,14 +16,14 @@ class OfflinePackBudgetTest {
     )
 
     @Test fun reservesBundledAndWorkingBasemapWithinTheFiveHundredMegabyteLimit() {
-        assertEquals(35_446_032L, OfflineBasemapAssets.BUNDLED_BYTES)
+        assertEquals(35_498_283L, OfflineBasemapAssets.BUNDLED_BYTES)
         assertEquals(34_857_842L, OfflineBasemapAssets.ARCHIVE_BYTES)
-        assertEquals(70_303_874L, OfflineBasemapAssets.INSTALLED_BYTES)
-        assertEquals(429_696_126L, OFFLINE_DATABASE_MAX_BYTES)
+        assertEquals(70_356_125L, OfflineBasemapAssets.INSTALLED_BYTES)
+        assertEquals(429_643_875L, OFFLINE_DATABASE_MAX_BYTES)
         assertEquals(500_000_000L, OFFLINE_MAX_BYTES)
 
         val currentPack = metadata(388_014_080L)
-        assertEquals(458_317_954L, currentPack.installedFootprintBytes)
+        assertEquals(458_370_205L, currentPack.installedFootprintBytes)
         assertEquals(currentPack, OfflinePackMetadata.parse(currentPack.json().toString()))
     }
 

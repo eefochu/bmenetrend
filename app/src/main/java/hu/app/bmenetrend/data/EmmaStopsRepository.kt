@@ -12,7 +12,7 @@ import java.time.Instant
 
 /** Static national stop index cached on disk; departure boards always query the selected platform. */
 class EmmaStopsRepository(context: Context, private val graphql: EmmaGraphqlClient = EmmaGraphqlClient()) {
-    private val file = File(context.filesDir, "emma-stop-index-v2.json")
+    private val file = File(context.filesDir, "emma-stop-index-v3.json")
     private var memory: Index? = null
     private val indexMutex = Mutex()
     data class Index(val catalogue: EmmaStopsParser.Catalogue, val fetchedAt: Instant, val stale: Boolean = false)
@@ -21,7 +21,7 @@ class EmmaStopsRepository(context: Context, private val graphql: EmmaGraphqlClie
     suspend fun mapArea(bounds: MapBounds): EmmaStopsParser.Catalogue {
         val variables = org.json.JSONObject().put("south", bounds.south).put("west", bounds.west)
             .put("north", bounds.north).put("east", bounds.east)
-        val text = graphql.execute(EmmaStopsParser.MAP_AREA_QUERY, variables)
+        val text = graphql.execute(EmmaStopsParser.MAP_RENDER_QUERY, variables)
         return withContext(Dispatchers.Default) { EmmaStopsParser.area(text) }
     }
 
@@ -36,7 +36,8 @@ class EmmaStopsRepository(context: Context, private val graphql: EmmaGraphqlClie
         val now = Instant.now()
         var saved = memory ?: withContext(Dispatchers.IO) {
             runCatching {
-                val cached = if (file.isFile) file else File(file.parentFile, "emma-stop-index-v1.json")
+                val cached = listOf(file, File(file.parentFile, "emma-stop-index-v2.json"), File(file.parentFile, "emma-stop-index-v1.json"))
+                    .firstOrNull { it.isFile } ?: return@runCatching null
                 if (!cached.isFile) null else Index(EmmaStopsParser.index(cached.readText()),
                     if (cached == file) Instant.ofEpochMilli(cached.lastModified()) else Instant.EPOCH)
             }.getOrNull()

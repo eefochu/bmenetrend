@@ -56,6 +56,8 @@ class TransitViewModelRecentBoardsTest {
         } catch (_: Exception) {}
         NetworkAccessPolicy.initialize(app)
         NetworkAccessPolicy.setOffline(app, false)
+        NetworkAccessPolicy.onConnectivityChanged(true)
+        File(app.filesDir, "emma-stop-index-v3.json").delete()
         File(app.filesDir, "emma-stop-index-v2.json").delete()
         File(app.filesDir, "emma-stop-index-v1.json").delete()
     }

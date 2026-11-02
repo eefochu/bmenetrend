@@ -26,7 +26,8 @@ manifest = {
 }
 (DATA / 'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
 archive_entry = entries['offline/hungary.pmtiles']
-bundled = sum(e['bytes'] for e in entries.values()) + (DATA / 'manifest.json').stat().st_size
+metro = ASSETS / 'budapest-metro.geojson'
+bundled = sum(e['bytes'] for e in entries.values()) + (DATA / 'manifest.json').stat().st_size + (metro.stat().st_size if metro.is_file() else 0)
 installed = bundled + archive_entry['bytes']
 kotlin = ROOT / 'app/src/main/java/hu/app/bmenetrend/map/OfflineBasemapAssets.kt'
 kotlin.write_text('''package hu.app.bmenetrend.map

@@ -664,10 +664,11 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 }
                 loadedMapBoundsList.add(area)
                 loadedMapBounds = area
+                stopRoutes = (catalogue.routes + stopRoutes).distinctBy { it.id }
                 mutableState.update { current ->
                     val merged = current.emmaStops.associateBy { it.id }.toMutableMap()
                     catalogue.stops.forEach { stop ->
-                        if (merged[stop.id]?.routeIds.isNullOrEmpty()) merged[stop.id] = stop
+                        if (merged[stop.id]?.routeIds.isNullOrEmpty() || stop.transportMode == "SUBWAY" && stop.routeIds.isNotEmpty()) merged[stop.id] = stop
                     }
                     current.copy(emmaStops = merged.values.toList())
                 }
@@ -926,9 +927,17 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private fun publishStopIndex(index: EmmaStopsRepository.Index) {
         if (NetworkAccessPolicy.offline.value) return
         stopIndexFailed = index.stale
+        stopRoutes = (index.catalogue.routes + stopRoutes).distinctBy { it.id }
         mutableState.update { current ->
             val updated = index.catalogue.stops.associateBy { it.id }.toMutableMap()
-            current.emmaStops.filter { it.routeIds.isNotEmpty() }.forEach { updated[it.id] = it }
+            current.emmaStops.filter { it.routeIds.isNotEmpty() }.forEach { stop ->
+                val indexed = updated[stop.id]
+                updated[stop.id] = if (indexed == null) stop
+                else if (indexed.transportMode == "SUBWAY" && indexed.routeIds.isNotEmpty()) indexed
+                else indexed.copy(
+                    routeIds = (indexed.routeIds + stop.routeIds).distinct(),
+                    transportMode = indexed.transportMode ?: stop.transportMode)
+            }
             val allStops = current.network?.stops.orEmpty() + updated.values
             val nearest = current.userLocation?.let { nearestStop(allStops, it) }
             current.copy(emmaStops = updated.values.toList(), stopIndexLoaded = true,
