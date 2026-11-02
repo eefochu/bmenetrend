@@ -6,16 +6,18 @@ import hu.app.bmenetrend.data.*
 import java.time.Instant
 import java.time.LocalDate
 
-/** App IDs deliberately retain exact EMMA namespaces for the two official feeds. */
+/** App IDs retain exact EMMA namespaces, including rail station/platform identities. */
 internal fun stopAppId(source: String): String = when (source.substringBefore(':')) {
     "local" -> source.substringAfter(':')
     "volan" -> "emma:hkir:${source.substringAfter(':')}"
     "bkk" -> "emma:BKK:${source.substringAfter(':')}"
+    "mav" -> "emma:${source.substringAfter(':')}"
     else -> "offline:$source"
 }
 internal fun sourceStopId(appId: String): String = when {
     appId.startsWith("emma:hkir:") -> "volan:${appId.removePrefix("emma:hkir:")}"
     appId.startsWith("emma:BKK:") -> "bkk:${appId.removePrefix("emma:BKK:")}"
+    appId.startsWith("emma:1:") -> "mav:${appId.removePrefix("emma:")}"
     appId.startsWith("offline:") -> appId.removePrefix("offline:")
     else -> "local:$appId"
 }
@@ -23,12 +25,14 @@ internal fun routeAppId(source: String): String = when (source.substringBefore('
     "local" -> source.substringAfter(':')
     "volan" -> "volan:hkir:${source.substringAfter(':')}"
     "bkk" -> "bkk:BKK:${source.substringAfter(':')}"
+    "mav" -> source
     else -> "offline:$source"
 }
 
 private fun sourceRouteId(appId: String): String = when {
     appId.startsWith("volan:hkir:") -> "volan:${appId.removePrefix("volan:hkir:")}"
     appId.startsWith("bkk:BKK:") -> "bkk:${appId.removePrefix("bkk:BKK:")}"
+    appId.startsWith("mav:1:") -> appId
     appId.startsWith("offline:") -> appId.removePrefix("offline:")
     else -> "local:$appId"
 }

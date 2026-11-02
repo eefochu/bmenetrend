@@ -4,7 +4,7 @@
     <string name="offline_automatic">No internet access. The downloaded timetable pack remains available.</string>
     <string name="offline_title">Offline use</string>
     <string name="offline_pack_title">Hungary offline timetable pack</string>
-    <string name="offline_coverage">Nationwide and local Volán buses, BKK and HÉV services included in the BKK feed. Rail timetables can be added by importing an authorized GTFS file.</string>
+    <string name="offline_coverage">Nationwide and local Volán buses, BKK, HÉV services included in the BKK feed, and MÁV trains from EMMA, with stations and scheduled departures.</string>
     <string name="offline_limits">Optional download, at most 500 MB. Installation temporarily needs at least 1.5 GB free. Scheduled stop-to-stop planning uses only source-provided transfer links. No live vehicles, delays or address search. The bundled offline map is described below.</string>
     <string name="offline_mode">Offline mode</string>
     <string name="offline_mode_hint">Without an internet connection, the app automatically uses the downloaded pack and returns online when connectivity is restored. Manually enabled offline mode stays enabled.</string>
@@ -32,7 +32,7 @@
     <string name="offline_date_unavailable">The selected date is outside the downloaded timetable. Update the pack in online mode.</string>
     <string name="offline_endpoint_unavailable">Select two downloaded boarding stops for offline planning. Walking access from your location and addresses has not been downloaded.</string>
     <string name="offline_valid_until">Offline timetable · Valid through %1$s</string>
-    <string name="offline_attribution">Sources: MÁV Személyszállítás / KTI and BKK. https://napportal.kozut.hu/ · https://bkk.hu/fejlesztoknek/</string>
+    <string name="offline_attribution">Sources: MÁV Személyszállítás / KTI and BKK. https://napportal.kozut.hu/ · https://bkk.hu/fejlesztoknek/ · https://mavplusz.hu/</string>
     <string name="offline_open_settings">Offline · Settings</string>
     <string name="offline_missing_favorites">Some favorite stops are outside the downloaded pack. They remain available in online mode.</string>
     <string name="offline_auto_updates">Update daily on Wi-Fi automatically (in online mode)</string>

@@ -15,6 +15,7 @@ const val OFFLINE_DATABASE_MAX_BYTES = OFFLINE_MAX_BYTES - OfflineBasemapAssets.
 @Immutable
 data class OfflineSource(val id: String, val name: String, val url: String, val licenseUrl: String) {
     companion object {
+        val emmaRail = OfflineSource("mav", "MÁV – EMMA vasúti menetrend", "https://mavplusz.hu/otp2-backend/otp/routers/default/index/graphql", "https://mavplusz.hu/")
         val defaults = listOf(
             OfflineSource("volan", "Volán – országos és helyi autóbuszok", "https://gtfs.kti.hu/public-gtfs/volanbusz_gtfs.zip", "https://napportal.kozut.hu/"),
             OfflineSource("bkk", "BKK – Budapest", "https://go.bkk.hu/api/static/v1/public-gtfs/budapest_gtfs.zip", "https://bkk.hu/fejlesztoknek/"),

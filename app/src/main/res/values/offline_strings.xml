@@ -2,7 +2,7 @@
 <resources>
     <string name="offline_title">Offline használat</string>
     <string name="offline_pack_title">Magyarország offline menetrendcsomag</string>
-    <string name="offline_coverage">Országos és helyi Volán-autóbuszok, BKK és a BKK-adatforrásban szereplő HÉV-járatok. A vasúti menetrend külön, engedélyezett GTFS-fájlból importálható.</string>
+    <string name="offline_coverage">Országos és helyi Volán-autóbuszok, BKK, a BKK-adatforrásban szereplő HÉV-járatok és MÁV-vonatok az EMMA adataiból, állomásokkal és menetrend szerinti indulásokkal.</string>
     <string name="offline_limits">Opcionális letöltés, legfeljebb 500 MB. Telepítéshez átmenetileg legalább 1,5 GB szabad hely szükséges. Menetrend szerinti, megállótól megállóig történő tervezés; kizárólag az adatforrásban megadott átszállásokkal. Nincs élő járműkövetés, késés és címkeresés. A beépített offline térkép leírása alább olvasható.</string>
     <string name="offline_mode">Offline mód</string>
     <string name="offline_mode_hint">Internetkapcsolat nélkül az alkalmazás automatikusan a letöltött csomagra vált, majd a kapcsolat helyreállásakor visszatér online módba. A kézzel bekapcsolt offline mód bekapcsolva marad.</string>
@@ -32,7 +32,7 @@
     <string name="offline_date_unavailable">A választott dátum kívül esik a letöltött menetrenden. Frissítsd a csomagot online módban.</string>
     <string name="offline_endpoint_unavailable">Offline tervezéshez válassz két letöltött felszállóhelyet. Az aktuális hely és a címek gyalogos kapcsolata nincs letöltve.</string>
     <string name="offline_valid_until">Offline menetrend · Érvényes: %1$s-ig</string>
-    <string name="offline_attribution">Források: MÁV Személyszállítás / KTI és BKK. https://napportal.kozut.hu/ · https://bkk.hu/fejlesztoknek/</string>
+    <string name="offline_attribution">Források: MÁV Személyszállítás / KTI és BKK. https://napportal.kozut.hu/ · https://bkk.hu/fejlesztoknek/ · https://mavplusz.hu/</string>
     <string name="offline_open_settings">Offline · Beállítások</string>
     <string name="offline_missing_favorites">Néhány kedvenc megálló nem szerepel a letöltött csomagban. Online módban továbbra is elérhetők.</string>
     <string name="offline_auto_updates">Automatikus frissítés naponta, csak Wi-Fi-n (online módban)</string>
