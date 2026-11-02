@@ -10,11 +10,19 @@ object EmmaStopsParser {
     const val BOARD_LIMIT = 300
     const val ROUTE_FIELDS = "gtfsId shortName longName mode color"
     const val STOP_FIELDS = "gtfsId name lat lon vehicleMode platformCode locationType parentStation { gtfsId name } routes { $ROUTE_FIELDS }"
-    const val INDEX_QUERY = "{stops {gtfsId name lat lon vehicleMode platformCode locationType parentStation {gtfsId name}}}"
+    private const val INDEX_STOP_FIELDS = "gtfsId name lat lon vehicleMode platformCode locationType parentStation {gtfsId name}"
+    private const val METRO_ROUTES = "metroRoutes:routes(transportModes:[SUBWAY]) {$ROUTE_FIELDS stops {$INDEX_STOP_FIELDS}}"
+    // Keep the national stop stream light; only four metro routes need all their station memberships.
+    const val INDEX_QUERY = "{stops {$INDEX_STOP_FIELDS} $METRO_ROUTES}"
+    // Planner stop discovery needs identities/coordinates, not map styling metadata.
     val MAP_AREA_QUERY = """query MapStopsInArea(${'$'}south: Float!, ${'$'}west: Float!, ${'$'}north: Float!, ${'$'}east: Float!) {
+        stopsByBbox(minLat:${'$'}south,minLon:${'$'}west,maxLat:${'$'}north,maxLon:${'$'}east) { $INDEX_STOP_FIELDS }
+    }""".trimIndent()
+    val MAP_RENDER_QUERY = """query MapStopsInArea(${'$'}south: Float!, ${'$'}west: Float!, ${'$'}north: Float!, ${'$'}east: Float!) {
         stopsByBbox(minLat:${'$'}south,minLon:${'$'}west,maxLat:${'$'}north,maxLon:${'$'}east) {
-            gtfsId name lat lon vehicleMode platformCode locationType parentStation { gtfsId name }
+            $STOP_FIELDS
         }
+        $METRO_ROUTES
     }""".trimIndent()
     val AREA_QUERY = """query StopsInArea(${'$'}south: Float!, ${'$'}west: Float!, ${'$'}north: Float!, ${'$'}east: Float!) {
         stopsByBbox(minLat:${'$'}south,minLon:${'$'}west,maxLat:${'$'}north,maxLon:${'$'}east) { $STOP_FIELDS }
@@ -99,6 +107,7 @@ object EmmaStopsParser {
     fun index(text: String): Catalogue {
         val tokens = JSONTokener(text)
         val result = mutableListOf<TransitStop>()
+        var metro = Catalogue(emptyList(), emptyList())
         var found = false
         fun expect(char: Char) { require(tokens.nextClean() == char) { "Invalid EMMA stop index" } }
         fun fields(action: (String) -> Unit) {
@@ -115,7 +124,8 @@ object EmmaStopsParser {
             when (key) {
                 "errors" -> require((tokens.nextValue() as? JSONArray)?.length().let { it == null || it == 0 }) { "EMMA GraphQL error" }
                 "data" -> fields { dataKey ->
-                    if (dataKey != "stops") tokens.nextValue() else {
+                    if (dataKey == "metroRoutes") metro = metroCatalogue(tokens.nextValue() as JSONArray)
+                    else if (dataKey != "stops") tokens.nextValue() else {
                         expect('['); found = true
                         if (tokens.nextClean() != ']') {
                             tokens.back()
@@ -132,10 +142,52 @@ object EmmaStopsParser {
             }
         }
         require(found && result.isNotEmpty()) { "Missing national stop index" }
-        return Catalogue(result.distinctBy { it.id }, emptyList() // Routes populated on demand
-        )
+        return withMetro(Catalogue(result.distinctBy { it.id }, emptyList()), metro, includeMetroStops = true)
     }
-    fun area(text: String) = stops(EmmaGraphqlClient.data(text).getJSONArray("stopsByBbox"))
+
+    private fun withMetro(base: Catalogue, metro: Catalogue, includeMetroStops: Boolean): Catalogue {
+        val merged = base.stops.associateByTo(linkedMapOf()) { it.id }
+        val byId = base.routes.associateBy { it.id }
+        metro.stops.forEach { stop ->
+            val previous = merged[stop.id]
+            if (includeMetroStops || previous != null) {
+                // stop.routes can include every line at an interchange, even on a single
+                // platform. route.stops is the authoritative membership, matching GTFS offline.
+                val otherModes = previous?.routeIds.orEmpty().filter { byId[it]?.transportMode != "SUBWAY" }
+                merged[stop.id] = stop.copy(routeIds = (otherModes + stop.routeIds).distinct())
+            }
+        }
+        // Parent stations carry the same line colours as their boarding platforms, as offline.
+        val parentRoutes = mutableMapOf<String, MutableSet<String>>()
+        metro.stops.forEach { stop -> stop.parentStationId?.let { id ->
+            parentRoutes.getOrPut(id) { linkedSetOf() }.addAll(stop.routeIds)
+        } }
+        parentRoutes.forEach { (id, routes) -> merged[id]?.let { stop ->
+            merged[id] = stop.copy(routeIds = (stop.routeIds + routes).distinct(), transportMode = "SUBWAY")
+        } }
+        return Catalogue(merged.values.toList(), (metro.routes + base.routes).distinctBy { it.id })
+    }
+
+    private fun metroCatalogue(rows: JSONArray): Catalogue {
+        val routes = linkedMapOf<String, TransitRoute>()
+        val stations = linkedMapOf<String, TransitStop>()
+        for (i in 0 until rows.length()) {
+            val row = rows.getJSONObject(i)
+            val route = route(row)?.takeIf { it.transportMode == "SUBWAY" } ?: continue
+            routes[route.id] = route
+            for (stop in stops(row.getJSONArray("stops")).stops) {
+                val previous = stations[stop.id]
+                stations[stop.id] = stop.copy(routeIds = (previous?.routeIds.orEmpty() + route.id).distinct(), transportMode = "SUBWAY")
+            }
+        }
+        return Catalogue(stations.values.toList(), routes.values.toList())
+    }
+    fun area(text: String): Catalogue {
+        val data = EmmaGraphqlClient.data(text)
+        val base = stops(data.getJSONArray("stopsByBbox"))
+        val metro = data.optJSONArray("metroRoutes")?.let(::metroCatalogue) ?: return base
+        return withMetro(base, metro, includeMetroStops = false)
+    }
     fun search(text: String) = stops(EmmaGraphqlClient.data(text).getJSONArray("stops"))
     /** All routes attached to the exact source stop, without a date or departure-time filter. */
     fun servingLines(text: String,expectedId: String): Catalogue {

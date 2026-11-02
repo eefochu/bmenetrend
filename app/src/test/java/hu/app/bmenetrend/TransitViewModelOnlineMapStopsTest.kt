@@ -20,6 +20,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Before
+import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -33,6 +34,9 @@ import java.util.concurrent.atomic.AtomicInteger
 class TransitViewModelOnlineMapStopsTest {
 
     private lateinit var app: Application
+    private val models = mutableListOf<TransitViewModel>()
+
+    @After fun cleanup() { models.forEach { it.viewModelScope.cancel() } }
 
     @Before
     fun setup() {
@@ -42,6 +46,8 @@ class TransitViewModelOnlineMapStopsTest {
         } catch (_: Exception) {}
         NetworkAccessPolicy.initialize(app)
         NetworkAccessPolicy.setOffline(app, false)
+        NetworkAccessPolicy.onConnectivityChanged(true)
+        File(app.filesDir, "emma-stop-index-v3.json").delete()
         File(app.filesDir, "emma-stop-index-v2.json").delete()
         File(app.filesDir, "emma-stop-index-v1.json").delete()
     }
@@ -61,9 +67,34 @@ class TransitViewModelOnlineMapStopsTest {
         .toString()
 
     private fun injectRepository(viewModel: TransitViewModel, repo: EmmaStopsRepository) {
+        models += viewModel
         val field = TransitViewModel::class.java.getDeclaredField("stopsRepository")
         field.isAccessible = true
         field.set(viewModel, repo)
+    }
+
+    @Test fun onlineViewportPublishesMetroRoutesAndColorsBeforeNationalIndexLoads() = runBlocking {
+        val metro = JSONObject().put("gtfsId", "BKK:5400").put("shortName", "M4")
+            .put("longName", "M4").put("mode", "SUBWAY").put("color", "46A43B")
+        val station = sampleStopJson("BKK:metro", "Kelenföld", 47.50, 19.05)
+            .put("vehicleMode", "SUBWAY").put("routes", JSONArray().put(metro))
+        val client = OkHttpClient.Builder().addInterceptor { chain ->
+            Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                .body(bboxResponse(station).toResponseBody()).build()
+        }.build()
+        val viewModel = TransitViewModel(app)
+        injectRepository(viewModel, EmmaStopsRepository(app, EmmaGraphqlClient(client)))
+        viewModel.updateMapArea(MapBounds(19.04, 47.48, 19.06, 47.52), GeoPoint(47.50, 19.05))
+        val deadline = System.currentTimeMillis() + 5_000
+        while (viewModel.state.value.emmaRoutes.none { it.id == "bkk:BKK:5400" } && System.currentTimeMillis() < deadline) {
+            ShadowLooper.idleMainLooper(); delay(5)
+        }
+        ShadowLooper.idleMainLooper()
+        val state = viewModel.state.value
+        val stop = state.emmaStops.single { it.id == "emma:BKK:metro" }
+        assertFalse(state.stopIndexLoaded)
+        assertEquals(listOf(hu.app.bmenetrend.map.MetroLineStyle.forLine("M4", "SUBWAY")!!.color),
+            hu.app.bmenetrend.map.StopMarkerColors.palette(listOf(stop), state.emmaRoutes.associateBy { it.id }))
     }
 
     @Test

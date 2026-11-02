@@ -32,6 +32,7 @@ class PlannerViewModelSearchSelectionTest {
         viewModelStore = ViewModelStore()
         val app = ApplicationProvider.getApplicationContext<Application>()
         NetworkAccessPolicy.setOffline(app, false)
+        NetworkAccessPolicy.onConnectivityChanged(true)
     }
 
     @After fun teardown() {

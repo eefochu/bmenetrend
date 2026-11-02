@@ -32,6 +32,8 @@ class EmmaOnlineFastPathTest {
     @Before
     fun setup() {
         context = ApplicationProvider.getApplicationContext()
+        hu.app.bmenetrend.offline.NetworkAccessPolicy.onConnectivityChanged(true)
+        File(context.filesDir, "emma-stop-index-v3.json").delete()
         File(context.filesDir, "emma-stop-index-v2.json").delete()
         File(context.filesDir, "emma-stop-index-v1.json").delete()
     }
@@ -54,9 +56,35 @@ class EmmaOnlineFastPathTest {
         .put("data", JSONObject().put("stops", JSONArray(stops.toList())))
         .toString()
 
+    @Test fun oldFreshStopCacheIsShownThenRefreshedWithMetroMembership() = runBlocking {
+        val station = sampleStopJson("BKK:metro", "Kelenföld", 47.5, 19.05).put("vehicleMode", "SUBWAY")
+        File(context.filesDir, "emma-stop-index-v2.json").writeText(indexResponse(station))
+        val line = JSONObject().put("gtfsId", "BKK:5400").put("shortName", "M4")
+            .put("mode", "SUBWAY").put("stops", JSONArray().put(station))
+        val response = JSONObject(indexResponse(station)).apply {
+            getJSONObject("data").put("metroRoutes", JSONArray().put(line))
+        }.toString()
+        val calls = AtomicInteger()
+        val client = OkHttpClient.Builder().addInterceptor { chain ->
+            calls.incrementAndGet()
+            Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                .body(response.toResponseBody()).build()
+        }.build()
+        var cached: EmmaStopsRepository.Index? = null
+        val repository = EmmaStopsRepository(context, EmmaGraphqlClient(client))
+        val result = repository.index(onCached = { cached = it })
+        assertTrue("Old index is useful but must not block metro refresh", cached!!.stale)
+        assertEquals(listOf("bkk:BKK:5400"), result.catalogue.stops.single().routeIds)
+        assertFalse(result.stale)
+        assertEquals(1, calls.get())
+        assertTrue(File(context.filesDir, "emma-stop-index-v3.json").isFile)
+        repository.index()
+        assertEquals("New cache is reused", 1, calls.get())
+    }
+
     @Test
-    fun mapAreaQueryContainsOnlyBoundedFieldsWithoutRoutes() {
-        val query = EmmaStopsParser.MAP_AREA_QUERY
+    fun mapAreaQueryIncludesLineColorsWithoutDepartureWindows() {
+        val query = EmmaStopsParser.MAP_RENDER_QUERY
         assertTrue("Query must request stopsByBbox with coordinates", query.contains("stopsByBbox(minLat:\$south,minLon:\$west,maxLat:\$north,maxLon:\$east)"))
         assertTrue("Query must include gtfsId", query.contains("gtfsId"))
         assertTrue("Query must include name", query.contains("name"))
@@ -67,8 +95,8 @@ class EmmaOnlineFastPathTest {
         assertTrue("Query must include locationType", query.contains("locationType"))
         assertTrue("Query must include parentStation", query.contains("parentStation"))
 
-        // Critical: Must NOT query routes in the fast dot path!
-        assertFalse("MAP_AREA_QUERY must NOT include routes field", query.contains("routes"))
+        // Static serving lines are needed to render online dots exactly like offline dots.
+        assertTrue("MAP_AREA_QUERY must include serving routes", query.contains("routes"))
         assertFalse("MAP_AREA_QUERY must NOT include stoptimes", query.contains("stoptimes"))
     }
 

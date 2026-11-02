@@ -40,3 +40,14 @@ The school term/break calendar is separate in `KanyargoCalendar.kt`; it must be 
 ## Volán route catalogue
 
 `python3 scripts/import_volan_routes.py` imports route identities from the official Biatorbágy, Páty and Budaörs town listings. It uses the Python standard library. Review the new catalogue and its review date before committing. It does not import stop times or GPS data. See [VOLAN.md](../docs/VOLAN.md).
+
+
+## Budapest metro overview
+
+`build_metro_map.py` creates `map/budapest-metro.geojson` from the official BKK GTFS ZIP. It keeps full route shapes in both directions for M1–M4 and groups the 103 boarding platforms into 48 parent-station dots. The asset records its source URL and ZIP SHA-256; the app applies the shared metro palette at runtime. This is static map context, not a separate routing/timetable feed.
+
+```sh
+python3 scripts/build_metro_map.py /path/to/budapest_gtfs.zip app/src/main/assets/map/budapest-metro.geojson
+```
+
+The source data is BKK GTFS (`https://bkk.hu/fejlesztoknek/`), credited in the map information dialog. When regenerating, update the installed map asset budget through `tools/offline-map/package.py`; its total includes this additional asset. Review changed route shapes before shipping an updated snapshot.
