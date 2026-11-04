@@ -4,7 +4,7 @@
     <string name="theme_light">Light mode</string>
     <string name="theme_dark">Dark mode</string>
     <string name="accent_title">Accent colour</string>
-    <string name="accent_hint">Choose your app colours. System follows your wallpaper on Android 12 or newer.</string>
+    <string name="accent_hint">System colours follow your wallpaper. With a custom accent, surfaces follow the selected colour too.</string>
     <string name="accent_system">System</string>
     <string name="accent_green">Green</string>
     <string name="accent_blue">Blue</string>

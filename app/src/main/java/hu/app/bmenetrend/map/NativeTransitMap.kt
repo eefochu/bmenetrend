@@ -6,7 +6,6 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.PointF
-import android.graphics.RectF
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import hu.app.bmenetrend.ui.LocalDarkTheme
@@ -21,6 +20,9 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.collectLatest
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import hu.app.bmenetrend.R
 import hu.app.bmenetrend.data.MapBounds
@@ -58,7 +60,8 @@ import org.maplibre.android.style.layers.PropertyFactory
 import org.maplibre.android.style.layers.PropertyValue
 
 private data class StationHitTarget(val position: LatLng,val offset: StopMarkerLayout.Offset,val focused: Boolean)
-private data class StationScene(val groups: List<List<TransitStop>>,val offsets: Map<String,StopMarkerLayout.Offset>)
+private data class StationGroup(val anchor: TransitStop, val members: List<TransitStop>)
+private class StationScene(val chunks: StationChunkIndex<StationGroup>,val offsets: Map<String,StopMarkerLayout.Offset>)
 private fun stationAnchor(members: List<TransitStop>): TransitStop = members.first().let { first ->
     first.copy(position=(members.firstOrNull { it.providerId=="volan" } ?: first).position)
 }
@@ -97,11 +100,14 @@ fun NativeTransitMap(
     topPaddingPx: Int? = null,
     routeOrigin: GeoPoint? = null,
     routeCatalogue: Map<String, TransitRoute> = emptyMap(),
+    showTransitStops: Boolean = true,
+    highlightedStopId: String? = selectedStopId,
+    onViewportPrefetch: (MapBounds) -> Unit = {},
 ) {
     val darkTheme = LocalDarkTheme.current
     val styleUri = if (offline) { if (darkTheme) "asset://map/offline-dark.json" else "asset://map/offline.json" } else if (darkTheme) "asset://map/night.json" else "https://tiles.openfreemap.org/styles/positron"
     val context = LocalContext.current
-    val metroNetwork by produceState<String?>(null, context.applicationContext) {
+    val rapidTransitLines by produceState<String?>(null, context.applicationContext) {
         value = MetroNetworkOverlay.load(context.applicationContext)
     }
     val owner = LocalLifecycleOwner.current
@@ -110,9 +116,13 @@ fun NativeTransitMap(
     val onMapClicked by rememberUpdatedState(onMapClick)
     val onError by rememberUpdatedState(onMapError)
     val onArea by rememberUpdatedState(onViewportChanged)
+    val onPrefetch by rememberUpdatedState(onViewportPrefetch)
+    val prefetchStops by rememberUpdatedState(showTransitStops)
     val onZoom by rememberUpdatedState(onMapZoomChanged)
     val onVehicle by rememberUpdatedState(onVehicleSelected)
-    val stops = remember(network?.stops, additionalStops, routeStops) { (network?.stops.orEmpty() + additionalStops + routeStops).distinctBy { it.id } }
+    val stops = remember(network?.stops, additionalStops, routeStops, showTransitStops) {
+        ((if (showTransitStops) network?.stops.orEmpty() + additionalStops else emptyList()) + routeStops).distinctBy { it.id }
+    }
     // Group and allocate in a camera-independent world. Pan, zoom, selection and highlights cannot reshuffle it.
     val sceneStops=remember(stops,lineFocus?.displayStops) { (stops+lineFocus?.displayStops.orEmpty()).distinctBy { it.id } }
     val stationScene by produceState<StationScene?>(null,sceneStops,stopBearings) {
@@ -121,7 +131,9 @@ fun NativeTransitMap(
             val bounds=sceneStops.takeIf { it.isNotEmpty() }?.let { all -> MapBounds(
                 all.minOf { it.position.lon },all.minOf { it.position.lat },all.maxOf { it.position.lon },all.maxOf { it.position.lat }) }
             val groups=traceMapWork("BMenetrend.StopGroups") { StopMapClustering.groups(sceneStops,bounds,16.0,stopBearings) }
-            StationScene(groups,StopMarkerLayout.offsets(groups.map(::stationAnchor),previousOffsets))
+            val merged = RailStationMarkers.mergePlatforms(groups).map { StationGroup(stationAnchor(it), it) }
+            StationScene(StationChunkIndex(merged) { it.anchor.position },
+                StopMarkerLayout.offsets(merged.map { it.anchor },previousOffsets))
         }
     }
     var savedLat by rememberSaveable { mutableDoubleStateOf(47.473) }
@@ -144,9 +156,8 @@ fun NativeTransitMap(
     }
     var map by remember(mapView) { mutableStateOf<MapLibreMap?>(null) }
     var viewport by remember { mutableStateOf<MapBounds?>(null) }
+    val stationWindows = remember(mapView) { MutableStateFlow<StationWindow?>(null) }
     var styleLoaded by remember(mapView) { mutableStateOf(false) }
-    // A local style can reload within one Compose frame. A false/true Boolean pulse
-    // can be conflated, so every installed style needs its own render generation.
     var styleGeneration by remember(mapView) { mutableIntStateOf(0) }
     var locatedOnce by rememberSaveable { mutableStateOf(false) }
     var locatedRequest by remember { mutableIntStateOf(-1) }
@@ -193,7 +204,21 @@ fun NativeTransitMap(
             }
             ready.cameraPosition = CameraPosition.Builder().target(LatLng(savedLat, savedLon)).zoom(savedZoom).build()
             ready.setMinZoomPreference(5.0)
+            var lastStationUpdate = 0L
+            fun updateStationWindow() {
+                val bounds = ready.projection.visibleRegion.latLngBounds
+                val previous = stationWindows.value
+                val next = StationWindow.next(previous,
+                    MapBounds(bounds.longitudeWest,bounds.latitudeSouth,bounds.longitudeEast,bounds.latitudeNorth),ready.cameraPosition.zoom)
+                stationWindows.value = next
+                if (prefetchStops && next != previous && next.detail > 0) onPrefetch(next.bounds)
+            }
+            ready.addOnCameraMoveListener {
+                val now = android.os.SystemClock.uptimeMillis()
+                if (now-lastStationUpdate >= 120L) { lastStationUpdate=now; updateStationWindow() }
+            }
             ready.addOnCameraIdleListener {
+                updateStationWindow()
                 val bounds = ready.projection.visibleRegion.latLngBounds
                 viewport = MapBounds(bounds.longitudeWest, bounds.latitudeSouth, bounds.longitudeEast, bounds.latitudeNorth)
                 zoom = ready.cameraPosition.zoom
@@ -234,21 +259,6 @@ fun NativeTransitMap(
                     onVehicle(vehicle)
                     return@addOnMapClickListener true
                 }
-                // Overview dots select individual source metro platforms, including interchanges.
-                val touchRadius = 22f * context.resources.displayMetrics.density
-                val metroStation = ready.queryRenderedFeatures(RectF(point.x - touchRadius, point.y - touchRadius,
-                    point.x + touchRadius, point.y + touchRadius), *MetroNetworkOverlay.stationLayers)
-                    .minByOrNull { feature ->
-                        val coordinate = feature.geometry() as Point
-                        val screen = ready.projection.toScreenLocation(LatLng(coordinate.latitude(), coordinate.longitude()))
-                        val offset = feature.getProperty("offset").asJsonArray
-                        kotlin.math.hypot(screen.x + offset[0].asDouble * context.resources.displayMetrics.density - point.x,
-                            screen.y + offset[1].asDouble * context.resources.displayMetrics.density - point.y)
-                    }
-                if (metroStation != null) {
-                    val ids = MetroNetworkOverlay.stopIds(metroStation)
-                    if (ids.isNotEmpty()) { onSharedSelect(ids); return@addOnMapClickListener true }
-                }
                 val hits=targets()
                 val density=context.resources.displayMetrics.density.toDouble()
                 val hit=StopHitTesting.nearest(hits,point.x.toDouble(),point.y.toDouble(),density)
@@ -258,7 +268,7 @@ fun NativeTransitMap(
                     true
                 } else {
                     if(StopHitTesting.needsZoom(hits,hit,density,ready.cameraPosition.zoom)) reveal(location)
-                    else if(stopGroups[candidate.id].orEmpty().flatMap { it.providerIds }.distinct().size>1) onSharedSelect(listOf(candidate.id)+stopGroups[candidate.id].orEmpty().map { it.id }.filterNot { it==candidate.id })
+                    else if(stopGroups[candidate.id].orEmpty().let { group -> group.flatMap { it.providerIds }.distinct().size>1 || group.size>1 && group.all(RailStationMarkers::isRail) }) onSharedSelect(listOf(candidate.id)+stopGroups[candidate.id].orEmpty().map { it.id }.filterNot { it==candidate.id })
                     else onSelect(candidate.id)
                     true
                 }
@@ -294,6 +304,7 @@ fun NativeTransitMap(
                             onError(null)
                             val bounds = ready.projection.visibleRegion.latLngBounds
                             viewport = MapBounds(bounds.longitudeWest, bounds.latitudeSouth, bounds.longitudeEast, bounds.latitudeNorth)
+                            stationWindows.value = StationWindow.next(stationWindows.value, viewport!!, ready.cameraPosition.zoom)
                             zoom = ready.cameraPosition.zoom
                             savedLat = ready.cameraPosition.target!!.latitude
                             savedLon = ready.cameraPosition.target!!.longitude
@@ -315,10 +326,11 @@ fun NativeTransitMap(
             onError(context.getString(R.string.engine_map_unavailable))
         } finally { active = false }
     }
-    LaunchedEffect(map, styleLoaded, styleGeneration, metroNetwork, darkTheme, focused) {
-        val style = map?.takeIf { styleLoaded }?.style ?: return@LaunchedEffect
-        val json = metroNetwork ?: return@LaunchedEffect
-        MetroNetworkOverlay.install(style, json, darkTheme, focused)
+    LaunchedEffect(map, styleLoaded, styleGeneration, rapidTransitLines, darkTheme) {
+        val ready = map ?: return@LaunchedEffect
+        if (!styleLoaded) return@LaunchedEffect
+        val json = rapidTransitLines ?: return@LaunchedEffect
+        ready.style?.let { MetroNetworkOverlay.install(it,json,darkTheme) }
     }
     LaunchedEffect(map, styleLoaded, styleGeneration, paths, routeColor, darkTheme, dottedRoute) {
         val ready = map ?: return@LaunchedEffect
@@ -356,8 +368,7 @@ fun NativeTransitMap(
                 setProperties(*lineProps.toTypedArray())
             }
 
-            val aboveRoute = MetroNetworkOverlay.lineAnchor(style.layers.map { it.id }, selectedRoute = true)
-                ?: MapLibreConstants.LAYER_ID_ANNOTATIONS
+            val aboveRoute = style.getLayer("station-symbols")?.id ?: style.getLayer("vehicle-dots-rail")?.id ?: MapLibreConstants.LAYER_ID_ANNOTATIONS
             if (style.getLayer(aboveRoute) != null) style.addLayerBelow(casing, aboveRoute) else style.addLayer(casing)
             style.addLayerAbove(line, "selected-line-casing")
         }
@@ -383,7 +394,7 @@ fun NativeTransitMap(
             strokeLayer?.setProperties(PropertyFactory.lineDasharray(arrayOf(1f, 0f)))
         }
     }
-    LaunchedEffect(map, styleLoaded, lineFocus?.key, paths, focusStops, fitRouteRequest,
+    LaunchedEffect(map, styleLoaded, styleGeneration, lineFocus?.key, paths, focusStops, fitRouteRequest,
         selectedStopId, selectedPlace, placeCameraRequest, cameraRequest, bottomPaddingPx, topPaddingPx, size, browsingNearby, userLocation, locationCameraRequest) {
         val ready = map ?: return@LaunchedEffect
         if (!styleLoaded || size.width <= 0 || size.height <= 0) return@LaunchedEffect
@@ -457,12 +468,13 @@ fun NativeTransitMap(
         }
     }
     key(mapView) { AndroidView(factory = { mapView }, modifier = modifier.onSizeChanged { size = it }) }
-    LaunchedEffect(map,styleLoaded,styleGeneration,viewport,zoom,stationScene,highlightedIds,focused,routeColor,selectedStopId,stopBearings,darkTheme,routeCatalogue) {
+    LaunchedEffect(map,styleLoaded,styleGeneration,stationWindows,stationScene,highlightedIds,focused,routeColor,highlightedStopId,stopBearings,darkTheme,routeCatalogue) {
         val nativeMap=map ?: return@LaunchedEffect
         if(!styleLoaded) return@LaunchedEffect
         val scene=stationScene ?: return@LaunchedEffect
-        val bounds=viewport ?: return@LaunchedEffect
-        val style=nativeMap.style ?: return@LaunchedEffect
+        stationWindows.filterNotNull().collectLatest { window ->
+        val markerZoom=window.zoom
+        val style=nativeMap.style ?: return@collectLatest
         val source=style.getSourceAs<GeoJsonSource>("station-markers")
         if(source==null) stationIconKeys.clear()
         val nextGroups=mutableMapOf<String,List<TransitStop>>()
@@ -474,21 +486,22 @@ fun NativeTransitMap(
         try {
             val json=withContext(Dispatchers.Default) {
                 // Keep catalogue scanning, feature allocation and serialization off the UI thread.
-                val groups=scene.groups.filter { members ->
+                val groups=(if (!focused && window.detail==0) emptyList()
+                    else traceMapWork("BMenetrend.StopChunks") { scene.chunks.query(window) }).filter { group ->
                     ensureActive()
-                    val anchor=stationAnchor(members)
-                    anchor.position.lat in bounds.south..bounds.north && anchor.position.lon in bounds.west..bounds.east &&
-                        TransitMapVisibility.stop(anchor.transportMode,zoom,focused) && (!focused || members.any { it.id in highlightedIds })
+                    TransitMapVisibility.stop(group.anchor.transportMode,markerZoom,focused) &&
+                        (!focused || group.members.any { it.id in highlightedIds })
                 }
                 traceMapWork("BMenetrend.MapLayout") {
-                    groups.forEach { members ->
+                    groups.forEach { group ->
                         ensureActive()
+                        val members=group.members
                         // Marker identity and anchor never depend on the selected member or highlighted line.
-                        val stop=stationAnchor(members)
+                        val stop=group.anchor
                         nextGroups[stop.id]=members
-                        val selected=members.any { it.id==selectedStopId }
+                        val selected=members.any { it.id==highlightedStopId }
                         val sizeDp=StopMarkerLayout.DIAMETER_DP.toInt()
-                        val directions=if(zoom>=StopMapClustering.PLATFORM_ZOOM && sizeDp>=10) members.flatMap { stopBearings[it.id].orEmpty() }
+                        val directions=if(markerZoom>=StopMapClustering.PLATFORM_ZOOM && sizeDp>=10) members.flatMap { stopBearings[it.id].orEmpty() }
                             .fold(mutableListOf<Double>()) { angles,value ->
                                 if(angles.none { StopDirections.difference(it,value)<35 }) angles.add(value)
                                 angles
@@ -511,8 +524,11 @@ fun NativeTransitMap(
                 }
                 FeatureCollection.fromFeatures(features).toJson()
             }
+            pending.forEachIndexed { index, (key,bitmap) ->
+                if (index>0 && index%8==0) withFrameNanos { }
+                style.addImage(key,bitmap);stationIconKeys.add(key)
+            }
             traceMapWork("BMenetrend.MapUpload") {
-                pending.forEach { (key,bitmap) -> style.addImage(key,bitmap);stationIconKeys.add(key) }
                 if(source!=null) source.setGeoJson(json) else {
                     style.addSource(GeoJsonSource("station-markers",json))
                     fun layer(id: String,selected: Boolean)=SymbolLayer(id,"station-markers").withProperties(
@@ -542,8 +558,9 @@ fun NativeTransitMap(
                 }
             }
         } finally { pending.forEach { it.second.recycle() } }
+        }
     }
-    // Source data changes only for live updates/selection. Camera zoom only controls visibility; icons keep a fixed screen size.
+    // Source data changes only for live updates/selection. Camera zoom and visibility are GPU style expressions.
     LaunchedEffect(map, styleLoaded, styleGeneration, vehicles, lineFocus?.routeId, lineFocus?.providerId,
         lineFocus?.number, lineFocus?.mode, lineFocus?.selectedVehicleId, selectedVehicle?.id) {
         val ready = map ?: return@LaunchedEffect
@@ -561,27 +578,29 @@ fun NativeTransitMap(
                 pending.forEach { (id, bitmap) -> style.addImage(id, bitmap); vehicleIconKeys.add(id) }
                 if (source != null) source.setGeoJson(json) else {
                     style.addSource(GeoJsonSource(VehicleMapScene.SOURCE, json))
-                    fun layer(id: String) = SymbolLayer(id, VehicleMapScene.SOURCE).withProperties(
-                        PropertyFactory.iconImage(Expression.get("icon")),
+                    fun layer(id: String, dot: Boolean) = SymbolLayer(id, VehicleMapScene.SOURCE).withProperties(
+                        PropertyFactory.iconImage(Expression.get(if (dot) "dot" else "icon")),
                         PropertyFactory.iconAllowOverlap(true), PropertyFactory.iconIgnorePlacement(true),
                         PropertyFactory.iconRotationAlignment("viewport"), PropertyFactory.iconPitchAlignment("viewport"),
                         PropertyFactory.symbolSortKey(Expression.get("priority")),
-                        PropertyFactory.iconSize(VehicleMapScene.ICON_SCALE)
+                        PropertyFactory.iconSize(if (dot) Expression.get("dot-scale") else Expression.step(
+                            Expression.zoom(), Expression.get("small-scale"),
+                            Expression.stop(13.5, Expression.get("large-scale"))))
                     )
-                    val rail = layer("vehicle-dots-rail").withFilter(Expression.eq(Expression.get("rail"), Expression.literal(true)))
-                    val road = layer("vehicle-dots-road").withFilter(Expression.eq(Expression.get("rail"), Expression.literal(false)))
-                    listOf(rail, road, layer("vehicle-symbols")).forEach { layer ->
+                    val rail = layer("vehicle-dots-rail", true).withFilter(Expression.eq(Expression.get("rail"), Expression.literal(true)))
+                    val road = layer("vehicle-dots-road", true).withFilter(Expression.eq(Expression.get("rail"), Expression.literal(false)))
+                    listOf(rail, road, layer("vehicle-symbols", false)).forEach { layer ->
                         if (style.getLayer(MapLibreConstants.LAYER_ID_ANNOTATIONS) != null)
                             style.addLayerBelow(layer, MapLibreConstants.LAYER_ID_ANNOTATIONS)
                         else style.addLayer(layer)
                     }
                 }
                 style.getLayerAs<SymbolLayer>("vehicle-dots-rail")?.apply {
-                    minZoom = TransitMapVisibility.RAIL_VEHICLE_MIN_ZOOM; maxZoom = TransitMapVisibility.VEHICLE_SYMBOL_MIN_ZOOM
+                    minZoom = TransitMapVisibility.TRAIN_VEHICLE_MIN_ZOOM; maxZoom = TransitMapVisibility.VEHICLE_SYMBOL_MIN_ZOOM
                     setProperties(PropertyFactory.visibility(if (focused) "none" else "visible"))
                 }
                 style.getLayerAs<SymbolLayer>("vehicle-dots-road")?.apply {
-                    minZoom = TransitMapVisibility.ROAD_VEHICLE_MIN_ZOOM; maxZoom = TransitMapVisibility.VEHICLE_SYMBOL_MIN_ZOOM
+                    minZoom = TransitMapVisibility.OTHER_VEHICLE_MIN_ZOOM; maxZoom = TransitMapVisibility.VEHICLE_SYMBOL_MIN_ZOOM
                     setProperties(PropertyFactory.visibility(if (focused) "none" else "visible"))
                 }
                 style.getLayerAs<SymbolLayer>("vehicle-symbols")?.minZoom = if (focused) 0f else TransitMapVisibility.VEHICLE_SYMBOL_MIN_ZOOM

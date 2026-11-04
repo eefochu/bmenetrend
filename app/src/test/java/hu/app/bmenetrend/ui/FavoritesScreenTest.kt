@@ -121,6 +121,18 @@ class FavoritesScreenTest {
         assertEquals("762", lines.otherBadges.first().label)
     }
 
+    @Test fun favoriteCardWithoutLiveDepartureFitsCompactHeight() {
+        compose.setContent {
+            ViaBuszTheme {
+                FavoritesScreen(uiState.copy(favoriteStations=listOf(nearbyStation.copy(departures=emptyList()))),
+                    onStop={},onRemove={},onRefresh={},onVisible={})
+            }
+        }
+        val height = compose.onNodeWithTag("favorite:${stationStop.id}").fetchSemanticsNode().boundsInRoot.height /
+            app.resources.displayMetrics.density
+        assertTrue("A compact card with rail and bus badges should be at most 190dp, got $height",height<=190f)
+    }
+
     @Test
     fun railLineColorMatchesSpecification() {
         assertEquals(Color(0xFF008001), railLineColor("IR"))
@@ -168,10 +180,10 @@ class FavoritesScreenTest {
         compose.onNodeWithText("Budapest-Kelenföld").assertIsDisplayed()
         compose.onNodeWithText("S10").assertIsDisplayed()
         compose.onNodeWithText("IC").assertIsDisplayed()
-        compose.onNodeWithText(app.getString(R.string.favorites_other_lines)).assertIsDisplayed()
+        compose.onNodeWithText(app.getString(R.string.favorites_other_lines)).assertDoesNotExist()
         compose.onNodeWithText("762").assertIsDisplayed()
 
-        listOf("S10", "IC", "762", "Budapest-Kelenföld", app.getString(R.string.favorites_all_departures)).forEach { text ->
+        listOf("S10", "IC", "762", "Budapest-Kelenföld").forEach { text ->
             compose.onNodeWithText(text).performClick()
             compose.runOnIdle { assertEquals(listOf(stationStop.id), selectedStops) }
             selectedStops.clear()
@@ -182,7 +194,8 @@ class FavoritesScreenTest {
         compose.runOnIdle { assertEquals(listOf(stationStop.id), selectedStops) }
         selectedStops.clear()
 
-        compose.onNodeWithContentDescription(app.getString(R.string.ui_remove_favorite)).performClick()
+        compose.onNodeWithContentDescription(app.getString(R.string.search_show_more)).performClick()
+        compose.onNodeWithText(app.getString(R.string.ui_remove_favorite)).performClick()
         compose.runOnIdle {
             assertEquals(listOf(stationStop.id), removedStops)
             assertTrue(selectedStops.isEmpty())

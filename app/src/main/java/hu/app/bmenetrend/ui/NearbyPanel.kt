@@ -35,6 +35,7 @@ internal fun NearbyPanel(
     onDeparture: (Departure) -> Unit,
     onCollapse: () -> Unit,
     onToggleExpand: () -> Unit = onCollapse,
+    onSearch: () -> Unit = {},
     modifier: Modifier = Modifier,
     isExpanded: Boolean = true,
 ) {
@@ -48,11 +49,12 @@ internal fun NearbyPanel(
                     style=MaterialTheme.typography.headlineSmall)
                 Text(stringResource(if(atUser) R.string.nearby_you else R.string.nearby_map),
                     style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
-                    Box {
+                Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                    Box(Modifier.weight(1f)) {
                         FilledTonalButton(onClick={windowMenu=true},shape=TransitDesign.controlShape,contentPadding=PaddingValues(horizontal=12.dp)) {
                             Icon(Icons.Rounded.Schedule,null,Modifier.size(18.dp));Spacer(Modifier.width(6.dp))
-                            Text(compactDuration(windowMinutes));Icon(Icons.Rounded.ExpandMore,null,Modifier.size(18.dp))
+                            Text(stringResource(R.string.design_departure_window, compactDuration(windowMinutes)),
+                                modifier = Modifier.weight(1f, fill = false), maxLines = 1, overflow = TextOverflow.Ellipsis);Icon(Icons.Rounded.ExpandMore,null,Modifier.size(18.dp))
                         }
                         DropdownMenu(expanded=windowMenu,onDismissRequest={windowMenu=false}) {
                             DepartureTime.windows.forEach { minutes -> DropdownMenuItem(
@@ -60,9 +62,9 @@ internal fun NearbyPanel(
                                 trailingIcon={if(minutes==windowMinutes) Icon(Icons.Rounded.Check,null)}) }
                         }
                     }
-                    Spacer(Modifier.weight(1f))
-                    IconButton(onClick=onLocate) { Icon(Icons.Rounded.MyLocation,stringResource(R.string.nearby_locate)) }
-                    IconButton(onClick=onRefresh) { Icon(Icons.Rounded.Refresh,stringResource(R.string.ui_refresh_departures)) }
+                    FilledTonalIconButton(onClick=onRefresh, shape = TransitDesign.controlShape, modifier = Modifier.size(48.dp)) {
+                        Icon(Icons.Rounded.Refresh,stringResource(R.string.ui_refresh_departures))
+                    }
                     IconButton(onClick=onCollapse) { Icon(Icons.Rounded.KeyboardArrowDown,
                         stringResource(if(isExpanded) R.string.ui_collapse_departures else R.string.ui_hide_departures)) }
                 }
@@ -72,7 +74,16 @@ internal fun NearbyPanel(
             }
         }
         if (stations.isEmpty() && !loading) item(key = "nearby-empty", contentType = "nearby_empty") {
-            EmptyState(stringResource(R.string.nearby_title),stopStatus ?: stringResource(R.string.nearby_no_departures_2h),Icons.Rounded.NearMe)
+            Column(Modifier.fillMaxWidth().padding(horizontal = TransitDesign.gutter, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text(stopStatus ?: stringResource(R.string.design_nearby_empty),
+                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                OutlinedButton(onClick = onSearch, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = TransitDesign.controlShape) {
+                    Icon(Icons.Rounded.Search, null, Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.design_find_stop))
+                }
+            }
         }
         stations.forEach { station ->
             item(key = "station-${station.stop.id}", contentType = "station_header") {
@@ -129,7 +140,7 @@ internal fun NearbyDepartureCard(
         ?: platform?.platformCode?.ifBlank { null }
         ?: hu.app.bmenetrend.data.BkkPlatformIndex.getPlatformCode(departure.stopId.ifBlank { null } ?: platform?.id)
     val boarding = if (resolvedPlatform == null) {
-        departure.platformCode?.let { stringResource(if(provider=="mav") R.string.rail_platform else R.string.emma_platform, it) }
+        departure.platformCode?.takeIf { it.isNotBlank() }?.let { stringResource(if(provider=="mav") R.string.rail_platform else R.string.emma_platform, it) }
     } else null
     DepartureBoardRow(departure, provider, route?.transportMode ?: platform?.transportMode, route?.color, minutes, boarding, onClick, platformCode = resolvedPlatform)
     HorizontalDivider(Modifier.padding(start=20.dp,end=20.dp),color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=.45f))

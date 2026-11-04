@@ -15,10 +15,9 @@ import org.maplibre.geojson.Feature
 import org.maplibre.geojson.FeatureCollection
 import org.maplibre.geojson.Point
 
-/** Camera-independent vehicle data. MapLibre handles visibility during gestures; icons keep a fixed screen size. */
+/** Camera-independent vehicle data. MapLibre handles visibility and size during gestures. */
 internal object VehicleMapScene {
     const val SOURCE = "live-vehicles"
-    const val ICON_SCALE = 24f / 36f
     val layers = arrayOf("vehicle-symbols", "vehicle-dots-rail", "vehicle-dots-road")
 
     suspend fun prepare(
@@ -37,6 +36,7 @@ internal object VehicleMapScene {
             val metro = MetroLineStyle.forLine(vehicle.routeNumber, vehicle.transportMode)
             val hev = HevLineStyle.forLine(vehicle.routeNumber, vehicle.transportMode)
             val key = "vehicle-${marker.name}-${metro?.number}-${hev?.number}"
+            val dot = "$key-dot"
             if (key !in cachedIcons && key !in pending) {
                 pending[key] = when {
                     hev != null -> HevLineStyle.render(context, hev, 108)
@@ -44,16 +44,32 @@ internal object VehicleMapScene {
                     else -> renderVehicle(context, marker)
                 }.apply { density = 480 }
             }
+            if (dot !in cachedIcons && dot !in pending) {
+                pending[dot] = renderDot(hev?.color ?: metro?.color ?: marker.color)
+            }
             val selected = vehicle.id == selectedId
             features += Feature.fromGeometry(Point.fromLngLat(vehicle.position.lon, vehicle.position.lat)).apply {
                 addStringProperty("vehicle-id", vehicle.id)
                 addStringProperty("icon", key)
+                addStringProperty("dot", dot)
                 addBooleanProperty("rail", RailSupport.isTrain(vehicle.transportMode))
                 addNumberProperty("priority", if (selected) 1 else 0)
-
+                addNumberProperty("small-scale", (24f + if (selected) 6f else 0f) / 36f)
+                addNumberProperty("large-scale", (36f + if (selected) 6f else 0f) / 36f)
+                addNumberProperty("dot-scale", if (selected) 10f / 6f else 1f)
             }
         }
         return FeatureCollection.fromFeatures(features).toJson()
+    }
+
+    private fun renderDot(color: Int): Bitmap = Bitmap.createBitmap(18, 18, Bitmap.Config.ARGB_8888).apply {
+        density = 480
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        val canvas = Canvas(this)
+        paint.color = Color.WHITE
+        canvas.drawCircle(9f, 9f, 9f, paint)
+        paint.color = color
+        canvas.drawCircle(9f, 9f, 7.05f, paint)
     }
 
     private fun renderVehicle(context: Context, marker: VehicleMarkerStyle): Bitmap {

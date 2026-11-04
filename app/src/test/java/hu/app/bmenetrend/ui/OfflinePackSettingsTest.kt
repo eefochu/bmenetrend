@@ -3,6 +3,7 @@ package hu.app.bmenetrend.ui
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import hu.app.bmenetrend.offline.*
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.Assert.*
@@ -17,6 +18,10 @@ import java.time.LocalDate
 class OfflinePackSettingsTest {
     @get:Rule val compose = createComposeRule()
     private val meta = OfflinePackMetadata("fixture", Instant.parse("2026-10-26T12:00:00Z"), LocalDate.of(2026,10,26), LocalDate.of(2026,11,24), 1000, 500, 3, 2, listOf("Fixture"), "hash")
+
+    @Before fun setUp() {
+        NetworkAccessPolicy.onConnectivityChanged(true)
+    }
     @Test fun missingPackCannotEnableOfflineMode() {
         var toggled = false
         compose.setContent { ViaBuszTheme { androidx.compose.foundation.layout.Column {

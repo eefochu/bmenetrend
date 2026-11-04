@@ -3,7 +3,9 @@ package hu.app.bmenetrend.ui
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.platform.LocalDensity
@@ -14,6 +16,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -116,14 +119,33 @@ class PlannerMapOverlayTabletTest {
 class PlannerMapOverlayPhoneTest {
     @get:Rule val compose = createComposeRule()
 
+    @Test fun offlineLocationExplainsThatABoardingStopIsRequired() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        var clicks = 0
+        compose.setContent {
+            ViaBuszTheme {
+                PlannerMapOverlay(
+                    state = PlannerState(offline = true, useLocation = true,
+                        destination = PlannerEndpoint("dest", "Deák Ferenc tér M", "Budapest", GeoPoint(47.498, 19.054))),
+                    onOrigin = {}, onDestination = {}, onSwap = {}, onDeparture = {}, onFind = { clicks++ },
+                    mapContent = { modifier -> Box(modifier) }
+                )
+            }
+        }
+        compose.onNodeWithText(context.getString(R.string.design_choose_origin)).assertIsDisplayed().performClick()
+        compose.onNodeWithText(context.getString(R.string.planner_find)).assertDoesNotExist()
+        assertEquals(1, clicks)
+    }
+
     @Test fun largeFontFormScrollsAndKeepsFindReachable() {
         var destinationEdits = 0; var finds = 0
+        var state by mutableStateOf(PlannerState())
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
         compose.setContent {
             ViaBuszTheme {
                 CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, 1.6f)) {
                     PlannerMapOverlay(
-                        state = PlannerState(),
+                        state = state,
                         onOrigin = {},
                         onDestination = { destinationEdits++ },
                         onSwap = {},
@@ -138,8 +160,14 @@ class PlannerMapOverlayPhoneTest {
         // Controls card has scroll capability
         compose.onNode(hasScrollAction()).assertIsDisplayed()
 
-        // CTA button is displayed and reachable outside the scrollable card
-        compose.onNodeWithText(context.getString(R.string.planner_find)).assertIsDisplayed().performClick()
+        // Empty destination suppresses bottom CTA
+        val findLabel = context.getString(R.string.planner_find)
+        compose.onNodeWithText(findLabel).assertDoesNotExist()
+
+        // Setting a destination displays the bottom CTA outside the scrollable card
+        state = PlannerState(destination = PlannerEndpoint("dest", "Deák Ferenc tér M", "Budapest", GeoPoint(47.498, 19.054)))
+        compose.waitForIdle()
+        compose.onNodeWithText(findLabel).assertIsDisplayed().performClick()
         compose.onNodeWithText(context.getString(R.string.planner_to)).performClick()
         assertEquals(1, finds); assertEquals(1, destinationEdits)
         compose.onNodeWithText(context.getString(R.string.planner_settings)).assertDoesNotExist()
@@ -150,7 +178,7 @@ class PlannerMapOverlayPhoneTest {
         compose.setContent {
             ViaBuszTheme {
                 PlannerMapOverlay(
-                    state = PlannerState(),
+                    state = PlannerState(destination = PlannerEndpoint("dest", "Deák Ferenc tér M", "Budapest", GeoPoint(47.498, 19.054))),
                     onOrigin = {}, onDestination = {}, onSwap = {},
                     onDeparture = {}, onFind = {},
                     mapContent = { modifier -> Box(modifier.testTag("planner-test-map")) }
@@ -159,10 +187,43 @@ class PlannerMapOverlayPhoneTest {
         }
         val cardBounds = compose.onNodeWithTag("planner-controls-card").fetchSemanticsNode().boundsInRoot
         val mapBounds = compose.onNodeWithTag("planner-test-map").fetchSemanticsNode().boundsInRoot
-        val ctaBounds = compose.onNodeWithText(context.getString(R.string.planner_find)).fetchSemanticsNode().boundsInRoot
-        assertTrue("Card bottom (${cardBounds.bottom}) must not exceed map top (${mapBounds.top})", cardBounds.bottom <= mapBounds.top)
-        assertTrue("Map bottom (${mapBounds.bottom}) must not exceed CTA top (${ctaBounds.top})", mapBounds.bottom <= ctaBounds.top)
+        val findLabel = context.getString(R.string.planner_find)
+        val ctaBounds = compose.onNodeWithText(findLabel).fetchSemanticsNode().boundsInRoot
+        val mapInfoText = context.getString(R.string.map_info)
+        val attrBounds = compose.onNodeWithText(mapInfoText).fetchSemanticsNode().boundsInRoot
+
+        assertTrue("Card bottom (${cardBounds.bottom}) must not exceed CTA top (${ctaBounds.top})", cardBounds.bottom <= ctaBounds.top)
+        assertTrue("Form and map have distinct viewports", cardBounds.bottom <= mapBounds.top)
+        assertTrue("Action remains below the map", mapBounds.bottom <= ctaBounds.top)
         assertTrue("Map must have positive height", mapBounds.height > 0f)
+        assertTrue("Map attribution is reachable above bottom CTA", attrBounds.bottom <= ctaBounds.top)
+        val density = context.resources.displayMetrics.density
+        assertTrue("CTA touch target at least 48dp", ctaBounds.height >= 48f * density)
+    }
+
+    @Test fun emptyDestinationShowsFavoriteDestinationChipsWhenAvailableAndTriggersCallback() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        var chosenFavorite: PlannerEndpoint? = null
+        val favEndpoint = PlannerEndpoint("fav:kelenfold", "Kelenföld vasútállomás M", "Budapest", GeoPoint(47.4635, 19.0232))
+        compose.setContent {
+            ViaBuszTheme {
+                PlannerMapOverlay(
+                    state = PlannerState(),
+                    favoriteDestinations = listOf(favEndpoint),
+                    onFavoriteDestination = { chosenFavorite = it },
+                    onOrigin = {}, onDestination = {}, onSwap = {},
+                    onDeparture = {}, onFind = {},
+                    mapContent = { modifier -> Box(modifier.testTag("planner-test-map")) }
+                )
+            }
+        }
+        // Quick destinations remain reachable inside the scrollable header on a small phone.
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Kelenföld vasútállomás M"))
+        compose.onNodeWithText("Kelenföld vasútállomás M").assertIsDisplayed().performClick()
+        assertEquals(favEndpoint, chosenFavorite)
+
+        // Find CTA is absent when destination is empty
+        compose.onNodeWithText(context.getString(R.string.planner_find)).assertDoesNotExist()
     }
 
     @Test fun servicesDialogShowsDistinctOperatorsDefaultCheckedAndInvokesCallbackOnce() {
@@ -185,8 +246,9 @@ class PlannerMapOverlayPhoneTest {
         // Open local services dialog
         compose.onNodeWithTag("planner-local-services").assertIsDisplayed().performClick()
 
-        // Dialog title
-        compose.onNodeWithText(context.getString(R.string.planner_local_services)).assertIsDisplayed()
+        // Dialog title and detail text are displayed (AssistChip + Dialog title both exist)
+        compose.onAllNodesWithText(context.getString(R.string.planner_local_services)).assertCountEquals(2)
+        compose.onNodeWithText(context.getString(R.string.planner_local_services_detail)).assertIsDisplayed()
 
         // Distinct operator names displayed and all default checked
         val services = LocalPlanningService.entries
@@ -207,7 +269,8 @@ class PlannerMapOverlayPhoneTest {
 
         // Done button dismisses dialog
         compose.onNodeWithText(context.getString(R.string.planner_local_services_done)).performClick()
-        compose.onNodeWithText(context.getString(R.string.planner_local_services)).assertDoesNotExist()
+        compose.onAllNodesWithText(context.getString(R.string.planner_local_services)).assertCountEquals(1)
+        compose.onNodeWithText(context.getString(R.string.planner_local_services_detail)).assertDoesNotExist()
     }
 
     @Test fun searchSheetRendersStationResultsWithSharedOperatorArtwork() {

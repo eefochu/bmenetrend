@@ -13,10 +13,15 @@ import kotlin.coroutines.resumeWithException
 
 /** Shared EMMA transport for vehicles, stops and departure boards. */
 class EmmaGraphqlClient(private val client: OkHttpClient = defaultHttpClient(), private val backoff: EmmaRequestBackoff = sharedBackoff) {
-    suspend fun execute(query: String, variables: JSONObject = JSONObject()): String {
+    fun resetCooldown() {
+        backoff.reset()
+    }
+    suspend fun execute(query: String, variables: JSONObject = JSONObject(), bypassCooldown: Boolean = false): String {
         hu.app.bmenetrend.offline.NetworkAccessPolicy.requireOnline()
         val networkGeneration = hu.app.bmenetrend.offline.NetworkAccessPolicy.generation
-        backoff.check(Instant.now())
+        if (!bypassCooldown) {
+            backoff.check(Instant.now())
+        }
         val body = JSONObject().put("query", query).put("variables", variables).toString()
         val request = Request.Builder().url(EmmaParser.ENDPOINT).header("Accept", "application/json")
             .header("User-Agent", "BMenetrendAndroid/0.3 (native transit viewer)")
@@ -44,8 +49,21 @@ class EmmaGraphqlClient(private val client: OkHttpClient = defaultHttpClient(), 
         // Repositories and MapLibre share connections, TLS sessions and dispatcher threads.
         // Callers needing different timeouts use newBuilder(), which retains these pools.
         private val sharedHttpClient by lazy {
-            hu.app.bmenetrend.offline.NetworkAccessPolicy.protect(OkHttpClient.Builder().connectTimeout(8, TimeUnit.SECONDS)
-                .readTimeout(10, TimeUnit.SECONDS).callTimeout(15, TimeUnit.SECONDS).build())
+            val dispatcher = Dispatcher().apply {
+                maxRequests = 32
+                maxRequestsPerHost = 16
+            }
+            val connectionPool = ConnectionPool(8, 2, TimeUnit.MINUTES)
+            hu.app.bmenetrend.offline.NetworkAccessPolicy.protect(
+                OkHttpClient.Builder()
+                    .dispatcher(dispatcher)
+                    .connectionPool(connectionPool)
+                    .connectTimeout(10, TimeUnit.SECONDS)
+                    .readTimeout(20, TimeUnit.SECONDS)
+                    .callTimeout(25, TimeUnit.SECONDS)
+                    .retryOnConnectionFailure(true)
+                    .build()
+            )
         }
         fun defaultHttpClient(): OkHttpClient = sharedHttpClient
         private val sharedPlannerHttpClient by lazy {

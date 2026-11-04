@@ -38,6 +38,61 @@ class RouteMapCardTest {
     private fun state()=UiState(network=TransitNetwork(listOf(a,b,c),listOf(route),emptyList(),Instant.now(),"test"),
         lineDetails=mapOf(route.id to LineDetails(route,listOf(out,inbound))),loading=false)
 
+    @Test fun tappingADepartureOpensItsPatternWithoutDirectionSelection() {
+        val now=Instant.now()
+        val departure=Departure(route.id,"762",c.name,b.id,now.plusSeconds(300),now.plusSeconds(300),
+            ArrivalKind.SCHEDULED,directionId="actual-trip",patternCode="out")
+        var previewDirection:String?=null
+        compose.setContent { ViaBuszTheme {
+            ViaBuszScreen(state().copy(selectedStopId=b.id,showNearby=false,departures=listOf(departure)),
+                {},{},{},{},{},mapContent={ modifier,_,_,direction,_ ->
+                    SideEffect { previewDirection=direction };Box(modifier)
+                })
+        } }
+        compose.waitForIdle()
+        compose.onNode(hasText("762") and hasText(c.name) and hasClickAction()).performClick()
+        compose.waitUntil(5_000) { previewDirection==out.id }
+        compose.waitForIdle()
+        compose.onNodeWithText(app.resources.getQuantityString(R.plurals.emma_journey_stops,3,3)).performScrollTo()
+        compose.waitForIdle()
+        compose.onNodeWithText(app.resources.getQuantityString(R.plurals.emma_journey_stops,3,3)).assertIsDisplayed()
+    }
+
+    @Test fun tappingALiveDepartureOpensThatVehicleInsteadOfAnotherBusOnItsLine() {
+        val now=Instant.now()
+        val departure=Departure(route.id,"762",c.name,b.id,now.plusSeconds(300),now.plusSeconds(300),
+            ArrivalKind.LIVE,vehicleId="chosen",directionId="chosen-trip")
+        val wrong=Vehicle("other",b.position,now,routeId=route.id,tripId="other-trip")
+        val chosen=wrong.copy(id="emma:chosen",tripId="chosen-trip")
+        var opened:String?=null
+        var lineOpened=false
+        compose.setContent { ViaBuszTheme {
+            ViaBuszScreen(state().copy(selectedStopId=b.id,showNearby=false,departures=listOf(departure),vehicles=listOf(wrong,chosen)),
+                {},{},{},{},{},onVehicleOpened={opened=it},onLineOpened={_,_->lineOpened=true})
+        } }
+        compose.waitForIdle()
+        compose.onNode(hasText("762") and hasText(c.name) and hasClickAction()).performClick()
+        compose.runOnIdle { assertEquals(chosen.id,opened);assertFalse(lineOpened) }
+    }
+
+    @Test fun aDepartureWaitsForItsPatternWithoutShowingOtherDirections() {
+        val now=Instant.now()
+        val departure=Departure(route.id,"762",c.name,b.id,now.plusSeconds(300),now.plusSeconds(300),
+            ArrivalKind.SCHEDULED,directionId="actual-trip",patternCode="out")
+        val ui=mutableStateOf(state().copy(selectedStopId=b.id,showNearby=false,departures=listOf(departure),lineDetails=emptyMap()))
+        var previewDirection:String?=null
+        compose.setContent { ViaBuszTheme {
+            ViaBuszScreen(ui.value,{},{},{},{},{},onLineOpened={ _,_ -> ui.value=ui.value.copy(loadingLineId=route.id) },
+                mapContent={ modifier,_,_,direction,_ -> SideEffect { previewDirection=direction };Box(modifier) })
+        } }
+        compose.waitForIdle()
+        compose.onNode(hasText("762") and hasText(c.name) and hasClickAction()).performClick()
+        compose.onNodeWithText(a.name).assertDoesNotExist()
+        compose.runOnIdle { ui.value=ui.value.copy(lineDetails=state().lineDetails,loadingLineId=null) }
+        compose.waitForIdle()
+        compose.runOnIdle { assertEquals(out.id,previewDirection) }
+    }
+
     @Test fun selectingALineLeavesSearchAndOpensACompactCardOverTheMap() {
         var previewRoute:String?=null
         var previewDirection:String?=null

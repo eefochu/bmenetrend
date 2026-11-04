@@ -60,6 +60,8 @@ class MainActivity : ComponentActivity() {
             val model: TransitViewModel = viewModel()
             val planner: PlannerViewModel = viewModel()
             var offlineSettingsRequest by rememberSaveable { mutableIntStateOf(0) }
+            var searchRequest by rememberSaveable { mutableIntStateOf(0) }
+            var mapFullscreen by remember { mutableStateOf(false) }
             var tab by rememberSaveable { mutableStateOf(MainTab.MAP) }
             val state by model.state.collectAsStateWithLifecycle()
             val language = LocalConfiguration.current.locales.toLanguageTags()
@@ -126,16 +128,20 @@ class MainActivity : ComponentActivity() {
                     tab,
                     { tab = it },
                     offline = state.offlineMode,
+                    hideNavigation = tab == MainTab.MAP && mapFullscreen,
                     onOfflineSettings = { tab = MainTab.MAP; offlineSettingsRequest++ },
                     planner = {
                         PlannerScreen(
                             model = planner,
+                            favoriteDestinations = remember(state.favoriteStations) {
+                                state.favoriteStations.map { hu.app.bmenetrend.data.PlannerEndpoint.fromStop(it.stop) }
+                            },
                             onRequestLocation = requestLocation,
                             onStopDepartures = { stopId ->
                                 model.selectStop(stopId)
                                 tab = MainTab.MAP
                             },
-                            onClose = { tab = MainTab.MAP },
+                            onClose = null,
                             transitMapContent = { mapModifier, routeGeometry, destinationPlace, cameraRequest, isDotted, originPosition ->
                                 val primaryColor = androidx.compose.material3.MaterialTheme.colorScheme.primary
                                 val accentArgb = remember(primaryColor) { primaryColor.toArgb() }
@@ -160,6 +166,7 @@ class MainActivity : ComponentActivity() {
                                     routeCatalogue = state.routesById,
                                     onVehicleSelected = { id -> model.selectVehicle(id); tab = MainTab.MAP },
                                     browsingNearby = true,
+                                    showTransitStops = false,
                                     routeGeometry = routeGeometry,
                                     routeColor = accentArgb,
                                     selectedPlace = destinationPlace,
@@ -177,7 +184,8 @@ class MainActivity : ComponentActivity() {
                             onStop = { model.selectStop(it); tab = MainTab.MAP },
                             onRemove = model::toggleFavorite,
                             onRefresh = model::refreshFavorites,
-                            onVisible = model::setVisibleFavorites
+                            onVisible = model::setVisibleFavorites,
+                            onBrowse = { tab = MainTab.MAP; searchRequest++ }
                         )
                     },
                     map = {
@@ -220,6 +228,7 @@ class MainActivity : ComponentActivity() {
                     onOfflineMode = model::setOfflineMode, onOfflineDownload = model::downloadOfflinePack,
                     onAutomaticOfflineUpdates = model::setAutomaticOfflineUpdates, onOfflineCancel = model::cancelOfflineDownload, onOfflineDelete = model::deleteOfflinePack,
                     onOfflineImport = model::importOfflineFeed, openSettingsRequest = offlineSettingsRequest,
+                    openSearchRequest = searchRequest, onFullscreenChanged = { mapFullscreen = it },
                     onOtaChannelChanged = model::setOtaChannel,
                     onCheckOtaUpdates = { model.checkForUpdates(false) },
                     onDownloadAndInstallOta = { info -> model.startOtaDownloadAndInstall(this@MainActivity, info) },
@@ -238,8 +247,8 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     }
-                    val geometry = if (vehicle != null) state.vehicleJourney?.geometry.orEmpty().ifEmpty { focus?.paths?.firstOrNull().orEmpty() } else pattern?.geometry.orEmpty()
-                    val stops = if (vehicle != null) state.vehicleJourney?.stops.orEmpty().ifEmpty { focus?.stops.orEmpty() } else pattern?.stops.orEmpty()
+                    val geometry = if (vehicle != null) state.vehicleJourney?.geometry.orEmpty().ifEmpty { focus?.paths?.firstOrNull().orEmpty() } else pattern?.geometry.orEmpty().ifEmpty { focus?.paths?.firstOrNull().orEmpty() }
+                    val stops = if (vehicle != null) state.vehicleJourney?.stops.orEmpty().ifEmpty { focus?.stops.orEmpty() } else pattern?.stops.orEmpty().ifEmpty { focus?.stops.orEmpty() }
                     val color = if (vehicle != null) lineColor(vehicle.providerId, vehicle.transportMode, vehicle.markerColor)
                         else route?.let(::lineColor) ?: androidx.compose.ui.graphics.Color(0xFF199DCF)
                     val onMapStop: (String) -> Unit = { id ->
@@ -272,7 +281,7 @@ class MainActivity : ComponentActivity() {
                             model.selectStopGroup(ids)
                         }
                     }
-                    NativeTransitMap(state.network, state.vehicles, state.selectedStopId.takeUnless { state.showNearby || browsingRoute!=null || state.selectedVehicle!=null }, state.userLocation, modifier, onMapStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, vehicle, routeGeometry = geometry, routeStops = stops, routeColor = color.toArgb(), fitRouteRequest = state.fitRouteRequest, selectedPlace = state.selectedPlace, placeCameraRequest = state.placeCameraRequest, lineFocus = focus, browsingNearby = state.showNearby, locationCameraRequest = state.locationCameraRequest, onViewportChanged = model::updateMapArea,stopBearings=stopBearings,onSharedStopSelected=onMapSharedStop,onMapClick=onDismissHighlight, offline = state.offlineMode, routeCatalogue = state.routesById)
+                    NativeTransitMap(state.network, state.vehicles, state.selectedStopId.takeUnless { state.showNearby || browsingRoute!=null || state.selectedVehicle!=null }, state.userLocation, modifier, onMapStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, vehicle, routeGeometry = geometry, routeStops = stops, routeColor = color.toArgb(), fitRouteRequest = state.fitRouteRequest, selectedPlace = state.selectedPlace, placeCameraRequest = state.placeCameraRequest, lineFocus = focus, browsingNearby = state.showNearby, locationCameraRequest = state.locationCameraRequest, onViewportChanged = model::updateMapArea,stopBearings=stopBearings,onSharedStopSelected=onMapSharedStop,onMapClick=onDismissHighlight, offline = state.offlineMode, routeCatalogue = state.routesById, highlightedStopId = state.selectedStopId, onViewportPrefetch = model::prefetchMapArea)
                 }
                 })
 

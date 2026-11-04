@@ -1,6 +1,7 @@
 package hu.app.bmenetrend.ui
 
 import androidx.compose.ui.test.*
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.graphics.Color
 import hu.app.bmenetrend.data.*
@@ -29,17 +30,22 @@ class DepartureBoardDesignTest {
         compose.onNode(hasClickAction()).assertIsNotEnabled()
         compose.runOnIdle { org.junit.Assert.assertFalse(opened) }
     }
-    @Test fun delayHasAnExplicitLabelBesideTheDepartureTime() {
-        compose.setContent { ViaBuszTheme { DepartureBoardRow(departure(),"volan","COACH",null,5,null,{}) } }
-        compose.onNodeWithText("+5 perc").assertIsDisplayed()
+    @Test fun compactRowShowsScheduleDetailsOnlyAfterTapping() {
+        val opened=mutableStateOf(false)
+        compose.setContent { ViaBuszTheme {
+            if(opened.value) DepartureDetails(departure())
+            else DepartureBoardRow(departure(),"volan","COACH",null,5,null,{opened.value=true})
+        } }
+        compose.onNodeWithText("5′").assertIsDisplayed()
+        compose.onNodeWithText("Várható: 14:05").assertDoesNotExist()
+        compose.onNodeWithText("Menetrend: 14:00").assertDoesNotExist()
+        compose.onNodeWithText("Biatorbágy, vasútállomás").performClick()
         compose.onNodeWithText("Várható: 14:05").assertIsDisplayed()
         compose.onNodeWithText("Menetrend: 14:00").assertIsDisplayed()
-        compose.onNodeWithText("Biatorbágy, vasútállomás").assertIsDisplayed()
     }
-    @Test fun smallDelayCrossingDisplayedMinuteStillShowsBothTimes() {
+    @Test fun smallDelayCrossingDisplayedMinuteStillShowsBothTimesInDetails() {
         val scheduled = clock.plusSeconds(45)
-        compose.setContent { ViaBuszTheme { DepartureBoardRow(departure(delaySeconds=75,scheduledAt=scheduled),"volan","COACH",null,1,null,{}) } }
-        // Less than a full elapsed minute, but the displayed minute changed from 14:00 to 14:01.
+        compose.setContent { ViaBuszTheme { DepartureDetails(departure(delaySeconds=75,scheduledAt=scheduled)) } }
         compose.onNodeWithText("Várható: 14:01").assertIsDisplayed()
         compose.onNodeWithText("Menetrend: 14:00").assertIsDisplayed()
     }
@@ -53,17 +59,17 @@ class DepartureBoardDesignTest {
         compose.onNodeWithText("Várható: 14:00").assertDoesNotExist()
         compose.onNodeWithText("Menetrend: 14:00").assertDoesNotExist()
     }
-    @Test fun largeTextRetainsBothTheDestinationAndDepartureStatus() {
+    @Test fun largeTextRetainsTheDestinationAndCompactTime() {
         compose.setContent {
             androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(1f,1.8f)) {
                 ViaBuszTheme { DepartureBoardRow(departure(),"volan","COACH",null,5,"2. kocsiállás",{}) }
             }
         }
         compose.onNodeWithText("Biatorbágy, vasútállomás").assertIsDisplayed()
-        compose.onNodeWithText("+5 perc").assertIsDisplayed()
-        compose.onNodeWithText("Várható: 14:05").assertIsDisplayed()
-        compose.onNodeWithText("Menetrend: 14:00").assertIsDisplayed()
-        compose.onNodeWithText("2. kocsiállás").assertIsDisplayed()
+        compose.onNodeWithText("5′").assertIsDisplayed()
+        compose.onNodeWithText("Várható: 14:05").assertDoesNotExist()
+        compose.onNodeWithText("Menetrend: 14:00").assertDoesNotExist()
+        compose.onNodeWithText("2. kocsiállás").assertDoesNotExist()
     }
     @Test fun vehicleJourneyLabelsLiveAndOriginalTimesAtLargeTextOnNarrowScreen() {
         compose.setContent {

@@ -14,12 +14,16 @@ import java.time.Instant
 class EmmaFeedClient(
     client: OkHttpClient = EmmaGraphqlClient.defaultHttpClient(),
     private val clock: () -> Instant = Instant::now,
-    backoff: EmmaRequestBackoff = EmmaGraphqlClient.sharedBackoff,
+    backoff: EmmaRequestBackoff = vehicleBackoff,
 ) {
     data class Feed(val vehicles: List<Vehicle>, val fetchedAt: Instant, val stale: Boolean = false)
     private val graphql = EmmaGraphqlClient(client, backoff)
     private val mutex = Mutex()
     private var snapshot: Feed? = null
+
+    companion object {
+        internal val vehicleBackoff = EmmaRequestBackoff()
+    }
 
     suspend fun get(force: Boolean = false): Feed = mutex.withLock {
         val cached = snapshot

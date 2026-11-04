@@ -1,0 +1,7 @@
+# Compact departure board and direct selection
+
+Departure rows now display the line badge, destination, and one countdown (under one hour) or clock time. Live estimates retain a small live indicator; delays and cancellations retain an error color and cancellations say `Kimarad`. Canceled rows remain disabled. Large text uses two rows so the destination and time stay readable. Timetable/original-time labels and platform/service/accessibility information are shown after opening a departure, rather than repeated on every board row.
+
+Departure taps resolve an observed vehicle by vehicle ID, then by exact trip ID. A different bus sharing a line number is never substituted. If the vehicle is not in the live snapshot, the selected departure opens its route pattern directly: exact pattern code first, otherwise boarding stop, source direction, and destination. Ambiguous/missing patterns show the chosen departure's details with loading/retry rather than an arbitrary direction or direction chooser. Normal line searches still offer direction selection. Opening scheduled departure details expands the sheet; returning closes the departure context instead of showing a direction chooser.
+
+Validation: `testDevelopmentUnitTest` completed with 620 tests, 615 passed, 5 skipped, 0 failures. Focused coverage includes exact vehicle identity, opposite directions, asynchronous pattern arrival, ambiguous patterns, compact rows, detail-on-tap, cancellation, and large text. Existing vehicle journey timetable/estimate labels remain unchanged.

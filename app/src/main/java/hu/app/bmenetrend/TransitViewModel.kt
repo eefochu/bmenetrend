@@ -124,6 +124,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private var mapBounds: MapBounds? = null
     private var mapStopsJob: Job? = null
     private var mapStopsGeneration = 0
+    private var pendingMapBounds: MapBounds? = null
     private var loadedMapBounds: MapBounds? = null
     private val loadedMapBoundsList = mutableListOf<MapBounds>()
     private var nearbyKey = emptyList<String>()
@@ -358,6 +359,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun refresh() {
+        EmmaGraphqlClient.sharedBackoff.reset()
+        EmmaFeedClient.vehicleBackoff.reset()
         mapSettledJob?.cancel()
         if (!state.value.stopIndexLoaded) viewModelScope.launch { refreshStopIndex() }
         viewModelScope.launch { refreshData(forceNetwork = true) }
@@ -370,6 +373,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
 
     private suspend fun refreshEmmaData(force: Boolean = false) {
         if (NetworkAccessPolicy.offline.value) return
+        if (force) EmmaFeedClient.vehicleBackoff.reset()
         if (emmaMutex.isLocked) return
         emmaMutex.withLock {
             val generation = NetworkAccessPolicy.generation
@@ -632,6 +636,9 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    /** Warm the map catalogue during gestures without requesting nearby departure boards. */
+    fun prefetchMapArea(bounds: MapBounds) = ensureMapStops(bounds)
+
     private fun ensureMapStops(bounds: MapBounds) {
         if (!mapVisible || NetworkAccessPolicy.offline.value || state.value.stopIndexLoaded) return
         // Do not query when zoomed far out where individual stops are not visible anyway
@@ -641,6 +648,10 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             bounds.west >= covered.west && bounds.east <= covered.east
         }
         if (alreadyCovered) return
+        val pending = pendingMapBounds
+        if (mapStopsJob?.isActive == true && pending != null &&
+            bounds.south >= pending.south && bounds.north <= pending.north &&
+            bounds.west >= pending.west && bounds.east <= pending.east) return
 
         mapStopsJob?.cancel()
         val generation = ++mapStopsGeneration
@@ -655,6 +666,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         )
         if (area.west >= area.east || area.south >= area.north) return
 
+        pendingMapBounds = area
         mapStopsJob = viewModelScope.launch {
             try {
                 val catalogue = stopsRepository.mapArea(area)
@@ -675,6 +687,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 recalculate()
             } catch (cancelled: CancellationException) { throw cancelled
             } catch (_: Exception) {
+            } finally {
+                if (generation == mapStopsGeneration) pendingMapBounds = null
             }
         }
     }
@@ -963,6 +977,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private fun ensureBoardRequest(force: Boolean = false) {
         if (NetworkAccessPolicy.offline.value) { recalculateOffline(); return }
         if (!mapVisible) return
+        if (force) EmmaGraphqlClient.sharedBackoff.reset()
         if (state.value.showNearby) { boardJob?.cancel(); boardKey = null; return }
         val key = state.value.boardRequestKey
         if (!force && key == boardKey) return
@@ -1097,14 +1112,33 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         if (!force && (state.value.loadingLineId == id || lineLoadedAt[id]?.let { Duration.between(it, Instant.now()).seconds in 0..599 } == true)) return
         val route = state.value.findRoute(id)
         val provider = route?.providerId ?: if (id.startsWith("emma:")) "mav" else null ?: return
-        if (provider !in setOf("volan", "bkk", "hev", "mav")) return
+        val emmaRouteId = when {
+            id.startsWith("emma:") -> id.removePrefix("emma:")
+            id.startsWith("mav:") -> {
+                val rest = id.removePrefix("mav:")
+                if (rest.startsWith("1:")) rest else "1:$rest"
+            }
+            id.startsWith("bkk:") -> {
+                val rest = id.removePrefix("bkk:")
+                if (rest.startsWith("BKK:")) rest else "BKK:$rest"
+            }
+            id.startsWith("volan:") -> {
+                val rest = id.removePrefix("volan:")
+                if (rest.startsWith("hkir:")) rest else "hkir:$rest"
+            }
+            id.startsWith("hev:") -> {
+                val rest = id.removePrefix("hev:")
+                if (rest.startsWith("1:") || rest.startsWith("BKK:")) rest else "1:$rest"
+            }
+            else -> id.substringAfter(":")
+        }
         val generation = ++lineGeneration
         lineJob?.cancel()
         mutableState.update { it.copy(loadingLineId = id, lineErrorId = null) }
         lineJob = viewModelScope.launch {
             try {
-                val text = journeyClient.execute(EmmaRouteParser.QUERY, org.json.JSONObject().put("id", id.substringAfter(":"))
-                    .put("date", LocalDate.now(budapest).format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE)))
+                val text = journeyClient.execute(EmmaRouteParser.QUERY, org.json.JSONObject().put("id", emmaRouteId)
+                    .put("date", LocalDate.now(budapest).format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE)), bypassCooldown = true)
                 val details = kotlinx.coroutines.withContext(Dispatchers.Default) { EmmaRouteParser.parse(text, id) }
                 if (lineGeneration == generation) {
                     lineLoadedAt[id] = Instant.now()
@@ -1117,7 +1151,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                     recalculate()
                 }
             } catch (cancelled: CancellationException) { throw cancelled
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                android.util.Log.e("TransitViewModel", "Failed to load line $id", e)
                 if (lineGeneration == generation) mutableState.update { it.copy(lineErrorId = id) }
             } finally {
                 if (lineGeneration == generation) mutableState.update { it.copy(loadingLineId = null) }
@@ -1204,6 +1239,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         if(ids.isEmpty()) return
         closeVehicle()
         manualStop = true
+        EmmaGraphqlClient.sharedBackoff.reset()
         val network=state.value.network
         val selectedIds=ids.map { id -> network?.let { SharedStops.resolve(it,id) } ?: SharedStops.canonicalId(id) }.toSet()
         mutableState.update { it.copy(showNearby=false,selectedStopId=selectedIds.first(),selectedPlatformIds=selectedIds,

@@ -44,7 +44,7 @@ The school term/break calendar is separate in `KanyargoCalendar.kt`; it must be 
 
 ## Budapest metro overview
 
-`build_metro_map.py` creates `map/budapest-metro.geojson` from the official BKK GTFS ZIP. It keeps full route shapes in both directions for M1–M4 and keeps all 103 boarding platforms as separate dots with individual line colors. The asset records its source URL and ZIP SHA-256; the app applies the shared metro palette at runtime. This is static map context, not a separate routing/timetable feed.
+`build_metro_map.py` creates line-only `map/budapest-metro.geojson` from the official BKK GTFS ZIP. It keeps full route shapes in both directions for M1–M4 and H5–H9, excluding replacement buses and all station/platform points. The asset records its source URL and ZIP SHA-256; the app applies the shared metro palette at runtime. This is static map context, not a separate routing/timetable feed.
 
 ```sh
 python3 scripts/build_metro_map.py /path/to/budapest_gtfs.zip app/src/main/assets/map/budapest-metro.geojson

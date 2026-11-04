@@ -8,9 +8,9 @@ import androidx.compose.material3.Typography
 import androidx.compose.material3.Shapes
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -30,36 +30,36 @@ val OpenSans = FontFamily(
     Font(R.font.open_sans_bold, FontWeight.Bold),
 )
 
+// Fallback palette for devices without Android dynamic colour support.
 private val LightColors = lightColorScheme(
-    primary=Color(0xFF205C48),onPrimary=Color.White,
-    primaryContainer=Color(0xFFC7ECD9),onPrimaryContainer=Color(0xFF103C2C),
-    secondary=Color(0xFF49655C),onSecondary=Color.White,
-    secondaryContainer=Color(0xFFDCEBE3),onSecondaryContainer=Color(0xFF233F35),
-    tertiary=Color(0xFF346779),onTertiary=Color.White,
-    tertiaryContainer=Color(0xFFD2EBF4),onTertiaryContainer=Color(0xFF163E4E),
-    background=Color(0xFFF3F7F5),onBackground=Color(0xFF172D26),
-    surface=Color(0xFFFAFCFA),onSurface=Color(0xFF172D26),
-    surfaceContainerLowest=Color.White,surfaceContainerLow=Color(0xFFEDF3EF),
-    surfaceContainer=Color(0xFFE6EEE8),surfaceContainerHigh=Color(0xFFDCE8DF),
-    surfaceContainerHighest=Color(0xFFD3E1D7),surfaceVariant=Color(0xFFE2EBE4),
-    onSurfaceVariant=Color(0xFF4C6257),outline=Color(0xFF71867B),outlineVariant=Color(0xFFC4D2C9),
-    inverseSurface=Color(0xFF243B31),inverseOnSurface=Color(0xFFF0F6F1),inversePrimary=Color(0xFF9DDFC3),
+    primary=Color(0xFF145FAD), onPrimary=Color.White,
+    primaryContainer=Color(0xFFE1EDFA), onPrimaryContainer=Color(0xFF163D66),
+    secondary=Color(0xFF536171), onSecondary=Color.White,
+    secondaryContainer=Color(0xFFE8ECF1), onSecondaryContainer=Color(0xFF293542),
+    tertiary=Color(0xFF356B71), onTertiary=Color.White,
+    tertiaryContainer=Color(0xFFD8EEF0), onTertiaryContainer=Color(0xFF173B40),
+    background=Color(0xFFF6F7F9), onBackground=Color(0xFF1C2025),
+    surface=Color(0xFFF6F7F9), onSurface=Color(0xFF1C2025),
+    surfaceContainerLowest=Color.White, surfaceContainerLow=Color(0xFFEDF0F3),
+    surfaceContainer=Color(0xFFE7EBEF), surfaceContainerHigh=Color(0xFFE0E5EB),
+    surfaceContainerHighest=Color(0xFFD8DFE6), surfaceVariant=Color(0xFFE7EBEF),
+    onSurfaceVariant=Color(0xFF53606C), outline=Color(0xFF75808A), outlineVariant=Color(0xFFCED5DC),
+    inverseSurface=Color(0xFF252A30), inverseOnSurface=Color(0xFFF1F3F5), inversePrimary=Color(0xFF94C9FF),
 )
-
 private val DarkColors = darkColorScheme(
-    primary=Color(0xFF9DDFC3),onPrimary=Color(0xFF073B29),
-    primaryContainer=Color(0xFF245642),onPrimaryContainer=Color(0xFFC7F2DC),
-    secondary=Color(0xFFB4CFC1),onSecondary=Color(0xFF1F3B2F),
-    secondaryContainer=Color(0xFF344E42),onSecondaryContainer=Color(0xFFD4EADC),
-    tertiary=Color(0xFFA4D4E6),onTertiary=Color(0xFF103747),
-    tertiaryContainer=Color(0xFF244F60),onTertiaryContainer=Color(0xFFC8EAF6),
-    background=Color(0xFF101B17),onBackground=Color(0xFFE2EDE5),
-    surface=Color(0xFF111E18),onSurface=Color(0xFFE2EDE5),
-    surfaceContainerLowest=Color(0xFF0C1612),surfaceContainerLow=Color(0xFF18261F),
-    surfaceContainer=Color(0xFF1E2E25),surfaceContainerHigh=Color(0xFF283B30),
-    surfaceContainerHighest=Color(0xFF33473A),surfaceVariant=Color(0xFF304238),
-    onSurfaceVariant=Color(0xFFBACDC0),outline=Color(0xFF869E8E),outlineVariant=Color(0xFF3F5547),
-    inverseSurface=Color(0xFFE2EDE5),inverseOnSurface=Color(0xFF243B31),inversePrimary=Color(0xFF205C48),
+    primary=Color(0xFF94C9FF), onPrimary=Color(0xFF102F4B),
+    primaryContainer=Color(0xFF213950), onPrimaryContainer=Color(0xFFD7EAFE),
+    secondary=Color(0xFFB7C1CC), onSecondary=Color(0xFF26323D),
+    secondaryContainer=Color(0xFF303841), onSecondaryContainer=Color(0xFFDDE4EC),
+    tertiary=Color(0xFF9CD1D7), onTertiary=Color(0xFF12363A),
+    tertiaryContainer=Color(0xFF27474C), onTertiaryContainer=Color(0xFFCFEDF0),
+    background=Color(0xFF131519), onBackground=Color(0xFFF1F3F5),
+    surface=Color(0xFF131519), onSurface=Color(0xFFF1F3F5),
+    surfaceContainerLowest=Color(0xFF1B1E23), surfaceContainerLow=Color(0xFF22262C),
+    surfaceContainer=Color(0xFF2A2F36), surfaceContainerHigh=Color(0xFF323841),
+    surfaceContainerHighest=Color(0xFF3C444E), surfaceVariant=Color(0xFF2A2F36),
+    onSurfaceVariant=Color(0xFFB8C1CC), outline=Color(0xFF85919E), outlineVariant=Color(0xFF3B434D),
+    inverseSurface=Color(0xFFF1F3F5), inverseOnSurface=Color(0xFF252A30), inversePrimary=Color(0xFF145FAD),
 )
 
 internal val TransitShapes=Shapes(
@@ -81,7 +81,6 @@ internal val TransitTypography=Typography(
 
 /** Tonal roles keep the chosen hue readable in both themes, including their container colours. */
 internal fun accentColorScheme(accent: AccentColor, dark: Boolean, customArgb: Int = 0xFF6750A4.toInt()): ColorScheme {
-    if(accent==AccentColor.GREEN) return if(dark) DarkColors else LightColors
     val custom = accentHueSaturation(customArgb)
     val hue = accent.hue ?: if (accent == AccentColor.CUSTOM) custom.first else return if (dark) DarkColors else LightColors
     fun tone(lightness: Float, saturation: Float = if (accent == AccentColor.CUSTOM) custom.second.coerceAtMost(0.85f) else 0.65f, shift: Float = 0f) =

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="offline_design_installed_summary">A menetrendcsomag telepítve</string>
+    <string name="offline_design_missing_summary">A menetrendcsomag még nincs letöltve</string>
+    <string name="offline_design_show_details">Részletek</string>
+    <string name="offline_design_hide_details">Részletek elrejtése</string>
+    <string name="offline_design_coverage_label">Lefedettség</string>
+    <string name="offline_design_size_label">Letöltés és tárhely</string>
+    <string name="offline_design_sources_label">Források és megjegyzések</string>
+    <string name="offline_nearby_origins">Megállók a közelemben</string>
+    <string name="offline_nearby_origins_hint">Válassz egy letöltött felszállóhelyet a közeledben. Az offline útvonal innen indul; a megállóig tartó séta nincs benne.</string>
+    <string name="offline_nearby_origins_empty">Nincs letöltött felszállóhely 1,5 km-en belül. Keress egy induló megállót név szerint.</string>
+</resources>

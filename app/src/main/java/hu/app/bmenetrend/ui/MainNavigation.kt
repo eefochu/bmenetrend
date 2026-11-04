@@ -39,7 +39,8 @@ fun MainNavigation(
     favorites: @Composable ()->Unit,
     offline: Boolean = false,
     onOfflineSettings: () -> Unit = {},
-    hideBottomBarOnPlanner: Boolean = false
+    hideBottomBarOnPlanner: Boolean = false,
+    hideNavigation: Boolean = false
 ) {
     val saved=rememberSaveableStateHolder()
     val rail=transitWindowWidth()>=840.dp
@@ -47,7 +48,7 @@ fun MainNavigation(
     BackHandler(enabled=tab!=MainTab.MAP) { onTab(MainTab.MAP) }
     Surface(color=MaterialTheme.colorScheme.background) {
         Row(Modifier.fillMaxSize()) {
-            if(rail) Surface(color=MaterialTheme.colorScheme.surfaceContainerLow) {
+            if(rail && !hideNavigation) Surface(color=MaterialTheme.colorScheme.surfaceContainerLow) {
                 Column(Modifier.width(if(compact) 156.dp else 104.dp).fillMaxHeight().statusBarsPadding().navigationBarsPadding().selectableGroup(),
                     verticalArrangement=Arrangement.spacedBy(12.dp)) {
                     Spacer(Modifier.height(16.dp))
@@ -64,8 +65,7 @@ fun MainNavigation(
                         }
                     }
                 }
-                if (offline) TextButton(onClick = onOfflineSettings, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.offline_open_settings)) }
-                if(!rail && (!hideBottomBarOnPlanner || tab != MainTab.PLANNER)) Surface(color=MaterialTheme.colorScheme.surfaceContainerLowest) {
+                if(!rail && !hideNavigation && (!hideBottomBarOnPlanner || tab != MainTab.PLANNER)) Surface(color=MaterialTheme.colorScheme.surfaceContainerLowest) {
                     Column {
                         HorizontalDivider(color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=.5f))
                         Row(Modifier.fillMaxWidth().navigationBarsPadding().selectableGroup().padding(horizontal=12.dp,vertical=6.dp)) {
@@ -82,17 +82,17 @@ fun MainNavigation(
 @Composable
 private fun TransitNavigationItem(item: MainTab,selected: Boolean,onClick: ()->Unit,modifier: Modifier,compact: Boolean=false) {
     val label=stringResource(when(item) { MainTab.MAP->R.string.planner_nav_map;MainTab.PLANNER->R.string.planner_nav_plan;MainTab.FAVORITES->R.string.favorites_nav })
-    val fill by animateColorAsState(if(selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLowest,
+    val selectionFill by animateColorAsState(if(selected) MaterialTheme.colorScheme.primaryContainer else androidx.compose.ui.graphics.Color.Transparent,
         tween(160),label="navigation selection")
     Column(modifier.heightIn(min=64.dp).semantics { if(compact) contentDescription=label }.selectable(
         selected=selected,
         interactionSource=remember { MutableInteractionSource() },
-        indication=null,
+        indication=androidx.compose.material3.ripple(),
         onClick=onClick,
         role=Role.Tab
     ).padding(vertical=4.dp),
         horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(4.dp)) {
-        Surface(color=fill,shape=RoundedCornerShape(if(selected) 12.dp else 20.dp)) {
+        Surface(color=selectionFill, shape=RoundedCornerShape(12.dp)) {
             Icon(when(item) { MainTab.MAP->Icons.Rounded.Map;MainTab.PLANNER->Icons.Rounded.Route;MainTab.FAVORITES->Icons.Rounded.Favorite },null,
                 Modifier.padding(horizontal=20.dp,vertical=6.dp).size(24.dp),
                 tint=if(selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)

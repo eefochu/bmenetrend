@@ -4,6 +4,10 @@ import android.content.Context
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
@@ -36,6 +40,40 @@ import java.time.Instant
 class MapAttributionTest {
     @get:Rule val compose = createComposeRule()
     private val context: Context get() = ApplicationProvider.getApplicationContext()
+
+    @Test
+    fun attributionFollowsSheetContinuouslyAndKeepsRoomForCollapsedAction() {
+        assertEquals(60f, mapAttributionLiftPx(0f, 300f, 60f), .001f)
+        assertEquals(180f, mapAttributionLiftPx(150f, 300f, 60f), .001f)
+        assertEquals(300f, mapAttributionLiftPx(300f, 300f, 60f), .001f)
+        assertEquals(500f, mapAttributionLiftPx(500f, 300f, 60f), .001f)
+        assertEquals(60f, mapAttributionLiftPx(-10f, 300f, 60f), .001f)
+    }
+
+    @Test
+    fun attributionMovesWithSheetAndStillOpensCredits() {
+        val visible = mutableFloatStateOf(0f)
+        val mapInfoText = context.getString(R.string.map_info)
+        compose.setContent {
+            ViaBuszTheme {
+                Box(Modifier.fillMaxSize()) {
+                    MapAttribution(Modifier.align(Alignment.BottomStart).graphicsLayer {
+                        translationY = -mapAttributionLiftPx(visible.floatValue, 300f, 60f)
+                    })
+                }
+            }
+        }
+        val node = compose.onNodeWithText(mapInfoText)
+        val hiddenTop = node.fetchSemanticsNode().boundsInRoot.top
+        compose.runOnIdle { visible.floatValue = 150f }
+        compose.waitForIdle()
+        assertEquals(hiddenTop - 120f, node.fetchSemanticsNode().boundsInRoot.top, 1f)
+        compose.runOnIdle { visible.floatValue = 300f }
+        compose.waitForIdle()
+        assertEquals(hiddenTop - 240f, node.fetchSemanticsNode().boundsInRoot.top, 1f)
+        node.performClick()
+        compose.onNodeWithText(context.getString(R.string.map_credits_title)).assertIsDisplayed()
+    }
 
     @Test
     fun tapOpensAndCloseDismissesWithoutNavigatingSelection() {
@@ -200,7 +238,7 @@ class MapAttributionTest {
         val mapBounds = compose.onNodeWithTag("planner-test-map").fetchSemanticsNode().boundsInRoot
 
         assertTrue("Card bottom (${cardBounds.bottom}) <= Attr top (${attrBounds.top})", cardBounds.bottom <= attrBounds.top)
-        assertTrue("Attr bottom (${attrBounds.bottom}) <= Map top (${mapBounds.top})", attrBounds.bottom <= mapBounds.top)
+        assertTrue("Attr is placed inside map bounds", attrBounds.top >= mapBounds.top && attrBounds.bottom <= mapBounds.bottom)
     }
 
     @Test
@@ -227,7 +265,6 @@ class MapAttributionTest {
         val mapBounds = compose.onNodeWithTag("planner-test-map").fetchSemanticsNode().boundsInRoot
 
         assertTrue("Tablet card right (${cardBounds.right}) <= map left (${mapBounds.left})", cardBounds.right <= mapBounds.left)
-        assertTrue("Tablet attr right (${attrBounds.right}) <= map left (${mapBounds.left})", attrBounds.right <= mapBounds.left)
-        assertTrue("Tablet attr top (${attrBounds.top}) >= card bottom (${cardBounds.bottom})", attrBounds.top >= cardBounds.bottom)
+        assertTrue("Tablet attr is placed inside map bounds", attrBounds.left >= mapBounds.left && attrBounds.bottom <= mapBounds.bottom)
     }
 }

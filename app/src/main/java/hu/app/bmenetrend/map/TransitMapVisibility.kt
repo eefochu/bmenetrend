@@ -2,12 +2,11 @@ package hu.app.bmenetrend.map
 
 import hu.app.bmenetrend.data.RailSupport
 
-/** City overview prioritizes the metro network. Platforms and live vehicles need closer zoom. */
+/** Rail remains useful at regional zooms; marker sizing is shared with every other mode. */
 object TransitMapVisibility {
-    const val RAIL_VEHICLE_MIN_ZOOM = 13.5f
-    const val ROAD_VEHICLE_MIN_ZOOM = 14f
-    const val VEHICLE_SYMBOL_MIN_ZOOM = 15f
-    fun stop(mode: String?, zoom: Double, focused: Boolean = false) = focused || zoom >= if (RailSupport.isTrain(mode)) 11.5 else 14.0
-    fun vehicle(mode: String?, zoom: Double, focused: Boolean = false) = focused || zoom >=
-        if (RailSupport.isTrain(mode)) RAIL_VEHICLE_MIN_ZOOM else ROAD_VEHICLE_MIN_ZOOM
+    const val TRAIN_VEHICLE_MIN_ZOOM = 7f
+    const val OTHER_VEHICLE_MIN_ZOOM = 11.5f
+    const val VEHICLE_SYMBOL_MIN_ZOOM = 12f
+    fun stop(mode: String?, zoom: Double, focused: Boolean = false) = focused || zoom >= if (RailSupport.isTrain(mode)) 9.0 else 12.0
+    fun vehicle(mode: String?, zoom: Double, focused: Boolean = false) = focused || zoom >= if (RailSupport.isTrain(mode)) TRAIN_VEHICLE_MIN_ZOOM else OTHER_VEHICLE_MIN_ZOOM
 }

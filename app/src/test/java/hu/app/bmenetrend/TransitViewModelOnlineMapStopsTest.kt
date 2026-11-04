@@ -73,6 +73,28 @@ class TransitViewModelOnlineMapStopsTest {
         field.set(viewModel, repo)
     }
 
+    @Test fun prefetchAndIdleShareAnInFlightCoveredArea() = runBlocking {
+        val release = CompletableDeferred<Unit>()
+        val calls = AtomicInteger()
+        val client = OkHttpClient.Builder().addInterceptor { chain ->
+            calls.incrementAndGet()
+            runBlocking { withTimeout(5_000) { release.await() } }
+            Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                .body(bboxResponse(sampleStopJson("BKK:prefetch", "Prefetched stop", 47.49, 19.05)).toResponseBody()).build()
+        }.build()
+        val model = TransitViewModel(app)
+        injectRepository(model, EmmaStopsRepository(app, EmmaGraphqlClient(client)))
+        val bounds = MapBounds(19.04,47.48,19.06,47.50)
+        try {
+            model.prefetchMapArea(bounds)
+            withTimeout(5_000) { while (calls.get()==0) { ShadowLooper.idleMainLooper(); delay(5) } }
+            repeat(10) { model.prefetchMapArea(bounds) }
+            model.updateMapArea(bounds,GeoPoint(47.49,19.05))
+            ShadowLooper.idleMainLooper()
+            assertEquals("Gesture and idle requests for a covered in-flight area must share the request",1,calls.get())
+        } finally { release.complete(Unit) }
+    }
+
     @Test fun onlineViewportPublishesMetroRoutesAndColorsBeforeNationalIndexLoads() = runBlocking {
         val metro = JSONObject().put("gtfsId", "BKK:5400").put("shortName", "M4")
             .put("longName", "M4").put("mode", "SUBWAY").put("color", "46A43B")
@@ -98,7 +120,7 @@ class TransitViewModelOnlineMapStopsTest {
     }
 
     @Test
-    fun initialMapDotsPublishedEarlyWithoutWaitingForGlobalIndex() {
+    fun panningPrefetchPublishesMapDotsBeforeIdleOrGlobalIndex() {
         runBlocking {
             val nationalLatch = CompletableDeferred<Unit>()
             val mapAreaCalls = AtomicInteger()
@@ -141,7 +163,7 @@ class TransitViewModelOnlineMapStopsTest {
 
             // Trigger map area in Budapest center
             val bounds = MapBounds(19.04, 47.48, 19.06, 47.50)
-            viewModel.updateMapArea(bounds, GeoPoint(47.49, 19.05))
+            viewModel.prefetchMapArea(bounds)
 
             // Allow coroutine on Main dispatcher to run
             ShadowLooper.idleMainLooper()

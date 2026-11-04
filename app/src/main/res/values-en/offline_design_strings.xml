@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="offline_design_installed_summary">Timetable pack installed</string>
+    <string name="offline_design_missing_summary">Timetable pack not downloaded</string>
+    <string name="offline_design_show_details">Details</string>
+    <string name="offline_design_hide_details">Hide details</string>
+    <string name="offline_design_coverage_label">Coverage</string>
+    <string name="offline_design_size_label">Download and storage</string>
+    <string name="offline_design_sources_label">Sources and notes</string>
+    <string name="offline_nearby_origins">Stops near me</string>
+    <string name="offline_nearby_origins_hint">Choose a downloaded boarding stop nearby. The offline journey starts there; walking to the stop is not included.</string>
+    <string name="offline_nearby_origins_empty">No downloaded boarding stops within 1.5 km. Search for an origin stop by name.</string>
+</resources>

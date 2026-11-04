@@ -104,7 +104,7 @@ fun LineBadge(number: String, provider: String, mode: String? = null, sourceColo
         if (showIcon) Image(rememberTransitIcon(VehicleMarkerStyle.forTransport(provider, mode).drawableRes, 28.dp),
             stringResource(when (mode) { "TRAM" -> R.string.emma_mode_tram; "TROLLEYBUS" -> R.string.emma_mode_trolley;
                 "SUBWAY" -> R.string.emma_mode_metro; "RAIL", "SUBURBAN_RAILWAY", "TRAMTRAIN" -> R.string.emma_mode_train; else -> R.string.emma_mode_bus }), Modifier.size(28.dp))
-        Surface(shape = RoundedCornerShape(6.dp), color = color) {
+        Surface(shape = RoundedCornerShape(4.dp), color = color) {
             Box(
                 Modifier
                     .heightIn(min = 28.dp)

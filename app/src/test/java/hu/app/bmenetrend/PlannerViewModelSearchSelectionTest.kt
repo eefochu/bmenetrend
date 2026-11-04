@@ -299,6 +299,9 @@ class PlannerViewModelSearchSelectionTest {
         }
         val model = ViewModelProvider(viewModelStore, factory)[PlannerViewModel::class.java]
 
+        // Let the initial policy collector invalidate startup state before exercising a plan.
+        withContext(Dispatchers.Main) { }
+
         // 1. Initial default state
         assertEquals(LocalPlanningService.providerIds, model.state.value.localProviders)
 

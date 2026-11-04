@@ -5,4 +5,22 @@
     <string name="design_transit_data">Transit data</string>
     <string name="board_estimated_time">Expected: %1$s</string>
     <string name="board_original_time">Scheduled: %1$s</string>
+    <string name="search_additional_lines">+%1$d lines</string>
+    <string name="planner_earlier">15 minutes earlier</string>
+    <string name="planner_later">15 minutes later</string>
+    <string name="design_offline_status">Offline mode · Settings</string>
+    <string name="design_nearby_empty">No departures to show in this area right now. Search for a stop or move the map.</string>
+    <string name="design_find_stop">Find a stop</string>
+    <string name="design_favorites_intro">Your everyday journeys, together</string>
+    <string name="design_add_stop">Add a stop</string>
+    <string name="design_planner_prompt">Where are you heading?</string>
+    <string name="design_planner_hint">Choose a destination to compare available journeys.</string>
+    <string name="design_local_networks">Local networks</string>
+    <string name="design_choose_destination">Find a destination</string>
+    <string name="design_theme_auto">Auto</string>
+    <string name="design_theme_light">Light</string>
+    <string name="design_theme_dark">Dark</string>
+    <string name="design_choose_origin">Choose a boarding stop</string>
+    <string name="design_departure_window">Next %1$s</string>
+    <string name="departure_stops_unavailable">Stops for the selected departure are not available yet.</string>
 </resources>

@@ -87,6 +87,9 @@ androidComponents {
         tasks.matching { it.name == "assemble$capitalized" }.configureEach {
             dependsOn(copyTask)
         }
+        tasks.matching { it.name == "install$capitalized" }.configureEach {
+            mustRunAfter(copyTask)
+        }
         tasks.matching { it.name == "package$capitalized" }.configureEach {
             finalizedBy(copyTask)
         }
