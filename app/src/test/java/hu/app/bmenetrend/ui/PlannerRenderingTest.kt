@@ -38,7 +38,12 @@ import java.time.Instant
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class PlannerRenderingTest {
     @get:Rule val compose = createComposeRule()
-    @Before fun setupMain() { Dispatchers.setMain(UnconfinedTestDispatcher()) }
+    @Before fun setupMain() {
+        Dispatchers.setMain(UnconfinedTestDispatcher())
+        val app = ApplicationProvider.getApplicationContext<android.app.Application>()
+        hu.app.bmenetrend.offline.NetworkAccessPolicy.setOffline(app, false)
+        hu.app.bmenetrend.offline.NetworkAccessPolicy.onConnectivityChanged(true)
+    }
     @After fun resetMain() { Dispatchers.resetMain() }
 
     private fun plan(): TripPlan {

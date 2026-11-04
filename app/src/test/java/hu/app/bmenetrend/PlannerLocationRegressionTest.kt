@@ -41,6 +41,7 @@ class PlannerLocationRegressionTest {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         app = ApplicationProvider.getApplicationContext()
         NetworkAccessPolicy.setOffline(app, false)
+        NetworkAccessPolicy.onConnectivityChanged(true)
     }
 
     @After
@@ -93,10 +94,11 @@ class PlannerLocationRegressionTest {
         // Full form header ("Utazástervezés")
         compose.onNodeWithText(app.getString(R.string.planner_title)).assertIsDisplayed()
 
-        // Departure control, swap button, and find button are present
-        compose.onNodeWithText(app.getString(R.string.planner_find)).assertIsDisplayed()
+        // Departure control and swap button are present; bottom CTA is absent when destination is empty
         compose.onNodeWithText(app.getString(R.string.planner_leave_now)).assertIsDisplayed()
         compose.onNodeWithContentDescription(app.getString(R.string.planner_swap)).assertIsDisplayed()
+        compose.onNodeWithText(app.getString(R.string.planner_find)).assertDoesNotExist()
+        compose.onNodeWithText(app.getString(R.string.design_choose_destination)).assertDoesNotExist()
 
         // Tapping the destination field triggers destination search
         compose.onNodeWithText(expectedPlaceholder).performClick()
@@ -243,6 +245,84 @@ class PlannerLocationRegressionTest {
         // Subsequent GPS update still does NOT replace swapped origin
         model.updateLocation(GeoPoint(47.5100, 18.8600))
         assertEquals("Swapped origin must not be replaced by GPS update", manualDest, model.state.value.origin)
+    }
+
+    @Test
+    fun offlinePlanningAsksForABoardingStopBeforeAttemptingARoute() {
+        NetworkAccessPolicy.onConnectivityChanged(false)
+        val model = createModel()
+        var locationRequested = false
+        model.edit(PlannerField.DESTINATION)
+        model.choose(PlannerEndpoint("dest:deak", "Deák Ferenc tér M", "Budapest", GeoPoint(47.498, 19.054)))
+        compose.setContent {
+            ViaBuszTheme {
+                PlannerScreen(model, onRequestLocation = { locationRequested = true })
+            }
+        }
+        compose.onNodeWithText(app.getString(R.string.design_choose_origin)).assertIsEnabled().performClick()
+        assertEquals(PlannerField.ORIGIN, model.state.value.editing)
+        assertNull(model.state.value.error)
+        assertFalse(locationRequested)
+    }
+
+    @Test
+    fun offlineCurrentLocationOffersDownloadedStopsAndSelectionUnblocksPlanning() {
+        NetworkAccessPolicy.onConnectivityChanged(false)
+        val model = createModel()
+        val gps = GeoPoint(47.4979, 19.0402)
+        val nearby = TransitStop("emma:BKK:near", "Közeli felszállóhely", gps, listOf("bkk:16"))
+        val far = TransitStop("emma:BKK:far", "Távoli megálló", GeoPoint(47.6, 19.1), listOf("bkk:16"))
+        model.updateStops(emptyList(), listOf(far, nearby))
+        model.updateLocation(gps)
+        model.edit(PlannerField.DESTINATION)
+        model.choose(PlannerEndpoint("dest", "Célállomás", "", GeoPoint(47.48, 19.05)))
+        compose.setContent { ViaBuszTheme { PlannerScreen(model) {} } }
+        compose.onNodeWithText(app.getString(R.string.design_choose_origin)).performClick()
+        // The CTA uses GPS to offer actual downloaded boarding stops directly.
+        compose.waitUntil(5_000) { model.state.value.suggestions.any { it.id == nearby.id } }
+        assertEquals(PlannerField.ORIGIN, model.state.value.editing)
+        assertFalse(model.state.value.suggestions.any { it.id == far.id })
+        compose.onNodeWithText(nearby.name).performClick()
+        assertEquals(nearby.id, model.state.value.origin?.id)
+        assertFalse(model.state.value.useLocation)
+        assertNull(model.state.value.editing)
+        compose.onNodeWithText(app.getString(R.string.planner_find)).assertIsEnabled()
+        compose.onNodeWithText(app.getString(R.string.design_choose_origin)).assertDoesNotExist()
+    }
+
+    @Test
+    fun offlineGpsChoiceWithoutNearbyStopsKeepsOriginPickerOpen() {
+        NetworkAccessPolicy.onConnectivityChanged(false)
+        val model = createModel()
+        model.updateLocation(GeoPoint(47.4979, 19.0402))
+        compose.setContent { ViaBuszTheme { PlannerScreen(model) {} } }
+        model.edit(PlannerField.ORIGIN)
+        model.useCurrentLocation()
+        assertEquals(PlannerField.ORIGIN, model.state.value.editing)
+        assertNull(model.state.value.result)
+        compose.waitUntil(5_000) { !model.state.value.searching }
+        compose.onNodeWithText(app.getString(R.string.offline_nearby_origins_empty)).assertIsDisplayed()
+    }
+
+    @Test
+    fun offlineNearbySearchWaitsForGpsAndDoesNotOverwriteManualSelection() {
+        NetworkAccessPolicy.onConnectivityChanged(false)
+        val model = createModel()
+        val gps = GeoPoint(47.4979, 19.0402)
+        val stop = TransitStop("emma:BKK:near", "Közeli felszállóhely", gps, listOf("bkk:16"))
+        model.updateStops(emptyList(), listOf(stop))
+        compose.setContent { ViaBuszTheme { PlannerScreen(model) {} } }
+        model.edit(PlannerField.ORIGIN)
+        model.useCurrentLocation()
+        assertEquals(PlannerField.ORIGIN, model.state.value.editing)
+        assertEquals(PlannerError.LOCATION, model.state.value.error)
+        model.updateLocation(gps)
+        compose.waitUntil(5_000) { model.state.value.suggestions.any { it.id == stop.id } }
+        model.choose(PlannerEndpoint.fromStop(stop))
+        model.updateLocation(GeoPoint(47.6, 19.1))
+        assertEquals(stop.id, model.state.value.origin?.id)
+        assertFalse(model.state.value.useLocation)
+        assertNull(model.state.value.editing)
     }
 
     @Test

@@ -14,6 +14,7 @@ import org.junit.Assert.assertTrue
 import androidx.test.core.app.ApplicationProvider
 import android.content.Context
 import hu.app.bmenetrend.R
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -24,6 +25,12 @@ import org.robolectric.annotation.Config
 @Config(sdk = [30], qualifiers = "hu-rHU-w400dp-h850dp-night")
 class StationRecommendationSearchTest {
     @get:Rule val compose = createComposeRule()
+
+    @Before fun setup() {
+        val app = ApplicationProvider.getApplicationContext<Context>()
+        hu.app.bmenetrend.offline.NetworkAccessPolicy.setOffline(app, false)
+        hu.app.bmenetrend.offline.NetworkAccessPolicy.onConnectivityChanged(true)
+    }
 
     @Test fun recommendationAndLiteralStationAndPlaceRemainSelectableAndQueryRefreshes() {
         val query = mutableStateOf("kelen")

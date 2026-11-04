@@ -50,14 +50,15 @@ internal fun TransitSearchInput(query: String, onQuery: (String) -> Unit, onBack
 }
 
 @Composable
-internal fun SearchRecommendation(name: String, detail: String, onClick: () -> Unit) {
+internal fun SearchRecommendation(name: String, detail: String, onClick: () -> Unit,
+    leading: @Composable () -> Unit = { Icon(Icons.Rounded.LocationOn, null, Modifier.size(28.dp)) }) {
     Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(stringResource(R.string.search_recommended), Modifier.semantics { heading() }, style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.primary)
         Surface(onClick = onClick, shape = TransitDesign.panelShape, color = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.fillMaxWidth()) {
             Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Icon(Icons.Rounded.LocationOn, null, Modifier.size(28.dp))
+                leading()
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(name, style = MaterialTheme.typography.titleLarge, maxLines = 3, overflow = TextOverflow.Ellipsis)
                     if (detail.isNotBlank()) Text(detail, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -101,3 +102,8 @@ internal fun SearchResultCard(
         }
     }
 }
+
+/** Shared, locale-aware distance formatting for map and planner search. */
+internal fun formatStopDistance(meters: Double): String =
+    if (meters < 1000) "${meters.toInt()} m"
+    else String.format(java.util.Locale.getDefault(), "%.1f km", meters / 1000)

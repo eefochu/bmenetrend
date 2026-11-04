@@ -25,6 +25,7 @@ fun EmmaLineBrowser(
     onBoard: (String, String, String) -> Unit,
     onRetry: () -> Unit,
     showHeader: Boolean = true,
+    departure: hu.app.bmenetrend.data.Departure? = null,
 ) {
     val details = state.lineDetails[route.id]
     val primaryVariants = remember(details?.patterns) {
@@ -37,6 +38,7 @@ fun EmmaLineBrowser(
     }
     val color = lineColor(route)
     LazyColumn(contentPadding = PaddingValues(bottom = 32.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())) {
+        departure?.let { item(key="departure-details",contentType="departure-details") { DepartureDetails(it) } }
         if(showHeader) item(key="header",contentType="header") {
             Row(Modifier.padding(horizontal=20.dp,vertical=12.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(12.dp)) {
                 LineBadge(route)
@@ -71,7 +73,8 @@ fun EmmaLineBrowser(
             }
         } else if (pattern != null) {
             itemsIndexed(pattern.stops, key = { index, stop -> "$index-${stop.id}" }, contentType = { _, _ -> "pattern_stop" }) { index, stop ->
-                LineStopRow(stop, index == 0, index == pattern.stops.lastIndex, color, onClick = { onBoard(route.id, pattern.id, stop.id) })
+                val isHighlighted = stop.id == state.selectedStopId || stop.id in state.selectedPlatformIds
+                LineStopRow(stop, index == 0, index == pattern.stops.lastIndex, color, onClick = { onBoard(route.id, pattern.id, stop.id) }, highlighted = isHighlighted)
             }
         }
     }

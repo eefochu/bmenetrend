@@ -2,6 +2,10 @@ package hu.app.bmenetrend.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -13,10 +17,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -37,15 +43,15 @@ internal object TransitDesign {
     val compact = 8.dp
     val section = 24.dp
     val contentWidth = 760.dp
-    val controlShape = RoundedCornerShape(16.dp)
-    val panelShape = RoundedCornerShape(24.dp)
+    val controlShape = RoundedCornerShape(12.dp)
+    val panelShape = RoundedCornerShape(20.dp)
     val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-    val groupShape = RoundedCornerShape(20.dp)
+    val groupShape = RoundedCornerShape(16.dp)
 }
 
 @Composable
 internal fun TransitIconTile(icon: ImageVector, modifier: Modifier = Modifier, prominent: Boolean = false) {
-    Surface(modifier.size(44.dp), shape = RoundedCornerShape(topStart=16.dp,topEnd=16.dp,bottomStart=16.dp,bottomEnd=8.dp),
+    Surface(modifier.size(44.dp), shape = RoundedCornerShape(12.dp),
         color = if(prominent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer,
         contentColor = if(prominent) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimaryContainer) {
         Box(contentAlignment=Alignment.Center) { Icon(icon,null,Modifier.size(23.dp)) }
@@ -56,7 +62,7 @@ internal fun TransitIconTile(icon: ImageVector, modifier: Modifier = Modifier, p
 internal fun TransitPageHeader(title: String, onBack: () -> Unit, actions: @Composable RowScope.() -> Unit = {}) {
     Row(Modifier.fillMaxWidth().padding(start=12.dp,end=12.dp,top=8.dp,bottom=16.dp),
         verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(12.dp)) {
-        FilledTonalIconButton(onClick=onBack,shape=TransitDesign.controlShape,modifier=Modifier.size(48.dp)) {
+        IconButton(onClick=onBack,modifier=Modifier.size(48.dp)) {
             Icon(Icons.AutoMirrored.Rounded.ArrowBack,stringResource(R.string.ui_back))
         }
         Text(title,Modifier.weight(1f),style=MaterialTheme.typography.headlineSmall)
@@ -96,7 +102,7 @@ internal fun PlatformBadge(
     if (clean.isBlank()) return
     val isPill = clean.length > 2
     Surface(
-        shape = if (isPill) RoundedCornerShape(11.dp) else CircleShape,
+        shape = RoundedCornerShape(4.dp),
         color = backgroundColor,
         contentColor = contentColor,
         modifier = modifier
@@ -127,7 +133,7 @@ internal fun PlatformBadge(
 /** The time is the scanning anchor. Live status has an icon as well as colour. */
 @Composable
 internal fun DepartureCount(minutes: Int, time: String, live: Boolean, modifier: Modifier = Modifier, cancelled: Boolean=false, delay: Long=0, scheduledTime: String?=null) {
-    Surface(modifier.widthIn(min=58.dp),shape=RoundedCornerShape(14.dp),
+    Surface(modifier.widthIn(min=58.dp),shape=RoundedCornerShape(8.dp),
         color=when { cancelled || delay>0 -> MaterialTheme.colorScheme.errorContainer;live -> MaterialTheme.colorScheme.primaryContainer;else -> MaterialTheme.colorScheme.surfaceContainerHigh },
         contentColor=when { cancelled || delay>0 -> MaterialTheme.colorScheme.onErrorContainer;live -> MaterialTheme.colorScheme.onPrimaryContainer;else -> MaterialTheme.colorScheme.onSurface }) {
         Column(Modifier.padding(horizontal=8.dp,vertical=8.dp),horizontalAlignment=Alignment.CenterHorizontally,
@@ -149,60 +155,94 @@ internal fun DepartureCount(minutes: Int, time: String, live: Boolean, modifier:
     }
 }
 
-/** Timetable row, shared only by departure boards. Large text gets a second line of layout, not narrower text. */
+/** A departure scans as badge, destination and time. Service metadata lives in its opened detail. */
 @Composable
 internal fun DepartureBoardRow(
     departure: hu.app.bmenetrend.data.Departure,provider: String,mode: String?,sourceColor: String?,minutes: Int,
     boardingInfo: String?,onClick: ()->Unit,modifier: Modifier=Modifier,
     platformCode: String? = departure.platformCode,
 ) {
-    val large=androidx.compose.ui.platform.LocalDensity.current.fontScale>1.3f || transitWindowWidth()<350.dp
     val live=departure.kind==hu.app.bmenetrend.data.ArrivalKind.LIVE
-    val clock=rememberBoardClock
-    val resolvedPlatform = platformCode?.ifBlank { null }
-        ?: hu.app.bmenetrend.data.BkkPlatformIndex.getPlatformCode(departure.stopId)
-    val badge: @Composable ()->Unit = {
-        Column(verticalArrangement=Arrangement.spacedBy(4.dp)) {
-            ServiceBadge(departure.routeNumber,provider,mode,sourceColor,departure.trainNumber)
-            Text(providerName(provider),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
+    val large=androidx.compose.ui.platform.LocalDensity.current.fontScale>1.3f
+    val shown=if(departure.isCancelled) departure.scheduledAt ?: departure.expectedAt else departure.expectedAt
+    val original=departure.scheduledAt?.takeIf { live && it!=departure.expectedAt }
+    val accessibility=listOfNotNull(
+        stringResource(if(live) R.string.ui_live_arrival else R.string.ui_scheduled),
+        if(original!=null) stringResource(R.string.board_estimated_time,rememberBoardClock.format(shown)) else null,
+        original?.let { stringResource(R.string.board_original_time,rememberBoardClock.format(it)) },
+        boardingInfo, platformCode).joinToString(" · ")
+    val badge: @Composable ()->Unit = { LineBadge(departure.routeNumber,provider,mode,sourceColor,showIcon=true) }
     val time: @Composable ()->Unit = {
-        // Compare instants, not truncated delay minutes: even a short delay can change HH:mm.
-        val original = departure.scheduledAt?.takeIf { live && !departure.isCancelled && it != departure.expectedAt }
-        val shown = if (departure.isCancelled) departure.scheduledAt ?: departure.expectedAt else departure.expectedAt
-        DepartureCount(minutes,clock.format(shown),live,cancelled=departure.isCancelled,
-            delay=if (live) departure.delayMinutes else 0,scheduledTime=original?.let(clock::format))
-    }
-    val detail: @Composable ()->Unit = {
-        Column(verticalArrangement=Arrangement.spacedBy(4.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(departure.destination.ifBlank { stringResource(R.string.emma_vehicle_no_direction) },
-                    style=MaterialTheme.typography.titleMedium,maxLines=if(large) 4 else 3,overflow=androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false))
-                resolvedPlatform?.let { PlatformBadge(it) }
-            }
-            Text(serviceTypeLabel(provider,mode),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-            listOfNotNull(departure.serviceName, boardingInfo?.takeIf { resolvedPlatform == null }).forEach { Text(it,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant) }
-            if(!departure.isCancelled) Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(4.dp)) {
-                Icon(if(live) Icons.Rounded.Sensors else Icons.Rounded.Schedule,null,Modifier.size(13.dp),tint=MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(stringResource(if(live) R.string.ui_live_arrival else R.string.ui_scheduled),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            val features=listOfNotNull(
-                if(departure.wheelchairAccessible=="POSSIBLE") stringResource(R.string.line_accessible) else null,
-                if(departure.bikesAllowed=="ALLOWED") stringResource(R.string.line_bikes) else null)
-            if(features.isNotEmpty()) Text(features.joinToString(" · "),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-            if(departure.restrictedService) Text(stringResource(R.string.ui_registration_required),style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(4.dp)) {
+            if(live && !departure.isCancelled) Icon(Icons.Rounded.Sensors,null,Modifier.size(13.dp),tint=MaterialTheme.colorScheme.primary)
+            Text(if(departure.isCancelled) stringResource(R.string.board_cancelled)
+                else if(minutes<60) "$minutes′" else rememberBoardClock.format(shown),
+                style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Bold,fontFamily=OpenSans,maxLines=1,
+                color=if(departure.isCancelled || departure.delayMinutes>0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface)
         }
     }
-    Column(modifier.fillMaxWidth().then(Modifier.clickable(enabled=!departure.isCancelled,role=androidx.compose.ui.semantics.Role.Button,onClick=onClick))
-        .padding(horizontal=20.dp,vertical=14.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {
+    val cleanDest = remember(departure.destination, departure.routeNumber) {
+        DestinationFormatter.clean(departure.destination, departure.routeNumber).ifBlank { departure.destination }
+    }
+    val destination: @Composable (Modifier)->Unit = { textModifier ->
+        Row(
+            textModifier,
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_direction_triangle),
+                contentDescription = null,
+                modifier = Modifier.size(10.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
+            )
+            Text(
+                text = cleanDest.ifBlank { stringResource(R.string.emma_vehicle_no_direction) },
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = OpenSans,
+                ),
+                maxLines = if (large) 3 else 2,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            )
+        }
+    }
+    Column(modifier.fillMaxWidth().semantics { stateDescription=accessibility }
+        .clickable(enabled=!departure.isCancelled,role=androidx.compose.ui.semantics.Role.Button,onClick=onClick)
+        .heightIn(min=64.dp).padding(horizontal=16.dp,vertical=10.dp),verticalArrangement=Arrangement.spacedBy(6.dp)) {
         if(large) {
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) { badge();Spacer(Modifier.weight(1f));time() }
-            detail()
-        } else Row(verticalAlignment=Alignment.Top,horizontalArrangement=Arrangement.spacedBy(12.dp)) {
-            badge();Box(Modifier.weight(1f)) { detail() };time()
+            destination(Modifier.fillMaxWidth())
+        } else Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(12.dp)) {
+            badge();destination(Modifier.weight(1f));time()
         }
+    }
+}
+
+/** Metadata for the exact departure, shown only after choosing its compact row. */
+@Composable
+internal fun DepartureDetails(departure: hu.app.bmenetrend.data.Departure) {
+    val live=departure.kind==hu.app.bmenetrend.data.ArrivalKind.LIVE
+    val cleanDest = remember(departure.destination, departure.routeNumber) {
+        DestinationFormatter.clean(departure.destination, departure.routeNumber).ifBlank { departure.destination }
+    }
+    Column(Modifier.fillMaxWidth().heightIn(max=240.dp).verticalScroll(rememberScrollState())
+        .padding(horizontal=20.dp,vertical=10.dp),verticalArrangement=Arrangement.spacedBy(6.dp)) {
+        Text(cleanDest, style=MaterialTheme.typography.titleMedium)
+        Text(if(live) stringResource(R.string.board_estimated_time,rememberBoardClock.format(departure.expectedAt))
+            else rememberBoardClock.format(departure.expectedAt),style=MaterialTheme.typography.bodyLarge)
+        departure.scheduledAt?.takeIf { live && it!=departure.expectedAt }?.let {
+            Text(stringResource(R.string.board_original_time,rememberBoardClock.format(it)),style=MaterialTheme.typography.bodyMedium)
+        }
+        Text(stringResource(if(live) R.string.ui_live_arrival else R.string.ui_scheduled),
+            style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+        listOfNotNull(departure.serviceName,departure.trainNumber).distinct().forEach {
+            Text(it,style=MaterialTheme.typography.bodyMedium)
+        }
+        departure.platformCode?.takeIf(String::isNotBlank)?.let { PlatformBadge(it) }
+        if(departure.wheelchairAccessible=="POSSIBLE") Text(stringResource(R.string.line_accessible),style=MaterialTheme.typography.bodyMedium)
+        if(departure.bikesAllowed=="ALLOWED") Text(stringResource(R.string.line_bikes),style=MaterialTheme.typography.bodyMedium)
+        if(departure.restrictedService) Text(stringResource(R.string.ui_registration_required),style=MaterialTheme.typography.bodyMedium)
     }
 }
 

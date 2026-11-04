@@ -1,9 +1,19 @@
 package hu.app.bmenetrend.ui
 
+import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.*
+import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 class AccentColorTest {
     @Test fun storedAccentKeysRoundTripAndUnknownSettingsUseSystem() {
@@ -35,5 +45,57 @@ class AccentColorTest {
                 }
             }
         }
+    }
+
+}
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [31])
+class MaterialYouDynamicThemeTest {
+    @get:Rule val compose = createComposeRule()
+
+    @Test fun selectedAccentSurfaceRolesReachMaterialThemeWithoutNeutralOverrides() {
+        var observedColors: ColorScheme? = null
+        compose.setContent {
+            ViaBuszTheme(themeMode = ThemeMode.DARK, accent = AccentColor.ROSE) {
+                observedColors = MaterialTheme.colorScheme
+            }
+        }
+        val expected = accentColorScheme(AccentColor.ROSE, dark = true)
+        assertNotNull(observedColors)
+        assertEquals(expected.surface, observedColors!!.surface)
+        assertEquals(expected.surfaceContainerLow, observedColors!!.surfaceContainerLow)
+        assertEquals(expected.surfaceContainerHigh, observedColors!!.surfaceContainerHigh)
+        assertEquals(expected.background, observedColors!!.background)
+    }
+
+    @Test fun materialYouSystemFollowsDynamicColorSchemeOnAndroid12Plus() {
+        var observedColors: ColorScheme? = null
+        compose.setContent {
+            ViaBuszTheme(themeMode = ThemeMode.LIGHT, accent = AccentColor.SYSTEM) {
+                observedColors = MaterialTheme.colorScheme
+            }
+        }
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val expected = dynamicLightColorScheme(context)
+        assertNotNull(observedColors)
+        assertEquals(expected.surface, observedColors!!.surface)
+        assertEquals(expected.primary, observedColors!!.primary)
+        assertEquals(expected.background, observedColors!!.background)
+    }
+
+    @Test fun materialYouSystemDarkFollowsDynamicDarkColorSchemeOnAndroid12Plus() {
+        var observedColors: ColorScheme? = null
+        compose.setContent {
+            ViaBuszTheme(themeMode = ThemeMode.DARK, accent = AccentColor.SYSTEM) {
+                observedColors = MaterialTheme.colorScheme
+            }
+        }
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val expected = dynamicDarkColorScheme(context)
+        assertNotNull(observedColors)
+        assertEquals(expected.surface, observedColors!!.surface)
+        assertEquals(expected.primary, observedColors!!.primary)
+        assertEquals(expected.background, observedColors!!.background)
     }
 }

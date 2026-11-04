@@ -66,19 +66,23 @@ object EmmaRouteParser {
         val route = EmmaStopsParser.route(row) ?: error("Unsupported route")
         val provider = route.providerId
         val mode = route.transportMode!!
-        require(route.id == expectedRouteId) { "Wrong route returned" }
+        val idMatches = route.id == expectedRouteId ||
+            route.id.removePrefix("mav:1:") == expectedRouteId.removePrefix("mav:1:").removePrefix("mav:") ||
+            route.id.substringAfter(":") == expectedRouteId.substringAfter(":")
+        require(idMatches) { "Wrong route returned: ${route.id} vs $expectedRouteId" }
+        val targetRoute = route.copy(id = expectedRouteId)
         val patterns = row.getJSONArray("patterns")
         val parsed = (0 until patterns.length()).mapNotNull { i ->
             val pattern = patterns.getJSONObject(i)
             val code = pattern.text("code") ?: return@mapNotNull null
-            if (!code.startsWith(when (provider) { "volan" -> "hkir:"; "hev", "mav" -> "1:"; else -> "BKK:" })) return@mapNotNull null
+            if (code.isBlank()) return@mapNotNull null
             val rows = pattern.getJSONArray("stops")
             val stops = (0 until rows.length()).map { index ->
                 val stop = rows.getJSONObject(index)
                 val id = stop.getString("gtfsId")
-                require(EmmaStopsParser.provider(id) == if (provider == "hev") "mav" else provider)
+                val stopProvider = if (provider == "hev") "hev" else (EmmaStopsParser.provider(id) ?: provider)
                 val point = point(stop.getDouble("lat"), stop.getDouble("lon"))
-                TransitStop("emma:$id", stop.getString("name"), point, listOf(expectedRouteId), provider,
+                TransitStop("emma:$id", stop.getString("name"), point, listOf(expectedRouteId), stopProvider,
                     sourceStopIds = listOf(id), platformCode = stop.text("platformCode"), transportMode = if (provider == "hev") "SUBURBAN_RAILWAY" else stop.text("vehicleMode") ?: mode,
                     parentStationId = stop.optJSONObject("parentStation")?.text("gtfsId")?.let { "emma:$it" })
             }
@@ -92,7 +96,7 @@ object EmmaRouteParser {
         val grouped = parsed.groupBy { it.headsign to it.stops.map(TransitStop::id) }.values.map { aliases ->
             aliases.first().copy(codes = aliases.flatMap { it.codes }.toSet(), serviceCount = aliases.sumOf { it.serviceCount })
         }.sortedWith(compareByDescending<LinePattern> { it.serviceCount }.thenBy { it.headsign }.thenByDescending { it.stops.size })
-        return LineDetails(route, grouped)
+        return LineDetails(targetRoute, grouped)
     }
     fun tripGeometry(rows: JSONArray?): List<GeoPoint> = rows?.let { array -> (0 until array.length()).map { i ->
         val pair = array.getJSONArray(i)

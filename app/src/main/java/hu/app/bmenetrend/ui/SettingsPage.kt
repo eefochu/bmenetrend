@@ -53,21 +53,24 @@ fun SettingsPage(
     Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
             TransitPageHeader(stringResource(R.string.volan_settings),onBack)
-            Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal=adaptivePageGutter()),
+            Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal=adaptivePageGutter()).padding(bottom = 24.dp),
                 verticalArrangement=Arrangement.spacedBy(16.dp)) {
                 TransitSectionTitle(stringResource(R.string.theme_title))
                 Surface(shape = TransitDesign.groupShape, color = MaterialTheme.colorScheme.surfaceContainerLowest) {
-                    Column(Modifier.selectableGroup()) {
+                    Row(Modifier.fillMaxWidth().selectableGroup().padding(8.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         ThemeMode.entries.forEach { mode ->
-                            Row(
-                                Modifier.fillMaxWidth().heightIn(min = 56.dp)
-                                    .selectable(state.themeMode == mode, role = Role.RadioButton, onClick = { onThemeMode(mode) })
-                                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            ) {
-                                Text(stringResource(mode.labelRes), Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
-                                RadioButton(selected = state.themeMode == mode, onClick = null)
+                            val selected = state.themeMode == mode
+                            Surface(modifier = Modifier.weight(1f), shape = TransitDesign.controlShape,
+                                color = if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent) {
+                                Box(Modifier.heightIn(min = 48.dp).selectable(selected, role = Role.RadioButton,
+                                    onClick = { onThemeMode(mode) }).padding(horizontal = 8.dp, vertical = 12.dp), contentAlignment = Alignment.Center) {
+                                    Text(stringResource(when (mode) {
+                                        ThemeMode.SYSTEM -> R.string.design_theme_auto
+                                        ThemeMode.LIGHT -> R.string.design_theme_light
+                                        ThemeMode.DARK -> R.string.design_theme_dark
+                                    }), style = MaterialTheme.typography.labelLarge,
+                                        color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
                             }
                         }
                     }

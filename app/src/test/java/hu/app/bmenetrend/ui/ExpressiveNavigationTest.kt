@@ -27,4 +27,87 @@ class ExpressiveNavigationTest {
         compose.onNodeWithContentDescription("Tervezés").assertHasClickAction().performClick().assertIsSelected()
         compose.onNodeWithContentDescription("Térkép").assertHasClickAction().performClick().assertIsSelected()
     }
+
+    @Test fun phoneRetainsBottomNavigationOnPlannerWithActualMainActivityContract() {
+        var tab by mutableStateOf(MainTab.MAP)
+        compose.setContent {
+            ViaBuszTheme {
+                // Actual MainActivity contract: hideBottomBarOnPlanner defaults to false
+                MainNavigation(
+                    tab = tab,
+                    onTab = { tab = it },
+                    map = { Box {} },
+                    planner = { Box {} },
+                    favorites = { Box {} }
+                )
+            }
+        }
+        // Initially on MAP: bottom navigation is present
+        compose.onNodeWithText("Térkép").assertIsDisplayed()
+        compose.onNodeWithText("Tervezés").assertIsDisplayed()
+
+        // Switch to PLANNER: bottom navigation bar remains visible
+        tab = MainTab.PLANNER
+        compose.waitForIdle()
+        compose.onNodeWithText("Térkép").assertIsDisplayed()
+        compose.onNodeWithText("Tervezés").assertIsDisplayed()
+        compose.onNodeWithText("Kedvencek").assertIsDisplayed()
+    }
+
+    @Test fun phoneHidesBottomNavigationWhenPlannerActiveOnlyIfExplicitlyRequested() {
+        var tab by mutableStateOf(MainTab.MAP)
+        compose.setContent {
+            ViaBuszTheme {
+                MainNavigation(
+                    tab = tab,
+                    onTab = { tab = it },
+                    map = { Box {} },
+                    planner = { Box {} },
+                    favorites = { Box {} },
+                    hideBottomBarOnPlanner = true
+                )
+            }
+        }
+        // Initially on MAP: bottom navigation is present
+        compose.onNodeWithText("Térkép").assertIsDisplayed()
+        compose.onNodeWithText("Tervezés").assertIsDisplayed()
+
+        // Switch to PLANNER: bottom navigation bar is hidden
+        tab = MainTab.PLANNER
+        compose.waitForIdle()
+        compose.onNodeWithText("Térkép").assertDoesNotExist()
+        compose.onNodeWithText("Tervezés").assertDoesNotExist()
+
+        // Switch to FAVORITES: bottom navigation bar returns
+        tab = MainTab.FAVORITES
+        compose.waitForIdle()
+        compose.onNodeWithText("Térkép").assertIsDisplayed()
+        compose.onNodeWithText("Kedvencek").assertIsDisplayed()
+    }
+}
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk=[30],qualifiers="hu-rHU-w1200dp-h800dp")
+class TabletNavigationRailTest {
+    @get:Rule val compose = createComposeRule()
+
+    @Test fun wideTabletNavigationRailStaysVisibleOnPlannerTab() {
+        var tab by mutableStateOf(MainTab.PLANNER)
+        compose.setContent {
+            ViaBuszTheme {
+                MainNavigation(
+                    tab = tab,
+                    onTab = { tab = it },
+                    map = { Box {} },
+                    planner = { Box {} },
+                    favorites = { Box {} },
+                    hideBottomBarOnPlanner = true
+                )
+            }
+        }
+        // Even when hideBottomBarOnPlanner=true, wide tablet rail displays all destinations
+        compose.onNodeWithText("Térkép").assertIsDisplayed()
+        compose.onNodeWithText("Tervezés").assertIsDisplayed()
+        compose.onNodeWithText("Kedvencek").assertIsDisplayed()
+    }
 }

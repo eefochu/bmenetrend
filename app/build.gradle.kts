@@ -15,8 +15,8 @@ android {
         applicationId = "hu.app.bmenetrend"
         minSdk = 26
         targetSdk = 36
-        versionCode = 9
-        versionName = "0.5.0"
+        versionCode = 10
+        versionName = "0.5.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures { compose = true; buildConfig = true }
@@ -86,6 +86,9 @@ androidComponents {
 
         tasks.matching { it.name == "assemble$capitalized" }.configureEach {
             dependsOn(copyTask)
+        }
+        tasks.matching { it.name == "install$capitalized" }.configureEach {
+            mustRunAfter(copyTask)
         }
         tasks.matching { it.name == "package$capitalized" }.configureEach {
             finalizedBy(copyTask)

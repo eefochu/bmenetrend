@@ -117,7 +117,8 @@ internal fun CategorizedSearch(
             }
             if (recommendation != null && (category == SearchCategory.ALL || category == SearchCategory.STATIONS)) {
                 item(key = "recommendation", contentType = "recommendation") {
-                    SearchRecommendation(StopClusters.stopDisplayName(recommendation.name), providerNames(recommendation.providerIds), { onStop(recommendation.id) })
+                    SearchRecommendation(StopClusters.stopDisplayName(recommendation.name), providerNames(recommendation.providerIds),
+                        { onStop(recommendation.id) }, leading = { StopMapDot(recommendation) })
                 }
             }
             // Stations primarily

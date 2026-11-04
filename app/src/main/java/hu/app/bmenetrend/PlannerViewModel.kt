@@ -16,6 +16,7 @@ data class PlannerState(
     val origin: PlannerEndpoint? = null, val destination: PlannerEndpoint? = null,
     val useLocation: Boolean = true, val editing: PlannerField? = null, val query: String = "",
     val suggestions: List<PlannerEndpoint> = emptyList(), val searching: Boolean = false,
+    val nearbyOriginSearch: Boolean = false,
     val searchUnavailable: Boolean = false, val planning: Boolean = false,
     val error: PlannerError? = null, val result: TripPlan? = null, val selectedId: String? = null,
     val departure: Instant? = null,
@@ -82,7 +83,8 @@ class PlannerViewModel internal constructor(
             }
             stopCatalogue = prepared.first
             index = prepared.second
-            if (state.value.editing != null) search(state.value.query)
+            if (state.value.nearbyOriginSearch) loadNearbyOrigins()
+            else if (state.value.editing != null) search(state.value.query)
         }
     }
 
@@ -92,6 +94,7 @@ class PlannerViewModel internal constructor(
             val updated = if (point != null && it.useLocation) it.copy(origin = currentEndpoint(point), error = null) else it
             updated.copy(userLocation = point)
         }
+        if (state.value.nearbyOriginSearch) loadNearbyOrigins()
     }
 
     fun updateOfflinePack(metadata: hu.app.bmenetrend.offline.OfflinePackMetadata?) {
@@ -104,20 +107,63 @@ class PlannerViewModel internal constructor(
 
     fun useCurrentLocation() {
         invalidate()
+        if (state.value.offline) {
+            val first = state.value.suggestions.firstOrNull() ?: location?.let { point ->
+                stopCatalogue.asSequence()
+                    .filter { !it.station && it.routeIds.isNotEmpty() }
+                    .map { it to StopClusters.distanceMeters(point, it.position) }
+                    .filter { it.second <= 1_500.0 }
+                    .minByOrNull { it.second }
+                    ?.first?.let { PlannerEndpoint.fromStop(it) }
+            }
+            if (state.value.nearbyOriginSearch && first != null) {
+                choose(first)
+                return
+            }
+            mutable.update { it.copy(editing = PlannerField.ORIGIN, query = "", nearbyOriginSearch = true,
+                recommendation = null, suggestions = emptyList(), searchUnavailable = false) }
+            loadNearbyOrigins()
+            return
+        }
         mutable.update { it.copy(origin = location?.let(::currentEndpoint), useLocation = true, editing = null,
             query = "", suggestions = emptyList(), error = if (location == null) PlannerError.LOCATION else null) }
         closeSearch()
     }
 
+    private fun loadNearbyOrigins() {
+        val generation = ++searchGeneration
+        searchJob?.cancel()
+        val point = location
+        mutable.update { it.copy(searching = point != null, error = if (point == null) PlannerError.LOCATION else null) }
+        if (point == null) return
+        val catalogue = stopCatalogue
+        searchJob = viewModelScope.launch {
+            val nearby = withContext(Dispatchers.Default) {
+                catalogue.asSequence()
+                    .filter { !it.station && it.routeIds.isNotEmpty() }
+                    .map { it to StopClusters.distanceMeters(point, it.position) }
+                    .filter { it.second <= 1_500.0 }
+                    .sortedBy { it.second }
+                    .distinctBy { it.first.id }
+                    .take(12)
+                    .map { PlannerEndpoint.fromStop(it.first) }
+                    .toList()
+            }
+            if (generation == searchGeneration && state.value.nearbyOriginSearch) {
+                mutable.update { it.copy(suggestions = nearby, searching = false) }
+            }
+        }
+    }
+
     fun edit(field: PlannerField) {
         warmupJob?.cancel()
         warmupStarted = false
-        mutable.update { it.copy(editing = field, query = "", suggestions = emptyList(), recommendation = null, searchUnavailable = false) }
+        mutable.update { it.copy(editing = field, nearbyOriginSearch = false, query = "", suggestions = emptyList(), recommendation = null, searchUnavailable = false) }
     }
 
     fun closeSearch() {
         searchGeneration++; searchJob?.cancel()
-        mutable.update { it.copy(editing = null, searching = false, recommendation = null) }
+        mutable.update { it.copy(editing = null, nearbyOriginSearch = false, searching = false, recommendation = null) }
         warmOnlinePlan()
     }
 
@@ -225,7 +271,7 @@ class PlannerViewModel internal constructor(
     fun search(query: String) {
         val generation = ++searchGeneration
         searchJob?.cancel()
-        mutable.update { it.copy(query = query, suggestions = emptyList(), recommendation = null, searching = query.trim().length >= 2, searchUnavailable = false) }
+        mutable.update { it.copy(query = query, nearbyOriginSearch = false, suggestions = emptyList(), recommendation = null, searching = query.trim().length >= 2, searchUnavailable = false) }
         if (query.trim().length < 2) return
         searchJob = viewModelScope.launch {
             val (localStationResults, consolidatedLocal, recommendation) = withContext(Dispatchers.Default) {

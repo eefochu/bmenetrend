@@ -57,6 +57,7 @@ import androidx.compose.material.icons.rounded.Sensors
 import androidx.compose.material.icons.rounded.WifiOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -76,6 +77,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
@@ -163,6 +165,8 @@ fun ViaBuszScreen(
     onOfflineDelete: () -> Unit = {},
     onOfflineImport: (android.net.Uri) -> Unit = {},
     openSettingsRequest: Int = 0,
+    openSearchRequest: Int = 0,
+    onFullscreenChanged: (Boolean) -> Unit = {},
     onOtaChannelChanged: (hu.app.bmenetrend.data.UpdateChannel) -> Unit = {},
     onCheckOtaUpdates: () -> Unit = {},
     onDownloadAndInstallOta: (hu.app.bmenetrend.data.OtaUpdateInfo) -> Unit = {},
@@ -177,6 +181,14 @@ fun ViaBuszScreen(
     LaunchedEffect(openSettingsRequest) { if (openSettingsRequest > handledSettingsRequest) { showSettings = true; handledSettingsRequest = openSettingsRequest } }
     var showAbout by rememberSaveable { mutableStateOf(false) }
     var showUpdates by rememberSaveable { mutableStateOf(false) }
+    SideEffect { onFullscreenChanged(showSettings || showAbout || showUpdates || searchOpen) }
+    var handledSearchRequest by rememberSaveable { mutableIntStateOf(0) }
+    LaunchedEffect(openSearchRequest) {
+        if (openSearchRequest > handledSearchRequest) {
+            showSettings = false; showAbout = false; showUpdates = false
+            searchOpen = true; query = ""; handledSearchRequest = openSearchRequest
+        }
+    }
     val scope = rememberCoroutineScope()
     val sheetState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
@@ -190,10 +202,12 @@ fun ViaBuszScreen(
     }
     val routesById = remember(state.network?.routes, state.emmaRoutes) { state.routesById }
     val selectedRoute = routesById[routeId]
+    var selectedDeparture by remember { mutableStateOf<Departure?>(null) }
     val openSearch: () -> Unit = {
         query = ""
         routeId = null
         directionId = null
+        selectedDeparture = null
         searchOpen = true
     }
     val selectStop: (String) -> Unit = {
@@ -201,9 +215,11 @@ fun ViaBuszScreen(
         searchOpen = false
         routeId = null
         directionId = null
+        selectedDeparture = null
     }
-    val closeLine: () -> Unit = { routeId = null; directionId = null; onClearBoarding(); scope.launch { sheetState.bottomSheetState.partialExpand() } }
+    val closeLine: () -> Unit = { routeId = null; directionId = null; selectedDeparture = null; onClearBoarding(); scope.launch { sheetState.bottomSheetState.partialExpand() } }
     val openLine: (String,String?)->Unit = { id,direction ->
+        selectedDeparture = null
         onVehicleClosed()
         onClearBoarding()
         routeId=id
@@ -213,21 +229,35 @@ fun ViaBuszScreen(
         scope.launch { sheetState.bottomSheetState.partialExpand() }
     }
     val openDeparture: (Departure) -> Unit = { departure ->
-        val observed = state.vehicles.find { it.tripId != null && it.tripId == departure.directionId }
+        val observed = departureVehicle(departure,state.vehicles)
         if (observed != null) {
-            routeId = null; directionId = null
+            routeId = null; directionId = null; selectedDeparture = null
             onVehicleOpened(observed.id)
             searchOpen = false
-        } else (state.findRoute(departure.routeId))?.let { route ->
-            val direction=state.lineDetails[route.id]?.patterns?.find { departure.patternCode in it.codes }?.id
-                ?: route.directions.firstOrNull { it.id==departure.directionId }?.id
-                ?: route.directions.singleOrNull()?.id
-            openLine(route.id,direction)
+        } else {
+            val route = state.findRoute(departure.routeId)
+            val lineId = route?.id ?: departure.routeId
+            val direction = departureDirection(departure,route,state.lineDetails[lineId])
+            onVehicleClosed()
+            onClearBoarding()
+            routeId = lineId
+            directionId = direction
+            selectedDeparture = departure
+            onLineOpened(lineId,false)
+            searchOpen = false
+            scope.launch { sheetState.bottomSheetState.expand() }
         }
     }
+    LaunchedEffect(routeId, state.lineDetails[routeId], selectedDeparture) {
+        val departure = selectedDeparture ?: return@LaunchedEffect
+        val id = routeId ?: return@LaunchedEffect
+        if (directionId == null) directionId = departureDirection(departure,state.findRoute(id),state.lineDetails[id])
+    }
+
     val navigateBack: () -> Unit = {
         when {
-            directionId != null -> directionId = null
+            selectedDeparture != null && routeId != null -> closeLine()
+            directionId != null -> { directionId = null; selectedDeparture = null }
             routeId != null -> closeLine()
             else -> searchOpen = false
         }
@@ -274,6 +304,7 @@ fun ViaBuszScreen(
     }
     BackHandler(enabled = !searchOpen && !showSettings && !showAbout && !showUpdates, onBack = {
         when {
+            selectedDeparture != null && routeId != null -> closeLine()
             directionId != null -> directionId = null
             routeId != null -> closeLine()
             state.trackedVehicle != null -> {
@@ -373,9 +404,10 @@ fun ViaBuszScreen(
                     if(selectedRoute != null && !searchOpen) RouteBrowserCard(state,selectedRoute,directionId,
                         onDirection={ directionId=it },
                         onBoard={ line,direction,stop -> routeId=null; directionId=null; onBoardingStop(line,direction,stop) },
-                        onBack={ if(directionId!=null) directionId=null else closeLine() },
+                        onBack={ if(selectedDeparture!=null) closeLine() else if(directionId!=null) directionId=null else closeLine() },
                         onClose=closeLine,
                         onRetry={ onLineOpened(selectedRoute.id,true) },
+                        selectedDeparture=selectedDeparture,
                         modifier=Modifier.fillMaxWidth().fillMaxHeight(0.88f))
                     else if (state.selectedVehicle != null) VehiclePanel(
                         state = state,
@@ -398,6 +430,7 @@ fun ViaBuszScreen(
                         onLocate = onLocate,
                         onToggleExpand = toggleExpand,
                         onCollapse = collapse,
+                        onSearch = openSearch,
                         onWindow = onWindowChanged,
                         modifier = Modifier.fillMaxWidth().fillMaxHeight(0.88f),
                         isExpanded = isExpanded,
@@ -455,8 +488,21 @@ fun ViaBuszScreen(
                             onSearch = openSearch,
                             onSettings = { showSettings = true },
                         )
-                        MapAttribution(Modifier.widthIn(max = 560.dp).padding(horizontal = 24.dp))
+                        if (state.offlineMode) AssistChip(
+                            onClick = { showSettings = true },
+                            label = { Text(stringResource(R.string.design_offline_status)) },
+                            leadingIcon = { Icon(Icons.Rounded.WifiOff, null, Modifier.size(16.dp)) },
+                            colors = androidx.compose.material3.AssistChipDefaults.assistChipColors(containerColor = MaterialTheme.colorScheme.surface)
+                        )
                     }
+
+                    val collapsedControlsPx = with(density) { 60.dp.toPx() }
+                    MapAttribution(Modifier.align(Alignment.BottomStart)
+                        .padding(start = 16.dp, bottom = 24.dp)
+                        .graphicsLayer {
+                            val visibleSheet = runCatching { layoutHeightPx - sheet.requireOffset() }.getOrDefault(0f)
+                            translationY = -mapAttributionLiftPx(visibleSheet, peekHeightPx.toFloat(), collapsedControlsPx)
+                        })
 
                     // Floating MyLocation button above the bottom sheet
                     FilledTonalIconButton(
@@ -479,7 +525,7 @@ fun ViaBuszScreen(
 
                     if (isMinimized) FilledTonalButton(
                         onClick = { scope.launch { sheet.partialExpand() } },
-                        modifier = Modifier.align(Alignment.BottomStart).padding(start = 16.dp, bottom = 24.dp),
+                        modifier = Modifier.align(Alignment.BottomStart).padding(start = 16.dp, bottom = 24.dp).heightIn(min = 48.dp),
                         shape = RoundedCornerShape(24.dp),
                     ) {
                         Icon(Icons.Rounded.DirectionsBus, null, Modifier.size(20.dp))
@@ -566,7 +612,7 @@ private fun FloatingSearchBlob(
             .widthIn(max = 560.dp)
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
-        shape = RoundedCornerShape(topStart=20.dp,topEnd=20.dp,bottomStart=20.dp,bottomEnd=12.dp),
+        shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surfaceContainerLowest,
         shadowElevation = 4.dp,
         tonalElevation = 0.dp,
@@ -914,24 +960,45 @@ internal fun transportLabel(mode: String?): String? = when (mode) {
 private fun stopLabel(stop: TransitStop): String? = stop.platformCode?.let { stringResource(R.string.emma_platform, it) }
     ?: stop.id.takeIf { it.startsWith("emma:") }?.let { stringResource(R.string.emma_stop_code, it.substringAfterLast(":")) }
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 internal fun StopSearchRow(stop: TransitStop, state: UiState, favorite: Boolean, onStop: (String) -> Unit) {
     // The search index already consolidates platforms and records multi-stop membership.
     val isMulti = stop.isMultiStop
     val resolvedPlatform = stop.platformCode ?: hu.app.bmenetrend.data.BkkPlatformIndex.resolve(stop.id, null)
-    val numbers = remember(stop.routeIds, state.network?.routes, state.emmaRoutes) {
-        stop.routeIds.mapNotNull { id -> state.findRoute(id)?.number ?: id.substringAfterLast(":").takeIf(StopClusters::isCleanRouteNumber) }.distinct()
+    val routes = remember(stop.routeIds, state.network?.routes, state.emmaRoutes) {
+        stop.routeIds.mapNotNull(state::findRoute).distinctBy { it.number to it.transportMode }
+    }
+    val distance = remember(state.userLocation, stop.position) {
+        state.userLocation?.let { formatStopDistance(StopClusters.distanceMeters(it, stop.position)) }
     }
     val boarding = if (isMulti || resolvedPlatform != null) null else stopLabel(stop)
-    val detail = listOfNotNull(providerNames(stop.providerIds), if (isMulti) null else transportLabel(stop.transportMode), boarding,
-        numbers.take(6).joinToString(" · ").takeIf(String::isNotBlank)).joinToString(" · ")
+    val detail = listOfNotNull(providerNames(stop.providerIds), if (isMulti) null else transportLabel(stop.transportMode), boarding).joinToString(" · ")
     SearchResultCard(StopClusters.stopDisplayName(stop.name), detail, { onStop(stop.id) },
-        leading = { TransitIconTile(when {
-            favorite -> Icons.Rounded.Favorite
-            stop.id in state.downloadedStationIds -> Icons.Rounded.CloudDone
-            else -> Icons.Rounded.LocationOn
-        }) },
-        badge = { resolvedPlatform?.let { PlatformBadge(it) } })
+        leading = { StopMapDot(stop, routes) },
+        badge = {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                resolvedPlatform?.let { PlatformBadge(it) }
+                if (favorite) Icon(Icons.Rounded.Favorite, stringResource(R.string.favorites_nav), Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                else if (stop.id in state.downloadedStationIds) Icon(Icons.Rounded.CloudDone,
+                    stringResource(R.string.ui_downloaded_timetables), Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        },
+        supporting = {
+            if (routes.isNotEmpty()) androidx.compose.foundation.layout.FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                routes.take(6).forEach { LineBadge(it, showIcon = false) }
+                if (routes.size > 6) Text(stringResource(R.string.search_additional_lines, routes.size - 6),
+                    style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(vertical = 6.dp))
+            }
+        },
+        trailing = {
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Icon(Icons.AutoMirrored.Rounded.ArrowForward, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                distance?.let { Text(it, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            }
+        })
 }
 
 @Composable

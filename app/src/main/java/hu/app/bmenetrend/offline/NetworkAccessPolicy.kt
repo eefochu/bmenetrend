@@ -200,8 +200,7 @@ object NetworkAccessPolicy {
                 call.enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) { if (continuation.isActive) continuation.resume(false) }
                     override fun onResponse(call: Call, response: Response) {
-                        val usable = response.use { it.code == 200 && it.header("Content-Type").orEmpty().substringBefore(';') in
-                            setOf("application/zip", "application/x-zip-compressed", "application/octet-stream") }
+                        val usable = response.use { it.code in 200..499 }
                         if (continuation.isActive) continuation.resume(usable)
                     }
                 })

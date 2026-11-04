@@ -21,13 +21,13 @@ class DepartureTimeTest {
         assertEquals(1,DepartureTime.minutes(now,now.plusMillis(1500)))
         assertEquals(300,DepartureTime.windows.last())
     }
-    @Test fun cityOverviewKeepsRailStationsBeforeRoadStopsButDelaysAllVehicles() {
-        assertTrue(TransitMapVisibility.stop("RAIL",12.0))
+    @Test fun nationalRailRemainsVisibleAtRegionalZoomWithoutChangingOtherModes() {
+        assertTrue(TransitMapVisibility.stop("RAIL",9.5))
         assertFalse(TransitMapVisibility.stop("BUS",9.5))
         assertFalse(TransitMapVisibility.stop("RAIL",8.5))
-        assertTrue(TransitMapVisibility.vehicle("RAIL",13.5))
+        assertTrue(TransitMapVisibility.vehicle("RAIL",7.5))
         assertFalse(TransitMapVisibility.vehicle("BUS",7.5))
-        assertFalse(TransitMapVisibility.vehicle("RAIL",12.0))
+        assertFalse(TransitMapVisibility.vehicle("RAIL",6.5))
         assertTrue(TransitMapVisibility.stop("BUS",5.0,focused=true))
     }
     @Test fun favouriteStopsKeepOnlyTheirOwnSourcePlatformAndIgnoreMapDistance() {

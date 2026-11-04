@@ -8,6 +8,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -102,7 +103,7 @@ fun PlannerScreen(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun PlannerScreen(
     model: PlannerViewModel,
@@ -118,6 +119,7 @@ fun PlannerScreen(
         originPosition: GeoPoint?
     ) -> Unit)? = null,
     mapContent: (@Composable (Modifier) -> Unit)? = null,
+    favoriteDestinations: List<PlannerEndpoint> = emptyList(),
 ) {
     val state by model.state.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
@@ -228,55 +230,50 @@ fun PlannerScreen(
                 if (state.offline) item(key = "offline", contentType = "notice") {
                     Text(if (state.offlineValidUntil == null) stringResource(R.string.offline_pack_missing)
                         else stringResource(R.string.offline_valid_until, state.offlineValidUntil.orEmpty()), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
-                    Text(stringResource(R.string.offline_endpoint_unavailable), style = MaterialTheme.typography.bodySmall)
+                    if (state.error != PlannerError.OFFLINE_ENDPOINT) Text(stringResource(R.string.offline_endpoint_unavailable), style = MaterialTheme.typography.bodySmall)
                 }
 
                 item(key = "form", contentType = "form") {
-                    val connectorColor = MaterialTheme.colorScheme.outlineVariant
-                    Surface(
-                        shape = TransitDesign.panelShape,
-                        color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .6f))
-                    ) {
-                        Column(Modifier.padding(8.dp)) {
-                            EndpointField(R.string.planner_from, state.origin, state.useLocation) {
-                                model.edit(PlannerField.ORIGIN)
-                            }
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                androidx.compose.foundation.Canvas(Modifier.padding(start = 16.dp).width(24.dp).height(36.dp)) {
-                                    drawLine(
-                                        connectorColor,
-                                        androidx.compose.ui.geometry.Offset(size.width / 2, 0f),
-                                        androidx.compose.ui.geometry.Offset(size.width / 2, size.height),
-                                        strokeWidth = 2.dp.toPx(),
-                                        cap = androidx.compose.ui.graphics.StrokeCap.Round
-                                    )
-                                }
-                                Spacer(Modifier.weight(1f))
-                                FilledTonalIconButton(
-                                    onClick = model::swap,
-                                    shape = TransitDesign.controlShape,
-                                    enabled = state.origin != null || state.destination != null
-                                ) {
-                                    Icon(Icons.Rounded.SwapVert, stringResource(R.string.planner_swap))
-                                }
-                            }
-                            EndpointField(R.string.planner_to, state.destination, false) {
-                                model.edit(PlannerField.DESTINATION)
-                            }
-                        }
-                    }
+                    PlannerEndpoints(state, { model.edit(PlannerField.ORIGIN) }, { model.edit(PlannerField.DESTINATION) }, model::swap)
                 }
 
                 item(key = "departure", contentType = "departure") {
-                    DepartureControl(state.departure) { departurePicker = true }
+                    AssistChip(onClick = { departurePicker = true }, modifier = Modifier.heightIn(min = 48.dp),
+                        label = { Text(state.departure?.let { departureLabel(it) } ?: stringResource(R.string.planner_leave_now)) },
+                        leadingIcon = { Icon(Icons.Rounded.Schedule, null, Modifier.size(18.dp)) },
+                        trailingIcon = { Icon(Icons.Rounded.ExpandMore, null, Modifier.size(16.dp)) })
+                }
+
+                if (result?.itineraries?.isNotEmpty() == true) item(key = "time-shift", contentType = "controls") {
+                    val base = state.departure ?: result.readyAt
+                    val earlier = base.minusSeconds(15 * 60)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = { model.setDeparture(earlier); model.plan() },
+                            enabled = !state.planning && earlier > now, modifier = Modifier.heightIn(min = 48.dp)) {
+                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, null, Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.planner_earlier))
+                        }
+                        OutlinedButton(onClick = { model.setDeparture(base.plusSeconds(15 * 60)); model.plan() },
+                            enabled = !state.planning, modifier = Modifier.heightIn(min = 48.dp)) {
+                            Text(stringResource(R.string.planner_later))
+                            Spacer(Modifier.width(8.dp))
+                            Icon(Icons.AutoMirrored.Rounded.ArrowForward, null, Modifier.size(18.dp))
+                        }
+                    }
                 }
 
                 item(key = "action", contentType = "action") {
                     Button(
                         onClick = {
-                            if (state.useLocation && state.origin == null) onRequestLocation()
-                            model.plan()
+                            if (state.offline && state.useLocation) {
+                                if (state.userLocation != null) model.useCurrentLocation()
+                                else model.edit(PlannerField.ORIGIN)
+                            }
+                            else {
+                                if (state.useLocation && state.origin == null) onRequestLocation()
+                                model.plan()
+                            }
                         },
                         enabled = (state.useLocation || state.origin != null) && state.destination != null && !state.planning,
                         modifier = Modifier
@@ -295,7 +292,7 @@ fun PlannerScreen(
                         } else {
                             Icon(Icons.Rounded.Route, null, Modifier.size(20.dp))
                             Spacer(Modifier.width(10.dp))
-                            Text(stringResource(R.string.planner_find))
+                            Text(stringResource(if (state.offline && state.useLocation) R.string.design_choose_origin else R.string.planner_find))
                         }
                     }
                 }
@@ -417,6 +414,8 @@ fun PlannerScreen(
                     else mapContent?.invoke(modifier)
                 },
                 onLocalProvider = model::setLocalProvider,
+                favoriteDestinations = favoriteDestinations,
+                onFavoriteDestination = { endpoint -> model.edit(PlannerField.DESTINATION); model.choose(endpoint) },
                 state = state,
                 onOrigin = { model.edit(PlannerField.ORIGIN) },
                 onDestination = { model.edit(PlannerField.DESTINATION) },
@@ -425,6 +424,10 @@ fun PlannerScreen(
                 onClose = onClose,
                 onFind = {
                     if (currentDest == null) model.edit(PlannerField.DESTINATION)
+                    else if (state.offline && state.useLocation) {
+                                if (state.userLocation != null) model.useCurrentLocation()
+                                else model.edit(PlannerField.ORIGIN)
+                            }
                     else {
                         if (state.useLocation && currentOrigin == null) onRequestLocation()
                         inResultsView = true
@@ -437,6 +440,7 @@ fun PlannerScreen(
 }
 
 /** The map has its own measured viewport; controls never cover route bounds. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun PlannerMapOverlay(
     state: PlannerState,
@@ -444,66 +448,80 @@ internal fun PlannerMapOverlay(
     onDeparture: () -> Unit, onFind: () -> Unit, onClose: (() -> Unit)? = null,
     onLocalProvider: (String, Boolean) -> Unit = { _, _ -> },
     mapContent: @Composable (Modifier) -> Unit = {},
+    favoriteDestinations: List<PlannerEndpoint> = emptyList(),
+    onFavoriteDestination: (PlannerEndpoint) -> Unit = {},
 ) {
     val wide = transitWindowWidth() >= 600.dp
     var servicesOpen by rememberSaveable { mutableStateOf(false) }
-    val maxCardHeight = (LocalConfiguration.current.screenHeightDp * .48f).dp
+    val maxCardHeight = (LocalConfiguration.current.screenHeightDp * .50f).dp
     if (servicesOpen) LocalPlanningServicesDialog(state.localProviders, onLocalProvider) { servicesOpen = false }
     val controls: @Composable () -> Unit = {
-        Surface(modifier = Modifier.widthIn(max = if (wide) 360.dp else 560.dp).fillMaxWidth()
-            .heightIn(max = if (wide) 600.dp else maxCardHeight).testTag("planner-controls-card"),
-            shape = TransitDesign.panelShape, color = MaterialTheme.colorScheme.surfaceContainerLow,
-            shadowElevation = 3.dp) {
-            Column(Modifier.verticalScroll(rememberScrollState()).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.planner_title), Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
-                    if (onClose != null) IconButton(onClick = onClose, modifier = Modifier.size(48.dp)) {
-                        Icon(Icons.Rounded.Close, stringResource(R.string.ui_close))
-                    }
+        Column(Modifier.fillMaxWidth().heightIn(max = if (wide) 600.dp else maxCardHeight)
+            .verticalScroll(rememberScrollState()).testTag("planner-controls-card")
+            .padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.planner_title), Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
+                if (onClose != null) IconButton(onClick = onClose) {
+                    Icon(Icons.Rounded.Close, stringResource(R.string.ui_close))
                 }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        EndpointField(R.string.planner_from, state.origin, state.useLocation, onOrigin)
-                        EndpointField(R.string.planner_to, state.destination, false, onDestination)
-                    }
-                    FilledTonalIconButton(onClick = onSwap, enabled = state.origin != null || state.destination != null,
-                        shape = TransitDesign.controlShape, modifier = Modifier.size(48.dp)) {
-                        Icon(Icons.Rounded.SwapVert, stringResource(R.string.planner_swap))
-                    }
-                }
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(onClick = onDeparture, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
-                        Icon(Icons.Rounded.Schedule, null, Modifier.size(20.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(if (state.departure == null) stringResource(R.string.planner_leave_now) else departureLabel(state.departure),
-                            style = MaterialTheme.typography.labelLarge)
-                    }
-                    TextButton(onClick = { servicesOpen = true }, modifier = Modifier.heightIn(min = 48.dp).testTag("planner-local-services")) {
-                        Row(horizontalArrangement = Arrangement.spacedBy((-4).dp)) {
-                            LocalPlanningService.entries.forEach { TransitVehicleIcon(it.providerId, size = 24.dp) }
-                        }
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.planner_local_services_count, state.localProviders.size), style = MaterialTheme.typography.labelLarge)
-                    }
-                }
-                if (wide) PlannerFindButton(state.planning, onFind)
             }
+            PlannerEndpoints(state, onOrigin, onDestination, onSwap)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                val chipColors = AssistChipDefaults.assistChipColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    labelColor = MaterialTheme.colorScheme.onSurface,
+                    leadingIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    trailingIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant)
+                AssistChip(onClick = onDeparture, modifier = Modifier.heightIn(min = 48.dp),
+                    label = { Text(state.departure?.let { departureLabel(it) } ?: stringResource(R.string.planner_leave_now)) },
+                    leadingIcon = { Icon(Icons.Rounded.Schedule, null, Modifier.size(18.dp)) },
+                    trailingIcon = { Icon(Icons.Rounded.ExpandMore, null, Modifier.size(16.dp)) },
+                    shape = RoundedCornerShape(16.dp), border = null, colors = chipColors)
+                AssistChip(onClick = { servicesOpen = true },
+                    modifier = Modifier.heightIn(min = 48.dp).testTag("planner-local-services"),
+                    label = { Text(stringResource(R.string.planner_local_services)) },
+                    leadingIcon = { Icon(Icons.Rounded.Tune, null, Modifier.size(18.dp)) },
+                    trailingIcon = { Icon(Icons.Rounded.ExpandMore, null, Modifier.size(16.dp)) },
+                    shape = RoundedCornerShape(16.dp), border = null, colors = chipColors)
+            }
+            if (state.destination == null && favoriteDestinations.isNotEmpty()) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .6f))
+                Text(stringResource(R.string.search_favorites), style = MaterialTheme.typography.titleSmall)
+                favoriteDestinations.take(2).forEach { endpoint ->
+                    Surface(onClick = { onFavoriteDestination(endpoint) }, color = Color.Transparent) {
+                        Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Icon(Icons.Rounded.FavoriteBorder, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(endpoint.name, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, maxLines = 2)
+                            Icon(Icons.Rounded.ChevronRight, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+            }
+            if (wide && state.destination != null) PlannerFindButton(state.planning, onFind, chooseOrigin = state.offline && state.useLocation)
         }
     }
     if (wide) {
         Row(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
-            Column(Modifier.width(384.dp).fillMaxHeight().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                controls()
-                MapAttribution()
+            Column(Modifier.width(360.dp).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp)) { controls() }
+            Box(Modifier.weight(1f).fillMaxHeight()) {
+                mapContent(Modifier.fillMaxSize())
+                MapAttribution(Modifier.align(Alignment.BottomStart).padding(12.dp))
             }
-            mapContent(Modifier.weight(1f).fillMaxHeight())
         }
     } else {
-        Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
-            Box(Modifier.fillMaxWidth().padding(12.dp), contentAlignment = Alignment.TopCenter) { controls() }
-            MapAttribution(Modifier.align(Alignment.CenterHorizontally).padding(start = 16.dp, end = 16.dp, bottom = 8.dp))
-            Box(Modifier.weight(1f).fillMaxWidth()) { mapContent(Modifier.fillMaxSize()) }
-            PlannerFindButton(state.planning, onFind, Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp))
+        Column(Modifier.fillMaxSize().statusBarsPadding()) {
+            controls()
+            Surface(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                shape = TransitDesign.panelShape, color = MaterialTheme.colorScheme.surfaceContainerLow) {
+                Box(Modifier.clip(TransitDesign.panelShape)) {
+                    mapContent(Modifier.fillMaxSize())
+                    MapAttribution(Modifier.align(Alignment.BottomStart).padding(12.dp))
+                }
+            }
+            if (state.destination != null) PlannerFindButton(state.planning, onFind,
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                chooseOrigin = state.offline && state.useLocation)
         }
     }
 }
@@ -532,18 +550,41 @@ internal fun LocalPlanningServicesDialog(selected: Set<String>, onProvider: (Str
 }
 
 @Composable
-private fun PlannerFindButton(planning: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier.fillMaxWidth()) {
-    Button(onClick = onClick, enabled = !planning, modifier = modifier.heightIn(min = 56.dp), shape = TransitDesign.controlShape) {
+private fun PlannerFindButton(planning: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier.fillMaxWidth(), chooseDestination: Boolean = false, chooseOrigin: Boolean = false) {
+    Button(onClick = onClick, enabled = !planning, modifier = modifier.heightIn(min = 56.dp), shape = TransitDesign.controlShape,
+        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary)) {
         if (planning) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
         else Icon(Icons.Rounded.Route, null, Modifier.size(20.dp))
         Spacer(Modifier.width(8.dp))
-        Text(stringResource(if (planning) R.string.planner_loading else R.string.planner_find))
+        Text(stringResource(if (planning) R.string.planner_loading else if (chooseOrigin) R.string.design_choose_origin else if (chooseDestination) R.string.design_choose_destination else R.string.planner_find),
+            style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+@Composable
+private fun PlannerEndpoints(state: PlannerState, onOrigin: () -> Unit, onDestination: () -> Unit, onSwap: () -> Unit) {
+    Surface(shape = TransitDesign.controlShape, color = MaterialTheme.colorScheme.surfaceContainerLow) {
+        Row(Modifier.fillMaxWidth().padding(end = 8.dp), verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(Modifier.weight(1f)) {
+                EndpointField(R.string.planner_from, state.origin, state.useLocation, onOrigin)
+                HorizontalDivider(Modifier.padding(start = 48.dp, end = 12.dp), color = MaterialTheme.colorScheme.outlineVariant)
+                EndpointField(R.string.planner_to, state.destination, false, onDestination)
+            }
+            FilledTonalIconButton(onClick = onSwap, enabled = state.origin != null || state.destination != null,
+                shape = CircleShape, modifier = Modifier.size(48.dp),
+                colors = IconButtonDefaults.filledTonalIconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    contentColor = MaterialTheme.colorScheme.onSurface)) {
+                Icon(Icons.Rounded.SwapVert, stringResource(R.string.planner_swap))
+            }
+        }
     }
 }
 
 @Composable
 private fun EndpointField(label: Int, endpoint: PlannerEndpoint?, current: Boolean, onClick: () -> Unit) {
-    Surface(onClick = onClick, color = MaterialTheme.colorScheme.surfaceContainerLowest, shape = TransitDesign.controlShape) {
+    Surface(onClick = onClick, color = MaterialTheme.colorScheme.surfaceContainerLow, shape = TransitDesign.controlShape) {
         Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Icon(if (current) Icons.Rounded.MyLocation else if (label == R.string.planner_from) Icons.Rounded.TripOrigin else Icons.Rounded.LocationOn,
                 null, tint = MaterialTheme.colorScheme.primary)
@@ -591,7 +632,7 @@ internal fun PlannerSearch(
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp).heightIn(min = 48.dp)) {
                 Icon(Icons.Rounded.MyLocation, null, Modifier.size(20.dp))
                 Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.planner_current))
+                Text(stringResource(if (state.offline) R.string.offline_nearby_origins else R.string.planner_current))
             }
         }
         Box(Modifier.fillMaxWidth().height(8.dp)) {
@@ -599,7 +640,16 @@ internal fun PlannerSearch(
         }
         LazyColumn(state = listState, modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(bottom = 24.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())) {
-            if (state.query.trim().length < 2) {
+            if (state.nearbyOriginSearch) {
+                item(key = "nearby_hint", contentType = "notice") {
+                    Text(stringResource(when {
+                        state.userLocation == null -> R.string.planner_location_error
+                        !state.searching && state.suggestions.isEmpty() -> R.string.offline_nearby_origins_empty
+                        else -> R.string.offline_nearby_origins_hint
+                    }), Modifier.padding(20.dp), style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+            if (!state.nearbyOriginSearch && state.query.trim().length < 2) {
                 item(key = "hint", contentType = "intro") {
                     EmptyState(stringResource(R.string.search_discover_title), stringResource(R.string.search_discover_body), Icons.Rounded.Search)
                     FlowRow(Modifier.padding(horizontal = 20.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -611,7 +661,8 @@ internal fun PlannerSearch(
             }
             state.recommendation?.takeIf { state.query.trim().length >= 3 }?.let { endpoint ->
                 item(key = "recommendation", contentType = "recommendation") {
-                    SearchRecommendation(endpoint.name, providerNames(endpoint.providerIds), { choose(endpoint) })
+                    SearchRecommendation(endpoint.name, providerNames(endpoint.providerIds), { choose(endpoint) },
+                        leading = { StopMapDot(endpoint.asSearchStop()) })
                 }
             }
             if (stations.isNotEmpty()) {
@@ -650,8 +701,7 @@ internal fun PlannerSearch(
 private fun PlannerSearchResult(endpoint: PlannerEndpoint, location: GeoPoint?, onChoose: () -> Unit, onStopDepartures: ((String) -> Unit)?) {
     val distance = remember(location, endpoint.position) {
         location?.let { loc ->
-            val meters = StopClusters.distanceMeters(loc, endpoint.position)
-            if (meters < 1000) "${meters.toInt()} m" else "${(meters / 1000.0).roundToInt()} km"
+            formatStopDistance(StopClusters.distanceMeters(loc, endpoint.position))
         }
     }
     val platform = if (endpoint.isStation) BkkPlatformIndex.resolve(endpoint.id, endpoint.detail.takeIf { it.isNotBlank() }) else null
@@ -662,8 +712,7 @@ private fun PlannerSearchResult(endpoint: PlannerEndpoint, location: GeoPoint?, 
         if (endpoint.isStation) transportLabel(endpoint.transportMode) else null, distance).filter(String::isNotBlank).joinToString(" · ")
     SearchResultCard(endpoint.name, detail, onChoose,
         leading = {
-            if (endpoint.isStation && (endpoint.transportMode != null || endpoint.providerIds.any { it in LocalPlanningService.providerIds }))
-                TransitVehicleIcon(endpoint.providerIds.firstOrNull().orEmpty(), endpoint.transportMode, 40.dp)
+            if (endpoint.isStation) StopMapDot(endpoint.asSearchStop())
             else TransitIconTile(Icons.Rounded.LocationOn)
         },
         badge = { platform?.let { PlatformBadge(it) } },
@@ -682,3 +731,7 @@ private fun PlannerSearchResult(endpoint: PlannerEndpoint, location: GeoPoint?, 
             } else Icon(Icons.AutoMirrored.Rounded.ArrowForward, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
         })
 }
+
+private fun PlannerEndpoint.asSearchStop() = TransitStop(id, name, position, routeIds,
+    providerId = providerIds.firstOrNull() ?: "bkk", providerIds = providerIds,
+    transportMode = transportMode)

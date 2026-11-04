@@ -16,11 +16,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import hu.app.bmenetrend.R
 import hu.app.bmenetrend.data.TransitRoute
+import hu.app.bmenetrend.data.Departure
 
 /** Route browsing lives in the map's existing bottom card. */
 @Composable
 internal fun RouteBrowserCard(state: UiState,route: TransitRoute,directionId: String?,onDirection: (String)->Unit,
-    onBoard: (String,String,String)->Unit,onBack: ()->Unit,onClose: ()->Unit,onRetry: ()->Unit,modifier: Modifier=Modifier) {
+    onBoard: (String,String,String)->Unit,onBack: ()->Unit,onClose: ()->Unit,onRetry: ()->Unit,modifier: Modifier=Modifier,selectedDeparture: Departure?=null) {
     Column(modifier) {
         Row(Modifier.fillMaxWidth().padding(start=8.dp,end=8.dp,bottom=4.dp),verticalAlignment=Alignment.CenterVertically) {
             IconButton(onClick=onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack,stringResource(R.string.ui_back)) }
@@ -32,11 +33,19 @@ internal fun RouteBrowserCard(state: UiState,route: TransitRoute,directionId: St
             IconButton(onClick=onClose) { Icon(Icons.Rounded.Close,stringResource(R.string.route_close)) }
         }
         HorizontalDivider(color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=.6f))
-        if(route.providerId in setOf("volan","bkk","hev","mav")) {
-            EmmaLineBrowser(state,route,directionId,onDirection,onBoard,onRetry,showHeader=false)
+        if (selectedDeparture!=null && directionId==null) {
+            DepartureDetails(selectedDeparture)
+            if (state.loadingLineId==route.id) LinearProgressIndicator(Modifier.fillMaxWidth())
+            else Column(Modifier.padding(horizontal=20.dp,vertical=8.dp)) {
+                Text(stringResource(R.string.departure_stops_unavailable),style=MaterialTheme.typography.bodyMedium)
+                TextButton(onClick=onRetry) { Text(stringResource(R.string.emma_vehicle_refresh)) }
+            }
+        } else if(route.providerId in setOf("volan","bkk","hev","mav")) {
+            EmmaLineBrowser(state,route,directionId,onDirection,onBoard,onRetry,showHeader=false,departure=selectedDeparture)
         } else {
             val direction=route.directions.firstOrNull { it.id==directionId }
             LazyColumn(contentPadding=PaddingValues(bottom=24.dp)) {
+                selectedDeparture?.let { item(key="departure-details",contentType="departure-details") { DepartureDetails(it) } }
                 if(direction==null) {
                     if(route.directions.isEmpty()) item(key="empty",contentType="notice") { EmptyState(stringResource(R.string.ui_no_directions_title),stringResource(R.string.ui_no_directions_body),Icons.Rounded.Info) }
                     items(route.directions,key={it.id},contentType={"direction"}) { variant ->
@@ -49,7 +58,10 @@ internal fun RouteBrowserCard(state: UiState,route: TransitRoute,directionId: St
                         if(direction.restrictedService) Text(stringResource(R.string.ui_registration_required),Modifier.padding(horizontal=22.dp,vertical=8.dp),style=MaterialTheme.typography.bodySmall)
                     }
                     itemsIndexed(direction.stopIds,key={i,id -> "$i-$id"},contentType={_,_->"stop"}) { i,id ->
-                        state.findStop(id)?.let { stop -> LineStopRow(stop,i==0,i==direction.stopIds.lastIndex,lineColor(route),{onBoard(route.id,direction.id,id)}) }
+                        state.findStop(id)?.let { stop ->
+                            val isHighlighted = stop.id == state.selectedStopId || stop.id in state.selectedPlatformIds
+                            LineStopRow(stop,i==0,i==direction.stopIds.lastIndex,lineColor(route),{onBoard(route.id,direction.id,id)}, highlighted = isHighlighted)
+                        }
                     }
                 }
             }
