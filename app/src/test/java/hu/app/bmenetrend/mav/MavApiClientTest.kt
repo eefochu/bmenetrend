@@ -28,6 +28,34 @@ class MavApiClientTest {
     }
 
     @Test
+    fun loginSuccessWithGetUserTokenReturnsSession() = runBlocking {
+        val mockJson = """
+            {
+                "userData": {
+                    "userTokenXml": "mock_saml_token_xyz",
+                    "regisztraciosAzonosito": "1001",
+                    "userEmail": "test@example.com"
+                }
+            }
+        """.trimIndent()
+
+        val client = createMockClient { req ->
+            if (req.url.encodedPath.contains("GetUserToken")) {
+                jsonResponse(req, mockJson)
+            } else {
+                jsonResponse(req, "{}", 404)
+            }
+        }
+
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
+        val session = api.login("test@example.com", "secret", "uaid_123456789012345678901234")
+
+        assertEquals("test@example.com", session.email)
+        assertEquals("mock_saml_token_xyz", session.token)
+        assertEquals("uaid_123456789012345678901234", session.uaid)
+    }
+
+    @Test
     fun loginSuccessReturnsSession() = runBlocking {
         val mockJson = """
             {
@@ -37,8 +65,12 @@ class MavApiClientTest {
         """.trimIndent()
 
         val client = createMockClient { req ->
-            assertTrue(req.url.encodedPath.contains("Bejelentkezes"))
-            jsonResponse(req, mockJson)
+            if (req.url.encodedPath.contains("GetUserToken")) {
+                jsonResponse(req, "{}", 500)
+            } else {
+                assertTrue(req.url.encodedPath.contains("Bejelentkezes"))
+                jsonResponse(req, mockJson)
+            }
         }
 
         val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
@@ -62,7 +94,11 @@ class MavApiClientTest {
         """.trimIndent()
 
         val client = createMockClient { req ->
-            jsonResponse(req, mockJson)
+            if (req.url.encodedPath.contains("GetUserToken")) {
+                jsonResponse(req, "{}", 500)
+            } else {
+                jsonResponse(req, mockJson)
+            }
         }
 
         val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
@@ -79,7 +115,11 @@ class MavApiClientTest {
         val mockHtml = "<html><body><b>A kért oldal nem jeleníthető meg, mert nem felel meg a hozzáférési szabályzat követelményeinek</b></body></html>"
 
         val client = createMockClient { req ->
-            jsonResponse(req, mockHtml, 200)
+            if (req.url.encodedPath.contains("GetUserToken")) {
+                jsonResponse(req, "{}", 500)
+            } else {
+                jsonResponse(req, mockHtml, 200)
+            }
         }
 
         val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
@@ -105,8 +145,14 @@ class MavApiClientTest {
         """.trimIndent()
 
         val client = createMockClient { req ->
-            assertTrue(req.url.encodedPath.contains("GetFelhasznaloAdat"))
-            jsonResponse(req, mockJson)
+            if (req.url.encodedPath.contains("GetUserPersonalDatas")) {
+                jsonResponse(req, "{}", 404)
+            } else if (req.url.encodedPath.contains("GetUserHPTDatas")) {
+                jsonResponse(req, """{"hptData":[]}""")
+            } else {
+                assertTrue(req.url.encodedPath.contains("GetFelhasznaloAdat"))
+                jsonResponse(req, mockJson)
+            }
         }
 
         val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
@@ -118,6 +164,72 @@ class MavApiClientTest {
         assertEquals("Kovács", user.lastName)
         assertEquals("Kovács Péter", user.fullName)
         assertEquals("REG-987", user.regId)
+    }
+
+    @Test
+    fun getUserDataWithPersonalDataAndAccountPhoto() = runBlocking {
+        val personalJson = """
+            {
+                "userData": {
+                    "vezetekNev": "Kókai",
+                    "keresztNev": "Balázs",
+                    "regisztraciosAzonosito": "17601334",
+                    "userEmail": "ilikehacking.py@gmail.com"
+                }
+            }
+        """.trimIndent()
+
+        val hptJson = """
+            {
+                "hptData": [
+                    {
+                        "id": "7270388",
+                        "dataType": "IK_PROFIL",
+                        "name": "Profile Picture Passenger",
+                        "alias": "Profile Picture",
+                        "profilePicture": {
+                            "binarisAllomany": "profile_b64_data"
+                        }
+                    },
+                    {
+                        "id": "7265084",
+                        "dataType": "MENTETT_UTAS",
+                        "name": "Kókai Balázs",
+                        "profilePicture": {
+                            "binarisAllomany": "passenger_selfie_b64"
+                        }
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        val client = createMockClient { req ->
+            if (req.url.encodedPath.contains("GetUserPersonalDatas")) {
+                jsonResponse(req, personalJson)
+            } else if (req.url.encodedPath.contains("GetUserHPTDatas")) {
+                jsonResponse(req, hptJson)
+            } else {
+                jsonResponse(req, "{}", 404)
+            }
+        }
+
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
+        val session = MavSession("ilikehacking.py@gmail.com", "tok", "uaid")
+        val user = api.getUserData(session)
+
+        assertEquals("ilikehacking.py@gmail.com", user.email)
+        assertEquals("Balázs", user.firstName)
+        assertEquals("Kókai", user.lastName)
+        assertEquals("Kókai Balázs", user.fullName)
+        assertEquals("17601334", user.regId)
+        assertEquals("profile_b64_data", user.photoBase64)
+
+        // Verify getPassengers returns passenger selfie, not account profile
+        val passengers = api.getPassengers(session)
+        assertEquals(1, passengers.size)
+        val p = passengers.first()
+        assertEquals("Kókai Balázs", p.name)
+        assertEquals("passenger_selfie_b64", p.photoBase64)
     }
 
     @Test
@@ -157,8 +269,14 @@ class MavApiClientTest {
         """.trimIndent()
 
         val client = createMockClient { req ->
-            assertTrue(req.url.encodedPath.contains("MegrendelesKereses"))
-            jsonResponse(req, mockJson)
+            if (req.url.encodedPath.contains("GetPreviousPurchases")) {
+                jsonResponse(req, """{"previousPurchases":[]}""")
+            } else if (req.url.encodedPath.contains("BerletTokLekeres")) {
+                jsonResponse(req, """{"BerletTokok":[]}""")
+            } else {
+                assertTrue(req.url.encodedPath.contains("MegrendelesKereses"))
+                jsonResponse(req, mockJson)
+            }
         }
 
         val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
@@ -215,15 +333,12 @@ class MavApiClientTest {
 
     @Test
     fun parseTimestampHandlesMultipleFormats() {
-        // Unix seconds converted to milliseconds
         assertEquals(1726000000000L, MavApiClient.parseTimestamp(1726000000L))
-        // Unix milliseconds kept as milliseconds
         assertEquals(1726000000000L, MavApiClient.parseTimestamp(1726000000000L))
-        // .NET /Date(...)/
         assertEquals(1726000000000L, MavApiClient.parseTimestamp("/Date(1726000000000)/"))
-        // String digits (seconds converted to ms)
         assertEquals(1726000000000L, MavApiClient.parseTimestamp("1726000000"))
         assertEquals(0L, MavApiClient.parseTimestamp(null))
         assertEquals(0L, MavApiClient.parseTimestamp(""))
     }
-}
+
+    }

@@ -37,7 +37,8 @@ data class MavPassenger(
     val birthDate: Long? = null,
     val birthDateString: String? = null,
     val photoBase64: String? = null,
-    val isDefault: Boolean = false
+    val isDefault: Boolean = false,
+    val businessId: String = ""
 ) {
     fun toPhotoBitmap(): Bitmap? {
         val raw = photoBase64 ?: return null

@@ -217,12 +217,14 @@ class MavViewModel(
     ) {
         val passengers = repository.getPassengers()
         val matched = passengers.firstOrNull { p ->
-            !passengerName.isNullOrBlank() && (
+            (receiptId.isNotBlank() && (p.id == receiptId || (p.businessId.isNotBlank() && p.businessId == receiptId))) ||
+            (!ticketNumber.isNullOrBlank() && (p.id == ticketNumber || (p.businessId.isNotBlank() && p.businessId == ticketNumber))) ||
+            (!passengerName.isNullOrBlank() && (
                 p.name.equals(passengerName.trim(), ignoreCase = true) ||
                 p.name.contains(passengerName.trim(), ignoreCase = true) ||
                 passengerName.trim().contains(p.name, ignoreCase = true)
-            )
-        } ?: if (passengers.size == 1) passengers.first() else null
+            ))
+        } ?: passengers.firstOrNull { !it.photoBase64.isNullOrBlank() } ?: passengers.firstOrNull()
 
         val finalName = passengerName?.ifBlank { null } ?: matched?.name?.ifBlank { null }
         val finalBirthDate = if (birthDate != null && birthDate > 0L) birthDate else matched?.birthDate

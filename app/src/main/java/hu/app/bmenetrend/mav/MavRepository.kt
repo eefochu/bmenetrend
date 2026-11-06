@@ -115,6 +115,15 @@ class MavRepository(
         sessionStore.saveSession(fullSession)
         if (user != null) cacheStore.saveUser(user)
         _session.value = fullSession
+
+        // Pre-fetch and cache passengers right after login
+        runCatching {
+            val passengers = apiClient.getPassengers(fullSession)
+            if (passengers.isNotEmpty()) {
+                cacheStore.savePassengers(passengers)
+            }
+        }
+
         fullSession
     }
 

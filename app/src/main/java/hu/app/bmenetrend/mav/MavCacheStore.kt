@@ -188,6 +188,7 @@ class MavCacheStore(
                     put("birthDateString", p.birthDateString.orEmpty())
                     put("photoBase64", p.photoBase64.orEmpty())
                     put("isDefault", p.isDefault)
+                    put("businessId", p.businessId)
                 }
                 arr.put(obj)
             }
@@ -212,7 +213,8 @@ class MavCacheStore(
                         birthDate = bDate,
                         birthDateString = obj.optString("birthDateString", "").ifBlank { null },
                         photoBase64 = obj.optString("photoBase64", "").ifBlank { null },
-                        isDefault = obj.optBoolean("isDefault", false)
+                        isDefault = obj.optBoolean("isDefault", false),
+                        businessId = obj.optString("businessId", "")
                     )
                 )
             }
