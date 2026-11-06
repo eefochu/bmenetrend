@@ -5,6 +5,9 @@ import android.graphics.ImageDecoder
 import android.graphics.drawable.AnimatedImageDrawable
 import android.os.Build
 import android.widget.ImageView
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -833,18 +836,20 @@ fun MavTicketDetailView(
     user: MavUser?,
     onDismiss: () -> Unit
 ) {
+    BackHandler(onBack = onDismiss)
     var showInfoDialog by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF101012))
-            .statusBarsPadding()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = 96.dp)
+                .statusBarsPadding()
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = 150.dp)
         ) {
             // 1. Top bar: Back arrow, Title, Info button (i)
             Row(
@@ -968,70 +973,64 @@ fun MavTicketDetailView(
             Spacer(Modifier.height(16.dp))
 
             // 3. Middle Ticket / Pass Card
-            Box(
+            Surface(
                 modifier = Modifier
-                    .weight(1f)
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                contentAlignment = Alignment.Center
+                shape = RoundedCornerShape(16.dp),
+                color = Color.White,
+                shadowElevation = 4.dp
             ) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    color = Color.White,
-                    shadowElevation = 4.dp
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        when {
-                            data.loading -> {
-                                Column(
-                                    modifier = Modifier.padding(48.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                                ) {
-                                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                                    Text(
-                                        stringResource(R.string.ui_loading_data),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = Color.DarkGray
-                                    )
-                                }
-                            }
-                            data.error != null -> {
-                                Column(
-                                    modifier = Modifier.padding(32.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.ErrorOutline,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.error,
-                                        modifier = Modifier.size(36.dp)
-                                    )
-                                    Text(
-                                        data.error,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.error,
-                                        textAlign = TextAlign.Center
-                                    )
-                                }
-                            }
-                            data.bitmap != null -> {
-                                Image(
-                                    bitmap = data.bitmap.asImageBitmap(),
-                                    contentDescription = data.title,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(12.dp)),
-                                    contentScale = ContentScale.FillWidth
+                    when {
+                        data.loading -> {
+                            Column(
+                                modifier = Modifier.padding(48.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                                Text(
+                                    stringResource(R.string.ui_loading_data),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.DarkGray
                                 )
                             }
+                        }
+                        data.error != null -> {
+                            Column(
+                                modifier = Modifier.padding(32.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Icon(
+                                    Icons.Rounded.ErrorOutline,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(36.dp)
+                                )
+                                Text(
+                                    data.error,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.error,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                        data.bitmap != null -> {
+                            Image(
+                                bitmap = data.bitmap.asImageBitmap(),
+                                contentDescription = data.title,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp)),
+                                contentScale = ContentScale.FillWidth
+                            )
                         }
                     }
                 }
@@ -1042,7 +1041,7 @@ fun MavTicketDetailView(
         AnimatedTrainGif(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(96.dp)
+                .aspectRatio(384f / 128f)
                 .align(Alignment.BottomCenter)
         )
 

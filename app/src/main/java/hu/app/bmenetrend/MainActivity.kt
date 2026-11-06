@@ -127,11 +127,13 @@ class MainActivity : ComponentActivity() {
                     crashReports.clear()
                     pendingCrash = null
                 } }
+                val mavBarcodeData by mav.barcodeData.collectAsStateWithLifecycle()
+                val isViewingTicket = mavBarcodeData != null
                 MainNavigation(
                     tab,
                     { tab = it },
                     offline = state.offlineMode,
-                    hideNavigation = tab == MainTab.MAP && mapFullscreen,
+                    hideNavigation = (tab == MainTab.MAP && mapFullscreen) || isViewingTicket,
                     onOfflineSettings = { tab = MainTab.MAP; offlineSettingsRequest++ },
                     planner = {
                         PlannerScreen(
