@@ -114,6 +114,18 @@ class MavCacheStore(
                 put("imageBase64", image.imageBase64)
             }
             imagesObj.put(receiptId, itemObj)
+            if (image.receiptId.isNotBlank()) {
+                imagesObj.put(image.receiptId, itemObj)
+            }
+            if (!image.ticketNumber.isNullOrBlank()) {
+                imagesObj.put(image.ticketNumber, itemObj)
+            }
+            if (receiptId.contains("#")) {
+                imagesObj.put(receiptId.substringAfterLast("#"), itemObj)
+            }
+            if (image.receiptId.contains("#")) {
+                imagesObj.put(image.receiptId.substringAfterLast("#"), itemObj)
+            }
             writeRoot(root)
         }
     }
@@ -124,7 +136,33 @@ class MavCacheStore(
             if (!cacheFile.exists()) return null
             val root = readRoot() ?: return null
             val imagesObj = root.optJSONObject("ticketImages") ?: return null
-            val itemObj = imagesObj.optJSONObject(receiptId) ?: return null
+
+            var itemObj = imagesObj.optJSONObject(receiptId)
+            if (itemObj == null && receiptId.contains("#")) {
+                itemObj = imagesObj.optJSONObject(receiptId.substringAfterLast("#"))
+            }
+            if (itemObj == null) {
+                val keys = imagesObj.keys()
+                while (keys.hasNext()) {
+                    val k = keys.next()
+                    val cand = imagesObj.optJSONObject(k) ?: continue
+                    val candReceiptId = cand.optString("receiptId", "")
+                    val candTicketNumber = cand.optString("ticketNumber", "")
+                    if (k == receiptId ||
+                        candReceiptId == receiptId ||
+                        candTicketNumber == receiptId ||
+                        (candReceiptId.isNotBlank() && receiptId.contains(candReceiptId)) ||
+                        (receiptId.isNotBlank() && candReceiptId.contains(receiptId)) ||
+                        (candReceiptId.contains("#") && candReceiptId.substringAfterLast("#") == receiptId) ||
+                        (receiptId.contains("#") && receiptId.substringAfterLast("#") == candReceiptId)
+                    ) {
+                        itemObj = cand
+                        break
+                    }
+                }
+            }
+            if (itemObj == null) return null
+
             val kind = itemObj.optString("kind", "")
             val imgBase64 = itemObj.optString("imageBase64", "")
             if (imgBase64.isBlank() || kind.equals("Certificate", ignoreCase = true) || imgBase64.startsWith("JVBER")) {
@@ -160,6 +198,15 @@ class MavCacheStore(
                 put("idCardNumber", passHolder.idCardNumber.orEmpty())
             }
             holdersObj.put(id, holderJson)
+            if (passHolder.id.isNotBlank()) {
+                holdersObj.put(passHolder.id, holderJson)
+            }
+            if (!passHolder.hptId.isNullOrBlank()) {
+                holdersObj.put(passHolder.hptId, holderJson)
+            }
+            if (id.contains("#")) {
+                holdersObj.put(id.substringAfterLast("#"), holderJson)
+            }
             writeRoot(root)
         }
     }
@@ -170,7 +217,29 @@ class MavCacheStore(
             if (!cacheFile.exists()) return null
             val root = readRoot() ?: return null
             val holdersObj = root.optJSONObject("passHolders") ?: return null
-            val obj = holdersObj.optJSONObject(id) ?: return null
+
+            var obj = holdersObj.optJSONObject(id)
+            if (obj == null && id.contains("#")) {
+                obj = holdersObj.optJSONObject(id.substringAfterLast("#"))
+            }
+            if (obj == null) {
+                val keys = holdersObj.keys()
+                while (keys.hasNext()) {
+                    val k = keys.next()
+                    val cand = holdersObj.optJSONObject(k) ?: continue
+                    val candId = cand.optString("id", "")
+                    val candHptId = cand.optString("hptId", "")
+                    if (k == id || candId == id || candHptId == id ||
+                        (candId.isNotBlank() && id.contains(candId)) ||
+                        (id.isNotBlank() && candId.contains(id))
+                    ) {
+                        obj = cand
+                        break
+                    }
+                }
+            }
+            if (obj == null) return null
+
             val bDate = obj.optLong("birthDate", 0L).let { if (it > 0) it else null }
             return MavPassHolder(
                 id = obj.optString("id", id),

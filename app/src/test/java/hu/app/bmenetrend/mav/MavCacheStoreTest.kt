@@ -140,6 +140,52 @@ class MavCacheStoreTest {
     }
 
     @Test
+    fun testMultiKeyTicketImageLookup() {
+        val compositeId = "ODAUTI_AJANLAT#CSCSAZON#CSAZON#1023744049"
+        val ticketNumber = "5594003G000448895"
+        val image = MavTicketImage(
+            receiptId = compositeId,
+            ticketNumber = ticketNumber,
+            kind = "AZTEC",
+            imageBase64 = "sample_aztec_barcode_base64"
+        )
+
+        cacheStore.saveTicketImage(compositeId, image)
+
+        // Exact key lookup
+        assertEquals(image.imageBase64, cacheStore.getTicketImage(compositeId)?.imageBase64)
+        // Substring after '#' / orderId lookup
+        assertEquals(image.imageBase64, cacheStore.getTicketImage("1023744049")?.imageBase64)
+        // Ticket number lookup
+        assertEquals(image.imageBase64, cacheStore.getTicketImage(ticketNumber)?.imageBase64)
+    }
+
+    @Test
+    fun testMultiKeyPassHolderLookup() {
+        val passHolder = MavPassHolder(
+            id = "7269605",
+            hptId = "HPT_12345",
+            photoBase64 = "selfie_photo_base64",
+            status = "Érvényes",
+            validTo = 1710000000000L,
+            name = "Kókai Balázs",
+            birthDate = 631152000000L,
+            version = 1,
+            idCardNumber = "998877AA"
+        )
+
+        val compositeKey = "BERLETTOK#7269605"
+        cacheStore.savePassHolder(compositeKey, passHolder)
+
+        // Exact key
+        assertEquals("selfie_photo_base64", cacheStore.getPassHolder(compositeKey)?.photoBase64)
+        // By ID
+        assertEquals("selfie_photo_base64", cacheStore.getPassHolder("7269605")?.photoBase64)
+        // By HPT ID
+        assertEquals("selfie_photo_base64", cacheStore.getPassHolder("HPT_12345")?.photoBase64)
+    }
+
+    @Test
     fun testRejectAndEvictCertificateInvoicePdf() {
         // 1. Trying to save Certificate should be ignored
         val certImage = MavTicketImage(

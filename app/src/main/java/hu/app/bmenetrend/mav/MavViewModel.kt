@@ -242,8 +242,16 @@ class MavViewModel(
 
         val finalName = passengerName?.ifBlank { null } ?: matched?.name?.ifBlank { null }
         val finalBirthDate = if (birthDate != null && birthDate > 0L) birthDate else matched?.birthDate
-        val passHolderPhoto = if (isPass) repository.getCachedPassHolder(receiptId)?.photoBase64 else null
-        val passengerPhoto = matched?.photoBase64 ?: passHolderPhoto
+        val passHolderPhoto = if (isPass) {
+            repository.getCachedPassHolder(receiptId)?.photoBase64
+                ?: ticketNumber?.let { repository.getCachedPassHolder(it)?.photoBase64 }
+                ?: (if (receiptId.contains("#")) repository.getCachedPassHolder(receiptId.substringAfterLast("#"))?.photoBase64 else null)
+        } else null
+
+        val passengerPhoto = matched?.photoBase64
+            ?: passHolderPhoto
+            ?: passengers.firstOrNull { !it.photoBase64.isNullOrBlank() }?.photoBase64
+            ?: repository.getCachedUser()?.photoBase64
 
         _barcodeData.value = TicketBarcodeData(
             receiptId = receiptId,
@@ -260,6 +268,8 @@ class MavViewModel(
                 // If passenger photo is not in cache yet, try loading pass holder if it is a pass
                 if (isPass && _barcodeData.value?.passengerPhotoBase64.isNullOrBlank()) {
                     val holder = runCatching { repository.getPassHolder(receiptId) }.getOrNull()
+                        ?: ticketNumber?.let { runCatching { repository.getPassHolder(it) }.getOrNull() }
+                        ?: (if (receiptId.contains("#")) runCatching { repository.getPassHolder(receiptId.substringAfterLast("#")) }.getOrNull() else null)
                     if (holder?.photoBase64 != null) {
                         _barcodeData.value = _barcodeData.value?.copy(
                             passengerPhotoBase64 = holder.photoBase64,
@@ -269,7 +279,13 @@ class MavViewModel(
                     }
                 }
 
-                val ticketImage = repository.getTicketImage(receiptId)
+                var ticketImage = repository.getTicketImage(receiptId)
+                if (ticketImage == null && !ticketNumber.isNullOrBlank()) {
+                    ticketImage = repository.getTicketImage(ticketNumber)
+                }
+                if (ticketImage == null && receiptId.contains("#")) {
+                    ticketImage = repository.getTicketImage(receiptId.substringAfterLast("#"))
+                }
                 val bitmap = ticketImage?.toBitmap()
                 if (bitmap != null) {
                     _barcodeData.value = _barcodeData.value?.copy(
