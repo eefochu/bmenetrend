@@ -2,6 +2,8 @@ package hu.app.bmenetrend.mav
 
 import android.app.Application
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.util.Base64
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
@@ -11,19 +13,22 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 sealed class LoginUiState {
-    data object Idle : LoginUiState()
-    data object Loading : LoginUiState()
+    object Idle : LoginUiState()
+    object Loading : LoginUiState()
     data class Error(val message: String) : LoginUiState()
 }
 
 sealed class TicketsUiState {
-    data object Loading : TicketsUiState()
+    object Loading : TicketsUiState()
     data class Success(
-        val activeOrders: List<MavOrder> = emptyList(),
-        val pastOrders: List<MavOrder> = emptyList(),
+        val activeOrders: List<MavOrder>,
+        val pastOrders: List<MavOrder>,
         val isOffline: Boolean = false,
         val lastSyncTime: Long = 0L
-    ) : TicketsUiState()
+    ) : TicketsUiState() {
+        val active: List<MavOrder> get() = activeOrders
+        val past: List<MavOrder> get() = pastOrders
+    }
     data class Error(val message: String) : TicketsUiState()
 }
 
@@ -39,10 +44,20 @@ data class TicketBarcodeData(
     val isPass: Boolean = false,
     val passengerName: String? = null,
     val birthDate: Long? = null,
+    val passengerPhotoBase64: String? = null,
     val bitmap: Bitmap? = null,
     val loading: Boolean = false,
     val error: String? = null
-)
+) {
+    fun toPassengerPhotoBitmap(): Bitmap? {
+        val raw = passengerPhotoBase64 ?: return null
+        return runCatching {
+            val clean = if (raw.contains(",")) raw.substringAfter(",") else raw
+            val bytes = Base64.decode(clean, Base64.DEFAULT)
+            BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+        }.getOrNull()
+    }
+}
 
 class MavViewModel(
     application: Application,
@@ -100,68 +115,80 @@ class MavViewModel(
         }
     }
 
+    fun onWebLoginSuccess(session: MavSession) {
+        viewModelScope.launch {
+            _loginState.value = LoginUiState.Idle
+            loadTickets()
+            // In the background, fetch user profile and passengers
+            runCatching {
+                repository.refreshUserData()
+            }
+        }
+    }
+
     fun logout() {
         viewModelScope.launch {
             repository.logout()
-            _ticketsState.value = TicketsUiState.Success()
-            _loginState.value = LoginUiState.Idle
+            _ticketsState.value = TicketsUiState.Success(emptyList<MavOrder>(), emptyList<MavOrder>())
             _barcodeData.value = null
         }
     }
 
-    fun refreshTickets() {
-        if (session.value == null) return
-        viewModelScope.launch {
-            _isRefreshing.value = true
-            loadTicketsInternal()
-            _isRefreshing.value = false
-        }
-    }
-
-    private fun loadTickets() {
+    fun loadTickets(forceRefresh: Boolean = false) {
         loadTicketsJob?.cancel()
         loadTicketsJob = viewModelScope.launch {
-            _ticketsState.value = TicketsUiState.Loading
-            loadTicketsInternal()
+            if (forceRefresh) {
+                _isRefreshing.value = true
+            } else if (_ticketsState.value !is TicketsUiState.Success) {
+                _ticketsState.value = TicketsUiState.Loading
+            }
+
+            // Step 1: Immediately emit cached tickets if available
+            val cached = repository.getCachedOrders()
+            val lastSync = repository.getLastSyncTime()
+            if (cached != null && (cached.first.isNotEmpty() || cached.second.isNotEmpty())) {
+                _ticketsState.value = TicketsUiState.Success(
+                    activeOrders = cached.first,
+                    pastOrders = cached.second,
+                    isOffline = false,
+                    lastSyncTime = lastSync
+                )
+            }
+
+            // Step 2: Sync with online server
+            try {
+                val (active, past) = repository.syncTicketsAndPasses()
+                _ticketsState.value = TicketsUiState.Success(
+                    activeOrders = active,
+                    pastOrders = past,
+                    isOffline = false,
+                    lastSyncTime = repository.getLastSyncTime()
+                )
+            } catch (e: Exception) {
+                // If online sync fails, check if we have cached tickets
+                val fallbackCache = repository.getCachedOrders()
+                if (fallbackCache != null && (fallbackCache.first.isNotEmpty() || fallbackCache.second.isNotEmpty())) {
+                    _ticketsState.value = TicketsUiState.Success(
+                        activeOrders = fallbackCache.first,
+                        pastOrders = fallbackCache.second,
+                        isOffline = true,
+                        lastSyncTime = repository.getLastSyncTime()
+                    )
+                } else {
+                    _ticketsState.value = TicketsUiState.Error(e.message ?: "Nem sikerült a jegyek betöltése")
+                }
+            } finally {
+                _isRefreshing.value = false
+            }
         }
     }
 
-    private suspend fun loadTicketsInternal() {
-        // Step 1: Immediately show cached data if available (instant offline display)
-        val cached = repository.getCachedOrders()
-        val lastSync = repository.getLastSyncTime()
-        if (cached != null && (cached.first.isNotEmpty() || cached.second.isNotEmpty())) {
-            _ticketsState.value = TicketsUiState.Success(
-                activeOrders = cached.first,
-                pastOrders = cached.second,
-                isOffline = true,
-                lastSyncTime = lastSync
-            )
-        }
+    fun refresh() {
+        loadTickets(forceRefresh = true)
+    }
 
-        // Step 2: Sync fresh orders and pre-cache barcodes while online
-        try {
-            val (active, past) = repository.syncTicketsAndPasses()
-            _ticketsState.value = TicketsUiState.Success(
-                activeOrders = active,
-                pastOrders = past,
-                isOffline = false,
-                lastSyncTime = repository.getLastSyncTime()
-            )
-        } catch (e: Exception) {
-            // Step 3: On network error or offline, fallback to cached data if we have any
-            val currentCached = repository.getCachedOrders()
-            if (currentCached != null && (currentCached.first.isNotEmpty() || currentCached.second.isNotEmpty())) {
-                _ticketsState.value = TicketsUiState.Success(
-                    activeOrders = currentCached.first,
-                    pastOrders = currentCached.second,
-                    isOffline = true,
-                    lastSyncTime = repository.getLastSyncTime()
-                )
-            } else {
-                _ticketsState.value = TicketsUiState.Error(e.message ?: "Nem sikerült a jegyek betöltése")
-            }
-        }
+    fun refreshTickets() {
+        refresh()
     }
 
     fun showBarcode(
@@ -188,17 +215,44 @@ class MavViewModel(
         passengerName: String?,
         birthDate: Long?
     ) {
+        val passengers = repository.getPassengers()
+        val matched = passengers.firstOrNull { p ->
+            !passengerName.isNullOrBlank() && (
+                p.name.equals(passengerName.trim(), ignoreCase = true) ||
+                p.name.contains(passengerName.trim(), ignoreCase = true) ||
+                passengerName.trim().contains(p.name, ignoreCase = true)
+            )
+        } ?: if (passengers.size == 1) passengers.first() else null
+
+        val finalName = passengerName?.ifBlank { null } ?: matched?.name?.ifBlank { null }
+        val finalBirthDate = if (birthDate != null && birthDate > 0L) birthDate else matched?.birthDate
+        val passHolderPhoto = if (isPass) repository.getCachedPassHolder(receiptId)?.photoBase64 else null
+        val passengerPhoto = matched?.photoBase64 ?: passHolderPhoto
+
         _barcodeData.value = TicketBarcodeData(
             receiptId = receiptId,
             ticketNumber = ticketNumber,
             title = title,
             isPass = isPass,
-            passengerName = passengerName,
-            birthDate = birthDate,
+            passengerName = finalName,
+            birthDate = finalBirthDate,
+            passengerPhotoBase64 = passengerPhoto,
             loading = true
         )
         viewModelScope.launch {
             try {
+                // If passenger photo is not in cache yet, try loading pass holder if it is a pass
+                if (isPass && _barcodeData.value?.passengerPhotoBase64.isNullOrBlank()) {
+                    val holder = runCatching { repository.getPassHolder(receiptId) }.getOrNull()
+                    if (holder?.photoBase64 != null) {
+                        _barcodeData.value = _barcodeData.value?.copy(
+                            passengerPhotoBase64 = holder.photoBase64,
+                            passengerName = _barcodeData.value?.passengerName ?: holder.name,
+                            birthDate = _barcodeData.value?.birthDate ?: holder.birthDate
+                        )
+                    }
+                }
+
                 val ticketImage = repository.getTicketImage(receiptId)
                 val bitmap = ticketImage?.toBitmap()
                 if (bitmap != null) {

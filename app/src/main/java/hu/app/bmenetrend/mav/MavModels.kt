@@ -31,6 +31,25 @@ data class MavUser(
 }
 
 @Immutable
+data class MavPassenger(
+    val id: String = "",
+    val name: String = "",
+    val birthDate: Long? = null,
+    val birthDateString: String? = null,
+    val photoBase64: String? = null,
+    val isDefault: Boolean = false
+) {
+    fun toPhotoBitmap(): Bitmap? {
+        val raw = photoBase64 ?: return null
+        return runCatching {
+            val clean = if (raw.contains(",")) raw.substringAfter(",") else raw
+            val bytes = Base64.decode(clean, Base64.DEFAULT)
+            BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+        }.getOrNull()
+    }
+}
+
+@Immutable
 data class MavSession(
     val email: String,
     val token: String,

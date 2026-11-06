@@ -359,21 +359,24 @@ private fun MavHeader(
                     if (photoBitmap != null) {
                         Image(
                             bitmap = photoBitmap.asImageBitmap(),
-                            contentDescription = user?.fullName,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(RoundedCornerShape(12.dp)),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else {
-                        Image(
-                            painter = painterResource(R.drawable.sample_passenger_photo),
                             contentDescription = user?.fullName ?: email,
                             modifier = Modifier
                                 .fillMaxSize()
                                 .clip(RoundedCornerShape(12.dp)),
                             contentScale = ContentScale.Crop
                         )
+                    } else {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.AccountCircle,
+                                contentDescription = user?.fullName ?: email,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
                     }
                 }
                 Column(modifier = Modifier.weight(1f)) {
@@ -910,30 +913,33 @@ fun MavTicketDetailView(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    val userPhotoBitmap = remember(user?.photoBase64) { user?.toPhotoBitmap() }
+                    val passengerPhotoBitmap = remember(data.passengerPhotoBase64) { data.toPassengerPhotoBitmap() }
                     Surface(
                         modifier = Modifier.size(width = 56.dp, height = 66.dp),
                         shape = RoundedCornerShape(14.dp),
                         color = Color(0xFF2C2D32)
                     ) {
-                        if (userPhotoBitmap != null) {
+                        if (passengerPhotoBitmap != null) {
                             Image(
-                                bitmap = userPhotoBitmap.asImageBitmap(),
-                                contentDescription = user?.fullName,
+                                bitmap = passengerPhotoBitmap.asImageBitmap(),
+                                contentDescription = data.passengerName ?: "Utas fénykép",
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .clip(RoundedCornerShape(14.dp)),
                                 contentScale = ContentScale.Crop
                             )
                         } else {
-                            Image(
-                                painter = painterResource(R.drawable.sample_passenger_photo),
-                                contentDescription = user?.fullName ?: "Passenger selfie",
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(RoundedCornerShape(14.dp)),
-                                contentScale = ContentScale.Crop
-                            )
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Person,
+                                    contentDescription = data.passengerName ?: "Utas fénykép",
+                                    tint = Color(0xFF8E8E93),
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
                         }
                     }
 
@@ -942,8 +948,7 @@ fun MavTicketDetailView(
                         modifier = Modifier.weight(1f)
                     ) {
                         val passengerName = data.passengerName?.ifBlank { null }
-                            ?: user?.fullName?.ifBlank { null }
-                            ?: "Kókai Balázs"
+                            ?: data.title
                         Text(
                             text = passengerName,
                             style = MaterialTheme.typography.titleMedium,
@@ -958,14 +963,16 @@ fun MavTicketDetailView(
                                     .withZone(ZoneId.of("Europe/Budapest"))
                                     .format(Instant.ofEpochMilli(b))
                             } else {
-                                "2011.07.14."
+                                null
                             }
                         }
-                        Text(
-                            text = birthDateStr,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFF9E9EA6)
-                        )
+                        if (!birthDateStr.isNullOrBlank()) {
+                            Text(
+                                text = birthDateStr,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color(0xFF9E9EA6)
+                            )
+                        }
                     }
                 }
             }

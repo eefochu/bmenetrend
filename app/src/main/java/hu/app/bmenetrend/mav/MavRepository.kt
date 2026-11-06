@@ -94,7 +94,17 @@ class MavRepository(
         ioDispatcher = ioDispatcher
     )
 
-    private val _session = MutableStateFlow<MavSession?>(sessionStore.getStoredSession())
+    private val _session = MutableStateFlow<MavSession?>(
+        sessionStore.getStoredSession() ?: cacheStore.getUser()?.let { cachedUser ->
+            MavSession(
+                email = cachedUser.email,
+                token = "",
+                uaid = sessionStore.getOrCreateUaid(),
+                expiresAt = 0L,
+                user = cachedUser
+            )
+        }
+    )
     val session: StateFlow<MavSession?> = _session.asStateFlow()
 
     suspend fun login(email: String, password: String): MavSession = withContext(ioDispatcher) {
@@ -103,6 +113,7 @@ class MavRepository(
         val user = runCatching { apiClient.getUserData(baseSession) }.getOrNull()
         val fullSession = baseSession.copy(user = user)
         sessionStore.saveSession(fullSession)
+        if (user != null) cacheStore.saveUser(user)
         _session.value = fullSession
         fullSession
     }
@@ -113,6 +124,7 @@ class MavRepository(
         if (user != null) {
             val updated = currentSession.copy(user = user)
             sessionStore.saveSession(updated)
+            cacheStore.saveUser(user)
             _session.value = updated
         }
         user
@@ -128,6 +140,18 @@ class MavRepository(
         return cacheStore.getOrders()
     }
 
+    fun getCachedUser(): MavUser? {
+        return cacheStore.getUser()
+    }
+
+    fun getPassengers(): List<MavPassenger> {
+        return cacheStore.getPassengers()
+    }
+
+    fun getCachedPassHolder(id: String): MavPassHolder? {
+        return cacheStore.getPassHolder(id)
+    }
+
     fun getLastSyncTime(): Long {
         return cacheStore.getLastSyncTime()
     }
@@ -135,22 +159,30 @@ class MavRepository(
     suspend fun syncTicketsAndPasses(): Pair<List<MavOrder>, List<MavOrder>> = withContext(ioDispatcher) {
         val currentSession = _session.value ?: throw MavApiException("Nincs bejelentkezve MÁV fiókba")
 
-        // If user profile is incomplete, refresh it
+        // 1. If user profile is incomplete, refresh it
         if (currentSession.user?.firstName.isNullOrBlank() || currentSession.user?.photoBase64.isNullOrBlank()) {
             runCatching { refreshUserData() }
         }
 
         try {
-            // 1. Fetch active orders (valid tickets and passes)
+            // 2. Fetch and cache passengers
+            runCatching {
+                val passengers = apiClient.getPassengers(currentSession)
+                if (passengers.isNotEmpty()) {
+                    cacheStore.savePassengers(passengers)
+                }
+            }
+
+            // 3. Fetch active orders (valid tickets and passes)
             val active = apiClient.getOrders(currentSession, validOnly = true)
 
-            // 2. Fetch past orders
+            // 4. Fetch past orders
             val past = runCatching { apiClient.getOrders(currentSession, validOnly = false) }.getOrDefault(emptyList())
 
-            // 3. Cache orders to disk
+            // 5. Cache orders to disk
             cacheStore.saveOrders(active, past)
 
-            // 4. Pre-fetch ticket images and pass holders for active tickets
+            // 6. Pre-fetch ticket images and pass holders for active tickets
             for (order in active) {
                 order.passHolder?.id?.let { phId ->
                     if (phId.isNotBlank() && cacheStore.getPassHolder(phId) == null) {

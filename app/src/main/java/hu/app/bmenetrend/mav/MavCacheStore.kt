@@ -176,6 +176,50 @@ class MavCacheStore(
         }
     }
 
+    fun savePassengers(passengers: List<MavPassenger>) {
+        synchronized(lock) {
+            val root = loadOrCreateRoot()
+            val arr = JSONArray()
+            for (p in passengers) {
+                val obj = JSONObject().apply {
+                    put("id", p.id)
+                    put("name", p.name)
+                    put("birthDate", p.birthDate ?: 0L)
+                    put("birthDateString", p.birthDateString.orEmpty())
+                    put("photoBase64", p.photoBase64.orEmpty())
+                    put("isDefault", p.isDefault)
+                }
+                arr.put(obj)
+            }
+            root.put("cachedPassengers", arr)
+            writeRoot(root)
+        }
+    }
+
+    fun getPassengers(): List<MavPassenger> {
+        synchronized(lock) {
+            if (!cacheFile.exists()) return emptyList()
+            val root = readRoot() ?: return emptyList()
+            val arr = root.optJSONArray("cachedPassengers") ?: return emptyList()
+            val list = mutableListOf<MavPassenger>()
+            for (i in 0 until arr.length()) {
+                val obj = arr.optJSONObject(i) ?: continue
+                val bDate = obj.optLong("birthDate", 0L).let { if (it > 0) it else null }
+                list.add(
+                    MavPassenger(
+                        id = obj.optString("id", ""),
+                        name = obj.optString("name", ""),
+                        birthDate = bDate,
+                        birthDateString = obj.optString("birthDateString", "").ifBlank { null },
+                        photoBase64 = obj.optString("photoBase64", "").ifBlank { null },
+                        isDefault = obj.optBoolean("isDefault", false)
+                    )
+                )
+            }
+            return list
+        }
+    }
+
     fun clear() {
         synchronized(lock) {
             if (cacheFile.exists()) {

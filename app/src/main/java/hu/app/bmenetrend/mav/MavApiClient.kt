@@ -8,6 +8,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.concurrent.TimeUnit
@@ -20,6 +21,16 @@ class MavApiClient(
     private val client: OkHttpClient = defaultClient(),
     private val baseUrl: String = DEFAULT_BASE_URL
 ) {
+    data class RawHptItem(
+        val id: String,
+        val dataType: String,
+        val name: String,
+        val alias: String,
+        val bornDate: String,
+        val photoBase64: String?,
+        val isDefault: Boolean
+    )
+
     suspend fun login(email: String, password: String, uaid: String): MavSession {
         val requestJson = JSONObject().apply {
             put("FelhasznaloAzonosito", email.trim())
@@ -70,8 +81,25 @@ class MavApiClient(
         val regId = userObj?.optString("RegAzonosito", "").orEmpty()
         var photoBase64: String? = userObj?.optString("Fenykep", "")?.ifBlank { null }
             ?: userObj?.optString("Foto", "")?.ifBlank { null }
+            ?: userObj?.optString("ProfilKep", "")?.ifBlank { null }
 
-        // Fallback 1: Extract name and email from SAML Assertion token (e.g. from Google OAuth)
+        // Fetch account profile from HPT / UserProfile (IK_PROFIL is the account's own profile and picture)
+        val hptItems = runCatching { fetchHptDatas(session) }.getOrNull().orEmpty()
+        val accountProfile = hptItems.firstOrNull { it.dataType.equals("IK_PROFIL", ignoreCase = true) }
+        if (photoBase64.isNullOrBlank() && accountProfile != null && !accountProfile.photoBase64.isNullOrBlank()) {
+            photoBase64 = accountProfile.photoBase64
+        }
+        if (firstName.isBlank() && lastName.isBlank() && accountProfile != null && accountProfile.name.isNotBlank()) {
+            val parts = accountProfile.name.split(" ").filter { it.isNotBlank() }
+            if (parts.size >= 2) {
+                lastName = parts[0]
+                firstName = parts.drop(1).joinToString(" ")
+            } else {
+                lastName = accountProfile.name
+            }
+        }
+
+        // Fallback: Extract name and email from SAML Assertion token (e.g. from Google OAuth)
         if ((firstName.isBlank() && lastName.isBlank()) && session.token.isNotBlank()) {
             val saml = session.token
 
@@ -114,27 +142,6 @@ class MavApiClient(
             }
         }
 
-        // Fallback 2: Check pass holders (HPT) to retrieve the user's photo and name
-        val passHolders = runCatching { getAllPassHolders(session) }.getOrNull().orEmpty()
-        if (photoBase64.isNullOrBlank()) {
-            val firstWithPhoto = passHolders.firstOrNull { !it.photoBase64.isNullOrBlank() }
-            if (firstWithPhoto != null) {
-                photoBase64 = firstWithPhoto.photoBase64
-            }
-        }
-        if (firstName.isBlank() && lastName.isBlank()) {
-            val firstWithName = passHolders.firstOrNull { !it.name.isNullOrBlank() }
-            if (firstWithName != null && !firstWithName.name.isNullOrBlank()) {
-                val parts = firstWithName.name.split(" ").filter { it.isNotBlank() }
-                if (parts.size >= 2) {
-                    lastName = parts[0]
-                    firstName = parts.drop(1).joinToString(" ")
-                } else {
-                    lastName = firstWithName.name
-                }
-            }
-        }
-
         return MavUser(
             email = email,
             firstName = firstName,
@@ -142,6 +149,177 @@ class MavApiClient(
             regId = regId,
             photoBase64 = photoBase64
         )
+    }
+
+    suspend fun fetchHptDatas(session: MavSession): List<RawHptItem> {
+        val endpoints = listOf(
+            "https://jegy-a.mav.hu/IK_API_PROD/api/ProfileApi/GetUserHPTDatas",
+            "https://jegy.mav.hu/UserProfile/Profile/GetStoredPassenger"
+        )
+        val payloads = listOf(
+            JSONObject().apply { put("userEmail", session.email) },
+            JSONObject().apply { put("requestModel", JSONObject().apply { put("userEmail", session.email) }) },
+            JSONObject()
+        )
+
+        for (url in endpoints) {
+            for (body in payloads) {
+                val result = runCatching {
+                    val reqBody = body.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
+                    val req = Request.Builder()
+                        .url(url)
+                        .addHeader("Accept", "application/json, text/plain, */*")
+                        .addHeader("Content-Type", "application/json; charset=utf-8")
+                        .addHeader("Language", "hu")
+                        .addHeader("language", "hu")
+                        .addHeader("UserTokenXml", session.token)
+                        .addHeader("Authorization", "Bearer ${session.token}")
+                        .addHeader("je-api-key", "232AC6FE-46BE-479B-894D-BFC96E548945")
+                        .addHeader("User-Agent", "MAVApp/2.6.15-prod (hu.mav.emmapp; build: 950; Android 14)")
+                        .addHeader("Referer", "mavpluszmobile")
+                        .post(reqBody)
+                        .build()
+
+                    suspendCancellableCoroutine<JSONObject> { cont ->
+                        val call = client.newCall(req)
+                        cont.invokeOnCancellation { call.cancel() }
+                        call.enqueue(object : Callback {
+                            override fun onFailure(call: Call, e: IOException) {
+                                if (cont.isActive) cont.resumeWithException(e)
+                            }
+                            override fun onResponse(call: Call, response: Response) {
+                                try {
+                                    val bodyStr = response.use { it.body?.string().orEmpty().trim() }
+                                    if (bodyStr.startsWith("{")) {
+                                        cont.resume(JSONObject(bodyStr))
+                                    } else {
+                                        cont.resume(JSONObject())
+                                    }
+                                } catch (e: Exception) {
+                                    if (cont.isActive) cont.resume(JSONObject())
+                                }
+                            }
+                        })
+                    }
+                }.getOrNull()
+
+                // Check hptData array (IK_API_PROD)
+                val hptArray = result?.optJSONArray("hptData")
+                if (hptArray != null && hptArray.length() > 0) {
+                    val list = mutableListOf<RawHptItem>()
+                    for (i in 0 until hptArray.length()) {
+                        val item = hptArray.optJSONObject(i) ?: continue
+                        val picObj = item.optJSONObject("profilePicture") ?: item.optJSONObject("picture")
+                        val photo = picObj?.optString("binarisAllomany", "")?.ifBlank { null }
+                            ?: picObj?.optString("image", "")?.ifBlank { null }
+                            ?: item.optString("binarisAllomany", "").ifBlank { null }
+                        list.add(
+                            RawHptItem(
+                                id = item.optString("id", item.optString("bussinessId", "")),
+                                dataType = item.optString("dataType", ""),
+                                name = item.optString("name", item.optString("passengerFullName", "")),
+                                alias = item.optString("alias", ""),
+                                bornDate = item.optString("bornDate", ""),
+                                photoBase64 = photo,
+                                isDefault = item.optBoolean("isDefault", false)
+                            )
+                        )
+                    }
+                    if (list.isNotEmpty()) return list
+                }
+
+                // Check storedPassengers array (PAPI GetStoredPassenger)
+                val storedArray = result?.optJSONArray("storedPassengers")
+                if (storedArray != null && storedArray.length() > 0) {
+                    val list = mutableListOf<RawHptItem>()
+                    for (i in 0 until storedArray.length()) {
+                        val item = storedArray.optJSONObject(i) ?: continue
+                        val picObj = item.optJSONObject("image") ?: item.optJSONObject("picture")
+                        val photo = picObj?.optString("binarisAllomany", "")?.ifBlank { null }
+                            ?: picObj?.optString("image", "")?.ifBlank { null }
+                        list.add(
+                            RawHptItem(
+                                id = item.optString("bussinessId", item.optString("id", "")),
+                                dataType = "MENTETT_UTAS",
+                                name = item.optString("passengerFullName", item.optString("name", "")),
+                                alias = item.optString("alias", ""),
+                                bornDate = item.optString("bornDate", ""),
+                                photoBase64 = photo,
+                                isDefault = item.optBoolean("isDefault", false)
+                            )
+                        )
+                    }
+                    if (list.isNotEmpty()) return list
+                }
+            }
+        }
+        return emptyList()
+    }
+
+    suspend fun getPassengers(session: MavSession): List<MavPassenger> {
+        val result = mutableListOf<MavPassenger>()
+        val seenNames = mutableSetOf<String>()
+
+        // 1. Fetch from HPT data (MÁV backend)
+        val hptItems = runCatching { fetchHptDatas(session) }.getOrNull().orEmpty()
+        for (item in hptItems) {
+            // MENTETT_UTAS are saved passengers created in the account
+            // BERLETTOK are pass tokens with passenger information
+            if (item.dataType.equals("MENTETT_UTAS", ignoreCase = true) ||
+                item.dataType.equals("BERLETTOK", ignoreCase = true)
+            ) {
+                val displayName = item.name.ifBlank { item.alias }.trim()
+                if (displayName.isNotBlank()) {
+                    val key = displayName.lowercase()
+                    if (key !in seenNames) {
+                        seenNames.add(key)
+                        val bDate = parseDateToTimestamp(item.bornDate)
+                        result.add(
+                            MavPassenger(
+                                id = item.id,
+                                name = displayName,
+                                birthDate = bDate,
+                                birthDateString = item.bornDate.ifBlank { null },
+                                photoBase64 = item.photoBase64,
+                                isDefault = item.isDefault
+                            )
+                        )
+                    }
+                }
+            }
+        }
+
+        // 2. Fetch pass holders from VIM API (BerletTokLekeres)
+        val passHolders = runCatching { getAllPassHolders(session) }.getOrNull().orEmpty()
+        for (holder in passHolders) {
+            val name = holder.name?.trim()
+            if (!name.isNullOrBlank()) {
+                val key = name.lowercase()
+                val existingIndex = result.indexOfFirst { it.name.equals(name, ignoreCase = true) }
+                if (existingIndex >= 0) {
+                    val existing = result[existingIndex]
+                    if (existing.photoBase64.isNullOrBlank() && !holder.photoBase64.isNullOrBlank()) {
+                        result[existingIndex] = existing.copy(photoBase64 = holder.photoBase64)
+                    }
+                    if (existing.birthDate == null && holder.birthDate != null) {
+                        result[existingIndex] = result[existingIndex].copy(birthDate = holder.birthDate)
+                    }
+                } else {
+                    seenNames.add(key)
+                    result.add(
+                        MavPassenger(
+                            id = holder.id,
+                            name = name,
+                            birthDate = holder.birthDate,
+                            photoBase64 = holder.photoBase64,
+                            isDefault = false
+                        )
+                    )
+                }
+            }
+        }
+
+        return result
     }
 
     suspend fun getAllPassHolders(session: MavSession): List<MavPassHolder> {
@@ -259,43 +437,42 @@ class MavApiClient(
                     )
                 }
 
+                // Tickets inside receipt can be in Jegyek or Jegylista
                 val ticketsArray = receiptObj.optJSONArray("Jegyek")
-                    ?: receiptObj.optJSONArray("TetelAdatok")
+                    ?: receiptObj.optJSONArray("Jegylista")
                     ?: JSONArray()
                 val items = mutableListOf<MavTicketItem>()
 
                 for (k in 0 until ticketsArray.length()) {
                     val ticketObj = ticketsArray.optJSONObject(k) ?: continue
-                    val itemId = ticketObj.optString(
-                        "TetelAzonosito",
-                        ticketObj.optString(
-                            "SzolgaltatasAzonosito",
-                            ticketObj.optString("JegyAzonosito", ticketObj.optString("Azonosito", ""))
-                        )
+                    val ticketId = ticketObj.optString("JegyAzonosito", ticketObj.optString("Azonosito", ""))
+                    val title = ticketObj.optString("Viszonylat", ticketObj.optString("Megnevezes", "MÁV jegy / bérlet"))
+                    val discount = ticketObj.optString("Kedvezmeny", ticketObj.optString("KedvezmenyNev", "")).ifBlank { null }
+                    val validFrom = parseTimestamp(
+                        ticketObj.opt("ErvenyessegKezdete")
+                            ?: ticketObj.opt("ErvenyessegKezdet")
+                            ?: ticketObj.opt("ErvenyessegEleje")
                     )
-                    val name = ticketObj.optString(
-                        "Nev",
-                        ticketObj.optString(
-                            "Leiras",
-                            ticketObj.optString("Viszonylat", ticketObj.optString("Megnevezes", "MÁV jegy / bérlet"))
-                        )
+                    val validTo = parseTimestamp(
+                        ticketObj.opt("ErvenyessegVege")
+                            ?: ticketObj.opt("ErvenyessegVeg")
                     )
-                    val discount = ticketObj.optString("Kedvezmeny", "").ifBlank { null }
-                    val validFrom = parseTimestamp(ticketObj.opt("ErvKezd") ?: ticketObj.opt("ErvenyessegKezdete"))
-                    val validTo = parseTimestamp(ticketObj.opt("ErvVeg") ?: ticketObj.opt("ErvenyessegVege"))
-                    val price = ticketObj.optDouble("Ar", ticketObj.optDouble("BruttoAr", 0.0)).toInt()
-                    val isPass = ticketObj.optBoolean("BerletJel", ticketObj.optBoolean("Berlet", false))
-                        || name.contains("bérlet", ignoreCase = true)
-                        || ticketObj.optString("Tipus", "").contains("BERLET", ignoreCase = true)
+                    val price = ticketObj.optInt("Ar", ticketObj.optInt("Osszeg", 0))
+                    val isPass = ticketObj.optBoolean("Berlet", false) ||
+                        title.contains("bérlet", ignoreCase = true) ||
+                        title.contains("orszagberlet", ignoreCase = true) ||
+                        title.contains("országbérlet", ignoreCase = true) ||
+                        title.contains("varmegye", ignoreCase = true) ||
+                        title.contains("vármegye", ignoreCase = true)
                     val status = ticketObj.optString("Allapot", ticketObj.optString("Statusz", "")).ifBlank { null }
-                    val serviceStatus = ticketObj.optString("SzolgaltatasAllapot", ticketObj.optString("SzolgaltatasStatusz", "")).ifBlank { null }
-                    val direction = ticketObj.optString("UtazasIranya", ticketObj.optString("Irany", "")).ifBlank { null }
-                    val serviceId = ticketObj.optString("Vonatszam", "").ifBlank { null }
+                    val serviceStatus = ticketObj.optString("SzolgaltatasStatusz", "").ifBlank { null }
+                    val direction = ticketObj.optString("Irany", "").ifBlank { null }
+                    val serviceId = ticketObj.optString("VonatSzam", ticketObj.optString("Jaratszam", "")).ifBlank { null }
 
                     items.add(
                         MavTicketItem(
-                            id = itemId,
-                            name = name,
+                            id = ticketId,
+                            name = title,
                             discount = discount,
                             validFrom = validFrom,
                             validTo = validTo,
@@ -385,16 +562,26 @@ class MavApiClient(
                 array.put(receiptId)
             }
             put("BizonylatAzonosito", array)
+            val bizArray = JSONArray().apply {
+                put(JSONObject().apply {
+                    put("BizonylatAzonosito", receiptId)
+                })
+            }
+            put("Bizonylatok", bizArray)
             put("Token", session.token)
             put("Nyelv", "HU")
             put("UAID", session.uaid)
         }
         val response = postJson("GetJegykep", requestJson)
-        val bizonylatok = response.optJSONArray("Bizonylatok") ?: JSONArray()
-        if (bizonylatok.length() == 0) return null
-        val first = bizonylatok.getJSONObject(0)
-        val imageBase64 = first.optString("Jegykep", "")
-        if (imageBase64.isBlank()) return null
+        val images = response.optJSONArray("JegykepAdatok")
+            ?: response.optJSONArray("JegykepLista")
+            ?: response.optJSONArray("Bizonylatok")
+            ?: JSONArray()
+        if (images.length() == 0) return null
+        val first = images.getJSONObject(0)
+        val imageBase64 = first.optString("Kep", first.optString("Jegykep", "")).trim()
+        if (imageBase64.isEmpty()) return null
+
         return MavTicketImage(
             receiptId = first.optString("BizonylatAzonosito", receiptId),
             ticketNumber = first.optString("Jegyszam", first.optString("Jegysorszam", "")).ifBlank { null },
@@ -511,7 +698,6 @@ class MavApiClient(
             when (raw) {
                 is Number -> {
                     val v = raw.toLong()
-                    // If between 1 and 10 billion, it is Unix timestamp in seconds -> convert to millis
                     return if (v in 1L..10_000_000_000L) v * 1000L else v
                 }
                 is String -> {
@@ -530,6 +716,17 @@ class MavApiClient(
                 }
                 else -> return 0L
             }
+        }
+
+        internal fun parseDateToTimestamp(raw: String?): Long? {
+            if (raw.isNullOrBlank()) return null
+            raw.toLongOrNull()?.let { return if (it in 1L..10_000_000_000L) it * 1000L else it }
+            return runCatching {
+                Instant.parse(raw).toEpochMilli()
+            }.recoverCatching {
+                val clean = raw.take(10) // "YYYY-MM-DD"
+                LocalDate.parse(clean).atStartOfDay(ZoneId.of("Europe/Budapest")).toInstant().toEpochMilli()
+            }.getOrNull()
         }
     }
 }
