@@ -2,8 +2,13 @@ package hu.app.bmenetrend.mav
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.pdf.PdfRenderer
+import android.os.ParcelFileDescriptor
 import android.util.Base64
 import androidx.compose.runtime.Immutable
+import java.io.File
 import java.time.Instant
 
 @Immutable
@@ -56,7 +61,8 @@ data class MavSession(
     val token: String,
     val uaid: String,
     val expiresAt: Long = 0L,
-    val user: MavUser? = null
+    val user: MavUser? = null,
+    val vimToken: String? = null
 )
 
 @Immutable
@@ -132,7 +138,42 @@ data class MavTicketImage(
         return runCatching {
             val clean = if (imageBase64.contains(",")) imageBase64.substringAfter(",") else imageBase64
             val decoded = Base64.decode(clean, Base64.DEFAULT)
-            BitmapFactory.decodeByteArray(decoded, 0, decoded.size)
+            if (decoded.size >= 4 && decoded[0] == 0x25.toByte() && decoded[1] == 0x50.toByte() && decoded[2] == 0x44.toByte() && decoded[3] == 0x46.toByte()) {
+                renderPdfToBitmap(decoded)
+            } else {
+                BitmapFactory.decodeByteArray(decoded, 0, decoded.size)
+            }
+        }.getOrNull()
+    }
+
+    private fun renderPdfToBitmap(pdfBytes: ByteArray): Bitmap? {
+        return runCatching {
+            val tempFile = File.createTempFile("mav_pdf_", ".pdf")
+            try {
+                tempFile.writeBytes(pdfBytes)
+                val pfd = ParcelFileDescriptor.open(tempFile, ParcelFileDescriptor.MODE_READ_ONLY)
+                val renderer = PdfRenderer(pfd)
+                if (renderer.pageCount > 0) {
+                    val page = renderer.openPage(0)
+                    val scale = 2
+                    val width = page.width * scale
+                    val height = page.height * scale
+                    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                    val canvas = Canvas(bitmap)
+                    canvas.drawColor(Color.WHITE)
+                    page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                    page.close()
+                    renderer.close()
+                    pfd.close()
+                    bitmap
+                } else {
+                    renderer.close()
+                    pfd.close()
+                    null
+                }
+            } finally {
+                tempFile.delete()
+            }
         }.getOrNull()
     }
 }

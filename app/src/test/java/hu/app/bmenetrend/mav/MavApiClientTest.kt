@@ -341,4 +341,101 @@ class MavApiClientTest {
         assertEquals(0L, MavApiClient.parseTimestamp(""))
     }
 
+    @Test
+    fun getOrdersWithValidOnlyFalseSkipsActivePurchases() = runBlocking {
+        val now = 1726000000000L
+        val future = 1736000000000L
+        val past = 1716000000000L
+
+        val mockPurchases = """
+            {
+                "previousPurchases": [
+                    {
+                        "id": "PURCHASE-ACTIVE",
+                        "name": "Active Pass",
+                        "validFrom": "1726000000",
+                        "validTo": "2000000000",
+                        "seasonTicket": true
+                    },
+                    {
+                        "id": "PURCHASE-PAST",
+                        "name": "Expired Pass",
+                        "validFrom": "1700000000",
+                        "validTo": "1710000000",
+                        "seasonTicket": true
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        val client = createMockClient { req ->
+            if (req.url.encodedPath.contains("GetPreviousPurchases")) {
+                jsonResponse(req, mockPurchases)
+            } else if (req.url.encodedPath.contains("BerletTokLekeres")) {
+                jsonResponse(req, """{"BerletTokok":[]}""")
+            } else {
+                jsonResponse(req, """{"Megrendelesek":[]}""")
+            }
+        }
+
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
+        val session = MavSession("test@example.com", "tok", "uaid")
+
+        val activeOrders = api.getOrders(session, validOnly = true)
+        assertEquals(1, activeOrders.size)
+        assertEquals("PURCHASE-ACTIVE", activeOrders.first().orderId)
+
+        val pastOrders = api.getOrders(session, validOnly = false)
+        assertEquals(1, pastOrders.size)
+        assertEquals("PURCHASE-PAST", pastOrders.first().orderId)
     }
+
+    @Test
+    fun getTicketImageWithCompositeIdResolvesFromPurchaseDetails() = runBlocking {
+        val detailsJson = """
+            {
+                "previousPurchaseDetails": {
+                    "ticketDatas": [
+                        {
+                            "bizonylatTechnikaiAzonosito": "1779935735",
+                            "jegySorszam": "5594003G000448895"
+                        }
+                    ]
+                }
+            }
+        """.trimIndent()
+
+        val vimJson = """
+            {
+                "Bizonylatok": [
+                    {
+                        "BizonylatTechnikaiAzonosito": "1779935735",
+                        "BizonylatFajta": "Orszag-varmegye berlet MAVapp",
+                        "Jegysorszam": "5594003G000448895",
+                        "Jegykep": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        val client = createMockClient { req ->
+            if (req.url.encodedPath.contains("GetPreviousPurchaseDetails")) {
+                jsonResponse(req, detailsJson)
+            } else if (req.url.encodedPath.contains("GetJegykep")) {
+                jsonResponse(req, vimJson)
+            } else {
+                jsonResponse(req, "{}", 404)
+            }
+        }
+
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
+        val session = MavSession("test@example.com", "tok", "uaid", vimToken = "mock_vim_token")
+        val image = api.getTicketImage(session, "ODAUTI#CSCSAZON#123#0#1023744049")
+
+        assertNotNull(image)
+        assertEquals("ODAUTI#CSCSAZON#123#0#1023744049", image?.receiptId)
+        assertEquals("5594003G000448895", image?.ticketNumber)
+        assertEquals("Orszag-varmegye berlet MAVapp", image?.kind)
+        assertTrue(image?.imageBase64?.isNotEmpty() == true)
+    }
+}

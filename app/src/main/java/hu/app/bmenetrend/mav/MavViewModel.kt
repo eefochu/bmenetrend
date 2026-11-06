@@ -147,9 +147,16 @@ class MavViewModel(
             val cached = repository.getCachedOrders()
             val lastSync = repository.getLastSyncTime()
             if (cached != null && (cached.first.isNotEmpty() || cached.second.isNotEmpty())) {
+                val activeOrderIds = cached.first.map { it.orderId }.toSet()
+                val activeReceiptIds = cached.first.flatMap { it.receipts }.map { it.receiptId }.toSet()
+                val filteredPast = cached.second.filter { p ->
+                    p.orderId !in activeOrderIds &&
+                    p.receipts.none { r -> r.receiptId in activeReceiptIds } &&
+                    !p.isValidNow
+                }
                 _ticketsState.value = TicketsUiState.Success(
                     activeOrders = cached.first,
-                    pastOrders = cached.second,
+                    pastOrders = filteredPast,
                     isOffline = false,
                     lastSyncTime = lastSync
                 )
@@ -168,9 +175,16 @@ class MavViewModel(
                 // If online sync fails, check if we have cached tickets
                 val fallbackCache = repository.getCachedOrders()
                 if (fallbackCache != null && (fallbackCache.first.isNotEmpty() || fallbackCache.second.isNotEmpty())) {
+                    val activeOrderIds = fallbackCache.first.map { it.orderId }.toSet()
+                    val activeReceiptIds = fallbackCache.first.flatMap { it.receipts }.map { it.receiptId }.toSet()
+                    val filteredPast = fallbackCache.second.filter { p ->
+                        p.orderId !in activeOrderIds &&
+                        p.receipts.none { r -> r.receiptId in activeReceiptIds } &&
+                        !p.isValidNow
+                    }
                     _ticketsState.value = TicketsUiState.Success(
                         activeOrders = fallbackCache.first,
-                        pastOrders = fallbackCache.second,
+                        pastOrders = filteredPast,
                         isOffline = true,
                         lastSyncTime = repository.getLastSyncTime()
                     )
@@ -263,9 +277,15 @@ class MavViewModel(
                         loading = false
                     )
                 } else {
+                    val session = repository.session.value
+                    val errorMsg = if (session != null && session.vimToken.isNullOrBlank()) {
+                        "A jegykép betöltéséhez kérjük jelentkezzen ki és be újra a frissítés után."
+                    } else {
+                        "A jegykép / vonalkód nem érhető el"
+                    }
                     _barcodeData.value = _barcodeData.value?.copy(
                         loading = false,
-                        error = "A jegykép / vonalkód nem érhető el"
+                        error = errorMsg
                     )
                 }
             } catch (e: Exception) {

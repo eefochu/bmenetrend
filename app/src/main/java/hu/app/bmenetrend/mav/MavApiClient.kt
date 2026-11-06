@@ -99,48 +99,68 @@ class MavApiClient(
         val ikUserData = ikResult?.optJSONObject("userData")
         val ikToken = ikUserData?.optString("userTokenXml", "").orEmpty().trim()
 
+        // 2. Also authenticate to VIM Bejelentkezes to obtain vimToken for GetJegykep
+        var vimToken: String? = null
+        var vimExpiresAt = 0L
+        var vimException: Throwable? = null
+
+        try {
+            val requestJson = JSONObject().apply {
+                put("FelhasznaloAzonosito", trimmedEmail)
+                put("Jelszo", password)
+                put("Nyelv", "HU")
+                put("UAID", uaid)
+            }
+            val response = postJson("Bejelentkezes", requestJson)
+            val messages = response.optJSONArray("Uzenetek")
+            val token = response.optString("Token", "").trim()
+            if (token.isNotEmpty()) {
+                vimToken = token
+                val rawExpiry = response.opt("ErvenyessegVege")
+                vimExpiresAt = when (rawExpiry) {
+                    is Number -> rawExpiry.toLong().let { if (it > 10_000_000_000L) it / 1000L else it }
+                    is String -> rawExpiry.toLongOrNull()?.let { if (it > 10_000_000_000L) it / 1000L else it }
+                        ?: (parseTimestamp(rawExpiry) / 1000L)
+                    else -> 0L
+                }
+            } else {
+                val errorMsg = if (messages != null && messages.length() > 0) {
+                    val first = messages.getJSONObject(0)
+                    first.optString("Szoveg", first.optString("Uzenet", "Bejelentkezés sikertelen"))
+                } else {
+                    "Bejelentkezés sikertelen. Kérjük ellenőrizze az adatokat!"
+                }
+                vimException = MavApiException(errorMsg)
+            }
+        } catch (t: Throwable) {
+            vimException = t
+        }
+
         if (ikToken.isNotBlank()) {
-            val regId = ikUserData?.optString("regisztraciosAzonosito", "").orEmpty()
             return MavSession(
                 email = trimmedEmail,
                 token = ikToken,
+                vimToken = vimToken,
                 uaid = uaid,
-                expiresAt = System.currentTimeMillis() / 1000L + 86400 * 30L
+                expiresAt = if (vimExpiresAt > 0L) vimExpiresAt else System.currentTimeMillis() / 1000L + 86400 * 30L
             )
         }
 
-        // 2. Fallback to VIM Bejelentkezes
-        val requestJson = JSONObject().apply {
-            put("FelhasznaloAzonosito", trimmedEmail)
-            put("Jelszo", password)
-            put("Nyelv", "HU")
-            put("UAID", uaid)
+        if (!vimToken.isNullOrBlank()) {
+            return MavSession(
+                email = trimmedEmail,
+                token = vimToken!!,
+                vimToken = vimToken,
+                uaid = uaid,
+                expiresAt = vimExpiresAt
+            )
         }
-        val response = postJson("Bejelentkezes", requestJson)
-        val messages = response.optJSONArray("Uzenetek")
-        val token = response.optString("Token", "").trim()
-        if (token.isEmpty()) {
-            val errorMsg = if (messages != null && messages.length() > 0) {
-                val first = messages.getJSONObject(0)
-                first.optString("Szoveg", first.optString("Uzenet", "Bejelentkezés sikertelen"))
-            } else {
-                "Bejelentkezés sikertelen. Kérjük ellenőrizze az adatokat!"
-            }
-            throw MavApiException(errorMsg)
+
+        if (vimException != null) {
+            throw vimException
         }
-        val rawExpiry = response.opt("ErvenyessegVege")
-        val expiresAt = when (rawExpiry) {
-            is Number -> rawExpiry.toLong().let { if (it > 10_000_000_000L) it / 1000L else it }
-            is String -> rawExpiry.toLongOrNull()?.let { if (it > 10_000_000_000L) it / 1000L else it }
-                ?: (parseTimestamp(rawExpiry) / 1000L)
-            else -> 0L
-        }
-        return MavSession(
-            email = trimmedEmail,
-            token = token,
-            uaid = uaid,
-            expiresAt = expiresAt
-        )
+
+        throw MavApiException("Bejelentkezés sikertelen. Kérjük ellenőrizze az adatokat!")
     }
 
     suspend fun getUserData(session: MavSession): MavUser {
@@ -472,7 +492,7 @@ class MavApiClient(
             put("FelhasznaloAzonosito", session.email)
             put("NevesitesAzonosito", "")
             put("Nyelv", "HU")
-            put("Token", session.token)
+            put("Token", session.vimToken ?: session.token)
             put("UAID", session.uaid)
         }
         val response = runCatching { postJson("BerletTokLekeres", requestJson) }.getOrNull() ?: return emptyList()
@@ -561,7 +581,7 @@ class MavApiClient(
                         val status = p.optString("status", "Ervenyes")
 
                         val isCurrent = validTo == 0L || validTo >= nowMs
-                        if (validOnly && !isCurrent) continue
+                        if (validOnly != isCurrent) continue
 
                         val item = MavTicketItem(
                             id = id,
@@ -599,7 +619,7 @@ class MavApiClient(
             val requestJson = JSONObject().apply {
                 put("FelhasznaloAzonosito", session.email)
                 put("Ervenyes", validOnly)
-                put("Token", session.token)
+                put("Token", session.vimToken ?: session.token)
                 put("Nyelv", "HU")
                 put("UAID", session.uaid)
             }
@@ -740,7 +760,7 @@ class MavApiClient(
 
         for (holder in passHolders) {
             val isCurrent = holder.validTo == 0L || holder.validTo >= nowMs
-            if (validOnly && !isCurrent) continue
+            if (validOnly != isCurrent) continue
             if (holder.id.isNotBlank() && holder.id !in existingPassIds && holder.id !in existingReceiptIds && holder.id !in seenOrderIds) {
                 val passItem = MavTicketItem(
                     id = holder.id,
@@ -801,6 +821,18 @@ class MavApiClient(
                     .build()
 
                 val detRes = executeJsonRequest(detReq)
+                val prevDetails = detRes.optJSONObject("previousPurchaseDetails") ?: detRes
+                val ticketDatas = prevDetails.optJSONArray("ticketDatas")
+                if (ticketDatas != null && ticketDatas.length() > 0) {
+                    val td = ticketDatas.getJSONObject(0)
+                    val bizTechId = td.optString("bizonylatTechnikaiAzonosito", "").trim()
+                    val jegySorszam = td.optString("jegySorszam", "").trim().ifBlank { null }
+                    if (bizTechId.isNotBlank()) {
+                        val vimImg = fetchVimTicketImage(session, bizTechId, jegySorszam, receiptId)
+                        if (vimImg != null) return@runCatching vimImg
+                    }
+                }
+
                 val financialDatas = detRes.optString("financialDatas", "")
                 if (financialDatas.isNotBlank()) {
                     val imgBody = JSONObject().apply {
@@ -841,25 +873,35 @@ class MavApiClient(
             if (result != null) return result
         }
 
-        // 2. Fallback to VIM GetJegykep
+        // 2. Direct / Fallback to VIM GetJegykep
+        return fetchVimTicketImage(session, receiptId, null, receiptId)
+    }
+
+    private suspend fun fetchVimTicketImage(
+        session: MavSession,
+        bizonylatId: String,
+        ticketNumber: String?,
+        originalReceiptId: String
+    ): MavTicketImage? {
+        val tokenToUse = session.vimToken ?: session.token
         return runCatching {
             val requestJson = JSONObject().apply {
                 put("FelhasznaloAzonosito", session.email)
                 val array = JSONArray()
-                val numericId = receiptId.toLongOrNull()
+                val numericId = bizonylatId.toLongOrNull()
                 if (numericId != null) {
                     array.put(numericId)
                 } else {
-                    array.put(receiptId)
+                    array.put(bizonylatId)
                 }
                 put("BizonylatAzonosito", array)
                 val bizArray = JSONArray().apply {
                     put(JSONObject().apply {
-                        put("BizonylatAzonosito", receiptId)
+                        put("BizonylatAzonosito", bizonylatId)
                     })
                 }
                 put("Bizonylatok", bizArray)
-                put("Token", session.token)
+                put("Token", tokenToUse)
                 put("Nyelv", "HU")
                 put("UAID", session.uaid)
             }
@@ -869,16 +911,22 @@ class MavApiClient(
                 ?: response.optJSONArray("Bizonylatok")
                 ?: JSONArray()
             if (images.length() == 0) return@runCatching null
-            val first = images.getJSONObject(0)
-            val imageBase64 = first.optString("Kep", first.optString("Jegykep", "")).trim()
-            if (imageBase64.isEmpty()) return@runCatching null
 
-            MavTicketImage(
-                receiptId = first.optString("BizonylatAzonosito", receiptId),
-                ticketNumber = first.optString("Jegyszam", first.optString("Jegysorszam", "")).ifBlank { null },
-                kind = first.optString("Tipus", "").ifBlank { null },
-                imageBase64 = imageBase64
-            )
+            for (i in 0 until images.length()) {
+                val imgObj = images.optJSONObject(i) ?: continue
+                val b64 = imgObj.optString("Jegykep", imgObj.optString("Kep", "")).trim()
+                if (b64.isNotEmpty()) {
+                    val sorszam = imgObj.optString("Jegysorszam", imgObj.optString("Jegyszam", imgObj.optString("Sorszam", ""))).ifBlank { ticketNumber }
+                    val kind = imgObj.optString("BizonylatFajta", imgObj.optString("Tipus", "Jegykep")).ifBlank { "Jegykep" }
+                    return@runCatching MavTicketImage(
+                        receiptId = originalReceiptId,
+                        ticketNumber = sorszam,
+                        kind = kind,
+                        imageBase64 = b64
+                    )
+                }
+            }
+            null
         }.getOrNull()
     }
 
@@ -886,7 +934,7 @@ class MavApiClient(
         val requestJson = JSONObject().apply {
             put("FelhasznaloAzonosito", session.email)
             put("NevesitesAzonosito", nevesitesAzonosito)
-            put("Token", session.token)
+            put("Token", session.vimToken ?: session.token)
             put("Nyelv", "HU")
             put("UAID", session.uaid)
         }

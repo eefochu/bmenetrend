@@ -8,15 +8,19 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
+import java.util.UUID
 
 class MavSessionStore(context: Context) {
-    private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val prefs: SharedPreferences =
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     fun getOrCreateUaid(): String {
-        val stored = prefs.getString(KEY_UAID, null)
-        if (!stored.isNullOrBlank()) return stored
-        prefs.edit().putString(KEY_UAID, DEFAULT_UAID).apply()
-        return DEFAULT_UAID
+        var uaid = prefs.getString(KEY_UAID, null)
+        if (uaid.isNullOrBlank()) {
+            uaid = DEFAULT_UAID
+            prefs.edit().putString(KEY_UAID, uaid).apply()
+        }
+        return uaid
     }
 
     fun getStoredSession(): MavSession? {
@@ -29,6 +33,7 @@ class MavSessionStore(context: Context) {
         val lastName = prefs.getString(KEY_LAST_NAME, "").orEmpty()
         val regId = prefs.getString(KEY_REG_ID, "").orEmpty()
         val photoBase64 = prefs.getString(KEY_PHOTO, null)
+        val vimToken = prefs.getString(KEY_VIM_TOKEN, null)
 
         val user = if (firstName.isNotEmpty() || lastName.isNotEmpty() || !photoBase64.isNullOrEmpty()) {
             MavUser(email = email, firstName = firstName, lastName = lastName, regId = regId, photoBase64 = photoBase64)
@@ -41,7 +46,8 @@ class MavSessionStore(context: Context) {
             token = token,
             uaid = uaid,
             expiresAt = expiresAt,
-            user = user
+            user = user,
+            vimToken = vimToken
         )
     }
 
@@ -55,6 +61,7 @@ class MavSessionStore(context: Context) {
             .putString(KEY_LAST_NAME, session.user?.lastName.orEmpty())
             .putString(KEY_REG_ID, session.user?.regId.orEmpty())
             .putString(KEY_PHOTO, session.user?.photoBase64)
+            .putString(KEY_VIM_TOKEN, session.vimToken)
             .apply()
     }
 
@@ -72,6 +79,7 @@ class MavSessionStore(context: Context) {
         private const val KEY_LAST_NAME = "last_name"
         private const val KEY_REG_ID = "reg_id"
         private const val KEY_PHOTO = "photo_base64"
+        private const val KEY_VIM_TOKEN = "vim_token"
 
         const val DEFAULT_UAID = "2Juija1mabqr24Blkx1qkXxJ105j"
     }
@@ -167,14 +175,17 @@ class MavRepository(
 
     suspend fun syncTicketsAndPasses(): Pair<List<MavOrder>, List<MavOrder>> = withContext(ioDispatcher) {
         val currentSession = _session.value ?: throw MavApiException("Nincs bejelentkezve MÁV fiókba")
-
-        // 1. If user profile is incomplete, refresh it
-        if (currentSession.user?.firstName.isNullOrBlank() || currentSession.user?.photoBase64.isNullOrBlank()) {
-            runCatching { refreshUserData() }
-        }
-
         try {
-            // 2. Fetch and cache passengers
+            // 1. Refresh user data (name and profile picture)
+            runCatching {
+                val user = apiClient.getUserData(currentSession)
+                val updatedSession = currentSession.copy(user = user)
+                sessionStore.saveSession(updatedSession)
+                cacheStore.saveUser(user)
+                _session.value = updatedSession
+            }
+
+            // 2. Refresh passengers
             runCatching {
                 val passengers = apiClient.getPassengers(currentSession)
                 if (passengers.isNotEmpty()) {
@@ -185,8 +196,15 @@ class MavRepository(
             // 3. Fetch active orders (valid tickets and passes)
             val active = apiClient.getOrders(currentSession, validOnly = true)
 
-            // 4. Fetch past orders
-            val past = runCatching { apiClient.getOrders(currentSession, validOnly = false) }.getOrDefault(emptyList())
+            // 4. Fetch past orders (strictly exclude any active or currently valid tickets/passes)
+            val pastRaw = runCatching { apiClient.getOrders(currentSession, validOnly = false) }.getOrDefault(emptyList())
+            val activeOrderIds = active.map { it.orderId }.toSet()
+            val activeReceiptIds = active.flatMap { it.receipts }.map { it.receiptId }.toSet()
+            val past = pastRaw.filter { pastOrder ->
+                pastOrder.orderId !in activeOrderIds &&
+                pastOrder.receipts.none { it.receiptId in activeReceiptIds } &&
+                !pastOrder.isValidNow
+            }
 
             // 5. Cache orders to disk
             cacheStore.saveOrders(active, past)
@@ -230,12 +248,16 @@ class MavRepository(
         try {
             val orders = apiClient.getOrders(currentSession, validOnly)
             val existing = cacheStore.getOrders()
-            if (validOnly) {
-                cacheStore.saveOrders(orders, existing?.second ?: emptyList())
+            val activeOrders = if (validOnly) orders else (existing?.first ?: emptyList())
+            val pastOrders = if (!validOnly) {
+                val activeOrderIds = activeOrders.map { it.orderId }.toSet()
+                val activeReceiptIds = activeOrders.flatMap { it.receipts }.map { it.receiptId }.toSet()
+                orders.filter { it.orderId !in activeOrderIds && it.receipts.none { r -> r.receiptId in activeReceiptIds } && !it.isValidNow }
             } else {
-                cacheStore.saveOrders(existing?.first ?: emptyList(), orders)
+                existing?.second ?: emptyList()
             }
-            orders
+            cacheStore.saveOrders(activeOrders, pastOrders)
+            if (validOnly) activeOrders else pastOrders
         } catch (e: Exception) {
             val cached = cacheStore.getOrders()
             if (cached != null) {
