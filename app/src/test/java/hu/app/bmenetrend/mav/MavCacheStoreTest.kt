@@ -1,0 +1,179 @@
+package hu.app.bmenetrend.mav
+
+import org.junit.Assert.*
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import java.io.File
+
+class MavCacheStoreTest {
+
+    @get:Rule
+    val tempFolder = TemporaryFolder()
+
+    private lateinit var cacheFile: File
+    private lateinit var cacheStore: MavCacheStore
+
+    @Before
+    fun setup() {
+        cacheFile = File(tempFolder.root, "test_mav_cache.json")
+        cacheStore = MavCacheStore(cacheFile)
+    }
+
+    @Test
+    fun testEmptyCacheReturnsNull() {
+        assertNull(cacheStore.getOrders())
+        assertEquals(0L, cacheStore.getLastSyncTime())
+        assertNull(cacheStore.getTicketImage("receipt_123"))
+        assertNull(cacheStore.getPassHolder("ph_123"))
+        assertNull(cacheStore.getUser())
+    }
+
+    @Test
+    fun testSaveAndGetUser() {
+        val user = MavUser(
+            email = "test@example.com",
+            firstName = "János",
+            lastName = "Kovács",
+            regId = "12345",
+            photoBase64 = "base64_photo_data"
+        )
+        cacheStore.saveUser(user)
+
+        val cached = cacheStore.getUser()
+        assertNotNull(cached)
+        assertEquals("test@example.com", cached?.email)
+        assertEquals("János", cached?.firstName)
+        assertEquals("Kovács", cached?.lastName)
+        assertEquals("Kovács János", cached?.fullName)
+        assertEquals("base64_photo_data", cached?.photoBase64)
+    }
+
+    @Test
+    fun testSaveAndGetOrders() {
+        val testItem = MavTicketItem(
+            id = "item_1",
+            name = "Országbérlet - 30 napos",
+            discount = "Teljesárú",
+            validFrom = 1700000000000L,
+            validTo = 1702592000000L,
+            price = 18900,
+            isPass = true,
+            status = "Érvényes",
+            serviceStatus = null,
+            direction = null,
+            serviceId = null
+        )
+
+        val testReceipt = MavTicketReceipt(
+            passengerName = "Kovács János",
+            birthDate = 631152000000L,
+            ticketNumber = "MAV-987654",
+            receiptId = "rec_999",
+            items = listOf(testItem)
+        )
+
+        val activeOrder = MavOrder(
+            orderId = "order_active_1",
+            purchaseDate = 1700000000000L,
+            deliveryMode = "E-Ticket",
+            passHolder = MavPassHolderSummary("hpt_1", "nevesites_1", 1),
+            receipts = listOf(testReceipt)
+        )
+
+        val pastOrder = MavOrder(
+            orderId = "order_past_1",
+            purchaseDate = 1690000000000L,
+            deliveryMode = "E-Ticket",
+            passHolder = null,
+            receipts = emptyList()
+        )
+
+        val syncTime = 1700000500000L
+        cacheStore.saveOrders(listOf(activeOrder), listOf(pastOrder), syncTime = syncTime)
+
+        assertEquals(syncTime, cacheStore.getLastSyncTime())
+
+        val result = cacheStore.getOrders()
+        assertNotNull(result)
+        val (active, past) = result!!
+
+        assertEquals(1, active.size)
+        assertEquals("order_active_1", active[0].orderId)
+        assertEquals(1700000000000L, active[0].purchaseDate)
+        assertEquals("E-Ticket", active[0].deliveryMode)
+        assertEquals("nevesites_1", active[0].passHolder?.id)
+        assertEquals("hpt_1", active[0].passHolder?.hptId)
+
+        assertEquals(1, active[0].receipts.size)
+        val rec = active[0].receipts[0]
+        assertEquals("Kovács János", rec.passengerName)
+        assertEquals("rec_999", rec.receiptId)
+        assertEquals("MAV-987654", rec.ticketNumber)
+        assertEquals(1, rec.items.size)
+        assertEquals("Országbérlet - 30 napos", rec.items[0].name)
+        assertEquals(18900, rec.items[0].price)
+        assertTrue(rec.items[0].isPass)
+
+        assertEquals(1, past.size)
+        assertEquals("order_past_1", past[0].orderId)
+    }
+
+    @Test
+    fun testSaveAndGetTicketImage() {
+        val image = MavTicketImage(
+            receiptId = "rec_999",
+            ticketNumber = "MAV-987654",
+            kind = "AZTEC",
+            imageBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+        )
+
+        cacheStore.saveTicketImage("rec_999", image)
+
+        val cached = cacheStore.getTicketImage("rec_999")
+        assertNotNull(cached)
+        assertEquals("rec_999", cached?.receiptId)
+        assertEquals("MAV-987654", cached?.ticketNumber)
+        assertEquals("AZTEC", cached?.kind)
+        assertEquals(image.imageBase64, cached?.imageBase64)
+    }
+
+    @Test
+    fun testSaveAndGetPassHolder() {
+        val passHolder = MavPassHolder(
+            id = "nevesites_1",
+            hptId = "hpt_1",
+            photoBase64 = "photo_bytes_xyz",
+            status = "Érvényes",
+            validTo = 1710000000000L,
+            name = "Kovács János",
+            birthDate = 631152000000L,
+            version = 2,
+            idCardNumber = "123456AB"
+        )
+
+        cacheStore.savePassHolder("nevesites_1", passHolder)
+
+        val cached = cacheStore.getPassHolder("nevesites_1")
+        assertNotNull(cached)
+        assertEquals("nevesites_1", cached?.id)
+        assertEquals("hpt_1", cached?.hptId)
+        assertEquals("photo_bytes_xyz", cached?.photoBase64)
+        assertEquals("123456AB", cached?.idCardNumber)
+        assertEquals(2, cached?.version)
+    }
+
+    @Test
+    fun testClearRemovesAllData() {
+        cacheStore.saveOrders(emptyList(), emptyList(), 12345L)
+        cacheStore.saveTicketImage("rec_1", MavTicketImage("rec_1", null, null, "base64"))
+        assertTrue(cacheFile.exists())
+
+        cacheStore.clear()
+        assertFalse(cacheFile.exists())
+        assertNull(cacheStore.getOrders())
+        assertNull(cacheStore.getTicketImage("rec_1"))
+        assertNull(cacheStore.getUser())
+    }
+}

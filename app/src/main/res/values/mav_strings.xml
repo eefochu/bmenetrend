@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tickets_nav">Jegyek</string>
+    <string name="mav_tickets_title">MÁV+ Jegyek és bérletek</string>
+    <string name="mav_account_title">MÁV+ Fiók</string>
+    <string name="mav_login_prompt">Jelentkezz be MÁV+ fiókoddal a megvásárolt jegyek és bérletek megtekintéséhez.</string>
+    <string name="mav_email_label">Email cím</string>
+    <string name="mav_password_label">Jelszó</string>
+    <string name="mav_login_btn">Bejelentkezés jelszóval</string>
+    <string name="mav_google_login_btn">Bejelentkezés Google-fiókkal</string>
+    <string name="mav_google_login_title">Google Bejelentkezés (MÁV+)</string>
+    <string name="mav_or_divider">vagy</string>
+    <string name="mav_offline_badge">Offline mód</string>
+    <string name="mav_offline_notice">Offline módban vagy. A szinkronizált jegyek és vonalkódok elérhetők.</string>
+    <string name="mav_sync_time">Szinkronizálva: %1$s</string>
+    <string name="mav_logging_in">Bejelentkezés folyamatban…</string>
+    <string name="mav_logout_btn">Kijelentkezés</string>
+    <string name="mav_logout_confirm_title">Kijelentkezés a MÁV+ fiókból</string>
+    <string name="mav_logout_confirm_msg">Biztosan ki szeretnél jelentkezni? A jegyek megtekintéséhez újra be kell majd jelentkezned.</string>
+    <string name="mav_cancel">Mégse</string>
+    <string name="mav_active_tab">Érvényes</string>
+    <string name="mav_past_tab">Korábbiak</string>
+    <string name="mav_empty_active">Nincsenek aktív vagy érvényes jegyek / bérletek.</string>
+    <string name="mav_empty_past">Nincsenek korábbi jegyek a fiókban.</string>
+    <string name="mav_refresh">Frissítés</string>
+    <string name="mav_show_barcode">Vonalkód / Jegy felmutatása</string>
+    <string name="mav_view_ticket">Jegy megtekintése</string>
+    <string name="mav_validity">Érvényesség</string>
+    <string name="mav_valid_from">Kezdete:</string>
+    <string name="mav_valid_to">Vége:</string>
+    <string name="mav_passenger">Utas:</string>
+    <string name="mav_price">Ár:</string>
+    <string name="mav_order_id">Rendelés: %1$s</string>
+    <string name="mav_ticket_dialog_title">Digitális Menetjegy</string>
+    <string name="mav_ticket_dialog_hint">Kérjük, mutasd fel ezt a képernyőt ellenőrzéskor a jegyvizsgálónak vagy a beléptetőkapunál.</string>
+    <string name="mav_privacy_note">A bejelentkezési adatok közvetlenül és biztonságosan a MÁV szervereihez kerülnek továbbításra.</string>
+    <string name="mav_valid_status">Érvényes</string>
+    <string name="mav_expired_status">Lejárt</string>
+</resources>

@@ -9,9 +9,10 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ConfirmationNumber
+import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Map
 import androidx.compose.material.icons.rounded.Route
-import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,7 +29,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import hu.app.bmenetrend.R
 
-enum class MainTab { MAP, PLANNER, FAVORITES }
+enum class MainTab { MAP, PLANNER, FAVORITES, TICKETS }
 
 @Composable
 fun MainNavigation(
@@ -37,6 +38,7 @@ fun MainNavigation(
     map: @Composable ()->Unit,
     planner: @Composable ()->Unit,
     favorites: @Composable ()->Unit,
+    tickets: @Composable ()->Unit = {},
     offline: Boolean = false,
     onOfflineSettings: () -> Unit = {},
     hideBottomBarOnPlanner: Boolean = false,
@@ -62,6 +64,7 @@ fun MainNavigation(
                             MainTab.MAP -> map()
                             MainTab.PLANNER -> planner()
                             MainTab.FAVORITES -> Box(Modifier.widthIn(max=TransitDesign.contentWidth).fillMaxSize()) { favorites() }
+                            MainTab.TICKETS -> Box(Modifier.widthIn(max=TransitDesign.contentWidth).fillMaxSize()) { tickets() }
                         }
                     }
                 }
@@ -81,7 +84,12 @@ fun MainNavigation(
 
 @Composable
 private fun TransitNavigationItem(item: MainTab,selected: Boolean,onClick: ()->Unit,modifier: Modifier,compact: Boolean=false) {
-    val label=stringResource(when(item) { MainTab.MAP->R.string.planner_nav_map;MainTab.PLANNER->R.string.planner_nav_plan;MainTab.FAVORITES->R.string.favorites_nav })
+    val label=stringResource(when(item) {
+        MainTab.MAP->R.string.planner_nav_map
+        MainTab.PLANNER->R.string.planner_nav_plan
+        MainTab.FAVORITES->R.string.favorites_nav
+        MainTab.TICKETS->R.string.tickets_nav
+    })
     val selectionFill by animateColorAsState(if(selected) MaterialTheme.colorScheme.primaryContainer else androidx.compose.ui.graphics.Color.Transparent,
         tween(160),label="navigation selection")
     Column(modifier.heightIn(min=64.dp).semantics { if(compact) contentDescription=label }.selectable(
@@ -93,7 +101,12 @@ private fun TransitNavigationItem(item: MainTab,selected: Boolean,onClick: ()->U
     ).padding(vertical=4.dp),
         horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(4.dp)) {
         Surface(color=selectionFill, shape=RoundedCornerShape(12.dp)) {
-            Icon(when(item) { MainTab.MAP->Icons.Rounded.Map;MainTab.PLANNER->Icons.Rounded.Route;MainTab.FAVORITES->Icons.Rounded.Favorite },null,
+            Icon(when(item) {
+                MainTab.MAP->Icons.Rounded.Map
+                MainTab.PLANNER->Icons.Rounded.Route
+                MainTab.FAVORITES->Icons.Rounded.Favorite
+                MainTab.TICKETS->Icons.Rounded.ConfirmationNumber
+            },null,
                 Modifier.padding(horizontal=20.dp,vertical=6.dp).size(24.dp),
                 tint=if(selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
         }

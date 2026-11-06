@@ -17,10 +17,12 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import hu.app.bmenetrend.mav.MavViewModel
 import hu.app.bmenetrend.ui.FavoritesScreen
 import hu.app.bmenetrend.ui.MainTab
 import hu.app.bmenetrend.ui.MainNavigation
 import hu.app.bmenetrend.ui.PlannerScreen
+import hu.app.bmenetrend.ui.mav.MavTicketsScreen
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.core.content.ContextCompat
 import androidx.core.location.LocationManagerCompat
@@ -59,6 +61,7 @@ class MainActivity : ComponentActivity() {
             }
             val model: TransitViewModel = viewModel()
             val planner: PlannerViewModel = viewModel()
+            val mav: MavViewModel = viewModel()
             var offlineSettingsRequest by rememberSaveable { mutableIntStateOf(0) }
             var searchRequest by rememberSaveable { mutableIntStateOf(0) }
             var mapFullscreen by remember { mutableStateOf(false) }
@@ -187,6 +190,9 @@ class MainActivity : ComponentActivity() {
                             onVisible = model::setVisibleFavorites,
                             onBrowse = { tab = MainTab.MAP; searchRequest++ }
                         )
+                    },
+                    tickets = {
+                        MavTicketsScreen(viewModel = mav)
                     },
                     map = {
                 ViaBuszScreen(

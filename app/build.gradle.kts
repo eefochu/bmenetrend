@@ -46,7 +46,13 @@ android {
             matchingFallbacks += "debug"
         }
     }
-    testOptions { unitTests.isIncludeAndroidResources = true }
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+        unitTests.all {
+            it.maxHeapSize = "4096m"
+            it.forkEvery = 80
+        }
+    }
     packaging { resources.excludes += setOf("META-INF/AL2.0", "META-INF/LGPL2.1", "META-INF/LICENSE*", "META-INF/NOTICE*") }
     androidResources.noCompress += listOf("pmtiles")
     splits {
@@ -65,6 +71,10 @@ android {
 }
 
 androidComponents {
+    beforeVariants(selector().withBuildType("release")) { variantBuilder ->
+        variantBuilder.enableUnitTest = false
+    }
+
     onVariants { variant ->
         val variantName = variant.name
         val capitalized = variantName.replaceFirstChar { it.uppercase() }
