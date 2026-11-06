@@ -4,7 +4,6 @@ import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
-import java.io.IOException
 
 class MavCacheStore(
     private val cacheFile: File
@@ -13,6 +12,7 @@ class MavCacheStore(
         File(context.filesDir, CACHE_FILE_NAME)
     )
 
+    private val userPhotoFile = File(cacheFile.parentFile ?: File("."), USER_PHOTO_FILE_NAME)
     private val lock = Any()
 
     fun saveUser(user: MavUser) {
@@ -27,22 +27,41 @@ class MavCacheStore(
             }
             root.put("cachedUser", userObj)
             writeRoot(root)
+
+            if (!user.photoBase64.isNullOrBlank()) {
+                runCatching {
+                    userPhotoFile.parentFile?.mkdirs()
+                    userPhotoFile.writeText(user.photoBase64, Charsets.UTF_8)
+                }
+            }
         }
     }
 
     fun getUser(): MavUser? {
         synchronized(lock) {
-            if (!cacheFile.exists()) return null
+            var photo = runCatching {
+                if (userPhotoFile.exists()) userPhotoFile.readText().ifBlank { null } else null
+            }.getOrNull()
+
+            if (!cacheFile.exists()) {
+                if (photo != null) {
+                    return MavUser(email = "", photoBase64 = photo)
+                }
+                return null
+            }
             val root = readRoot() ?: return null
             val userObj = root.optJSONObject("cachedUser") ?: return null
             val email = userObj.optString("email", "")
             if (email.isBlank()) return null
+            if (photo == null) {
+                photo = userObj.optString("photoBase64", "").ifBlank { null }
+            }
             return MavUser(
                 email = email,
                 firstName = userObj.optString("firstName", ""),
                 lastName = userObj.optString("lastName", ""),
                 regId = userObj.optString("regId", ""),
-                photoBase64 = userObj.optString("photoBase64", "").ifBlank { null }
+                photoBase64 = photo
             )
         }
     }
@@ -303,8 +322,9 @@ class MavCacheStore(
 
     fun clear() {
         synchronized(lock) {
-            if (cacheFile.exists()) {
-                cacheFile.delete()
+            runCatching {
+                if (cacheFile.exists()) cacheFile.delete()
+                if (userPhotoFile.exists()) userPhotoFile.delete()
             }
         }
     }
@@ -325,13 +345,9 @@ class MavCacheStore(
 
     private fun writeRoot(root: JSONObject) {
         try {
-            val tempFile = File(cacheFile.parentFile ?: return, "${cacheFile.name}.tmp")
-            tempFile.writeText(root.toString())
-            if (!tempFile.renameTo(cacheFile)) {
-                cacheFile.delete()
-                tempFile.renameTo(cacheFile)
-            }
-        } catch (e: IOException) {
+            cacheFile.parentFile?.mkdirs()
+            cacheFile.writeText(root.toString(), Charsets.UTF_8)
+        } catch (t: Throwable) {
             // Ignore disk write errors
         }
     }
@@ -461,5 +477,6 @@ class MavCacheStore(
 
     companion object {
         const val CACHE_FILE_NAME = "mav_tickets_cache.json"
+        const val USER_PHOTO_FILE_NAME = "mav_user_photo.b64"
     }
 }

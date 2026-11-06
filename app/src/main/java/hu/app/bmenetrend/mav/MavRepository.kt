@@ -8,17 +8,19 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.util.UUID
 
 class MavSessionStore(context: Context) {
     private val prefs: SharedPreferences =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val photoFile = File(context.filesDir, MavCacheStore.USER_PHOTO_FILE_NAME)
 
     fun getOrCreateUaid(): String {
         var uaid = prefs.getString(KEY_UAID, null)
         if (uaid.isNullOrBlank()) {
             uaid = DEFAULT_UAID
-            prefs.edit().putString(KEY_UAID, uaid).apply()
+            prefs.edit().putString(KEY_UAID, uaid).commit()
         }
         return uaid
     }
@@ -31,7 +33,10 @@ class MavSessionStore(context: Context) {
         val firstName = prefs.getString(KEY_FIRST_NAME, "").orEmpty().ifBlank { cachedUser?.firstName.orEmpty() }
         val lastName = prefs.getString(KEY_LAST_NAME, "").orEmpty().ifBlank { cachedUser?.lastName.orEmpty() }
         val regId = prefs.getString(KEY_REG_ID, "").orEmpty().ifBlank { cachedUser?.regId.orEmpty() }
-        val photoBase64 = prefs.getString(KEY_PHOTO, null)?.ifBlank { null } ?: cachedUser?.photoBase64
+        val filePhoto = runCatching {
+            if (photoFile.exists()) photoFile.readText().ifBlank { null } else null
+        }.getOrNull()
+        val photoBase64 = filePhoto ?: prefs.getString(KEY_PHOTO, null)?.ifBlank { null } ?: cachedUser?.photoBase64
         val vimToken = prefs.getString(KEY_VIM_TOKEN, null)
 
         val user = if (firstName.isNotEmpty() || lastName.isNotEmpty() || !photoBase64.isNullOrEmpty()) {
@@ -51,6 +56,14 @@ class MavSessionStore(context: Context) {
     }
 
     fun saveSession(session: MavSession) {
+        session.user?.photoBase64?.let { b64 ->
+            if (b64.isNotBlank()) {
+                runCatching {
+                    photoFile.parentFile?.mkdirs()
+                    photoFile.writeText(b64, Charsets.UTF_8)
+                }
+            }
+        }
         prefs.edit()
             .putString(KEY_EMAIL, session.email)
             .putString(KEY_TOKEN, session.token)
@@ -61,11 +74,14 @@ class MavSessionStore(context: Context) {
             .putString(KEY_REG_ID, session.user?.regId.orEmpty())
             .putString(KEY_PHOTO, session.user?.photoBase64)
             .putString(KEY_VIM_TOKEN, session.vimToken)
-            .apply()
+            .commit()
     }
 
     fun clearSession() {
-        prefs.edit().clear().putString(KEY_UAID, DEFAULT_UAID).apply()
+        runCatching {
+            if (photoFile.exists()) photoFile.delete()
+        }
+        prefs.edit().clear().putString(KEY_UAID, DEFAULT_UAID).commit()
     }
 
     companion object {
@@ -102,7 +118,15 @@ class MavRepository(
     )
 
     private val _session = MutableStateFlow<MavSession?>(
-        sessionStore.getStoredSession(cacheStore.getUser())
+        sessionStore.getStoredSession(cacheStore.getUser()) ?: cacheStore.getUser()?.let { cachedUser ->
+            MavSession(
+                email = cachedUser.email,
+                token = "",
+                uaid = sessionStore.getOrCreateUaid(),
+                expiresAt = 0L,
+                user = cachedUser
+            )
+        }
     )
     val session: StateFlow<MavSession?> = _session.asStateFlow()
 
