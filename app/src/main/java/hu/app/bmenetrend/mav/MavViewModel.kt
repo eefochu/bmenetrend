@@ -36,7 +36,9 @@ data class TicketBarcodeData(
     val receiptId: String,
     val ticketNumber: String? = null,
     val title: String,
+    val isPass: Boolean = false,
     val passengerName: String? = null,
+    val birthDate: Long? = null,
     val bitmap: Bitmap? = null,
     val loading: Boolean = false,
     val error: String? = null
@@ -96,27 +98,6 @@ class MavViewModel(
                 _loginState.value = LoginUiState.Error(e.message ?: "Bejelentkezési hiba történt")
             }
         }
-    }
-
-    fun loginWithGoogle(payload: MavGoogleLoginPayload) {
-        if (payload.tokenXml.isBlank()) {
-            _loginState.value = LoginUiState.Error("Érvénytelen bejelentkezési adatok a Google azonosításból.")
-            return
-        }
-        viewModelScope.launch {
-            _loginState.value = LoginUiState.Loading
-            try {
-                repository.loginWithGoogle(payload)
-                _loginState.value = LoginUiState.Idle
-                loadTickets()
-            } catch (e: Exception) {
-                _loginState.value = LoginUiState.Error(e.message ?: "Google bejelentkezési hiba történt")
-            }
-        }
-    }
-
-    fun loginWithGoogleToken(email: String, tokenXml: String) {
-        loginWithGoogle(MavGoogleLoginPayload(email = email.trim(), tokenXml = tokenXml, sessionId = ""))
     }
 
     fun logout() {
@@ -189,11 +170,31 @@ class MavViewModel(
         title: String,
         passengerName: String?
     ) {
+        showBarcode(
+            receiptId = receiptId,
+            ticketNumber = ticketNumber,
+            title = title,
+            isPass = false,
+            passengerName = passengerName,
+            birthDate = null
+        )
+    }
+
+    fun showBarcode(
+        receiptId: String,
+        ticketNumber: String?,
+        title: String,
+        isPass: Boolean,
+        passengerName: String?,
+        birthDate: Long?
+    ) {
         _barcodeData.value = TicketBarcodeData(
             receiptId = receiptId,
             ticketNumber = ticketNumber,
             title = title,
+            isPass = isPass,
             passengerName = passengerName,
+            birthDate = birthDate,
             loading = true
         )
         viewModelScope.launch {

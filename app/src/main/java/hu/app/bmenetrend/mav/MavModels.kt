@@ -116,13 +116,3 @@ data class MavTicketImage(
         }.getOrNull()
     }
 }
-
-@Immutable
-data class MavGoogleLoginPayload(
-    val email: String,
-    val tokenXml: String,
-    val sessionId: String,
-    val personalDataJson: String? = null,
-    val hptDataJson: String? = null,
-    val purchasesJson: String? = null
-)
