@@ -631,6 +631,7 @@ class MavApiClient(
             for (i in 0 until ordersArray.length()) {
                 val orderObj = ordersArray.optJSONObject(i) ?: continue
                 val orderId = orderObj.optString("MegrendelesAzonosito", orderObj.optString("Azonosito", ""))
+                val csoportAzon = orderObj.optString("CsoportAzon", "").trim()
                 if (orderId.isNotBlank() && orderId in seenOrderIds) continue
 
                 val purchaseDate = parseTimestamp(
@@ -687,29 +688,32 @@ class MavApiClient(
 
                     for (k in 0 until ticketsArray.length()) {
                         val ticketObj = ticketsArray.optJSONObject(k) ?: continue
-                        val ticketId = ticketObj.optString("JegyAzonosito", ticketObj.optString("Azonosito", ""))
-                        val title = ticketObj.optString("Viszonylat", ticketObj.optString("Megnevezes", "MÁV jegy / bérlet"))
+                        val ticketId = ticketObj.optString("JegyAzonosito", ticketObj.optString("Azonosito", ticketObj.optString("TetelAzonosito", "")))
+                        val title = ticketObj.optString("Nev", ticketObj.optString("Viszonylat", ticketObj.optString("Megnevezes", "MÁV jegy / bérlet")))
                         val discount = ticketObj.optString("Kedvezmeny", ticketObj.optString("KedvezmenyNev", "")).ifBlank { null }
                         val validFrom = parseTimestamp(
                             ticketObj.opt("ErvenyessegKezdete")
                                 ?: ticketObj.opt("ErvenyessegKezdet")
                                 ?: ticketObj.opt("ErvenyessegEleje")
+                                ?: ticketObj.opt("ErvKezd")
                         )
                         val validTo = parseTimestamp(
                             ticketObj.opt("ErvenyessegVege")
                                 ?: ticketObj.opt("ErvenyessegVeg")
+                                ?: ticketObj.opt("ErvVeg")
                         )
                         val price = ticketObj.optInt("Ar", ticketObj.optInt("Osszeg", 0))
-                        val isPass = ticketObj.optBoolean("Berlet", false) ||
+                        val isPass = ticketObj.optBoolean("BerletJel", false) ||
+                            ticketObj.optBoolean("Berlet", false) ||
                             title.contains("bérlet", ignoreCase = true) ||
                             title.contains("orszagberlet", ignoreCase = true) ||
                             title.contains("országbérlet", ignoreCase = true) ||
                             title.contains("varmegye", ignoreCase = true) ||
                             title.contains("vármegye", ignoreCase = true)
                         val status = ticketObj.optString("Allapot", ticketObj.optString("Statusz", "")).ifBlank { null }
-                        val serviceStatus = ticketObj.optString("SzolgaltatasStatusz", "").ifBlank { null }
-                        val direction = ticketObj.optString("Irany", "").ifBlank { null }
-                        val serviceId = ticketObj.optString("VonatSzam", ticketObj.optString("Jaratszam", "")).ifBlank { null }
+                        val serviceStatus = ticketObj.optString("SzolgaltatasStatusz", ticketObj.optString("SzolgaltatasAllapot", "")).ifBlank { null }
+                        val direction = ticketObj.optString("Irany", ticketObj.optString("UtazasIranya", "")).ifBlank { null }
+                        val serviceId = ticketObj.optString("VonatSzam", ticketObj.optString("Jaratszam", ticketObj.optString("SzolgaltatasAzonosito", ""))).ifBlank { null }
 
                         items.add(
                             MavTicketItem(
@@ -747,8 +751,85 @@ class MavApiClient(
                     receipts = receipts
                 )
                 if (validOnly != builtOrder.isValidNow) continue
-                orders.add(builtOrder)
+
+                // Check if this VIM order matches an order already added (e.g. from IK GetPreviousPurchases)
+                val matchingIdx = orders.indexOfFirst { ex ->
+                    ex.orderId == orderId ||
+                    (csoportAzon.isNotBlank() && (ex.orderId.contains(csoportAzon) || ex.receipts.any { it.receiptId.contains(csoportAzon) })) ||
+                    (resolvedPassHolder?.id != null && (ex.orderId == resolvedPassHolder.id || ex.passHolder?.id == resolvedPassHolder.id)) ||
+                    receipts.any { r ->
+                        ex.receipts.any { exR ->
+                            (exR.receiptId.isNotBlank() && (exR.receiptId == r.receiptId || exR.receiptId.contains(r.receiptId))) ||
+                            (!exR.ticketNumber.isNullOrBlank() && exR.ticketNumber == r.ticketNumber)
+                        }
+                    } ||
+                    (receipts.isNotEmpty() && ex.allItems.any { exItem ->
+                        !exItem.serviceId.isNullOrBlank() && receipts.any { r -> r.items.any { it.serviceId == exItem.serviceId } }
+                    })
+                }
+
+                if (matchingIdx != -1) {
+                    val ex = orders[matchingIdx]
+                    val mergedOrderId = if (ex.orderId.isNotBlank() && !ex.orderId.contains("#")) ex.orderId else orderId
+                    val mergedPurchaseDate = if (purchaseDate > 0) purchaseDate else ex.purchaseDate
+                    val mergedPassHolder = ex.passHolder ?: resolvedPassHolder
+                    val mergedDeliveryMode = ex.deliveryMode ?: deliveryMode.ifBlank { null }
+
+                    val mergedReceipts = ex.receipts.mapIndexed { idx, exR ->
+                        val vimR = receipts.getOrNull(idx) ?: receipts.firstOrNull()
+                        val passengerName = vimR?.passengerName?.ifBlank { null } ?: exR.passengerName
+                        val birthDate = vimR?.birthDate?.takeIf { it > 0 } ?: exR.birthDate
+                        val ticketNumber = vimR?.ticketNumber?.ifBlank { null } ?: exR.ticketNumber
+
+                        val mergedItems = exR.items.mapIndexed { itemIdx, exItem ->
+                            val vimItem = vimR?.items?.getOrNull(itemIdx) ?: vimR?.items?.firstOrNull()
+                            val name = if (exItem.name.isNotBlank() && !exItem.name.equals("MÁV jegy / bérlet", ignoreCase = true)) {
+                                exItem.name
+                            } else {
+                                vimItem?.name?.ifBlank { null } ?: exItem.name
+                            }
+                            val discount = when {
+                                !exItem.discount.isNullOrBlank() && !vimItem?.discount.isNullOrBlank() &&
+                                    !exItem.discount.equals(vimItem.discount, ignoreCase = true) ->
+                                    "${exItem.discount} • ${vimItem.discount}"
+                                !exItem.discount.isNullOrBlank() -> exItem.discount
+                                else -> vimItem?.discount
+                            }
+                            val validFrom = if (exItem.validFrom > 0) exItem.validFrom else (vimItem?.validFrom ?: 0L)
+                            val validTo = if (exItem.validTo > 0) exItem.validTo else (vimItem?.validTo ?: 0L)
+                            val price = if (exItem.price > 0) exItem.price else (vimItem?.price ?: 0)
+                            val isPass = exItem.isPass || (vimItem?.isPass == true)
+
+                            exItem.copy(
+                                name = name,
+                                discount = discount,
+                                validFrom = validFrom,
+                                validTo = validTo,
+                                price = price,
+                                isPass = isPass
+                            )
+                        }
+
+                        exR.copy(
+                            passengerName = passengerName,
+                            birthDate = birthDate,
+                            ticketNumber = ticketNumber,
+                            items = mergedItems
+                        )
+                    }
+
+                    orders[matchingIdx] = ex.copy(
+                        orderId = mergedOrderId,
+                        purchaseDate = mergedPurchaseDate,
+                        deliveryMode = mergedDeliveryMode,
+                        passHolder = mergedPassHolder,
+                        receipts = mergedReceipts
+                    )
+                } else {
+                    orders.add(builtOrder)
+                }
                 seenOrderIds.add(orderId)
+                if (csoportAzon.isNotBlank()) seenOrderIds.add(csoportAzon)
             }
         }
 

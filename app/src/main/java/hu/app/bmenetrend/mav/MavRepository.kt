@@ -155,7 +155,94 @@ class MavRepository(
     }
 
     fun getCachedOrders(): Pair<List<MavOrder>, List<MavOrder>>? {
-        return cacheStore.getOrders()
+        val cached = cacheStore.getOrders() ?: return null
+        return Pair(deduplicateOrders(cached.first), deduplicateOrders(cached.second))
+    }
+
+    private fun deduplicateOrders(orders: List<MavOrder>): List<MavOrder> {
+        val result = mutableListOf<MavOrder>()
+        for (order in orders) {
+            val matchingIdx = result.indexOfFirst { ex ->
+                ex.orderId == order.orderId ||
+                (ex.passHolder?.id != null && ex.passHolder.id == order.passHolder?.id) ||
+                (ex.receipts.isNotEmpty() && order.receipts.isNotEmpty() &&
+                    ex.receipts.any { exR ->
+                        order.receipts.any { oR ->
+                            (exR.receiptId.isNotBlank() && (exR.receiptId == oR.receiptId || exR.receiptId.contains(oR.receiptId) || oR.receiptId.contains(exR.receiptId))) ||
+                            (!exR.ticketNumber.isNullOrBlank() && exR.ticketNumber == oR.ticketNumber)
+                        }
+                    }
+                ) ||
+                (ex.allItems.isNotEmpty() && order.allItems.isNotEmpty() &&
+                    ex.allItems.any { exItem ->
+                        order.allItems.any { oItem ->
+                            !exItem.serviceId.isNullOrBlank() && exItem.serviceId == oItem.serviceId
+                        }
+                    }
+                )
+            }
+            if (matchingIdx != -1) {
+                val ex = result[matchingIdx]
+                val mergedOrderId = if (ex.orderId.isNotBlank() && !ex.orderId.contains("#")) ex.orderId else order.orderId
+                val mergedPurchaseDate = if (order.purchaseDate > 0) order.purchaseDate else ex.purchaseDate
+                val mergedPassHolder = ex.passHolder ?: order.passHolder
+                val mergedDeliveryMode = ex.deliveryMode ?: order.deliveryMode
+
+                val mergedReceipts = ex.receipts.mapIndexed { idx, exR ->
+                    val oR = order.receipts.getOrNull(idx) ?: order.receipts.firstOrNull()
+                    val passengerName = oR?.passengerName?.ifBlank { null } ?: exR.passengerName
+                    val birthDate = oR?.birthDate?.takeIf { it > 0 } ?: exR.birthDate
+                    val ticketNumber = oR?.ticketNumber?.ifBlank { null } ?: exR.ticketNumber
+
+                    val mergedItems = exR.items.mapIndexed { itemIdx, exItem ->
+                        val oItem = oR?.items?.getOrNull(itemIdx) ?: oR?.items?.firstOrNull()
+                        val name = if (exItem.name.isNotBlank() && !exItem.name.equals("MÁV jegy / bérlet", ignoreCase = true)) {
+                            exItem.name
+                        } else {
+                            oItem?.name?.ifBlank { null } ?: exItem.name
+                        }
+                        val discount = when {
+                            !exItem.discount.isNullOrBlank() && !oItem?.discount.isNullOrBlank() &&
+                                !exItem.discount.equals(oItem.discount, ignoreCase = true) ->
+                                "${exItem.discount} • ${oItem.discount}"
+                            !exItem.discount.isNullOrBlank() -> exItem.discount
+                            else -> oItem?.discount
+                        }
+                        val validFrom = if (exItem.validFrom > 0) exItem.validFrom else (oItem?.validFrom ?: 0L)
+                        val validTo = if (exItem.validTo > 0) exItem.validTo else (oItem?.validTo ?: 0L)
+                        val price = if (exItem.price > 0) exItem.price else (oItem?.price ?: 0)
+                        val isPass = exItem.isPass || (oItem?.isPass == true)
+
+                        exItem.copy(
+                            name = name,
+                            discount = discount,
+                            validFrom = validFrom,
+                            validTo = validTo,
+                            price = price,
+                            isPass = isPass
+                        )
+                    }
+
+                    exR.copy(
+                        passengerName = passengerName,
+                        birthDate = birthDate,
+                        ticketNumber = ticketNumber,
+                        items = mergedItems
+                    )
+                }
+
+                result[matchingIdx] = ex.copy(
+                    orderId = mergedOrderId,
+                    purchaseDate = mergedPurchaseDate,
+                    deliveryMode = mergedDeliveryMode,
+                    passHolder = mergedPassHolder,
+                    receipts = mergedReceipts
+                )
+            } else {
+                result.add(order)
+            }
+        }
+        return result
     }
 
     fun getCachedUser(): MavUser? {
@@ -195,13 +282,13 @@ class MavRepository(
             }
 
             // 3. Fetch active orders (valid tickets and passes)
-            val active = apiClient.getOrders(currentSession, validOnly = true)
+            val active = deduplicateOrders(apiClient.getOrders(currentSession, validOnly = true))
 
             // 4. Fetch past orders (strictly exclude any active or currently valid tickets/passes)
             val pastRaw = runCatching { apiClient.getOrders(currentSession, validOnly = false) }.getOrDefault(emptyList())
             val activeOrderIds = active.map { it.orderId }.toSet()
             val activeReceiptIds = active.flatMap { it.receipts }.map { it.receiptId }.toSet()
-            val past = pastRaw.filter { pastOrder ->
+            val past = deduplicateOrders(pastRaw).filter { pastOrder ->
                 pastOrder.orderId !in activeOrderIds &&
                 pastOrder.receipts.none { it.receiptId in activeReceiptIds } &&
                 !pastOrder.isValidNow
