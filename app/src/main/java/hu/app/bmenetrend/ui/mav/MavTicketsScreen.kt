@@ -849,7 +849,7 @@ fun MavTicketDetailView(
                 .fillMaxSize()
                 .statusBarsPadding()
                 .verticalScroll(rememberScrollState())
-                .padding(bottom = 150.dp)
+                .padding(bottom = 120.dp)
         ) {
             // 1. Top bar: Back arrow, Title, Info button (i)
             Row(
@@ -1041,7 +1041,7 @@ fun MavTicketDetailView(
         AnimatedTrainGif(
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(384f / 128f)
+                .aspectRatio(560f / 112f)
                 .align(Alignment.BottomCenter)
         )
 
@@ -1062,7 +1062,7 @@ private fun AnimatedTrainGif(modifier: Modifier = Modifier) {
                 adjustViewBounds = true
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     try {
-                        val source = ImageDecoder.createSource(context.resources, R.drawable.vonat_cut)
+                        val source = ImageDecoder.createSource(context.resources, R.drawable.ticket_anim)
                         val drawable = ImageDecoder.decodeDrawable(source)
                         setImageDrawable(drawable)
                         if (drawable is AnimatedImageDrawable) {
@@ -1070,10 +1070,10 @@ private fun AnimatedTrainGif(modifier: Modifier = Modifier) {
                             drawable.start()
                         }
                     } catch (e: Exception) {
-                        setImageResource(R.drawable.vonat_cut)
+                        setImageResource(R.drawable.ticket_anim)
                     }
                 } else {
-                    setImageResource(R.drawable.vonat_cut)
+                    setImageResource(R.drawable.ticket_anim)
                 }
             }
         },
