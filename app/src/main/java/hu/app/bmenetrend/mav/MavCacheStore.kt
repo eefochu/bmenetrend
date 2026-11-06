@@ -101,6 +101,9 @@ class MavCacheStore(
 
     fun saveTicketImage(receiptId: String, image: MavTicketImage) {
         if (receiptId.isBlank()) return
+        if (image.kind.equals("Certificate", ignoreCase = true) || image.imageBase64.startsWith("JVBER")) {
+            return
+        }
         synchronized(lock) {
             val root = loadOrCreateRoot()
             val imagesObj = root.optJSONObject("ticketImages") ?: JSONObject().also { root.put("ticketImages", it) }
@@ -122,8 +125,15 @@ class MavCacheStore(
             val root = readRoot() ?: return null
             val imagesObj = root.optJSONObject("ticketImages") ?: return null
             val itemObj = imagesObj.optJSONObject(receiptId) ?: return null
+            val kind = itemObj.optString("kind", "")
             val imgBase64 = itemObj.optString("imageBase64", "")
-            if (imgBase64.isBlank()) return null
+            if (imgBase64.isBlank() || kind.equals("Certificate", ignoreCase = true) || imgBase64.startsWith("JVBER")) {
+                if (kind.equals("Certificate", ignoreCase = true) || imgBase64.startsWith("JVBER")) {
+                    imagesObj.remove(receiptId)
+                    writeRoot(root)
+                }
+                return null
+            }
             return MavTicketImage(
                 receiptId = itemObj.optString("receiptId", receiptId),
                 ticketNumber = itemObj.optString("ticketNumber", "").ifBlank { null },

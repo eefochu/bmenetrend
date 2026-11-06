@@ -739,15 +739,15 @@ class MavApiClient(
                     )
                 }
 
-                orders.add(
-                    MavOrder(
-                        orderId = orderId,
-                        purchaseDate = purchaseDate,
-                        deliveryMode = deliveryMode.ifBlank { null },
-                        passHolder = resolvedPassHolder,
-                        receipts = receipts
-                    )
+                val builtOrder = MavOrder(
+                    orderId = orderId,
+                    purchaseDate = purchaseDate,
+                    deliveryMode = deliveryMode.ifBlank { null },
+                    passHolder = resolvedPassHolder,
+                    receipts = receipts
                 )
+                if (validOnly != builtOrder.isValidNow) continue
+                orders.add(builtOrder)
                 seenOrderIds.add(orderId)
             }
         }
@@ -833,41 +833,6 @@ class MavApiClient(
                     }
                 }
 
-                val financialDatas = detRes.optString("financialDatas", "")
-                if (financialDatas.isNotBlank()) {
-                    val imgBody = JSONObject().apply {
-                        put("userEmail", session.email)
-                        put("financialDatas", financialDatas)
-                    }.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
-
-                    val imgReq = Request.Builder()
-                        .url("https://jegy-a.mav.hu/IK_API_PROD/api/OrderAndPaymentApi/GetCertificatesImages")
-                        .addHeader("Accept", "application/json")
-                        .addHeader("UserSessionId", session.uaid.ifBlank { java.util.UUID.randomUUID().toString() })
-                        .addHeader("Content-Type", "application/json; charset=utf-8")
-                        .addHeader("Origin", "https://jegy.mav.hu")
-                        .addHeader("Referer", "https://jegy.mav.hu/")
-                        .addHeader("Language", "hu")
-                        .addHeader("UserTokenXml", safeToken)
-                        .addHeader("User-Agent", "MAVApp/2.6.15-prod (hu.mav.emmapp; build: 950; Android 14)")
-                        .post(imgBody)
-                        .build()
-
-                    val imgRes = executeJsonRequest(imgReq)
-                    val tc = imgRes.optJSONArray("tiketsAndCertificates")
-                    if (tc != null && tc.length() > 0) {
-                        val firstCert = tc.getJSONObject(0)
-                        val b64 = firstCert.optString("image", firstCert.optString("imageData", "")).trim()
-                        if (b64.isNotBlank()) {
-                            return@runCatching MavTicketImage(
-                                receiptId = receiptId,
-                                ticketNumber = firstCert.optString("certificateId", "").ifBlank { null },
-                                kind = "Certificate",
-                                imageBase64 = b64
-                            )
-                        }
-                    }
-                }
                 null
             }.getOrNull()
             if (result != null) return result
@@ -895,12 +860,6 @@ class MavApiClient(
                     array.put(bizonylatId)
                 }
                 put("BizonylatAzonosito", array)
-                val bizArray = JSONArray().apply {
-                    put(JSONObject().apply {
-                        put("BizonylatAzonosito", bizonylatId)
-                    })
-                }
-                put("Bizonylatok", bizArray)
                 put("Token", tokenToUse)
                 put("Nyelv", "HU")
                 put("UAID", session.uaid)
@@ -915,15 +874,17 @@ class MavApiClient(
             for (i in 0 until images.length()) {
                 val imgObj = images.optJSONObject(i) ?: continue
                 val b64 = imgObj.optString("Jegykep", imgObj.optString("Kep", "")).trim()
-                if (b64.isNotEmpty()) {
+                if (b64.isNotEmpty() && !b64.startsWith("JVBER")) {
                     val sorszam = imgObj.optString("Jegysorszam", imgObj.optString("Jegyszam", imgObj.optString("Sorszam", ""))).ifBlank { ticketNumber }
                     val kind = imgObj.optString("BizonylatFajta", imgObj.optString("Tipus", "Jegykep")).ifBlank { "Jegykep" }
-                    return@runCatching MavTicketImage(
-                        receiptId = originalReceiptId,
-                        ticketNumber = sorszam,
-                        kind = kind,
-                        imageBase64 = b64
-                    )
+                    if (!kind.equals("Certificate", ignoreCase = true)) {
+                        return@runCatching MavTicketImage(
+                            receiptId = originalReceiptId,
+                            ticketNumber = sorszam,
+                            kind = kind,
+                            imageBase64 = b64
+                        )
+                    }
                 }
             }
             null

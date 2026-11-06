@@ -34,6 +34,7 @@ class MavSessionStore(context: Context) {
         val regId = prefs.getString(KEY_REG_ID, "").orEmpty()
         val photoBase64 = prefs.getString(KEY_PHOTO, null)
         val vimToken = prefs.getString(KEY_VIM_TOKEN, null)
+        if (vimToken.isNullOrBlank()) return null
 
         val user = if (firstName.isNotEmpty() || lastName.isNotEmpty() || !photoBase64.isNullOrEmpty()) {
             MavUser(email = email, firstName = firstName, lastName = lastName, regId = regId, photoBase64 = photoBase64)

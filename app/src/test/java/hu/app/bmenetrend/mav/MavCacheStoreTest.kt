@@ -140,6 +140,29 @@ class MavCacheStoreTest {
     }
 
     @Test
+    fun testRejectAndEvictCertificateInvoicePdf() {
+        // 1. Trying to save Certificate should be ignored
+        val certImage = MavTicketImage(
+            receiptId = "invoice_1",
+            ticketNumber = "SZAMLA-123",
+            kind = "Certificate",
+            imageBase64 = "JVBERi0xLjQKJeLjz9MKMSAwIG9iag=="
+        )
+        cacheStore.saveTicketImage("invoice_1", certImage)
+        assertNull(cacheStore.getTicketImage("invoice_1"))
+
+        // 2. Trying to save PDF with different kind should also be ignored
+        val pdfImage = MavTicketImage(
+            receiptId = "invoice_2",
+            ticketNumber = "SZAMLA-456",
+            kind = "Jegykep",
+            imageBase64 = "JVBERi0xLjQKJeLjz9MKMSAwIG9iag=="
+        )
+        cacheStore.saveTicketImage("invoice_2", pdfImage)
+        assertNull(cacheStore.getTicketImage("invoice_2"))
+    }
+
+    @Test
     fun testSaveAndGetPassHolder() {
         val passHolder = MavPassHolder(
             id = "nevesites_1",

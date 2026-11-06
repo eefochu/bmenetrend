@@ -15,8 +15,8 @@ android {
         applicationId = "hu.app.bmenetrend"
         minSdk = 26
         targetSdk = 36
-        versionCode = 14
-        versionName = "0.5.5"
+        versionCode = 15
+        versionName = "0.5.6"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures { compose = true; buildConfig = true }
