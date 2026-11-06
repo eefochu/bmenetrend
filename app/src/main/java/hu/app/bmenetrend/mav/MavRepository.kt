@@ -134,6 +134,7 @@ class MavRepository(
         val uaid = sessionStore.getOrCreateUaid()
         val baseSession = apiClient.login(email.trim(), password, uaid)
         val user = runCatching { apiClient.getUserData(baseSession) }.getOrNull()
+            ?.let { mergeUser(cacheStore.getUser()?.takeIf { c -> c.email.equals(it.email, ignoreCase = true) }, it) }
         val fullSession = baseSession.copy(user = user)
         sessionStore.saveSession(fullSession)
         if (user != null) cacheStore.saveUser(user)
@@ -152,7 +153,8 @@ class MavRepository(
 
     suspend fun refreshUserData(): MavUser? = withContext(ioDispatcher) {
         val currentSession = _session.value ?: return@withContext null
-        val user = runCatching { apiClient.getUserData(currentSession) }.getOrNull()
+        val fetched = runCatching { apiClient.getUserData(currentSession) }.getOrNull()
+        val user = fetched?.let { mergeUser(currentSession.user, it) }
         if (user != null) {
             val updated = currentSession.copy(user = user)
             sessionStore.saveSession(updated)
@@ -160,6 +162,24 @@ class MavRepository(
             _session.value = updated
         }
         user
+    }
+
+    /**
+     * Never let a partial server response erase what we already have offline:
+     * keep the previously known photo / name fields when the fresh payload leaves them blank.
+     */
+    private fun mergeUser(previous: MavUser?, fresh: MavUser): MavUser {
+        val fallback = previous ?: cacheStore.getUser()
+        if (fallback == null) return fresh
+        return fresh.copy(
+            email = fresh.email.ifBlank { fallback.email },
+            firstName = fresh.firstName.ifBlank { fallback.firstName },
+            lastName = fresh.lastName.ifBlank { fallback.lastName },
+            regId = fresh.regId.ifBlank { fallback.regId },
+            photoBase64 = fresh.photoBase64?.ifBlank { null }
+                ?: fallback.photoBase64?.ifBlank { null }
+                ?: cacheStore.getUser()?.photoBase64
+        )
     }
 
     suspend fun logout() = withContext(ioDispatcher) {
@@ -280,7 +300,7 @@ class MavRepository(
 
         // 1. Refresh user data (name and profile picture)
         runCatching {
-            val user = apiClient.getUserData(currentSession)
+            val user = mergeUser(currentSession.user, apiClient.getUserData(currentSession))
             val updatedSession = currentSession.copy(user = user)
             sessionStore.saveSession(updatedSession)
             cacheStore.saveUser(user)

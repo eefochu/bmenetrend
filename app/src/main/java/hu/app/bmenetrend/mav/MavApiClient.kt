@@ -170,6 +170,8 @@ class MavApiClient(
         var lastName = ""
         var regId = ""
         var photoBase64: String? = null
+        var anyBackendReached = false
+        var lastFailure: Throwable? = null
 
         // 1. Try IK_API_PROD GetUserPersonalDatas
         if (safeToken.isNotBlank()) {
@@ -191,6 +193,7 @@ class MavApiClient(
                     .build()
 
                 val res = executeJsonRequest(req)
+                anyBackendReached = true
                 val uData = res.optJSONObject("userData")
                 if (uData != null) {
                     val fn = uData.optString("keresztNev", "").trim()
@@ -202,7 +205,7 @@ class MavApiClient(
                     if (rId.isNotBlank()) regId = rId
                     if (em.isNotBlank()) email = em
                 }
-            }
+            }.onFailure { lastFailure = it }
         }
 
         // 2. Try VIM GetFelhasznaloAdat
@@ -215,6 +218,7 @@ class MavApiClient(
                     put("UAID", session.uaid)
                 }
                 val response = postJson("GetFelhasznaloAdat", requestJson)
+                anyBackendReached = true
                 val userObj = response.optJSONObject("FelhasznaloAdat") ?: response
                 email = userObj.optString("EmailCim", email).ifBlank { email }
                 val fn = userObj.optString("KeresztNev", "").trim()
@@ -228,7 +232,7 @@ class MavApiClient(
                 if (ln.isNotBlank()) lastName = ln
                 if (rId.isNotBlank()) regId = rId
                 if (photo != null) photoBase64 = photo
-            }
+            }.onFailure { lastFailure = it }
         }
 
         // 3. Fallback: Parse SAML assertion token (decoded from Base64 if needed)
@@ -283,6 +287,16 @@ class MavApiClient(
 
         // 4. Fetch account profile picture from HPT (IK_PROFIL is the account's own profile and picture)
         val hptItems = runCatching { fetchHptDatas(session) }.getOrNull().orEmpty()
+        if (hptItems.isNotEmpty()) anyBackendReached = true
+
+        // If no MÁV backend answered at all (e.g. the device is offline), fail loudly instead of
+        // returning a stripped-down user (name parsed from the SAML token, no photo) that would
+        // overwrite the cached profile.
+        if (!anyBackendReached) {
+            throw lastFailure as? Exception
+                ?: MavApiException("A MÁV szerver nem érhető el")
+        }
+
         val accountProfile = hptItems.firstOrNull { it.dataType.equals("IK_PROFIL", ignoreCase = true) }
         if (photoBase64.isNullOrBlank() && accountProfile != null && !accountProfile.photoBase64.isNullOrBlank()) {
             photoBase64 = accountProfile.photoBase64
@@ -543,6 +557,11 @@ class MavApiClient(
         val safeToken = getSafeTokenHeader(session.token)
         val orders = mutableListOf<MavOrder>()
         val seenOrderIds = mutableSetOf<String>()
+        // Every backend call below is wrapped in runCatching. Without tracking whether
+        // at least one of them actually answered, an offline device would get an empty
+        // list back, which callers would then persist over the good offline cache.
+        var anyBackendReached = false
+        var lastFailure: Throwable? = null
 
         // 1. Fetch from IK_API_PROD GetPreviousPurchases
         if (safeToken.isNotBlank()) {
@@ -564,6 +583,7 @@ class MavApiClient(
                     .build()
 
                 val res = executeJsonRequest(req)
+                anyBackendReached = true
                 val purchases = res.optJSONArray("previousPurchases")
                 if (purchases != null) {
                     val nowMs = System.currentTimeMillis()
@@ -611,7 +631,7 @@ class MavApiClient(
                         if (passHolderId != null) seenOrderIds.add(passHolderId)
                     }
                 }
-            }
+            }.onFailure { lastFailure = it }
         }
 
         // 2. Fetch from VIM MegrendelesKereses and merge any orders not already present
@@ -624,6 +644,7 @@ class MavApiClient(
                 put("UAID", session.uaid)
             }
             val response = postJson("MegrendelesKereses", requestJson)
+            anyBackendReached = true
             val ordersArray = response.optJSONArray("MegrendelesLista")
                 ?: response.optJSONArray("Megrendelesek")
                 ?: JSONArray()
@@ -831,6 +852,11 @@ class MavApiClient(
                 seenOrderIds.add(orderId)
                 if (csoportAzon.isNotBlank()) seenOrderIds.add(csoportAzon)
             }
+        }.onFailure { lastFailure = it }
+
+        if (!anyBackendReached) {
+            throw lastFailure as? Exception
+                ?: MavApiException("A MÁV szerver nem érhető el")
         }
 
         // 3. Check BerletTokok to make sure any standalone passes are listed!
