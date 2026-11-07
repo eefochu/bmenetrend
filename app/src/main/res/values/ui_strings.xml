@@ -134,4 +134,6 @@
     <string name="service_city_bus">Városi busz</string>
     <string name="service_ferry">Hajó</string>
     <string name="route_close">Vonalnézet bezárása</string>
+    <!-- Optional MÁV tickets tab (mav-tickets module). -->
+    <string name="tickets_nav">Jegyek</string>
 </resources>

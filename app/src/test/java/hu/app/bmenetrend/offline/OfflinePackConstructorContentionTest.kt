@@ -2,6 +2,8 @@ package hu.app.bmenetrend.offline
 
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
+import android.os.Looper
+import androidx.lifecycle.viewModelScope
 import hu.app.bmenetrend.TransitViewModel
 import kotlinx.coroutines.*
 import org.junit.After
@@ -11,6 +13,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.SQLiteMode
 import java.io.File
@@ -37,6 +40,8 @@ class OfflinePackConstructorContentionTest {
         } catch (_: Exception) { }
         store = OfflinePackStore(context)
         store.delete()
+        NetworkAccessPolicy.setOffline(context, false)
+        NetworkAccessPolicy.onConnectivityChanged(true)
 
         // Create a valid offline pack fixture
         val root = File(context.noBackupFilesDir, "offline-pack").apply { mkdirs() }
@@ -64,6 +69,8 @@ class OfflinePackConstructorContentionTest {
         releaseLatch.countDown()
         store.delete()
         scope.cancel()
+        NetworkAccessPolicy.setOffline(context, false)
+        NetworkAccessPolicy.onConnectivityChanged(true)
     }
 
     /**
@@ -187,15 +194,43 @@ class OfflinePackConstructorContentionTest {
     fun rapidOfflineToggle_isThreadSafeAndNonBlocking() = runBlocking {
         val app = RuntimeEnvironment.getApplication()
         val viewModel = TransitViewModel(app)
+        val mainLooper = shadowOf(Looper.getMainLooper())
+        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(6)
 
-        // Rapidly toggle offline mode back and forth
-        repeat(20) { i ->
-            viewModel.setOfflineMode(i % 2 == 0)
+        suspend fun awaitSettled(message: String, settled: () -> Boolean) {
+            do {
+                mainLooper.idle()
+                if (settled()) return
+                delay(10)
+            } while (System.nanoTime() < deadline)
+            assertTrue(message, settled())
         }
 
-        // Cleanly ensure final disabled state
-        viewModel.setOfflineMode(false)
-        delay(100)
-        assertFalse("Offline mode should settle cleanly", NetworkAccessPolicy.offline.value)
+        try {
+            val parent = viewModel.viewModelScope.coroutineContext[Job]!!
+            val initialJobs = parent.children.toSet()
+
+            // Keep the burst rapid; snapshot its outstanding jobs before draining main.
+            repeat(20) { i ->
+                viewModel.setOfflineMode(i % 2 == 0)
+            }
+            val toggleJobs = parent.children.filterNot { it in initialJobs }.toList()
+            awaitSettled("Rapid offline toggles must complete without deadlocking") {
+                toggleJobs.all { it.isCompleted }
+            }
+
+            // Independent IO launches do not guarantee request order. Finish the burst
+            // before the final request, and start offline so ignoring it cannot pass.
+            NetworkAccessPolicy.setOffline(context, true)
+            assertTrue("Final disable must start from offline mode", NetworkAccessPolicy.offline.value)
+            viewModel.setOfflineMode(false)
+            awaitSettled("Offline mode should settle cleanly") {
+                !NetworkAccessPolicy.offline.value
+            }
+            assertFalse("Offline mode should settle cleanly", NetworkAccessPolicy.offline.value)
+        } finally {
+            viewModel.viewModelScope.cancel()
+            mainLooper.idle()
+        }
     }
 }

@@ -134,4 +134,6 @@
     <string name="service_city_bus">City bus</string>
     <string name="service_ferry">Ferry</string>
     <string name="route_close">Close line view</string>
+    <!-- Optional MÁV tickets tab (mav-tickets module). -->
+    <string name="tickets_nav">Tickets</string>
 </resources>
