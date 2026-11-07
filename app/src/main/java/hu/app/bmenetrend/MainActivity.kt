@@ -17,12 +17,11 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import hu.app.bmenetrend.mav.MavViewModel
 import hu.app.bmenetrend.ui.FavoritesScreen
 import hu.app.bmenetrend.ui.MainTab
 import hu.app.bmenetrend.ui.MainNavigation
 import hu.app.bmenetrend.ui.PlannerScreen
-import hu.app.bmenetrend.ui.mav.MavTicketsScreen
+import hu.app.bmenetrend.plugins.TicketsPlugin
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.core.content.ContextCompat
 import androidx.core.location.LocationManagerCompat
@@ -61,7 +60,8 @@ class MainActivity : ComponentActivity() {
             }
             val model: TransitViewModel = viewModel()
             val planner: PlannerViewModel = viewModel()
-            val mav: MavViewModel = viewModel()
+            // Optional MÁV tickets module; null when the mav-tickets folder is not in the build.
+            val tickets = TicketsPlugin.host()
             var offlineSettingsRequest by rememberSaveable { mutableIntStateOf(0) }
             var searchRequest by rememberSaveable { mutableIntStateOf(0) }
             var mapFullscreen by remember { mutableStateOf(false) }
@@ -103,11 +103,16 @@ class MainActivity : ComponentActivity() {
                 if (tab == MainTab.PLANNER) planner.updateStops(state.network?.stops.orEmpty(), state.emmaStops)
             }
             // Both map surfaces share catalogue updates and marker directions.
+            // Only routes with stop sequences contribute bearings. Live vehicles add direction-less
+            // routes every few seconds; they must not rescan the national catalogue.
+            val bearingRoutes = remember(state.network?.routes, state.emmaRoutes) {
+                state.routes.filter { route -> route.directions.any { it.stopIds.size >= 2 } }
+            }
             val stopBearings by produceState(
                 initialValue = emptyMap<String, List<Double>>(),
-                state.network, state.emmaStops, state.emmaRoutes, state.lineDetails, state.vehicleJourney
+                bearingRoutes, state.network?.stops, state.emmaStops, state.lineDetails, state.vehicleJourney
             ) {
-                value = hu.app.bmenetrend.map.StopDirections.collectAsync(state.routes, state.stops, state.lineDetails.values, state.vehicleJourney)
+                value = hu.app.bmenetrend.map.StopDirections.collectAsync(bearingRoutes, state.stops, state.lineDetails.values, state.vehicleJourney)
             }
             val requestLocation: () -> Unit = {
                 locationAllowed = hasLocationPermission()
@@ -127,8 +132,7 @@ class MainActivity : ComponentActivity() {
                     crashReports.clear()
                     pendingCrash = null
                 } }
-                val mavBarcodeData by mav.barcodeData.collectAsStateWithLifecycle()
-                val isViewingTicket = mavBarcodeData != null
+                val isViewingTicket = tickets?.isViewingTicket() == true
                 MainNavigation(
                     tab,
                     { tab = it },
@@ -193,9 +197,7 @@ class MainActivity : ComponentActivity() {
                             onBrowse = { tab = MainTab.MAP; searchRequest++ }
                         )
                     },
-                    tickets = {
-                        MavTicketsScreen(viewModel = mav)
-                    },
+                    tickets = tickets?.let { host -> @Composable { host.Screen() } },
                     map = {
                 ViaBuszScreen(
                     state = state,

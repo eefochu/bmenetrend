@@ -4,6 +4,9 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+// The optional MÁV tickets module is used when its folder exists; otherwise a stub hides the tab.
+val hasTicketsModule = rootProject.findProject(":mav-tickets") != null
+
 val isBuildingBundle = gradle.startParameter.taskNames.any {
     it.contains("bundle", ignoreCase = true) || it.contains("buildrelease", ignoreCase = true)
 }
@@ -112,7 +115,10 @@ composeCompiler {
     stabilityConfigurationFiles.add(rootProject.layout.projectDirectory.file("stability_config.conf"))
 }
 
+if (!hasTicketsModule) android.sourceSets.getByName("main").java.srcDir("src/ticketsStub/java")
+
 dependencies {
+    if (hasTicketsModule) implementation(project(":mav-tickets"))
     implementation("androidx.work:work-runtime-ktx:2.10.1")
     implementation(platform("androidx.compose:compose-bom:2025.05.01"))
     implementation("androidx.compose.ui:ui")

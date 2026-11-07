@@ -88,6 +88,13 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private var boardFailure = false
     private var stopIndexFailed = false
     private var stopRoutes = emptyList<TransitRoute>()
+    private var stopRoutesIndexed: List<TransitRoute>? = null
+    private var stopRoutesById = emptyMap<String, TransitRoute>()
+    /** Keeps [stopRoutes] identity when nothing new arrives, so the live route catalogue is not rebuilt. */
+    private fun mergeStopRoutes(incoming: List<TransitRoute>, preferIncoming: Boolean = true) {
+        if (stopRoutesIndexed !== stopRoutes) { stopRoutesById = stopRoutes.associateBy { it.id }; stopRoutesIndexed = stopRoutes }
+        stopRoutes = CatalogueMerge.mergeRoutes(stopRoutes, incoming, preferIncoming, stopRoutesById)
+    }
     private var initialNetwork: TransitNetwork? = null
     private var bundledEmmaRoutes = emptyList<EmmaParser.Route>()
     private var bundledCatalogue = emptyList<TransitRoute>()
@@ -331,7 +338,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                                     favoriteLines[id]=result
                                     while(favoriteLines.size>64) favoriteLines.remove(favoriteLines.keys.first())
                                     if(result.stale) favoriteFailures+=id
-                                    stopRoutes=(result.catalogue.routes+stopRoutes).distinctBy { it.id }
+                                    mergeStopRoutes(result.catalogue.routes)
                                     recalculate()
                                 }
                             } catch(cancelled: CancellationException) { throw cancelled
@@ -488,13 +495,14 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             } else null
             val isOfflineActive = offlineBoard != null && (validBoard == null || boardFailure)
             if (offlineBoard != null) {
-                stopRoutes = (stopRoutes + offlineBoard.routes).distinctBy { it.id }
+                mergeStopRoutes(offlineBoard.routes, preferIncoming = false)
             }
             val effectiveEmmaDepartures = if (isOfflineActive) offlineBoard!!.departures else emmaDepartures
             val rawDepartures = (effectiveEmmaDepartures + localDepartures)
                 .distinctBy { listOf(it.routeId, it.directionId, it.expectedAt) }
                 .sortedBy { it.expectedAt }
-            val departures = current.boardingSelection?.let { filter -> rawDepartures.filter(filter::matches) } ?: rawDepartures
+            val departures = (current.boardingSelection?.let { filter -> rawDepartures.filter(filter::matches) } ?: rawDepartures)
+                .sameOr(current.departures)
             val emma = emmaLive?.takeIf {
                 Duration.between(it.fetchedAt, now).seconds in 0..120
             }
@@ -503,7 +511,9 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             }
             val vehicles = (snapshot?.vehicles.orEmpty() + emmaVehicles).filter {
                 Duration.between(it.observedAt, now).seconds in -30..180
-            }.map { if (Duration.between(it.observedAt, now).seconds > 90) it.copy(routeEstimate = null) else it }
+            }.map { if (it.routeEstimate != null && Duration.between(it.observedAt, now).seconds > 90) it.copy(routeEstimate = null) else it }
+                // Unchanged positions keep the list identity, so the map does not re-serialize every vehicle.
+                .sameOr(current.vehicles)
             val emmaMessage = when {
                 emma?.messageResource == R.plurals.volan_positions -> null
                 emma != null -> getApplication<Application>().getString(emma.messageResource)
@@ -536,7 +546,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                         station.copy(departures = rows, loading = nearbyLoading,
                             unavailable = station.platforms.any { it.id in nearbyFailed || (it.id.startsWith("emma:") && nearbyBoards[it.id]?.let { board -> Duration.between(board.fetchedAt, now).seconds !in 0..60 } != false) } && !nearbyLoading)
                     }
-                }.take(3),
+                }.take(3).sameOr(current.nearbyStations),
                 nearbyLoading = nearbyLoading || (!current.stopIndexLoaded && !stopIndexFailed && nearbySelection.isEmpty()),
                 boardUpdatedAt = if (hasEmma) validBoard?.fetchedAt else null,
                 error = null,
@@ -556,7 +566,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 vehicles = vehicles,
                 selectedVehicle = current.selectedVehicle?.let { selected -> vehicles.find { it.id == selected.id } ?: selected.copy(routeEstimate = null) },
                 trackedVehicle = current.trackedVehicle?.let { tracked -> vehicles.find { it.id == tracked.id } ?: tracked.copy(routeEstimate = null) },
-                emmaRoutes = liveRouteCatalogue.update(vehicles.filter { it.providerId in setOf("volan", "bkk", "hev", "mav") }, stopRoutes, lineCatalogue, bundledCatalogue),
+                emmaRoutes = liveRouteCatalogue.update(vehicles.filter { it.providerId in emmaProviders }, stopRoutes, lineCatalogue, bundledCatalogue),
                 emmaStatus = emmaMessage,
                 liveStopMinutes = snapshot?.arrivals.orEmpty()
                     .filter {
@@ -676,13 +686,12 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 }
                 loadedMapBoundsList.add(area)
                 loadedMapBounds = area
-                stopRoutes = (catalogue.routes + stopRoutes).distinctBy { it.id }
+                mergeStopRoutes(catalogue.routes)
                 mutableState.update { current ->
-                    val merged = current.emmaStops.associateBy { it.id }.toMutableMap()
-                    catalogue.stops.forEach { stop ->
-                        if (merged[stop.id]?.routeIds.isNullOrEmpty() || stop.transportMode == "SUBWAY" && stop.routeIds.isNotEmpty()) merged[stop.id] = stop
+                    val merged = CatalogueMerge.upsertStops(current.emmaStops, catalogue.stops) { existing, stop ->
+                        existing?.routeIds.isNullOrEmpty() || stop.transportMode == "SUBWAY" && stop.routeIds.isNotEmpty()
                     }
-                    current.copy(emmaStops = merged.values.toList())
+                    if (merged === current.emmaStops) current else current.copy(emmaStops = merged)
                 }
                 recalculate()
             } catch (cancelled: CancellationException) { throw cancelled
@@ -724,7 +733,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                         nearbyFailed = nearbyFailed + stationResults.filter { it.second == null }.map { it.first }
                         stationResults.forEach { (id, board) -> if (board != null) nearbyBoards[id] = board }
                         while (nearbyBoards.size > 36) nearbyBoards.remove(nearbyBoards.keys.first())
-                        stopRoutes = (stationResults.flatMap { it.second?.catalogue?.routes.orEmpty() } + stopRoutes).distinctBy { it.id }
+                        mergeStopRoutes(stationResults.flatMap { it.second?.catalogue?.routes.orEmpty() })
                         recalculate()
                     }
                     stationResults
@@ -732,7 +741,10 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             }
             if (generation != nearbyGeneration) return@launch
             val enriched = results.flatMap { it.second?.catalogue?.stops.orEmpty() }.associateBy { it.id }
-            mutableState.update { it.copy(emmaStops = it.emmaStops.map { stop -> enriched[stop.id] ?: stop }) }
+            mutableState.update { current ->
+                val merged = CatalogueMerge.replaceStops(current.emmaStops, enriched)
+                if (merged === current.emmaStops) current else current.copy(emmaStops = merged)
+            }
             nearbyLoading = false
             recalculate()
         }
@@ -754,9 +766,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 val text = journeyClient.execute(EmmaJourneyParser.QUERY, org.json.JSONObject().put("id", tripId))
                 val journey = kotlinx.coroutines.withContext(Dispatchers.Default) { EmmaJourneyParser.parse(text, tripId) }
                 if (journeyGeneration == generation && journeyKey == key) mutableState.update { current ->
-                    val stops = current.emmaStops.associateBy { it.id }.toMutableMap()
-                    journey.stops.forEach { stop -> if (stop.id !in stops) stops[stop.id] = stop }
-                    current.copy(vehicleJourney = journey, emmaStops = stops.values.toList())
+                    current.copy(vehicleJourney = journey,
+                        emmaStops = CatalogueMerge.upsertStops(current.emmaStops, journey.stops) { existing, _ -> existing == null })
                 }
             } catch (cancelled: CancellationException) { throw cancelled
             } catch (_: Exception) {
@@ -941,9 +952,9 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private fun publishStopIndex(index: EmmaStopsRepository.Index) {
         if (NetworkAccessPolicy.offline.value) return
         stopIndexFailed = index.stale
-        stopRoutes = (index.catalogue.routes + stopRoutes).distinctBy { it.id }
+        mergeStopRoutes(index.catalogue.routes)
         mutableState.update { current ->
-            val updated = index.catalogue.stops.associateBy { it.id }.toMutableMap()
+            val updated = index.catalogue.stops.associateByTo(LinkedHashMap(index.catalogue.stops.size)) { it.id }
             current.emmaStops.filter { it.routeIds.isNotEmpty() }.forEach { stop ->
                 val indexed = updated[stop.id]
                 updated[stop.id] = if (indexed == null) stop
@@ -1033,12 +1044,11 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                         boardFailure = results.size < emmaStops.size
                         if (!boardFailure) recentBoards[requestKey] = requireNotNull(board)
                         val routes = results.flatMap { it.catalogue.routes }.distinctBy { it.id }
-                        stopRoutes = (stopRoutes + routes).distinctBy { it.id }
+                        mergeStopRoutes(routes, preferIncoming = false)
                         val newStopsMap = results.flatMap { it.catalogue.stops }.associateBy { it.id }
                         mutableState.update { current ->
-                            current.copy(emmaStops = current.emmaStops.map {
-                                newStopsMap[it.id] ?: it
-                            })
+                            val merged = CatalogueMerge.replaceStops(current.emmaStops, newStopsMap)
+                            if (merged === current.emmaStops) current else current.copy(emmaStops = merged)
                         }
                     }
                 }
@@ -1142,11 +1152,10 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 val details = kotlinx.coroutines.withContext(Dispatchers.Default) { EmmaRouteParser.parse(text, id) }
                 if (lineGeneration == generation) {
                     lineLoadedAt[id] = Instant.now()
-                    stopRoutes = (listOf(details.route.copy(name = if (details.route.name == details.route.number) (route?.name ?: details.route.name) else details.route.name)) + stopRoutes.filterNot { it.id == id })
+                    mergeStopRoutes(listOf(details.route.copy(name = if (details.route.name == details.route.number) (route?.name ?: details.route.name) else details.route.name)))
                     mutableState.update { current ->
-                        val stops = current.emmaStops.associateBy { it.id }.toMutableMap()
-                        details.patterns.flatMap { it.stops }.forEach { stop -> if (stop.id !in stops) stops[stop.id] = stop }
-                        current.copy(lineDetails = current.lineDetails + (id to details), emmaStops = stops.values.toList())
+                        current.copy(lineDetails = current.lineDetails + (id to details),
+                            emmaStops = CatalogueMerge.upsertStops(current.emmaStops, details.patterns.flatMap { it.stops }) { existing, _ -> existing == null })
                     }
                     recalculate()
                 }
@@ -1197,11 +1206,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 if (generation != placeSearchGeneration) return@launch
                 if (stations.isNotEmpty()) {
                     mutableState.update { current ->
-                        val merged = current.emmaStops.associateBy { it.id }.toMutableMap()
-                        stations.forEach { stop ->
-                            if (merged[stop.id]?.routeIds.isNullOrEmpty()) merged[stop.id] = stop
-                        }
-                        current.copy(emmaStops = merged.values.toList())
+                        val merged = CatalogueMerge.upsertStops(current.emmaStops, stations) { existing, _ -> existing?.routeIds.isNullOrEmpty() }
+                        if (merged === current.emmaStops) current else current.copy(emmaStops = merged)
                     }
                     recalculate()
                 }
@@ -1443,6 +1449,11 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     }
 }
 
+
+private val emmaProviders = setOf("volan", "bkk", "hev", "mav")
+
+/** Returns [previous] when content-equal, so identity-keyed UI and map work is skipped. */
+internal fun <T> List<T>.sameOr(previous: List<T>): List<T> = if (this == previous) previous else this
 
 internal fun nearestStop(network: TransitNetwork, location: GeoPoint): String? = nearestStop(network.stops, location)
 internal fun nearestStop(stops: Collection<TransitStop>, location: GeoPoint): String? =
