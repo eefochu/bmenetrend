@@ -48,17 +48,38 @@ object StopClusters {
         return trimmed.matches(routeNumberRegex)
     }
 
-    fun areNamesCloselyMatching(nameA: String, nameB: String): Boolean {
-        val normA = normalize(nameA)
-        val normB = normalize(nameB)
-        if (normA == normB) return true
+    /** Derived forms of one raw name; matching compares these, not the raw strings. */
+    private class NameForms(raw: String) {
+        val normalized = StopClusters.normalize(raw)
+        val clean = StopClusters.cleanName(raw)
+        val words = clean.split(" ").filter { it.isNotBlank() }.toSet()
+    }
 
-        val cleanA = cleanName(nameA)
-        val cleanB = cleanName(nameB)
+    private const val NAME_FORMS_CAPACITY = 8192
+    // Clustering compares each name against many neighbours; regex cleaning per pair dominated
+    // allocation. Bounded LRU: names are a finite catalogue vocabulary.
+    private val nameForms = object : LinkedHashMap<String, NameForms>(256, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, NameForms>?) = size > NAME_FORMS_CAPACITY
+    }
+
+    private fun forms(raw: String): NameForms {
+        synchronized(nameForms) { nameForms[raw]?.let { return it } }
+        val computed = NameForms(raw)
+        synchronized(nameForms) { nameForms[raw] = computed }
+        return computed
+    }
+
+    fun areNamesCloselyMatching(nameA: String, nameB: String): Boolean {
+        val a = forms(nameA)
+        val b = forms(nameB)
+        if (a.normalized == b.normalized) return true
+
+        val cleanA = a.clean
+        val cleanB = b.clean
         if (cleanA.isNotEmpty() && cleanA == cleanB) return true
 
-        val wordsA = cleanA.split(" ").filter { it.isNotBlank() }.toSet()
-        val wordsB = cleanB.split(" ").filter { it.isNotBlank() }.toSet()
+        val wordsA = a.words
+        val wordsB = b.words
         if (wordsA.isNotEmpty() && wordsB.isNotEmpty()) {
             if (wordsA.containsAll(wordsB) || wordsB.containsAll(wordsA)) return true
         }

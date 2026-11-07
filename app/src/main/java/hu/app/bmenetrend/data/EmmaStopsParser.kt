@@ -289,7 +289,8 @@ object EmmaStopsParser {
     }
     fun freshDepartures(board: Board?, stopId: String?, now: Instant, windowMinutes: Int): List<Departure> {
         if (board == null || board.stopId != stopId || Duration.between(board.fetchedAt, now).seconds !in 0..60) return emptyList()
-        return board.departures.filter { it.expectedAt >= now && it.expectedAt <= now.plusSeconds(windowMinutes * 60L) }
+        val until = now.plusSeconds(windowMinutes * 60L)
+        return board.departures.filter { it.expectedAt >= now && it.expectedAt <= until }
     }
 
 }

@@ -45,7 +45,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
-import hu.app.bmenetrend.R
+import hu.app.bmenetrend.mav.R
 import hu.app.bmenetrend.mav.*
 import java.time.Instant
 import java.time.ZoneId
@@ -181,7 +181,7 @@ fun MavTicketsScreen(
                                 ) {
                                     CircularProgressIndicator()
                                     Text(
-                                        stringResource(R.string.ui_loading_data),
+                                        stringResource(R.string.mav_loading_data),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -224,7 +224,7 @@ fun MavTicketsScreen(
                                                 containerColor = MaterialTheme.colorScheme.error
                                             )
                                         ) {
-                                            Text(stringResource(R.string.ota_retry))
+                                            Text(stringResource(R.string.mav_retry))
                                         }
                                     }
                                 }
@@ -1004,7 +1004,7 @@ fun MavTicketDetailView(
                             ) {
                                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                                 Text(
-                                    stringResource(R.string.ui_loading_data),
+                                    stringResource(R.string.mav_loading_data),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = Color.DarkGray
                                 )

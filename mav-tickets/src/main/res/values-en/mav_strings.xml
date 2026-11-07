@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="tickets_nav">Tickets</string>
     <string name="mav_tickets_title">MÁV+ Tickets &amp; Passes</string>
     <string name="mav_account_title">MÁV+ Account</string>
     <string name="mav_login_prompt">Log in with your MÁV+ account to view your purchased tickets and passes.</string>
@@ -38,4 +37,6 @@
     <string name="mav_privacy_note">Credentials are securely sent directly to official MÁV servers.</string>
     <string name="mav_valid_status">Valid</string>
     <string name="mav_expired_status">Expired</string>
+    <string name="mav_loading_data">Loading data</string>
+    <string name="mav_retry">Retry</string>
 </resources>

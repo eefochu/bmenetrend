@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="tickets_nav">Jegyek</string>
     <string name="mav_tickets_title">MÁV+ Jegyek és bérletek</string>
     <string name="mav_account_title">MÁV+ Fiók</string>
     <string name="mav_login_prompt">Jelentkezz be MÁV+ fiókoddal a megvásárolt jegyek és bérletek megtekintéséhez.</string>
@@ -38,4 +37,6 @@
     <string name="mav_privacy_note">A bejelentkezési adatok közvetlenül és biztonságosan a MÁV szervereihez kerülnek továbbításra.</string>
     <string name="mav_valid_status">Érvényes</string>
     <string name="mav_expired_status">Lejárt</string>
+    <string name="mav_loading_data">Az adatok betöltése folyamatban</string>
+    <string name="mav_retry">Újrapróbálás</string>
 </resources>

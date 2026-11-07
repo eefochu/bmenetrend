@@ -38,7 +38,8 @@ fun MainNavigation(
     map: @Composable ()->Unit,
     planner: @Composable ()->Unit,
     favorites: @Composable ()->Unit,
-    tickets: @Composable ()->Unit = {},
+    /** Optional MÁV tickets screen; the Tickets tab is shown only when it is provided. */
+    tickets: (@Composable ()->Unit)? = null,
     offline: Boolean = false,
     onOfflineSettings: () -> Unit = {},
     hideBottomBarOnPlanner: Boolean = false,
@@ -47,6 +48,7 @@ fun MainNavigation(
     val saved=rememberSaveableStateHolder()
     val rail=transitWindowWidth()>=840.dp
     val compact=LocalDensity.current.fontScale>1.3f
+    val tabs=if(tickets!=null) MainTab.entries else MainTab.entries.filter { it!=MainTab.TICKETS }
     BackHandler(enabled=tab!=MainTab.MAP) { onTab(MainTab.MAP) }
     Surface(color=MaterialTheme.colorScheme.background) {
         Row(Modifier.fillMaxSize()) {
@@ -54,7 +56,7 @@ fun MainNavigation(
                 Column(Modifier.width(if(compact) 156.dp else 104.dp).fillMaxHeight().statusBarsPadding().navigationBarsPadding().selectableGroup(),
                     verticalArrangement=Arrangement.spacedBy(12.dp)) {
                     Spacer(Modifier.height(16.dp))
-                    MainTab.entries.forEach { item -> TransitNavigationItem(item,tab==item,{onTab(item)},Modifier.fillMaxWidth()) }
+                    tabs.forEach { item -> TransitNavigationItem(item,tab==item,{onTab(item)},Modifier.fillMaxWidth()) }
                 }
             }
             Column(Modifier.weight(1f)) {
@@ -64,7 +66,7 @@ fun MainNavigation(
                             MainTab.MAP -> map()
                             MainTab.PLANNER -> planner()
                             MainTab.FAVORITES -> Box(Modifier.widthIn(max=TransitDesign.contentWidth).fillMaxSize()) { favorites() }
-                            MainTab.TICKETS -> Box(Modifier.widthIn(max=TransitDesign.contentWidth).fillMaxSize()) { tickets() }
+                            MainTab.TICKETS -> Box(Modifier.widthIn(max=TransitDesign.contentWidth).fillMaxSize()) { tickets?.invoke() }
                         }
                     }
                 }
@@ -72,7 +74,7 @@ fun MainNavigation(
                     Column {
                         HorizontalDivider(color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=.5f))
                         Row(Modifier.fillMaxWidth().navigationBarsPadding().selectableGroup().padding(horizontal=12.dp,vertical=6.dp)) {
-                            MainTab.entries.forEach { item -> TransitNavigationItem(item,tab==item,{onTab(item)},
+                            tabs.forEach { item -> TransitNavigationItem(item,tab==item,{onTab(item)},
                                 Modifier.weight(if(compact) { if(tab==item) 1.6f else .8f } else 1f),compact) }
                         }
                     }
