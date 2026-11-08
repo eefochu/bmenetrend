@@ -67,7 +67,6 @@ data class UiState(
     val departureStatus: String? = null,
     val departureBoardLoading: Boolean = false,
     val departureBoardUnavailable: Boolean = false,
-    val mapZoom: Double = 13.2,
     val boardUpdatedAt: Instant? = null,
     val emmaRoutes: List<TransitRoute> = emptyList(),
     val lineCatalogueLoading: Boolean = false,

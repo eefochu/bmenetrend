@@ -40,4 +40,30 @@ internal data class StationSprite(
         if(radius>=5 && (!selected || colors.size>1)) circle(radius-3,if(focused && dark) 0xFF10160F.toInt() else Color.WHITE)
         return bitmap
     }
+
+    companion object {
+        fun arrowKey(diameterDp: Int, dark: Boolean) = "station-arrow-$diameterDp-$dark"
+
+        /**
+         * One north-pointing direction arrow on the same canvas, scale and centre as an arrowed
+         * sprite, so the map can rotate a single texture per heading instead of baking every
+         * heading combination into its own marker bitmap.
+         */
+        fun renderArrow(diameterDp: Int, dark: Boolean): Bitmap {
+            val scale=3.0
+            val radius=diameterDp/2.0
+            val side=ceil((radius+8)*2*scale).toInt()
+            val bitmap=Bitmap.createBitmap(side,side,Bitmap.Config.ARGB_8888).apply { density=480 }
+            val c=side/2.0
+            val path=Path()
+            StopDirections.triangle(c,c,radius*scale,0.0,-1.0,scale).forEachIndexed { i,p ->
+                if(i==0) path.moveTo(p.x.toFloat(),p.y.toFloat()) else path.lineTo(p.x.toFloat(),p.y.toFloat())
+            }
+            path.close()
+            Canvas(bitmap).drawPath(path,Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style=Paint.Style.FILL; color=if(dark) Color.WHITE else 0xFF334455.toInt()
+            })
+            return bitmap
+        }
+    }
 }

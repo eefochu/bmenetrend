@@ -182,7 +182,8 @@ class MainActivity : ComponentActivity() {
                                     routeOrigin = originPosition,
                                     placeCameraRequest = cameraRequest,
                                     dottedRoute = isDotted,
-                                    offline = state.offlineMode
+                                    offline = state.offlineMode,
+                                    onGestureChanged = model::setMapGesture,
                                 )
                             }
                         )
@@ -250,7 +251,11 @@ class MainActivity : ComponentActivity() {
                     val boarding=preview ?: state.boardingSelection
                     val pattern = boarding?.pattern
                     val route = browsingRoute ?: state.boardingSelection?.routeId?.let(state::findRoute)
-                    val focus = remember(vehicle?.id, vehicle?.routeId, boarding, state.network, state.emmaRoutes, state.lineDetails, state.vehicleJourney, state.emmaStops) {
+                    // create() reads only the focused route from the catalogue: key on it, not on the
+                    // whole live route list, which changes with every vehicle refresh.
+                    val focusRouteId = vehicle?.routeId ?: boarding?.routeId
+                    val focusRoute = focusRouteId?.let { id -> state.routes.find { it.id == id } }
+                    val focus = remember(vehicle?.id, vehicle?.routeId, boarding, focusRoute, state.network?.stops, state.lineDetails, state.vehicleJourney, state.emmaStops) {
                         if (vehicle == null && boarding == null) null else {
                             hu.app.bmenetrend.map.traceMapWork("BMenetrend.LineFocus") {
                                 LineMapFocus.create(vehicle, boarding, state.routes, state.lineDetails, state.vehicleJourney, state.stops)
@@ -291,7 +296,7 @@ class MainActivity : ComponentActivity() {
                             model.selectStopGroup(ids)
                         }
                     }
-                    NativeTransitMap(state.network, state.vehicles, state.selectedStopId.takeUnless { state.showNearby || browsingRoute!=null || state.selectedVehicle!=null }, state.userLocation, modifier, onMapStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, vehicle, routeGeometry = geometry, routeStops = stops, routeColor = color.toArgb(), fitRouteRequest = state.fitRouteRequest, selectedPlace = state.selectedPlace, placeCameraRequest = state.placeCameraRequest, lineFocus = focus, browsingNearby = state.showNearby, locationCameraRequest = state.locationCameraRequest, onViewportChanged = model::updateMapArea,stopBearings=stopBearings,onSharedStopSelected=onMapSharedStop,onMapClick=onDismissHighlight, offline = state.offlineMode, routeCatalogue = state.routesById, highlightedStopId = state.selectedStopId, onViewportPrefetch = model::prefetchMapArea)
+                    NativeTransitMap(state.network, state.vehicles, state.selectedStopId.takeUnless { state.showNearby || browsingRoute!=null || state.selectedVehicle!=null }, state.userLocation, modifier, onMapStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, vehicle, routeGeometry = geometry, routeStops = stops, routeColor = color.toArgb(), fitRouteRequest = state.fitRouteRequest, selectedPlace = state.selectedPlace, placeCameraRequest = state.placeCameraRequest, lineFocus = focus, browsingNearby = state.showNearby, locationCameraRequest = state.locationCameraRequest, onViewportChanged = model::updateMapArea,stopBearings=stopBearings,onSharedStopSelected=onMapSharedStop,onMapClick=onDismissHighlight, offline = state.offlineMode, routeCatalogue = state.routesById, highlightedStopId = state.selectedStopId, onViewportPrefetch = model::prefetchMapArea, onGestureChanged = model::setMapGesture)
                 }
                 })
 

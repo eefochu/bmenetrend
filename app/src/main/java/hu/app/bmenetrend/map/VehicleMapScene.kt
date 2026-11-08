@@ -11,9 +11,6 @@ import hu.app.bmenetrend.data.RailSupport
 import hu.app.bmenetrend.data.Vehicle
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
-import org.maplibre.geojson.Feature
-import org.maplibre.geojson.FeatureCollection
-import org.maplibre.geojson.Point
 
 /** Camera-independent vehicle data. MapLibre handles visibility and size during gestures. */
 internal object VehicleMapScene {
@@ -28,7 +25,9 @@ internal object VehicleMapScene {
         cachedIcons: Set<String>,
         pending: MutableMap<String, Bitmap>,
     ): String {
-        val features = ArrayList<Feature>(vehicles.size)
+        // Written straight to JSON: no per-vehicle Feature/Point/Gson object graph on every refresh.
+        val json = StringBuilder(vehicles.size * 230 + 64).append("{\"type\":\"FeatureCollection\",\"features\":[")
+        var first = true
         for (vehicle in vehicles) {
             currentCoroutineContext().ensureActive()
             if (focus != null && !focus.includes(vehicle)) continue
@@ -48,18 +47,22 @@ internal object VehicleMapScene {
                 pending[dot] = renderDot(hev?.color ?: metro?.color ?: marker.color)
             }
             val selected = vehicle.id == selectedId
-            features += Feature.fromGeometry(Point.fromLngLat(vehicle.position.lon, vehicle.position.lat)).apply {
-                addStringProperty("vehicle-id", vehicle.id)
-                addStringProperty("icon", key)
-                addStringProperty("dot", dot)
-                addBooleanProperty("rail", RailSupport.isTrain(vehicle.transportMode))
-                addNumberProperty("priority", if (selected) 1 else 0)
-                addNumberProperty("small-scale", (24f + if (selected) 6f else 0f) / 36f)
-                addNumberProperty("large-scale", (36f + if (selected) 6f else 0f) / 36f)
-                addNumberProperty("dot-scale", if (selected) 10f / 6f else 1f)
-            }
+            val lon = vehicle.position.lon; val lat = vehicle.position.lat
+            if (!lon.isFinite() || !lat.isFinite()) continue
+            if (!first) json.append(',')
+            first = false
+            json.append("{\"type\":\"Feature\",\"geometry\":{\"type\":\"Point\",\"coordinates\":[")
+                .append(lon).append(',').append(lat).append("]},\"properties\":{\"vehicle-id\":").appendJsonString(vehicle.id)
+                .append(",\"icon\":").appendJsonString(key)
+                .append(",\"dot\":").appendJsonString(dot)
+                .append(",\"rail\":").append(RailSupport.isTrain(vehicle.transportMode))
+                .append(",\"priority\":").append(if (selected) 1 else 0)
+                .append(",\"small-scale\":").append((24f + if (selected) 6f else 0f) / 36f)
+                .append(",\"large-scale\":").append((36f + if (selected) 6f else 0f) / 36f)
+                .append(",\"dot-scale\":").append(if (selected) 10f / 6f else 1f)
+                .append("}}")
         }
-        return FeatureCollection.fromFeatures(features).toJson()
+        return json.append("]}").toString()
     }
 
     private fun renderDot(color: Int): Bitmap = Bitmap.createBitmap(18, 18, Bitmap.Config.ARGB_8888).apply {

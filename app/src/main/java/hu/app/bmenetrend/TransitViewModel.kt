@@ -214,7 +214,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         }
         launch {
             while (isActive) {
-                if (mapVisible || favoritesVisible) recalculate()
+                if (mapVisible || favoritesVisible) recalculateWhenIdle()
                 delay(5_000)
             }
         }
@@ -388,7 +388,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             if (generation != NetworkAccessPolicy.generation) return@withLock
             emmaLive = result
             emmaFetchedAt = result.fetchedAt
-            recalculate()
+            recalculateWhenIdle()
         }
     }
 
@@ -436,7 +436,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 mutableState.update { it.copy(loading = false) }
             } finally {
                 mutableState.update { it.copy(refreshing = false) }
-                recalculate()
+                recalculateWhenIdle()
             }
         }
     }
@@ -470,6 +470,14 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 key.timeBucket - previous.timeBucket in 0..1
         }?.second
     }
+
+    /**
+     * Every UiState emission recomposes the whole UI (~75 ms per frame on a Kirin 970). Many
+     * recalculations change nothing but the clock; those keep the current state, and the clock
+     * still advances at least every [NOW_REFRESH] (the 5 s ticker), enough for minute countdowns.
+     */
+    private fun settle(current: UiState, next: UiState, now: Instant): UiState =
+        if (Duration.between(current.now, now) < NOW_REFRESH && next.copy(now = current.now) == current) current else next
 
     private fun recalculate() {
         if (NetworkAccessPolicy.offline.value) { recalculateOffline(); return }
@@ -528,7 +536,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             val liveWarning = stopProviders.mapNotNull { snapshot?.providerWarnings?.get(it) }
                 .distinct().joinToString("\n").takeIf { it.isNotBlank() }
             val clusterStopIds = if (cluster.isNotEmpty()) cluster.map { it.id }.toSet() else setOfNotNull(selectedId)
-            current.copy(
+            val next = current.copy(
                 now = now,
                 favoriteStations = if (!favoritesVisible) current.favoriteStations else favoriteStations(current).map { station ->
                     station.copy(loading=favoriteLoading && (station.stop.id in visibleFavorites || visibleFavorites.isEmpty()),
@@ -583,6 +591,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                     getApplication<Application>().getString(R.string.engine_live_positions)
                 else getApplication<Application>().getString(R.string.engine_no_live_positions),
             )
+            settle(current, next, now)
         }
         ensureVehicleJourney()
     }
@@ -632,6 +641,9 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         mapCenter = center
         ensureMapStops(bounds)
         if (!state.value.showNearby) return
+        // Zoomed out past where stops are drawn, "nearby" would mean whatever lies within 1.5 km of
+        // the map centre: re-selecting it after every pan scanned every stop and fetched boards.
+        if (mapZoom < NEARBY_MIN_ZOOM) return
         mapSettledJob?.cancel()
         mapSettledJob = viewModelScope.launch {
             // Camera updates already arrive on idle. Coalesce rapid idle callbacks
@@ -779,8 +791,10 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     }
 
 
+    // One lane: rapid toggles apply in the order they were made, so the last tap always wins.
+    private val offlineToggles = Dispatchers.IO.limitedParallelism(1)
     fun setOfflineMode(enabled: Boolean) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(offlineToggles) {
             if (!enabled) {
                 NetworkAccessPolicy.setOffline(getApplication(), false)
                 return@launch
@@ -981,9 +995,23 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun updateMapZoom(zoom: Double) {
-        mutableState.update { if (kotlin.math.abs(it.mapZoom - zoom) < 0.01) it else it.copy(mapZoom = zoom) }
+    // While the user drags or flings the map, periodic live-data refreshes do not re-emit UiState:
+    // each emission recomposes the whole UI on the main thread, which also handles the gesture.
+    // The update is applied as soon as the map settles. User actions still update immediately.
+    private var mapGesture = false
+    private var recalculatePending = false
+    fun setMapGesture(active: Boolean) {
+        mapGesture = active
+        if (!active && recalculatePending) { recalculatePending = false; recalculate() }
     }
+    private fun recalculateWhenIdle() {
+        if (mapGesture && mapVisible) recalculatePending = true else recalculate()
+    }
+
+    // Nothing renders the zoom: keep it here instead of re-emitting UiState (a full recomposition)
+    // after every pinch.
+    private var mapZoom = 13.2
+    fun updateMapZoom(zoom: Double) { mapZoom = zoom }
 
     private fun ensureBoardRequest(force: Boolean = false) {
         if (NetworkAccessPolicy.offline.value) { recalculateOffline(); return }
@@ -1451,6 +1479,9 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
 
 
 private val emmaProviders = setOf("volan", "bkk", "hev", "mav")
+private val NOW_REFRESH: Duration = Duration.ofSeconds(4)
+/** Ordinary stops are drawn from zoom 12; nearby boards follow the map only from just below that. */
+private const val NEARBY_MIN_ZOOM = 11.0
 
 /** Returns [previous] when content-equal, so identity-keyed UI and map work is skipped. */
 internal fun <T> List<T>.sameOr(previous: List<T>): List<T> = if (this == previous) previous else this
