@@ -24,7 +24,9 @@ sealed class TicketsUiState {
         val activeOrders: List<MavOrder>,
         val pastOrders: List<MavOrder>,
         val isOffline: Boolean = false,
-        val lastSyncTime: Long = 0L
+        val lastSyncTime: Long = 0L,
+        /** The MÁV server rejected the stored token: cached data is shown, user should log in again. */
+        val sessionExpired: Boolean = false
     ) : TicketsUiState() {
         val active: List<MavOrder> get() = activeOrders
         val past: List<MavOrder> get() = pastOrders
@@ -172,6 +174,7 @@ class MavViewModel(
                     lastSyncTime = repository.getLastSyncTime()
                 )
             } catch (e: Exception) {
+                val sessionExpired = (e as? MavApiException)?.isAuthError == true
                 // If online sync fails, check if we have cached tickets
                 val fallbackCache = repository.getCachedOrders()
                 if (fallbackCache != null && (fallbackCache.first.isNotEmpty() || fallbackCache.second.isNotEmpty())) {
@@ -186,7 +189,12 @@ class MavViewModel(
                         activeOrders = fallbackCache.first,
                         pastOrders = filteredPast,
                         isOffline = true,
-                        lastSyncTime = repository.getLastSyncTime()
+                        lastSyncTime = repository.getLastSyncTime(),
+                        sessionExpired = sessionExpired
+                    )
+                } else if (sessionExpired) {
+                    _ticketsState.value = TicketsUiState.Error(
+                        getApplication<Application>().getString(hu.app.bmenetrend.mav.R.string.mav_session_expired)
                     )
                 } else {
                     _ticketsState.value = TicketsUiState.Error(e.message ?: "Nem sikerült a jegyek betöltése")

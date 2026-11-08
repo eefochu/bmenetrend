@@ -16,7 +16,10 @@ import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-class MavApiException(val errorMessage: String, val statusCode: Int = 0) : IOException(errorMessage)
+class MavApiException(val errorMessage: String, val statusCode: Int = 0) : IOException(errorMessage) {
+    /** True when the server rejected our stored token (session expired / invalid). */
+    val isAuthError: Boolean get() = statusCode == 401 || statusCode == 403
+}
 
 class MavApiClient(
     private val client: OkHttpClient = defaultClient(),
@@ -1079,6 +1082,7 @@ class MavApiClient(
                             bodyString
                         }
                         val json = if (responseBody.isBlank()) JSONObject() else JSONObject(responseBody)
+                        vimErrorOnlyResponse(json)?.let { throw it }
                         if (continuation.isActive) continuation.resume(json)
                     } catch (e: Exception) {
                         if (continuation.isActive) continuation.resumeWithException(e)
@@ -1089,6 +1093,37 @@ class MavApiClient(
     }
 
     companion object {
+        /**
+         * VIM answers rejected requests (e.g. an expired token) with HTTP 200 and a body that only
+         * holds an error message: {"Uzenetek":[{"Tipus":"R","Szoveg":"Hibas input: Nem megfelelo SAML token!"}]}.
+         * Treat such a payload as a failure, otherwise callers would read it as "no tickets"
+         * and overwrite the offline cache with an empty list.
+         */
+        internal fun vimErrorOnlyResponse(json: JSONObject): MavApiException? {
+            val messages = json.optJSONArray("Uzenetek") ?: return null
+            var errorText: String? = null
+            for (i in 0 until messages.length()) {
+                val msg = messages.optJSONObject(i) ?: continue
+                if (msg.optString("Tipus", "").equals("R", ignoreCase = true)) {
+                    errorText = msg.optString("Szoveg", msg.optString("Uzenet", "")).ifBlank { "MÁV API hiba" }
+                    break
+                }
+            }
+            if (errorText == null) return null
+            val hasPayload = json.keys().asSequence().any { key ->
+                key != "Uzenetek" && when (val v = json.opt(key)) {
+                    null, JSONObject.NULL -> false
+                    is JSONArray -> v.length() > 0
+                    is JSONObject -> v.length() > 0
+                    is String -> v.isNotBlank()
+                    else -> true
+                }
+            }
+            if (hasPayload) return null
+            val isAuth = errorText.contains("token", ignoreCase = true)
+            return MavApiException(errorText, if (isAuth) 401 else 0)
+        }
+
         const val DEFAULT_BASE_URL = "https://vim.mav-start.hu/VIM/PR/20250529/MobileServiceS.svc/rest"
 
         private fun defaultClient(): OkHttpClient {

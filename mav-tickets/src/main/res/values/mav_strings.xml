@@ -7,6 +7,8 @@
     <string name="mav_password_label">Jelszó</string>
     <string name="mav_login_btn">Bejelentkezés</string>
     <string name="mav_offline_badge">Offline mód</string>
+    <string name="mav_session_expired">A MÁV bejelentkezés lejárt. Jelentkezz ki, majd be újra a jegyek frissítéséhez.</string>
+    <string name="mav_session_expired_notice">A MÁV bejelentkezés lejárt, a mentett jegyek láthatók. A frissítéshez jelentkezz be újra.</string>
     <string name="mav_offline_notice">Offline módban vagy. A szinkronizált jegyek és vonalkódok elérhetők.</string>
     <string name="mav_sync_time">Szinkronizálva: %1$s</string>
     <string name="mav_logging_in">Bejelentkezés folyamatban…</string>
