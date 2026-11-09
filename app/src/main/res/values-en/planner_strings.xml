@@ -24,7 +24,7 @@
     <string name="planner_done">Done</string>
     <string name="planner_refresh">Plan again</string>
     <string name="planner_loading">Finding a practical route…</string>
-    <string name="planner_timing">Leave after 2 minutes to get ready. Walking: about 4.1 km/h. Transfers allow an extra 3 minutes, plus the walk between stops.</string>
+    <string name="planner_timing">Leave now. Total time includes waiting and walking at about 4.1 km/h. Transfers allow an extra 3 minutes, plus the walk between stops.</string>
     <string name="planner_location_error">Location is not available yet. Allow location access, or choose a starting place.</string>
     <string name="planner_same_place">Choose a destination farther from your starting point.</string>
     <string name="planner_no_route">No practical journey was found at the selected time. Try another time or starting point.</string>

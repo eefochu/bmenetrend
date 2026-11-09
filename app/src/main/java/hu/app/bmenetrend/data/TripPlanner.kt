@@ -52,9 +52,11 @@ data class TripItinerary(val id: String, val start: Instant, val end: Instant, v
     val transfers: Int get() = (legs.count { !it.walking && !it.stayOnBoard } - 1).coerceAtLeast(0)
     val walkMeters: Double get() = legs.filter { it.walking }.sumOf { it.distance }
     val walkSeconds: Long get() = legs.filter { it.walking }.sumOf { Duration.between(it.start, it.end).seconds }
-    /** Includes the gaps supplied by the router, so a journey bar accounts for waiting too. */
-    fun segments(): List<PlanSegment> = buildList {
-        var cursor = start
+    /** Door-to-door time from the chosen departure, including the initial wait. */
+    fun totalSeconds(ready: Instant): Long = Duration.between(minOf(ready, start), end).seconds
+
+    fun segments(ready: Instant = start): List<PlanSegment> = buildList {
+        var cursor = minOf(ready, start)
         legs.forEach { leg ->
             if (leg.start > cursor) add(PlanSegment(cursor, leg.start, null))
             if (leg.end > leg.start) add(PlanSegment(leg.start, leg.end, leg))
@@ -69,7 +71,6 @@ data class TripPlan(val origin: PlannerEndpoint, val destination: PlannerEndpoin
 
 object TripPlanner {
     const val WALK_SPEED = 1.15
-    const val PREPARATION_SECONDS = 120L
     const val BOARD_SECONDS = 60L
     const val TRANSFER_SECONDS = 180L
     val zone: ZoneId = ZoneId.of("Europe/Budapest")
@@ -107,7 +108,7 @@ object TripPlanner {
     }
 
     fun parse(text: String, origin: PlannerEndpoint, destination: PlannerEndpoint, requestedAt: Instant,
-              ready: Instant = requestedAt.plusSeconds(PREPARATION_SECONDS)): TripPlan {
+              ready: Instant = requestedAt): TripPlan {
         val plan = EmmaGraphqlClient.data(text).optJSONObject("plan") ?: error("Missing plan")
         val itineraries = plan.optJSONArray("itineraries") ?: error("Missing itineraries")
         val parsed = (0 until itineraries.length()).mapNotNull { index ->
@@ -179,7 +180,7 @@ object TripPlanner {
         return true
     }
 
-    val order = compareBy<TripItinerary> { it.end }.thenBy { it.transfers }.thenBy { it.walkSeconds }.thenBy { it.walkMeters }.thenBy { it.durationSeconds }.thenBy { it.id }
+    val order = compareBy<TripItinerary> { it.end }.thenBy { it.walkSeconds }.thenBy { it.transfers }.thenBy { it.walkMeters }.thenBy { it.durationSeconds }.thenBy { it.id }
 
     fun itinerary(legs: List<PlanLeg>, ready: Instant): TripItinerary? {
         if (!feasible(legs, ready)) return null

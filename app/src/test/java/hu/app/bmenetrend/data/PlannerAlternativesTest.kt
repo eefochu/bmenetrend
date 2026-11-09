@@ -42,7 +42,7 @@ class PlannerAlternativesTest {
         val rail=journey("rail",transfers=1,walk=600.0,provider="mav")
         val bkk=journey("bkk",minutes=31,transfers=1,walk=300.0)
         val volan=journey("volan",minutes=33,walk=100.0,provider="volan")
-        assertEquals(listOf(rail,bkk,volan),select(volan,rail,bkk))
+        assertEquals(listOf(bkk,rail,volan),select(volan,rail,bkk))
     }
     @Test fun sameLinesAtNearbyBoardingStopsAreOneJourneyDespiteDifferentNamesAndIds() {
         val best=journey("best",line="762",walk=100.0)
@@ -53,7 +53,7 @@ class PlannerAlternativesTest {
     @Test fun routeVariantsWithDistantBoardingPointsAreNotMistakenForDuplicates() {
         val fast=journey("fast",line="762",walk=500.0)
         val lessWalking=journey("nearer",line="762",minutes=32,walk=100.0,shift=.004)
-        assertEquals(listOf(fast,lessWalking),select(fast,lessWalking))
+        assertEquals(listOf(lessWalking,fast),select(fast,lessWalking))
     }
     @Test fun fewerThanThreeUsefulOptionsAreNotPadded() {
         val best=journey("a")
@@ -70,13 +70,13 @@ class PlannerAlternativesTest {
         val marginal=journey("marginal",minutes=31,walk=450.0)
         assertEquals(listOf(fast),select(fast,marginal))
     }
-    @Test fun threeChoicesCoverFastestEasiestAndLeastWalkingRatherThanThreeMinorVariants() {
+    @Test fun threeChoicesKeepRecommendationFastestAndEasiestWhenWalkingSavingsAreWorthWaiting() {
         val fastest=journey("fastest",transfers=2,walk=600.0)
         val almost=journey("almost",minutes=31,transfers=2,walk=350.0)
         val easy=journey("easy",minutes=33,transfers=0,walk=500.0)
         val walk=journey("walk",minutes=34,transfers=1,walk=100.0)
         val source=listOf(walk,almost,easy,fastest)
-        assertEquals(listOf(fastest,easy,walk),TripPlanner.alternatives(source,ready))
+        assertEquals(listOf(almost,fastest,easy),TripPlanner.alternatives(source,ready))
         assertEquals(TripPlanner.alternatives(source,ready),TripPlanner.alternatives(source.reversed(),ready))
     }
     @Test fun aRestrictedSchoolServiceDoesNotEraseAnAvailablePublicJourney() {
@@ -104,6 +104,27 @@ class PlannerAlternativesTest {
         assertEquals("COACH",volan.mode)
         assertEquals("volan:hkir:hkir_V-R-200-762",volan.route!!.id)
         assertTrue(TripPlanner.feasible(journey.legs,time))
+    }
+    @Test fun waitingForBusBeatsWalkingWhenArrivalIsTheSame() {
+        val start = PlanPoint("A", GeoPoint(47.4,18.8))
+        val end = PlanPoint("B", GeoPoint(47.5,18.8))
+        val walking = TripItinerary("walk", ready, ready.plusSeconds(1800), listOf(
+            PlanLeg("WALK", ready, ready.plusSeconds(1800), 1800.0, start, end, null, null, false, false, emptyList())))
+        val bus = journey("bus", minutes=30, provider="homm")
+        assertEquals(listOf(bus),select(walking,bus))
+        assertEquals(1800L,bus.totalSeconds(ready))
+    }
+    @Test fun comfortableRecommendationKeepsFastestAndRespectsDelayAndTransferLimits() {
+        val fastest=journey("fast",walk=900.0)
+        val wait=journey("wait",minutes=32,walk=100.0,provider="viabusz")
+        assertEquals(listOf(wait,fastest),select(fastest,wait))
+        assertEquals(listOf(wait,fastest),select(wait,fastest))
+        val later=journey("later",minutes=33,walk=100.0)
+        assertEquals(fastest,select(fastest,later).first())
+        val extraTransfer=journey("transfer",minutes=31,transfers=1,walk=100.0)
+        assertEquals(fastest,select(fastest,extraTransfer).first())
+        val school=journey("school",minutes=31,walk=100.0,restricted=true)
+        assertEquals(fastest,select(fastest,school).first())
     }
     @Test fun busOnlySearchIncludesRegionalCoachAndCityBusAlongsideUnrestrictedTransitQuery() {
         assertTrue(TripPlanner.QUERY.contains("{mode:TRANSIT}"))

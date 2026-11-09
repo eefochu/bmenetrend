@@ -352,7 +352,7 @@ fun PlannerScreen(
                         )
                     }
                     items(result.itineraries, key = { it.id }, contentType = { "itinerary" }) { itinerary ->
-                        ItineraryCard(itinerary, itinerary == result.itineraries.first(), now) {
+                        ItineraryCard(itinerary, itinerary == result.itineraries.first(), now, result.readyAt) {
                             model.selectItinerary(itinerary.id)
                         }
                     }

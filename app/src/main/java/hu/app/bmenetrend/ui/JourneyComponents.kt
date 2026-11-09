@@ -35,13 +35,13 @@ import kotlin.math.roundToInt
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun ItineraryCard(trip: TripItinerary, fastest: Boolean, now: Instant, onClick: () -> Unit) {
+internal fun ItineraryCard(trip: TripItinerary, recommended: Boolean, now: Instant, ready: Instant = trip.start, onClick: () -> Unit) {
     Surface(onClick=onClick,shape=TransitDesign.panelShape,
-        color=if(fastest) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLowest,
-        contentColor=if(fastest) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-        border=if(fastest) null else androidx.compose.foundation.BorderStroke(1.dp,MaterialTheme.colorScheme.outlineVariant.copy(alpha=.6f))) {
+        color=if(recommended) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLowest,
+        contentColor=if(recommended) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+        border=if(recommended) null else androidx.compose.foundation.BorderStroke(1.dp,MaterialTheme.colorScheme.outlineVariant.copy(alpha=.6f))) {
         Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            JourneyBar(trip)
+            JourneyBar(trip, ready)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp),
                 itemVerticalAlignment = Alignment.CenterVertically) {
                 trip.legs.forEach { leg ->
@@ -56,13 +56,13 @@ internal fun ItineraryCard(trip: TripItinerary, fastest: Boolean, now: Instant, 
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    if (fastest) Text(stringResource(R.string.planner_fastest), style = MaterialTheme.typography.labelLarge,
+                    if (recommended) Text(stringResource(R.string.planner_best_route), style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                     Text(stringResource(R.string.planner_summary,
                         if (trip.transfers == 0) stringResource(R.string.planner_direct) else pluralStringResource(R.plurals.planner_transfers, trip.transfers, trip.transfers),
                         minutes(trip.walkSeconds)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                Text(stringResource(R.string.ui_minutes_short, minutes(Duration.between(trip.start, trip.end).seconds)),
+                Text(stringResource(R.string.ui_minutes_short, minutes(trip.totalSeconds(ready))),
                     style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             }
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -86,19 +86,20 @@ private fun segmentColor(segment: PlanSegment): Color = when {
 
 /** Draw-only proportions: the widths include every second of walking, riding and waiting. */
 @Composable
-internal fun JourneyBar(trip: TripItinerary) {
-    val segments = remember(trip) { trip.segments() }
+internal fun JourneyBar(trip: TripItinerary, ready: Instant = trip.start) {
+    val start = minOf(ready, trip.start)
+    val segments = remember(trip, start) { trip.segments(start) }
     val colors = segments.map { segmentColor(it) }
-    val duration = Duration.between(trip.start, trip.end).toMillis().coerceAtLeast(1).toDouble()
+    val duration = Duration.between(start, trip.end).toMillis().coerceAtLeast(1).toDouble()
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            ClockWithDate(trip.start, trip.start)
-            ClockWithDate(trip.end, trip.start)
+            ClockWithDate(start, start)
+            ClockWithDate(trip.end, start)
         }
         Canvas(Modifier.fillMaxWidth().height(10.dp)) {
             segments.forEachIndexed { index, segment ->
-                val left = (Duration.between(trip.start, segment.start).toMillis() / duration * size.width).toFloat()
-                val right = (Duration.between(trip.start, segment.end).toMillis() / duration * size.width).toFloat()
+                val left = (Duration.between(start, segment.start).toMillis() / duration * size.width).toFloat()
+                val right = (Duration.between(start, segment.end).toMillis() / duration * size.width).toFloat()
                 val gap = minOf(2.dp.toPx(), (right - left) / 4)
                 drawRoundRect(colors[index], Offset(left + gap / 2, 0f), Size((right - left - gap).coerceAtLeast(0f), size.height), CornerRadius(2.dp.toPx()))
             }
@@ -130,13 +131,21 @@ internal fun JourneyDetail(plan: TripPlan, trip: TripItinerary, now: Instant, on
             item(key = "summary", contentType = "summary") {
                 Surface(shape = TransitDesign.panelShape, color = MaterialTheme.colorScheme.surfaceContainerLowest, modifier = Modifier.padding(bottom = 24.dp)) {
                     Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text(departureLabel(trip.start), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                        Text(departureLabel(plan.readyAt), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                         Text("${endpointName(plan.origin)} → ${endpointName(plan.destination)}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                        JourneyBar(trip)
-                        Text(stringResource(R.string.planner_duration, minutes(Duration.between(trip.start, trip.end).seconds)), style = MaterialTheme.typography.titleMedium)
+                        JourneyBar(trip, plan.readyAt)
+                        Text(stringResource(R.string.planner_duration, minutes(trip.totalSeconds(plan.readyAt))), style = MaterialTheme.typography.titleMedium)
                         Text(stringResource(R.string.planner_bar_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         if (trip.start < now.minusSeconds(30)) Text(stringResource(R.string.planner_stale), color = MaterialTheme.colorScheme.error)
                     }
+                }
+            }
+            val initialWait = Duration.between(plan.readyAt, trip.start).seconds
+            if (initialWait > 0) item(key = "initial-wait", contentType = "wait") {
+                TimelinePoint(trip.legs.first().from, plan.readyAt, plan.readyAt, endpointName(plan.origin), null, waitColor)
+                TimelineRow(waitColor, waitColor) {
+                    Text(stringResource(R.string.planner_wait, minutes(initialWait)), Modifier.padding(vertical = 16.dp),
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             trip.legs.forEachIndexed { index, leg ->

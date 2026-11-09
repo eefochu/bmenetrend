@@ -366,7 +366,7 @@ class PlannerViewModel internal constructor(
         if (origin == null || !TripPlanner.supported(origin.position) || !TripPlanner.supported(destination.position) ||
             StopClusters.distanceMeters(origin.position, destination.position) < 25) return
         val requested = Instant.now()
-        val ready = current.departure ?: requested.plusSeconds(TripPlanner.PREPARATION_SECONDS)
+        val ready = current.departure ?: requested
         if (ready < requested) return
         warmupJob = viewModelScope.launch {
             delay(250)
@@ -401,7 +401,7 @@ class PlannerViewModel internal constructor(
         }
         val generation = ++planGeneration
         val requested = Instant.now()
-        val ready = current.departure ?: requested.plusSeconds(TripPlanner.PREPARATION_SECONDS)
+        val ready = current.departure ?: requested
         if (ready < requested) {
             mutable.update { it.copy(error = PlannerError.DEPARTURE_PASSED) }; return
         }

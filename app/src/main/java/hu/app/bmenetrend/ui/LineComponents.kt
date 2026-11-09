@@ -81,26 +81,21 @@ fun LineBadge(number: String, provider: String, mode: String? = null, sourceColo
               /** When set, every badge (bus, tram, train, metro, HÉV) occupies exactly this size so grids line up. */
               uniform: androidx.compose.ui.unit.DpSize? = null) {
     val metro = MetroLineStyle.forLine(number, mode)
-    if (metro != null) {
-        val context = LocalContext.current
-        val emblemSize = uniform?.height ?: 36.dp
-        val height = with(LocalDensity.current) { emblemSize.roundToPx() }
-        val emblem = remember(metro, height) { MetroLineStyle.render(context, metro, height).asImageBitmap() }
-        if (uniform != null) Box(Modifier.size(uniform), contentAlignment = Alignment.Center) {
-            Image(emblem, stringResource(R.string.metro_line_badge, metro.number), Modifier.size(emblemSize))
-        } else Image(emblem, stringResource(R.string.metro_line_badge, metro.number), Modifier.size(36.dp))
-        return
-    }
     val hev = HevLineStyle.forLine(number, mode)
-    if (hev != null) {
+    val logo = metro?.let { TransitLineLogo.metro(it.number) } ?: hev?.let { TransitLineLogo.hev(it.number) }
+    if (logo != null) {
         val context = LocalContext.current
-        val emblemSize = uniform?.height ?: 36.dp
-        val heightPx = with(LocalDensity.current) { emblemSize.roundToPx() }
-        val emblem = remember(hev, heightPx) { HevLineStyle.render(context, hev, heightPx).asImageBitmap() }
-        Row((if (uniform != null) Modifier.size(uniform) else Modifier), verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = if (uniform != null) Arrangement.Center else Arrangement.Start) {
-            Image(emblem, stringResource(R.string.hev_line_badge, hev.number), Modifier.size(emblemSize))
-            if (hev.number.length > 2) Text(hev.number.substring(2), Modifier.padding(start = 4.dp), style = MaterialTheme.typography.labelLarge, fontFamily = OpenSans)
+        val emblemHeight = uniform?.height ?: 36.dp
+        val heightPx = with(LocalDensity.current) { emblemHeight.roundToPx() }
+        val emblem = remember(logo, heightPx) { TransitLineLogo.render(context, logo, heightPx).asImageBitmap() }
+        val description = if (metro != null) stringResource(R.string.metro_line_badge, metro.number)
+            else stringResource(R.string.hev_line_badge, requireNotNull(hev).number)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Image(emblem, description,
+                if (uniform != null) Modifier.size(uniform) else Modifier.width(76.dp).height(36.dp),
+                contentScale = androidx.compose.ui.layout.ContentScale.Fit)
+            if (hev != null && hev.number.length > 2) Text(hev.number.substring(2), Modifier.padding(start = 4.dp),
+                style = MaterialTheme.typography.labelLarge, fontFamily = OpenSans)
         }
         return
     }
