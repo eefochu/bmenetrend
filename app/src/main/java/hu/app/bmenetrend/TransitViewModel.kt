@@ -223,7 +223,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         launch {
             while (isActive) {
                 if (mapVisible) refreshEmmaData()
-                delay(5_000)
+                delay(10_000)
             }
         }
         launch {
@@ -501,8 +501,10 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             val selectedId = current.selectedStopId.takeUnless { current.showNearby }
             val cluster = if(selectedId!=null) current.selectedPlatforms else emptyList()
             val hasEmma = cluster.any { it.id.startsWith("emma:") } || selectedId?.startsWith("emma:") == true
-            val validBoard = board?.takeIf { boardKey==current.boardRequestKey && it.stopId == selectedId && Duration.between(it.fetchedAt, now).seconds in 0..60 }
-            val emmaDepartures = if (hasEmma) EmmaStopsParser.freshDepartures(validBoard, selectedId, now, current.windowMinutes) else emptyList()
+            val validBoard = board?.takeIf { boardKey==current.boardRequestKey && it.stopId == selectedId && Duration.between(it.fetchedAt, now).seconds in 0..EmmaStopsParser.STALE_BOARD_SECONDS }
+            // Predictions older than a minute are still far better than an empty panel; they are labelled.
+            val boardStale = validBoard != null && Duration.between(validBoard.fetchedAt, now).seconds > EmmaStopsParser.FRESH_BOARD_SECONDS
+            val emmaDepartures = if (hasEmma) EmmaStopsParser.freshDepartures(validBoard, selectedId, now, current.windowMinutes, EmmaStopsParser.STALE_BOARD_SECONDS) else emptyList()
             val localStops = if (cluster.isNotEmpty()) cluster.filterNot { it.id.startsWith("emma:") }
                 else emptyList()
             val localDepartures = current.network?.let { network ->
@@ -558,7 +560,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 favoritesLoading = favoriteLoading || !current.stopIndexLoaded && !stopIndexFailed && current.favorites.any { it.startsWith("emma:") },
                 nearbyStations = nearbySelection.mapNotNull { station ->
                     val rows = station.platforms.flatMap { platform ->
-                        if (platform.id.startsWith("emma:")) EmmaStopsParser.freshDepartures(nearbyBoards[platform.id], platform.id, now, current.windowMinutes)
+                        if (platform.id.startsWith("emma:")) EmmaStopsParser.freshDepartures(nearbyBoards[platform.id], platform.id, now, current.windowMinutes, EmmaStopsParser.STALE_BOARD_SECONDS)
                         else current.network?.let { repository.departures(it, snapshot, platform.id, now, current.windowMinutes) }.orEmpty()
                     }.distinctBy { listOf(it.routeId, it.directionId, it.expectedAt) }.sortedBy { it.expectedAt }
                     if (!nearbyLoading && rows.isEmpty()) {
@@ -572,12 +574,12 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 boardUpdatedAt = if (hasEmma) validBoard?.fetchedAt else null,
                 error = null,
                 departureBoardLoading = hasEmma && boardLoading,
-                departureBoardUnavailable = hasEmma && !boardLoading && !isOfflineActive && (boardFailure || (validBoard == null && localDepartures.isEmpty())),
+                departureBoardUnavailable = hasEmma && !boardLoading && !isOfflineActive && ((boardFailure && emmaDepartures.isEmpty()) || (validBoard == null && localDepartures.isEmpty())),
                 departureStatus = if (isOfflineActive) {
                     getApplication<Application>().getString(R.string.ui_offline_timetable_active)
                 } else if (!hasEmma) null else when {
                     boardLoading && validBoard == null -> getApplication<Application>().getString(R.string.emma_board_loading)
-                    boardFailure && validBoard != null -> getApplication<Application>().getString(R.string.emma_board_stale)
+                    (boardFailure || boardStale) && validBoard != null -> getApplication<Application>().getString(R.string.emma_board_stale)
                     boardFailure || validBoard == null -> getApplication<Application>().getString(R.string.emma_board_unavailable)
                     validBoard.limitReached -> getApplication<Application>().getString(R.string.emma_board_limit)
                     else -> null
@@ -751,9 +753,10 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         nearbyJob = viewModelScope.launch {
             val semaphore = kotlinx.coroutines.sync.Semaphore(3)
             val results = coroutineScope {
-                stations.map { station -> async {
-                    val stationResults = fetchBoards(station.platforms, window, nearbyBoards, force, semaphore)
-                    // One slow station must not hold back departures that are already available.
+                // Six platforms share one request, whichever stations they belong to.
+                stations.flatMap { it.platforms }.distinctBy { it.id }.filter { it.id.startsWith("emma:") }.chunked(6).map { platforms -> async {
+                    val stationResults = fetchBoards(platforms, window, nearbyBoards, force, semaphore)
+                    // One slow batch must not hold back departures that are already available.
                     if (generation == nearbyGeneration) {
                         nearbyFailed = nearbyFailed + stationResults.filter { it.second == null }.map { it.first }
                         stationResults.forEach { (id, board) -> if (board != null) nearbyBoards[id] = board }
@@ -1042,11 +1045,10 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         boardJob?.cancel()
         // Revisiting an exact station/platform/window selection can display its
         // still-fresh board immediately. Forced refresh always bypasses this path.
-        board = if (force) null else recentBoards[key]?.takeIf {
-            Duration.between(it.fetchedAt, Instant.now()).seconds in 0..19
-        }
+        val remembered = recentBoards[key]?.let { it to Duration.between(it.fetchedAt, Instant.now()).seconds }
+        board = remembered?.takeIf { it.second in 0..EmmaStopsParser.STALE_BOARD_SECONDS }?.first
         boardFailure = false
-        if (board != null) {
+        if (!force && board != null && remembered!!.second in 0..19) {
             boardLoading = false
             recalculate()
             return

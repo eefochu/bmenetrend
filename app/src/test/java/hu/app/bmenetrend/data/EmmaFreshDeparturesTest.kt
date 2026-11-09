@@ -140,4 +140,32 @@ class EmmaFreshDeparturesTest {
         val result = EmmaStopsParser.freshDepartures(board, "stop1", now, windowMinutes)
         assertEquals(listOf(depAtNow, depMid, depAtEnd), result)
     }
+
+    @Test
+    fun freshDepartures_staleBoardSeconds_returns61And600SecondsOldBoard() {
+        val dep = makeDeparture("R1", now.plusSeconds(300))
+        val board61 = makeBoard(stopId = "stop1", departures = listOf(dep), fetchedAt = now.minusSeconds(61))
+        val result61 = EmmaStopsParser.freshDepartures(board61, "stop1", now, windowMinutes, EmmaStopsParser.STALE_BOARD_SECONDS)
+        assertEquals(listOf(dep), result61)
+
+        val board600 = makeBoard(stopId = "stop1", departures = listOf(dep), fetchedAt = now.minusSeconds(600))
+        val result600 = EmmaStopsParser.freshDepartures(board600, "stop1", now, windowMinutes, EmmaStopsParser.STALE_BOARD_SECONDS)
+        assertEquals(listOf(dep), result600)
+    }
+
+    @Test
+    fun freshDepartures_staleBoardSeconds_rejects601SecondsOldBoard() {
+        val dep = makeDeparture("R1", now.plusSeconds(300))
+        val board601 = makeBoard(stopId = "stop1", departures = listOf(dep), fetchedAt = now.minusSeconds(601))
+        val result601 = EmmaStopsParser.freshDepartures(board601, "stop1", now, windowMinutes, EmmaStopsParser.STALE_BOARD_SECONDS)
+        assertTrue(result601.isEmpty())
+    }
+
+    @Test
+    fun freshDepartures_defaultMaxAge_stillRejectsAt61Seconds() {
+        val dep = makeDeparture("R1", now.plusSeconds(300))
+        val board61 = makeBoard(stopId = "stop1", departures = listOf(dep), fetchedAt = now.minusSeconds(61))
+        val result = EmmaStopsParser.freshDepartures(board61, "stop1", now, windowMinutes)
+        assertTrue(result.isEmpty())
+    }
 }

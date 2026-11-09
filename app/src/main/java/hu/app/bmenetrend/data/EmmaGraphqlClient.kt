@@ -27,11 +27,19 @@ class EmmaGraphqlClient(private val client: OkHttpClient = defaultHttpClient(), 
         val queryBackoff = synchronized(queryBackoffs) { queryBackoffs.getOrPut(query) { EmmaRequestBackoff() } }
         queryBackoff.check(Instant.now())
         val body = JSONObject().put("query", query).put("variables", variables).toString()
-        return inFlight.execute(RequestKey(client, backoff, body, networkGeneration)) {
-            backoff.check(Instant.now())
-            queryBackoff.check(Instant.now())
-            executeRequest(body, networkGeneration, queryBackoff)
-        }
+        val startedAt = System.nanoTime()
+        return try {
+            inFlight.execute(RequestKey(client, backoff, body, networkGeneration)) {
+                backoff.check(Instant.now())
+                queryBackoff.check(Instant.now())
+                executeRequest(body, networkGeneration, queryBackoff)
+            }.also { trace(query, startedAt, "ok ${it.length}") }
+        } catch (error: Exception) { trace(query, startedAt, error.toString()); throw error }
+    }
+
+    private fun trace(query: String, startedAt: Long, outcome: String) {
+        if (!hu.app.bmenetrend.BuildConfig.DEBUG) return
+        runCatching { android.util.Log.d("EmmaHttp", "${query.take(28).replace('\n', ' ')} ${(System.nanoTime() - startedAt) / 1_000_000}ms $outcome") }
     }
 
     private suspend fun executeRequest(body: String, networkGeneration: Long, queryBackoff: EmmaRequestBackoff): String {
@@ -55,6 +63,7 @@ class EmmaGraphqlClient(private val client: OkHttpClient = defaultHttpClient(), 
                             }
                             it.body?.string() ?: throw IOException("Empty EMMA response")
                         }
+                        backoff.succeeded(); queryBackoff.succeeded()
                         if (networkGeneration != hu.app.bmenetrend.offline.NetworkAccessPolicy.generation) throw IOException("Network mode changed")
                         if (continuation.isActive) continuation.resume(text)
                     } catch (error: Exception) { if (continuation.isActive) continuation.resumeWithException(error) }
