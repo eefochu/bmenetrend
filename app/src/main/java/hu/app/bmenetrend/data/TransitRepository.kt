@@ -30,7 +30,11 @@ class TransitRepository(context: Context) {
         .connectTimeout(10, TimeUnit.SECONDS).readTimeout(15, TimeUnit.SECONDS)
         .callTimeout(20, TimeUnit.SECONDS).build())
     private fun message(id: Int, vararg args: Any) = appContext.getString(id, *args)
-    private fun bundled(provider: Provider) = NetworkJson.decode(appContext.assets.open(provider.asset).bufferedReader().use { it.readText() })
+    // Bundled timetables are immutable: decode each once instead of on every daily verification.
+    private val bundledNetworks = java.util.concurrent.ConcurrentHashMap<String, TransitNetwork>()
+    private fun bundled(provider: Provider) = bundledNetworks.getOrPut(provider.id) {
+        NetworkJson.decode(appContext.assets.open(provider.asset).bufferedReader().use { it.readText() })
+    }
     private fun cache(provider: Provider) = File(appContext.filesDir, "${provider.id}-network-v3.json")
 
     fun bundledNetwork(): TransitNetwork = NetworkMerger.merge(providers.map { checkedDate(bundled(it), it, Instant.now()) })

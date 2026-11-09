@@ -154,8 +154,15 @@ object TransitSearch {
     fun getCachedStopIndex(stops: List<TransitStop>, national: List<TransitStop> = emptyList()): List<StopEntry>? =
         cachedStops?.takeIf { it.local === stops && it.national === national }?.entries
 
+    private val stopIndexLock = Any()
+
+    /** Single-flight: concurrent callers for the same catalogues share one build. */
     fun indexStops(stops: List<TransitStop>, national: List<TransitStop> = emptyList()): List<StopEntry> {
         getCachedStopIndex(stops, national)?.let { return it }
+        return synchronized(stopIndexLock) { getCachedStopIndex(stops, national) ?: buildStopIndex(stops, national) }
+    }
+
+    private fun buildStopIndex(stops: List<TransitStop>, national: List<TransitStop>): List<StopEntry> {
         val combined = if (national.isEmpty()) stops else if (stops.isEmpty()) national else stops + national
         val consolidated = StopClusters.consolidateForSearch(combined)
         val indexed = consolidated.map { stop ->

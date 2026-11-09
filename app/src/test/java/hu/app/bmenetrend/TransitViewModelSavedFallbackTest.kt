@@ -44,6 +44,9 @@ class TransitViewModelSavedFallbackTest {
         } catch (_: Exception) {}
         NetworkAccessPolicy.initialize(app)
         NetworkAccessPolicy.setOffline(app, false)
+        // Online mode also needs validated connectivity; Robolectric's default network has none.
+        // Without this the tests passed only when an earlier test in the same JVM had set it.
+        NetworkAccessPolicy.onConnectivityChanged(true)
 
         timetableDir = tempFolder.newFolder("station-timetables-v1")
         timetableRepo = StationTimetableRepository(context = app, baseDirectory = timetableDir)
