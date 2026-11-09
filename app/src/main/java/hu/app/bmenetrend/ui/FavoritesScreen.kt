@@ -1,3 +1,4 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 package hu.app.bmenetrend.ui
 
 import androidx.compose.foundation.BorderStroke
@@ -8,6 +9,10 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.testTag
@@ -116,9 +121,20 @@ internal fun extractStationLines(station: NearbyStation, state: UiState): Statio
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun StationBadgeGrid(badges: List<StationBadgeItem>, modifier: Modifier = Modifier) {
-    FlowRow(modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        badges.forEach { badge -> LineBadge(badge.label, badge.provider, badge.mode, badge.sourceColor, showIcon = false) }
+    // Every badge has the same size, so trains, buses, metro and HÉV form one even grid; the cell width
+    // is stretched from UniformBadge so the columns end flush with the card on both sides.
+    BoxWithConstraints(modifier.fillMaxWidth()) {
+        val gap = 6.dp
+        val columns = ((maxWidth + gap) / (UniformBadge.width + gap)).toInt().coerceAtLeast(1)
+        // Whole pixels, rounded down: a fractional overflow would push each row's last badge onto the next line.
+        val cell = with(androidx.compose.ui.platform.LocalDensity.current) {
+            val cellPx = (constraints.maxWidth - gap.roundToPx() * (columns - 1)) / columns
+            androidx.compose.ui.unit.DpSize(cellPx.toDp(), UniformBadge.height)
+        }
+        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(gap), verticalArrangement = Arrangement.spacedBy(gap),
+            maxItemsInEachRow = columns) {
+            badges.forEach { badge -> LineBadge(badge.label, badge.provider, badge.mode, badge.sourceColor, showIcon = false, uniform = cell) }
+        }
     }
 }
 
@@ -140,158 +156,139 @@ fun FavoritesScreen(
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         Box(Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
             TransitPageIntro(stringResource(R.string.favorites_title), null) {
-                if (state.favorites.isNotEmpty()) FilledTonalIconButton(onClick = onRefresh, shape = TransitDesign.controlShape) {
-                    Icon(Icons.Rounded.Refresh, stringResource(R.string.favorites_refresh_lines))
+                if (state.favorites.isNotEmpty()) CookieIconButton(onClick = onRefresh, enabled = !state.favoritesLoading, size = 52.dp) {
+                    if (state.favoritesLoading) TransitLoading(size = 32.dp, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    else Icon(Icons.Rounded.Refresh, stringResource(R.string.favorites_refresh_lines))
                 }
             }
         }
-        Box(Modifier.fillMaxWidth().height(8.dp).padding(horizontal = 20.dp)) {
-            if (state.favoritesLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
-        }
-        LazyColumn(Modifier.weight(1f), state = listState, contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        TransitRefreshBar(state.favoritesLoading, Modifier.padding(horizontal = 20.dp))
+        LazyColumn(Modifier.weight(1f), state = listState, contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp)) {
             if (state.offlineMode && state.favorites.any { it !in state.stopsById }) item(key = "offline_missing", contentType = "notice") {
                 Text(stringResource(R.string.offline_missing_favorites), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             if (state.favoriteStations.isEmpty()) item(key = "empty", contentType = "notice") {
-                Surface(shape = TransitDesign.panelShape, color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .55f))) {
-                    Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        TransitIconTile(Icons.Rounded.FavoriteBorder)
-                        Text(stringResource(R.string.design_favorites_intro), style = MaterialTheme.typography.titleLarge)
+                Surface(Modifier.animateItem(), shape = TransitDesign.panelShape, color = MaterialTheme.colorScheme.surfaceContainer) {
+                    Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        ShapeIconTile(Icons.Rounded.Favorite, shape = MaterialShapes.Cookie12Sided)
+                        Text(stringResource(R.string.design_favorites_intro), style = MaterialTheme.typography.titleLarge,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                         Text(stringResource(if (state.favorites.isEmpty()) R.string.favorites_empty else if (state.favoritesLoading) R.string.favorites_loading else R.string.favorites_index_unavailable),
-                            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center)
 
                     }
                 }
             }
-            items(state.favoriteStations, key = { "favorite:${it.stop.id}" }, contentType = { "station" }) { station ->
-                val lines = remember(station.stop, station.platforms, state.routes) {
-                    extractStationLines(station, state)
-                }
-                var menuExpanded by remember { mutableStateOf(false) }
-                Surface(
-                    onClick = { onStop(station.stop.id) },
-                    modifier = Modifier.testTag("favorite:${station.stop.id}"),
-                    shape = TransitDesign.panelShape,
-                    color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .55f))
-                ) {
-                    Column(Modifier.padding(bottom = 6.dp)) {
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(start = 12.dp, end = 4.dp, top = 2.dp, bottom = 0.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            val stationPlatform = station.stop.platformCode?.ifBlank { null }
-                                ?: hu.app.bmenetrend.data.BkkPlatformIndex.getPlatformCode(station.stop.id)
-                            Row(
-                                modifier = Modifier
-                                    .weight(1f),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text(
-                                    text = station.stop.name,
-                                    modifier = Modifier.weight(1f, fill = false),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                stationPlatform?.let { PlatformBadge(it) }
-                            }
-                            Box {
-                                IconButton(
-                                    onClick = { menuExpanded = true },
-                                    modifier = Modifier.size(48.dp)
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.MoreVert,
-                                        contentDescription = stringResource(R.string.search_show_more),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
-                                    )
-                                }
-                                DropdownMenu(
-                                    expanded = menuExpanded,
-                                    onDismissRequest = { menuExpanded = false },
-                                    shape = RoundedCornerShape(12.dp),
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                                ) {
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.favorites_all_departures)) },
-                                        leadingIcon = { Icon(Icons.Rounded.Schedule, null) },
-                                        onClick = {
-                                            menuExpanded = false
-                                            onStop(station.stop.id)
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.ui_remove_favorite)) },
-                                        leadingIcon = { Icon(Icons.Rounded.DeleteOutline, null) },
-                                        onClick = {
-                                            menuExpanded = false
-                                            onRemove(station.stop.id)
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                        if (station.loading && lines.trainBadges.isEmpty() && lines.otherBadges.isEmpty()) {
-                            LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp))
-                        }
-
-                        if (lines.trainBadges.isNotEmpty() || lines.otherBadges.isNotEmpty()) {
-                            StationBadgeGrid(lines.trainBadges + lines.otherBadges)
-                        }
-
-                        if (lines.trainBadges.isEmpty() && lines.otherBadges.isEmpty() && !station.loading) {
-                            Text(
-                                stringResource(if (station.unavailable) R.string.favorites_lines_unavailable else R.string.favorites_no_lines),
-                                Modifier.padding(16.dp),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        if (station.unavailable && (lines.trainBadges.isNotEmpty() || lines.otherBadges.isNotEmpty())) {
-                            Text(
-                                stringResource(R.string.favorites_lines_stale),
-                                Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
-                        station.departures.filter { !it.isCancelled && it.expectedAt >= state.now }.minByOrNull { it.expectedAt }?.let { next ->
-                            val wait = kotlin.math.ceil(java.time.Duration.between(state.now, next.expectedAt).seconds / 60.0).toInt().coerceAtLeast(0)
-                            val nextRoute = state.findRoute(next.routeId)
-                            HorizontalDivider(Modifier.padding(horizontal = 12.dp, vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant)
-                            Row(Modifier.padding(horizontal = 12.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                LineBadge(next.routeNumber, nextRoute?.providerId ?: station.stop.providerId,
-                                    nextRoute?.transportMode ?: station.stop.transportMode, nextRoute?.color, showIcon = false)
-                                Text(next.destination, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis)
-                                DepartureCount(wait, rememberFavoriteClock.format(next.expectedAt), next.kind == ArrivalKind.LIVE)
-                            }
-                        }
-                        Text(providerNames(station.stop.providerIds), Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
-                            style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
+            val stations = state.favoriteStations
+            itemsIndexed(stations, key = { _, it -> "favorite:${it.stop.id}" }, contentType = { _, _ -> "station" }) { index, station ->
+                FavoriteStationCard(station, state, index, stations.size, onStop, onRemove,
+                    // Springy placement: removing or reordering a favourite slides the others into place.
+                    Modifier.animateItem(fadeInSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
+                        placementSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
+                        fadeOutSpec = MaterialTheme.motionScheme.fastEffectsSpec()))
             }
         }
-        Surface(color = MaterialTheme.colorScheme.surface) {
-            FilledTonalButton(onClick = onBrowse,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp).heightIn(min = 56.dp),
-                shape = TransitDesign.controlShape) {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            // The page's one primary action: its corners spring rounder under the finger (Expressive shape morph).
+            // Filled primary, like the planner's "Mutasd az útvonalakat": light accent with dark text in dark mode.
+            Button(onClick = onBrowse,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).heightIn(min = 56.dp),
+                shapes = ButtonDefaults.shapes(shape = TransitDesign.panelShape, pressedShape = RoundedCornerShape(28.dp)),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary)) {
                 Icon(Icons.Rounded.Add, null, Modifier.size(20.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.design_add_stop), style = MaterialTheme.typography.labelLarge)
             }
         }
 
+    }
+}
+
+/**
+ * One favourite inside the grouped list: cookie transport badge, name and operator,
+ * an even grid of same-size line badges, and the next departure in its own inset strip.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun FavoriteStationCard(station: NearbyStation, state: UiState, index: Int, count: Int,
+                                onStop: (String) -> Unit, onRemove: (String) -> Unit, modifier: Modifier = Modifier) {
+    val lines = remember(station.stop, station.platforms, state.routes) { extractStationLines(station, state) }
+    val badges = lines.trainBadges + lines.otherBadges
+    val modes = remember(badges) { badges.mapNotNull { it.mode }.toSet() }
+    val rail = lines.trainBadges.isNotEmpty()
+    val stationPlatform = station.stop.platformCode?.ifBlank { null }
+        ?: hu.app.bmenetrend.data.BkkPlatformIndex.getPlatformCode(station.stop.id)
+    var menuExpanded by remember { mutableStateOf(false) }
+    SegmentedItem(index, count, modifier.testTag("favorite:${station.stop.id}"), onClick = { onStop(station.stop.id) }) {
+        Column(Modifier.padding(start = 14.dp, end = 6.dp, top = 14.dp, bottom = 14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                ShapeIconTile(stopModeIcon(modes, rail), size = 44.dp, shape = MaterialShapes.Cookie9Sided)
+                Column(Modifier.weight(1f).padding(top = 1.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(station.stop.name, Modifier.weight(1f, fill = false), style = MaterialTheme.typography.titleMedium,
+                            maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        stationPlatform?.let { PlatformBadge(it) }
+                    }
+                    Text(providerNames(station.stop.providerIds), style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+                Box {
+                    IconButton(onClick = { menuExpanded = true }, modifier = Modifier.size(40.dp)) {
+                        Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.search_show_more),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    // Expressive menu: the everyday action and the destructive one sit in separate groups.
+                    DropdownMenuPopup(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+                        DropdownMenuGroup(shapes = MenuDefaults.groupShape(0, 2)) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.favorites_all_departures)) },
+                                shape = MenuDefaults.itemShape(0, 1).shape,
+                                leadingIcon = { Icon(Icons.Rounded.Schedule, null) },
+                                onClick = { menuExpanded = false; onStop(station.stop.id) },
+                            )
+                        }
+                        Spacer(Modifier.height(MenuDefaults.GroupSpacing))
+                        DropdownMenuGroup(shapes = MenuDefaults.groupShape(1, 2)) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.ui_remove_favorite)) },
+                                shape = MenuDefaults.itemShape(0, 1).shape,
+                                leadingIcon = { Icon(Icons.Rounded.DeleteOutline, null) },
+                                colors = MenuDefaults.itemColors(textColor = MaterialTheme.colorScheme.error,
+                                    leadingIconColor = MaterialTheme.colorScheme.error),
+                                onClick = { menuExpanded = false; onRemove(station.stop.id) },
+                            )
+                        }
+                    }
+                }
+            }
+            Column(Modifier.padding(end = 8.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                when {
+                    badges.isNotEmpty() -> StationBadgeGrid(badges)
+                    station.loading -> TransitRefreshBar(true)
+                    else -> Text(stringResource(if (station.unavailable) R.string.favorites_lines_unavailable else R.string.favorites_no_lines),
+                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                if (station.unavailable && badges.isNotEmpty()) Text(stringResource(R.string.favorites_lines_stale),
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                station.departures.filter { !it.isCancelled && it.expectedAt >= state.now }.minByOrNull { it.expectedAt }?.let { next ->
+                    val wait = kotlin.math.ceil(java.time.Duration.between(state.now, next.expectedAt).seconds / 60.0).toInt().coerceAtLeast(0)
+                    val nextRoute = state.findRoute(next.routeId)
+                    // The card's one live element sits in its own inset strip.
+                    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                        .padding(start = 10.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        LineBadge(next.routeNumber, nextRoute?.providerId ?: station.stop.providerId,
+                            nextRoute?.transportMode ?: station.stop.transportMode, nextRoute?.color, showIcon = false, uniform = UniformBadge)
+                        Text(DestinationFormatter.clean(next.destination, next.routeNumber).ifBlank { next.destination }, Modifier.weight(1f),
+                            style = MaterialTheme.typography.bodyMediumEmphasized, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        DepartureCount(wait, rememberFavoriteClock.format(next.expectedAt), next.kind == ArrivalKind.LIVE)
+                    }
+                }
+            }
+        }
     }
 }
 

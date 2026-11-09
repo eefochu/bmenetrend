@@ -58,7 +58,7 @@ fun EmmaLineBrowser(
             Text(pluralStringResource(R.plurals.emma_journey_stops,pattern.stops.size,pattern.stops.size),
                 Modifier.padding(horizontal=22.dp,vertical=8.dp),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        if (state.loadingLineId == route.id) item(key="loading",contentType="progress") { LinearProgressIndicator(Modifier.fillMaxWidth()) }
+        if (state.loadingLineId == route.id) item(key="loading",contentType="progress") { TransitRefreshBar(true) }
         if (state.lineErrorId == route.id) item(key="error",contentType="notice") {
             Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(stringResource(R.string.line_load_error))

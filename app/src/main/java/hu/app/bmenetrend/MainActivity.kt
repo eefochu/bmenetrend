@@ -142,9 +142,6 @@ class MainActivity : ComponentActivity() {
                     planner = {
                         PlannerScreen(
                             model = planner,
-                            favoriteDestinations = remember(state.favoriteStations) {
-                                state.favoriteStations.map { hu.app.bmenetrend.data.PlannerEndpoint.fromStop(it.stop) }
-                            },
                             onRequestLocation = requestLocation,
                             onStopDepartures = { stopId ->
                                 model.selectStop(stopId)

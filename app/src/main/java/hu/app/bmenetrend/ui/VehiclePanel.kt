@@ -75,7 +75,10 @@ fun VehiclePanel(state: UiState, onClose: () -> Unit, onRefresh: () -> Unit, onS
                         color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=2,overflow=TextOverflow.Ellipsis)
                 }
             }
-            IconButton(onClick=onRefresh,enabled=!state.vehicleJourneyLoading) { Icon(Icons.Rounded.Refresh,stringResource(R.string.emma_vehicle_refresh)) }
+            CookieIconButton(onClick=onRefresh,enabled=!state.vehicleJourneyLoading,size=44.dp) {
+                if(state.vehicleJourneyLoading) TransitLoading(size=30.dp,color=MaterialTheme.colorScheme.onSecondaryContainer)
+                else Icon(Icons.Rounded.Refresh,stringResource(R.string.emma_vehicle_refresh))
+            }
         }
         progress?.let { position ->
             Text(when {
@@ -89,7 +92,7 @@ fun VehiclePanel(state: UiState, onClose: () -> Unit, onRefresh: () -> Unit, onS
             Modifier.padding(horizontal = 22.dp, vertical = 6.dp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(stringResource(R.string.volan_observation_time, observationFormat.format(vehicle.observedAt)),
             Modifier.padding(start = 22.dp, end = 22.dp, bottom = 12.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        if (state.vehicleJourneyLoading) LinearProgressIndicator(Modifier.fillMaxWidth()) else HorizontalDivider()
+        if (state.vehicleJourneyLoading) TransitRefreshBar(true) else HorizontalDivider()
         LazyColumn(Modifier.weight(1f), state = listState, contentPadding = PaddingValues(bottom = 24.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())) {
             if (Duration.between(vehicle.observedAt, state.now).seconds > 180) item(contentType = "old_position") {
                 Text(stringResource(R.string.emma_vehicle_old_position), Modifier.padding(22.dp), color = MaterialTheme.colorScheme.error)

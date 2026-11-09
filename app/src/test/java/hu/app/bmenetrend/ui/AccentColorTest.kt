@@ -61,7 +61,8 @@ class MaterialYouDynamicThemeTest {
                 observedColors = MaterialTheme.colorScheme
             }
         }
-        val expected = accentColorScheme(AccentColor.ROSE, dark = true)
+        // Surfaces carry the accent hue at their own lightness (withAccentSurfaces); nothing else overrides them.
+        val expected = accentColorScheme(AccentColor.ROSE, dark = true).withAccentSurfaces(dark = true)
         assertNotNull(observedColors)
         assertEquals(expected.surface, observedColors!!.surface)
         assertEquals(expected.surfaceContainerLow, observedColors!!.surfaceContainerLow)
@@ -77,7 +78,7 @@ class MaterialYouDynamicThemeTest {
             }
         }
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
-        val expected = dynamicLightColorScheme(context)
+        val expected = dynamicLightColorScheme(context).withAccentSurfaces(dark = false)
         assertNotNull(observedColors)
         assertEquals(expected.surface, observedColors!!.surface)
         assertEquals(expected.primary, observedColors!!.primary)
@@ -92,7 +93,7 @@ class MaterialYouDynamicThemeTest {
             }
         }
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
-        val expected = dynamicDarkColorScheme(context)
+        val expected = dynamicDarkColorScheme(context).withAccentSurfaces(dark = true)
         assertNotNull(observedColors)
         assertEquals(expected.surface, observedColors!!.surface)
         assertEquals(expected.primary, observedColors!!.primary)

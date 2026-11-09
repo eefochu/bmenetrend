@@ -77,23 +77,30 @@ fun lineColor(provider: String, mode: String?, source: String? = null, number: S
 fun lineColor(route: TransitRoute) = lineColor(route.providerId, route.transportMode, route.color, route.number)
 
 @Composable
-fun LineBadge(number: String, provider: String, mode: String? = null, sourceColor: String? = null, showIcon: Boolean = true) {
+fun LineBadge(number: String, provider: String, mode: String? = null, sourceColor: String? = null, showIcon: Boolean = true,
+              /** When set, every badge (bus, tram, train, metro, HÉV) occupies exactly this size so grids line up. */
+              uniform: androidx.compose.ui.unit.DpSize? = null) {
     val metro = MetroLineStyle.forLine(number, mode)
     if (metro != null) {
         val context = LocalContext.current
-        val height = with(LocalDensity.current) { 36.dp.roundToPx() }
+        val emblemSize = uniform?.height ?: 36.dp
+        val height = with(LocalDensity.current) { emblemSize.roundToPx() }
         val emblem = remember(metro, height) { MetroLineStyle.render(context, metro, height).asImageBitmap() }
-        Image(emblem, stringResource(R.string.metro_line_badge, metro.number), Modifier.size(36.dp))
+        if (uniform != null) Box(Modifier.size(uniform), contentAlignment = Alignment.Center) {
+            Image(emblem, stringResource(R.string.metro_line_badge, metro.number), Modifier.size(emblemSize))
+        } else Image(emblem, stringResource(R.string.metro_line_badge, metro.number), Modifier.size(36.dp))
         return
     }
     val hev = HevLineStyle.forLine(number, mode)
     if (hev != null) {
         val context = LocalContext.current
-        val heightPx = with(LocalDensity.current) { 36.dp.roundToPx() }
+        val emblemSize = uniform?.height ?: 36.dp
+        val heightPx = with(LocalDensity.current) { emblemSize.roundToPx() }
         val emblem = remember(hev, heightPx) { HevLineStyle.render(context, hev, heightPx).asImageBitmap() }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Image(emblem, stringResource(R.string.hev_line_badge, hev.number), Modifier.size(36.dp))
-            if (hev.number.length > 2) Text(hev.number.substring(2), Modifier.padding(start = 4.dp), style = MaterialTheme.typography.labelLarge)
+        Row((if (uniform != null) Modifier.size(uniform) else Modifier), verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = if (uniform != null) Arrangement.Center else Arrangement.Start) {
+            Image(emblem, stringResource(R.string.hev_line_badge, hev.number), Modifier.size(emblemSize))
+            if (hev.number.length > 2) Text(hev.number.substring(2), Modifier.padding(start = 4.dp), style = MaterialTheme.typography.labelLarge, fontFamily = OpenSans)
         }
         return
     }
@@ -106,10 +113,8 @@ fun LineBadge(number: String, provider: String, mode: String? = null, sourceColo
                 "SUBWAY" -> R.string.emma_mode_metro; "RAIL", "SUBURBAN_RAILWAY", "TRAMTRAIN" -> R.string.emma_mode_train; else -> R.string.emma_mode_bus }), Modifier.size(28.dp))
         Surface(shape = RoundedCornerShape(4.dp), color = color) {
             Box(
-                Modifier
-                    .heightIn(min = 28.dp)
-                    .widthIn(min = 44.dp)
-                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                (if (uniform != null) Modifier.size(uniform).padding(horizontal = 5.dp)
+                else Modifier.heightIn(min = 28.dp).widthIn(min = 44.dp).padding(horizontal = 8.dp, vertical = 2.dp)),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
@@ -123,13 +128,19 @@ fun LineBadge(number: String, provider: String, mode: String? = null, sourceColo
                     ),
                     fontFamily = OpenSans,
                     maxLines = 1,
+                    // Fixed-size badges shrink long labels ("S968", "922B") instead of growing wider than the rest.
+                    autoSize = if (uniform != null) androidx.compose.foundation.text.TextAutoSize.StepBased(9.sp, 15.sp, 0.5.sp) else null,
                 )
             }
         }
     }
 }
 @Composable
-fun LineBadge(route: TransitRoute, showIcon: Boolean = true) = LineBadge(route.number, route.providerId, route.transportMode, route.color, showIcon)
+fun LineBadge(route: TransitRoute, showIcon: Boolean = true, uniform: androidx.compose.ui.unit.DpSize? = null) =
+    LineBadge(route.number, route.providerId, route.transportMode, route.color, showIcon, uniform)
+
+/** The one size every line badge takes in grids and one-line strips. */
+internal val UniformBadge = androidx.compose.ui.unit.DpSize(52.dp, 28.dp)
 
 @Composable
 fun LineStopRow(

@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.Typography
 import androidx.compose.material3.Shapes
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,6 +15,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -28,6 +30,14 @@ val OpenSans = FontFamily(
     Font(R.font.open_sans_regular, FontWeight.Normal),
     Font(R.font.open_sans_semibold, FontWeight.SemiBold),
     Font(R.font.open_sans_bold, FontWeight.Bold),
+)
+
+/** Google Sans Flex (Latin cut, static weights) for interface text: body, labels, buttons, menus. Titles and badges stay Open Sans. */
+val UiSans = FontFamily(
+    Font(R.font.google_sans_flex_regular, FontWeight.Normal),
+    Font(R.font.google_sans_flex_medium, FontWeight.Medium),
+    Font(R.font.google_sans_flex_semibold, FontWeight.SemiBold),
+    Font(R.font.google_sans_flex_bold, FontWeight.Bold),
 )
 
 // Fallback palette for devices without Android dynamic colour support.
@@ -66,8 +76,8 @@ internal val TransitShapes=Shapes(
     extraSmall=RoundedCornerShape(8.dp),small=RoundedCornerShape(12.dp),medium=RoundedCornerShape(16.dp),
     large=RoundedCornerShape(24.dp),extraLarge=RoundedCornerShape(28.dp),
 )
-private fun type(size: Int,line: Int,weight: FontWeight=FontWeight.Normal,tracking: Float=0f)=TextStyle(
-    fontFamily=OpenSans,fontWeight=weight,fontSize=size.sp,lineHeight=line.sp,letterSpacing=tracking.sp,
+private fun type(size: Int,line: Int,weight: FontWeight=FontWeight.Normal,tracking: Float=0f,family: FontFamily=OpenSans)=TextStyle(
+    fontFamily=family,fontWeight=weight,fontSize=size.sp,lineHeight=line.sp,letterSpacing=tracking.sp,
     fontFeatureSettings="tnum",
 )
 internal val TransitTypography=Typography(
@@ -75,8 +85,20 @@ internal val TransitTypography=Typography(
     displaySmall=type(34,40,FontWeight.Bold,-.6f),headlineLarge=type(30,36,FontWeight.Bold,-.6f),
     headlineMedium=type(27,34,FontWeight.Bold,-.5f),headlineSmall=type(24,30,FontWeight.Bold,-.4f),
     titleLarge=type(21,27,FontWeight.Bold,-.3f),titleMedium=type(16,22,FontWeight.SemiBold,-.1f),
-    titleSmall=type(14,20,FontWeight.Bold),bodyLarge=type(16,24),bodyMedium=type(14,21),bodySmall=type(12,18),
-    labelLarge=type(14,20,FontWeight.SemiBold),labelMedium=type(12,17,FontWeight.SemiBold),labelSmall=type(11,16,FontWeight.SemiBold),
+    titleSmall=type(14,20,FontWeight.Bold),
+    bodyLarge=type(16,24,family=UiSans),bodyMedium=type(14,21,family=UiSans),bodySmall=type(12,18,family=UiSans),
+    labelLarge=type(14,20,FontWeight.SemiBold,family=UiSans),labelMedium=type(12,17,FontWeight.SemiBold,family=UiSans),
+    labelSmall=type(11,16,FontWeight.SemiBold,family=UiSans),
+    // Emphasized styles (Material 3 Expressive): same voices, one step heavier.
+    displayLargeEmphasized=type(48,54,FontWeight.Bold,-1f),displayMediumEmphasized=type(40,46,FontWeight.Bold,-.8f),
+    displaySmallEmphasized=type(34,40,FontWeight.Bold,-.6f),headlineLargeEmphasized=type(30,36,FontWeight.Bold,-.6f),
+    headlineMediumEmphasized=type(27,34,FontWeight.Bold,-.5f),headlineSmallEmphasized=type(24,30,FontWeight.Bold,-.4f),
+    titleLargeEmphasized=type(21,27,FontWeight.Bold,-.3f),titleMediumEmphasized=type(16,22,FontWeight.Bold,-.1f),
+    titleSmallEmphasized=type(14,20,FontWeight.Bold),
+    bodyLargeEmphasized=type(16,24,FontWeight.SemiBold,family=UiSans),bodyMediumEmphasized=type(14,21,FontWeight.SemiBold,family=UiSans),
+    bodySmallEmphasized=type(12,18,FontWeight.SemiBold,family=UiSans),
+    labelLargeEmphasized=type(14,20,FontWeight.Bold,family=UiSans),labelMediumEmphasized=type(12,17,FontWeight.Bold,family=UiSans),
+    labelSmallEmphasized=type(11,16,FontWeight.Bold,family=UiSans),
 )
 
 /** Tonal roles keep the chosen hue readable in both themes, including their container colours. */
@@ -119,6 +141,48 @@ internal fun accentColorScheme(accent: AccentColor, dark: Boolean, customArgb: I
     )
 }
 
+/**
+ * Material You surfaces with more of the accent in them. Every surface gets the same, small amount of
+ * accent colour (constant chroma, not constant saturation): near-black bars and sheets show the tint as
+ * clearly as the lighter containers, and nothing becomes saturated. Lightness is kept, so the dark theme
+ * stays dark; only the very darkest level lifts a hair so its tint can register at all.
+ */
+internal fun ColorScheme.withAccentSurfaces(dark: Boolean): ColorScheme {
+    val hue = hueOf(primary)
+    val chroma = if (dark) 0.045f else 0.035f
+    fun tinted(base: Color): Color {
+        val lightness = lightnessOf(base).let { if (dark) it.coerceAtLeast(0.05f) else it }
+        // HSL chroma = (1 - |2L - 1|) * S, so solve for the saturation that gives the target chroma.
+        val span = (1f - kotlin.math.abs(2f * lightness - 1f)).coerceAtLeast(0.001f)
+        return Color.hsl(hue, (chroma / span).coerceAtMost(0.6f), lightness, base.alpha)
+    }
+    return copy(
+        background = tinted(background), surface = tinted(surface),
+        surfaceContainerLowest = tinted(surfaceContainerLowest), surfaceContainerLow = tinted(surfaceContainerLow),
+        surfaceContainer = tinted(surfaceContainer), surfaceContainerHigh = tinted(surfaceContainerHigh),
+        surfaceContainerHighest = tinted(surfaceContainerHighest), surfaceDim = tinted(surfaceDim),
+        surfaceBright = tinted(surfaceBright), surfaceVariant = tinted(surfaceVariant),
+    )
+}
+
+private fun lightnessOf(color: Color): Float {
+    val max = maxOf(color.red, color.green, color.blue)
+    val min = minOf(color.red, color.green, color.blue)
+    return ((max + min) / 2f).coerceIn(0f, 1f)
+}
+
+private fun hueOf(color: Color): Float {
+    val r = color.red; val g = color.green; val b = color.blue
+    val max = maxOf(r, g, b); val min = minOf(r, g, b); val delta = max - min
+    if (delta < 1e-4f) return 0f
+    val hue = when (max) {
+        r -> 60f * (((g - b) / delta) % 6f)
+        g -> 60f * ((b - r) / delta + 2f)
+        else -> 60f * ((r - g) / delta + 4f)
+    }
+    return (hue + 360f) % 360f
+}
+
 internal val LocalDarkTheme = staticCompositionLocalOf { false }
 
 @Composable
@@ -129,9 +193,12 @@ fun ViaBuszTheme(accent: AccentColor = AccentColor.SYSTEM, customArgb: Int = 0xF
     else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
     } else if (darkTheme) DarkColors else LightColors
+    val scheme = remember(colors, darkTheme) { colors.withAccentSurfaces(darkTheme) }
     CompositionLocalProvider(LocalDarkTheme provides darkTheme) {
         MaterialTheme(
-            colorScheme = colors,
+            colorScheme = scheme,
+            // Expressive spring motion for component transitions; shapes and colours stay the app's own.
+            motionScheme = MotionScheme.expressive(),
             shapes = TransitShapes,
             typography = TransitTypography,
             content = content,

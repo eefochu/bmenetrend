@@ -101,6 +101,8 @@ fun NativeTransitMap(
     val darkTheme = LocalDarkTheme.current
     val styleUri = if (offline) { if (darkTheme) "asset://map/offline-dark.json" else "asset://map/offline.json" } else if (darkTheme) "asset://map/night.json" else "https://tiles.openfreemap.org/styles/positron"
     val context = LocalContext.current
+    // Strings come from LocalResources so they follow configuration changes (Compose lint).
+    val resources = androidx.compose.ui.platform.LocalResources.current
     val rapidTransitLines by produceState<String?>(null, context.applicationContext) {
         value = MetroNetworkOverlay.load(context.applicationContext)
     }
@@ -193,7 +195,7 @@ fun NativeTransitMap(
             override fun onTrimMemory(level: Int) { if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) mapView.onLowMemory() }
         }
         context.applicationContext.registerComponentCallbacks(memoryCallbacks)
-        mapView.addOnDidFailLoadingMapListener { onError(context.getString(R.string.engine_map_unavailable)) }
+        mapView.addOnDidFailLoadingMapListener { onError(resources.getString(R.string.engine_map_unavailable)) }
         boostRenderThread(mapView)
         mapView.getMapAsync { ready ->
             map = ready
@@ -346,7 +348,7 @@ fun NativeTransitMap(
         } catch (cancelled: kotlinx.coroutines.CancellationException) {
             throw cancelled
         } catch (_: Exception) {
-            onError(context.getString(R.string.engine_map_unavailable))
+            onError(resources.getString(R.string.engine_map_unavailable))
         } finally { active = false }
     }
     LaunchedEffect(map, styleLoaded, styleGeneration, rapidTransitLines, darkTheme) {
@@ -697,7 +699,7 @@ fun NativeTransitMap(
             locationMarker?.let(nativeMap::removeMarker); locationMarker = null
         } else {
             val position = LatLng(userLocation.lat, userLocation.lon)
-            if (locationMarker == null) locationMarker = nativeMap.addMarker(MarkerOptions().position(position).title(context.getString(R.string.engine_you_are_here)).icon(locationIcon()))
+            if (locationMarker == null) locationMarker = nativeMap.addMarker(MarkerOptions().position(position).title(resources.getString(R.string.engine_you_are_here)).icon(locationIcon()))
             else if(locationMarker?.position!=position) locationMarker?.position=position
         }
         if (routeOrigin == null) {
@@ -705,7 +707,7 @@ fun NativeTransitMap(
         } else {
             val position = LatLng(routeOrigin.lat, routeOrigin.lon)
             if (originMarker == null) originMarker = nativeMap.addMarker(MarkerOptions().position(position)
-                .title(context.getString(R.string.planner_from))
+                .title(resources.getString(R.string.planner_from))
                 .icon(endpointIcon("origin-pin-marker", android.graphics.Color.rgb(117, 117, 117))))
             else if (originMarker?.position != position) originMarker?.position = position
         }

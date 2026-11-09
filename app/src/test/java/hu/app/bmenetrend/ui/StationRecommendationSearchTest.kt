@@ -46,7 +46,8 @@ class StationRecommendationSearchTest {
         compose.waitUntil(5_000) { compose.onAllNodesWithText("Kelenföld", substring = true).fetchSemanticsNodes().isNotEmpty() }
         val recommended = ApplicationProvider.getApplicationContext<Context>().getString(R.string.search_recommended)
         compose.onNodeWithText(recommended, substring = true).assertExists()
-        compose.onAllNodesWithText("Kelenföld vasútállomás", substring = true).assertCountEquals(2).onFirst().performClick()
+        // The recommended station is shown once, in the recommendation card, not repeated in the stop list.
+        compose.onAllNodesWithText("Kelenföld vasútállomás", substring = true).assertCountEquals(1).onFirst().performClick()
         assertEquals(listOf("kelen"), selectedStops)
         compose.onNodeWithText("Kelenföld Cafe").assertExists().performClick()
         assertEquals(listOf(place), selectedPlaces)

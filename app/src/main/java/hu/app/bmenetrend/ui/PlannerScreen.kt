@@ -1,3 +1,4 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 package hu.app.bmenetrend.ui
 
 import androidx.activity.compose.BackHandler
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,6 +24,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.MaterialShapes
+import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -119,7 +123,6 @@ fun PlannerScreen(
         originPosition: GeoPoint?
     ) -> Unit)? = null,
     mapContent: (@Composable (Modifier) -> Unit)? = null,
-    favoriteDestinations: List<PlannerEndpoint> = emptyList(),
 ) {
     val state by model.state.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
@@ -203,9 +206,10 @@ fun PlannerScreen(
                         }
                     },
                     actions = {
-                        IconButton(
+                        CookieIconButton(
                             onClick = { model.plan(force = true) },
-                            enabled = !state.planning
+                            enabled = !state.planning,
+                            modifier = Modifier.padding(end = 8.dp),
                         ) {
                             Icon(
                                 Icons.Rounded.Refresh,
@@ -286,8 +290,8 @@ fun PlannerScreen(
                         )
                     ) {
                         if (state.planning) {
-                            CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
-                            Spacer(Modifier.width(10.dp))
+                            TransitLoading(size = 28.dp, color = MaterialTheme.colorScheme.onPrimary)
+                            Spacer(Modifier.width(8.dp))
                             Text(stringResource(R.string.planner_loading))
                         } else {
                             Icon(Icons.Rounded.Route, null, Modifier.size(20.dp))
@@ -414,8 +418,6 @@ fun PlannerScreen(
                     else mapContent?.invoke(modifier)
                 },
                 onLocalProvider = model::setLocalProvider,
-                favoriteDestinations = favoriteDestinations,
-                onFavoriteDestination = { endpoint -> model.edit(PlannerField.DESTINATION); model.choose(endpoint) },
                 state = state,
                 onOrigin = { model.edit(PlannerField.ORIGIN) },
                 onDestination = { model.edit(PlannerField.DESTINATION) },
@@ -448,8 +450,6 @@ internal fun PlannerMapOverlay(
     onDeparture: () -> Unit, onFind: () -> Unit, onClose: (() -> Unit)? = null,
     onLocalProvider: (String, Boolean) -> Unit = { _, _ -> },
     mapContent: @Composable (Modifier) -> Unit = {},
-    favoriteDestinations: List<PlannerEndpoint> = emptyList(),
-    onFavoriteDestination: (PlannerEndpoint) -> Unit = {},
 ) {
     val wide = transitWindowWidth() >= 600.dp
     var servicesOpen by rememberSaveable { mutableStateOf(false) }
@@ -483,20 +483,6 @@ internal fun PlannerMapOverlay(
                     leadingIcon = { Icon(Icons.Rounded.Tune, null, Modifier.size(18.dp)) },
                     trailingIcon = { Icon(Icons.Rounded.ExpandMore, null, Modifier.size(16.dp)) },
                     shape = RoundedCornerShape(16.dp), border = null, colors = chipColors)
-            }
-            if (state.destination == null && favoriteDestinations.isNotEmpty()) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .6f))
-                Text(stringResource(R.string.search_favorites), style = MaterialTheme.typography.titleSmall)
-                favoriteDestinations.take(2).forEach { endpoint ->
-                    Surface(onClick = { onFavoriteDestination(endpoint) }, color = Color.Transparent) {
-                        Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Icon(Icons.Rounded.FavoriteBorder, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(endpoint.name, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, maxLines = 2)
-                            Icon(Icons.Rounded.ChevronRight, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                }
             }
             if (wide && state.destination != null) PlannerFindButton(state.planning, onFind, chooseOrigin = state.offline && state.useLocation)
         }
@@ -554,7 +540,7 @@ private fun PlannerFindButton(planning: Boolean, onClick: () -> Unit, modifier: 
     Button(onClick = onClick, enabled = !planning, modifier = modifier.heightIn(min = 56.dp), shape = TransitDesign.controlShape,
         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary)) {
-        if (planning) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
+        if (planning) TransitLoading(size = 28.dp, color = MaterialTheme.colorScheme.onPrimary)
         else Icon(Icons.Rounded.Route, null, Modifier.size(20.dp))
         Spacer(Modifier.width(8.dp))
         Text(stringResource(if (planning) R.string.planner_loading else if (chooseOrigin) R.string.design_choose_origin else if (chooseDestination) R.string.design_choose_destination else R.string.planner_find),
@@ -572,10 +558,8 @@ private fun PlannerEndpoints(state: PlannerState, onOrigin: () -> Unit, onDestin
                 HorizontalDivider(Modifier.padding(start = 48.dp, end = 12.dp), color = MaterialTheme.colorScheme.outlineVariant)
                 EndpointField(R.string.planner_to, state.destination, false, onDestination)
             }
-            FilledTonalIconButton(onClick = onSwap, enabled = state.origin != null || state.destination != null,
-                shape = CircleShape, modifier = Modifier.size(48.dp),
-                colors = IconButtonDefaults.filledTonalIconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    contentColor = MaterialTheme.colorScheme.onSurface)) {
+            CookieIconButton(onClick = onSwap, enabled = state.origin != null || state.destination != null, size = 52.dp,
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh, contentColor = MaterialTheme.colorScheme.onSurface) {
                 Icon(Icons.Rounded.SwapVert, stringResource(R.string.planner_swap))
             }
         }
@@ -635,9 +619,7 @@ internal fun PlannerSearch(
                 Text(stringResource(if (state.offline) R.string.offline_nearby_origins else R.string.planner_current))
             }
         }
-        Box(Modifier.fillMaxWidth().height(8.dp)) {
-            if (state.searching) LinearProgressIndicator(Modifier.fillMaxWidth())
-        }
+        TransitRefreshBar(state.searching)
         LazyColumn(state = listState, modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(bottom = 24.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())) {
             if (state.nearbyOriginSearch) {
@@ -654,7 +636,8 @@ internal fun PlannerSearch(
                     EmptyState(stringResource(R.string.search_discover_title), stringResource(R.string.search_discover_body), Icons.Rounded.Search)
                     FlowRow(Modifier.padding(horizontal = 20.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("Keleti pályaudvar", "Kelenföld", "Nyugati pályaudvar").forEach { example ->
-                            SuggestionChip(onClick = { onQuery(example) }, label = { Text(example) }, modifier = Modifier.heightIn(min = 48.dp))
+                            SuggestionChip(onClick = { onQuery(example) }, label = { Text(example) }, modifier = Modifier.heightIn(min = 48.dp),
+                                icon = { Icon(Icons.Rounded.Search, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary) })
                         }
                     }
                 }
@@ -662,19 +645,20 @@ internal fun PlannerSearch(
             state.recommendation?.takeIf { state.query.trim().length >= 3 }?.let { endpoint ->
                 item(key = "recommendation", contentType = "recommendation") {
                     SearchRecommendation(endpoint.name, providerNames(endpoint.providerIds), { choose(endpoint) },
-                        leading = { StopMapDot(endpoint.asSearchStop()) })
+                        leading = { StopModeBadge(endpoint.asSearchStop(), emptyList(), size = 56.dp, color = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary) })
                 }
             }
             if (stations.isNotEmpty()) {
                 item(key = "stations_header", contentType = "header") { SearchGroupTitle(stringResource(R.string.search_stations)) }
-                items(stations, key = { "station-${it.id}" }, contentType = { "station" }) { endpoint ->
-                    PlannerSearchResult(endpoint, state.userLocation, { choose(endpoint) }, onStopDepartures)
+                itemsIndexed(stations, key = { _, it -> "station-${it.id}" }, contentType = { _, _ -> "station" }) { index, endpoint ->
+                    PlannerSearchResult(endpoint, state.userLocation, { choose(endpoint) }, onStopDepartures, index, stations.size)
                 }
             }
             if (places.isNotEmpty()) {
                 item(key = "places_header", contentType = "header") { SearchGroupTitle(stringResource(R.string.search_places)) }
-                items(places, key = { "place-${it.id}" }, contentType = { "place" }) { endpoint ->
-                    PlannerSearchResult(endpoint, state.userLocation, { choose(endpoint) }, null)
+                itemsIndexed(places, key = { _, it -> "place-${it.id}" }, contentType = { _, _ -> "place" }) { index, endpoint ->
+                    PlannerSearchResult(endpoint, state.userLocation, { choose(endpoint) }, null, index, places.size)
                 }
                 item(key = "attribution", contentType = "notice") {
                     Text(stringResource(R.string.search_places_attribution), Modifier.padding(20.dp),
@@ -698,7 +682,8 @@ internal fun PlannerSearch(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun PlannerSearchResult(endpoint: PlannerEndpoint, location: GeoPoint?, onChoose: () -> Unit, onStopDepartures: ((String) -> Unit)?) {
+private fun PlannerSearchResult(endpoint: PlannerEndpoint, location: GeoPoint?, onChoose: () -> Unit, onStopDepartures: ((String) -> Unit)?,
+                                index: Int = 0, count: Int = 1) {
     val distance = remember(location, endpoint.position) {
         location?.let { loc ->
             formatStopDistance(StopClusters.distanceMeters(loc, endpoint.position))
@@ -712,8 +697,8 @@ private fun PlannerSearchResult(endpoint: PlannerEndpoint, location: GeoPoint?, 
         if (endpoint.isStation) transportLabel(endpoint.transportMode) else null, distance).filter(String::isNotBlank).joinToString(" · ")
     SearchResultCard(endpoint.name, detail, onChoose,
         leading = {
-            if (endpoint.isStation) StopMapDot(endpoint.asSearchStop())
-            else TransitIconTile(Icons.Rounded.LocationOn)
+            if (endpoint.isStation) StopModeBadge(endpoint.asSearchStop(), emptyList())
+            else ShapeIconTile(Icons.Rounded.Place, size = 44.dp, shape = MaterialShapes.Cookie4Sided)
         },
         badge = { platform?.let { PlatformBadge(it) } },
         supporting = {
@@ -728,8 +713,8 @@ private fun PlannerSearchResult(endpoint: PlannerEndpoint, location: GeoPoint?, 
         trailing = {
             if (onStopDepartures != null && endpoint.isStation) IconButton(onClick = { onStopDepartures(endpoint.id) }, modifier = Modifier.size(48.dp)) {
                 Icon(Icons.Rounded.Schedule, stringResource(R.string.planner_view_departures))
-            } else Icon(Icons.AutoMirrored.Rounded.ArrowForward, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-        })
+            }
+        }, index = index, count = count)
 }
 
 private fun PlannerEndpoint.asSearchStop() = TransitStop(id, name, position, routeIds,

@@ -59,6 +59,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -502,20 +503,22 @@ fun ViaBuszScreen(
                         .graphicsLayer {
                             val visibleSheet = runCatching { layoutHeightPx - sheet.requireOffset() }.getOrDefault(0f)
                             translationY = -mapAttributionLiftPx(visibleSheet, peekHeightPx.toFloat(), collapsedControlsPx)
+                            // Riding the sheet past its peek would carry the credit over the search bar: fade it out instead.
+                            alpha = (1f - (visibleSheet - peekHeightPx) / collapsedControlsPx).coerceIn(0f, 1f)
                         })
 
                     // Floating MyLocation button above the bottom sheet
-                    FilledTonalIconButton(
+                    CookieIconButton(
                         onClick = onLocate,
+                        size = 60.dp,
+                        shadowElevation = 3.dp,
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
-                            .padding(end = 16.dp, bottom = 24.dp)
-                            .size(52.dp)
+                            .padding(end = 16.dp, bottom = 22.dp)
                             .graphicsLayer {
                                 val visibleSheet = runCatching { layoutHeightPx - sheet.requireOffset() }.getOrDefault(0f)
                                 translationY = -visibleSheet.coerceIn(0f, peekHeightPx.toFloat())
                             },
-                        shape = CircleShape,
                     ) {
                         Icon(
                             Icons.Rounded.MyLocation,
@@ -548,7 +551,7 @@ fun ViaBuszScreen(
                     }
 
                     if (state.loading && state.network == null) {
-                        CircularProgressIndicator(Modifier.align(Alignment.Center))
+                        TransitLoading(Modifier.align(Alignment.Center), size = 64.dp, contained = true)
                     }
                 }
             }
@@ -629,7 +632,7 @@ private fun FloatingSearchBlob(
             )
             Text(stringResource(R.string.ui_search_short), Modifier.weight(1f).padding(horizontal = 12.dp),
                 style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            FilledTonalIconButton(onClick = onSettings,shape=TransitDesign.controlShape) {
+            CookieIconButton(onClick = onSettings) {
                 Icon(Icons.Rounded.Settings, stringResource(R.string.volan_settings))
             }
         }
@@ -767,8 +770,8 @@ private fun StopPanel(
                             stringResource(if(stop.id in state.favorites) R.string.ui_remove_favorite else R.string.ui_add_favorite),tint=MaterialTheme.colorScheme.primary)
                     }
                 }
-                IconButton(onClick=onRefresh,enabled=!state.refreshing) {
-                    if(state.refreshing) CircularProgressIndicator(Modifier.size(20.dp),strokeWidth=2.dp)
+                CookieIconButton(onClick=onRefresh,enabled=!state.refreshing,size=44.dp) {
+                    if(state.refreshing) TransitLoading(size=30.dp,color=MaterialTheme.colorScheme.onSecondaryContainer)
                     else Icon(Icons.Rounded.Refresh,stringResource(R.string.ui_refresh_departures))
                 }
                 IconButton(onClick=onCollapse) { Icon(Icons.Rounded.KeyboardArrowDown,
@@ -805,22 +808,8 @@ private fun StopPanel(
                 }
             }
         }
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 22.dp),
-            horizontalArrangement = Arrangement.spacedBy(7.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(top = 6.dp, bottom = 3.dp),
-        ) {
-            item(contentType = "label") { Text(stringResource(R.string.ui_departures), Modifier.padding(end = 5.dp), style = MaterialTheme.typography.labelLarge) }
-            items(hu.app.bmenetrend.data.DepartureTime.windows, key = { it }, contentType = { "chip" }) { minutes ->
-                FilterChip(
-                    selected = state.windowMinutes == minutes,
-                    onClick = { onWindowChanged(minutes) },
-                    label = { Text(compactDuration(minutes)) },
-                )
-            }
-        }
-        if (state.loading || state.departureBoardLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
+        DepartureWindowSelector(state.windowMinutes, onWindowChanged, Modifier.padding(horizontal = 18.dp, vertical = 6.dp))
+        if (departuresWithMinutes.isNotEmpty() && (state.loading || state.departureBoardLoading)) TransitRefreshBar(true)
         else HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
         LazyColumn(
             modifier = Modifier.weight(1f),
@@ -844,17 +833,22 @@ private fun StopPanel(
             if (!state.departureStatus.isNullOrBlank() && !state.isOfflineTimetableActive) item(contentType = "notice") { Notice(state.departureStatus, Icons.Rounded.AccessTime) }
             if (stop == null && !state.loading) {
                 item(contentType = "empty") {
-                    EmptyState(stringResource(R.string.ui_pick_stop_title), stringResource(R.string.ui_pick_stop_body), Icons.Rounded.LocationOn)
+                    EmptyState(stringResource(R.string.ui_pick_stop_title), stringResource(R.string.ui_pick_stop_body), Icons.Rounded.LocationOn, MaterialShapes.Cookie7Sided)
                     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                         Button(onClick = onSearch) { Text(stringResource(R.string.ui_search_stop)) }
                     }
+                }
+            }
+            if (departuresWithMinutes.isEmpty() && (state.loading || state.departureBoardLoading)) {
+                item(contentType = "loading") {
+                    Box(Modifier.fillMaxWidth().padding(vertical = 40.dp), contentAlignment = Alignment.Center) { TransitLoading() }
                 }
             }
             if (state.liveStopMinutes.isNotEmpty()) {
                 item(contentType = "live_signal") { LiveStopSignal(state.liveStopMinutes) }
             }
             if (stop != null && departuresWithMinutes.isEmpty() && !state.loading && !state.departureBoardLoading && !state.departureBoardUnavailable) {
-                item(contentType = "empty") { EmptyState(stringResource(R.string.ui_no_departures_title), stringResource(R.string.ui_no_departures_body, state.windowMinutes), Icons.Rounded.AccessTime) }
+                item(contentType = "empty") { EmptyState(stringResource(R.string.ui_no_departures_title), stringResource(R.string.ui_no_departures_body, state.windowMinutes), Icons.Rounded.AccessTime, MaterialShapes.Cookie12Sided) }
             }
             itemsIndexed(
                 departuresWithMinutes,
@@ -863,6 +857,12 @@ private fun StopPanel(
             ) { index, item ->
                 val departure = item.departure
                 val onClick = remember(departure) { { openDeparture(departure) } }
+                if (index == 0) {
+                    val route = routeById[departure.routeId]
+                    NextDepartureHero(departure, route?.providerId ?: "viabusz", route?.transportMode, route?.color, item.minutes, onClick,
+                        Modifier.padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 6.dp))
+                    return@itemsIndexed
+                }
                 DepartureRow(
                     departure = departure,
                     minutes = item.minutes,
@@ -962,7 +962,7 @@ private fun stopLabel(stop: TransitStop): String? = stop.platformCode?.let { str
 
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
-internal fun StopSearchRow(stop: TransitStop, state: UiState, favorite: Boolean, onStop: (String) -> Unit) {
+internal fun StopSearchRow(stop: TransitStop, state: UiState, favorite: Boolean, onStop: (String) -> Unit, index: Int = 0, count: Int = 1) {
     // The search index already consolidates platforms and records multi-stop membership.
     val isMulti = stop.isMultiStop
     val resolvedPlatform = stop.platformCode ?: hu.app.bmenetrend.data.BkkPlatformIndex.resolve(stop.id, null)
@@ -975,7 +975,7 @@ internal fun StopSearchRow(stop: TransitStop, state: UiState, favorite: Boolean,
     val boarding = if (isMulti || resolvedPlatform != null) null else stopLabel(stop)
     val detail = listOfNotNull(providerNames(stop.providerIds), if (isMulti) null else transportLabel(stop.transportMode), boarding).joinToString(" · ")
     SearchResultCard(StopClusters.stopDisplayName(stop.name), detail, { onStop(stop.id) },
-        leading = { StopMapDot(stop, routes) },
+        leading = { StopModeBadge(stop, routes) },
         badge = {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 resolvedPlatform?.let { PlatformBadge(it) }
@@ -984,21 +984,8 @@ internal fun StopSearchRow(stop: TransitStop, state: UiState, favorite: Boolean,
                     stringResource(R.string.ui_downloaded_timetables), Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         },
-        supporting = {
-            if (routes.isNotEmpty()) androidx.compose.foundation.layout.FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                routes.take(6).forEach { LineBadge(it, showIcon = false) }
-                if (routes.size > 6) Text(stringResource(R.string.search_additional_lines, routes.size - 6),
-                    style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(vertical = 6.dp))
-            }
-        },
-        trailing = {
-            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Icon(Icons.AutoMirrored.Rounded.ArrowForward, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                distance?.let { Text(it, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-            }
-        })
+        supporting = { OneLineBadges(routes, Modifier.padding(top = 2.dp)) },
+        trailing = { distance?.let { DistancePill(it) } }, index = index, count = count)
 }
 
 @Composable
@@ -1014,11 +1001,14 @@ private fun Notice(message: String, icon: ImageVector, isError: Boolean = false)
 }
 
 @Composable
-internal fun EmptyState(title: String, body: String, icon: ImageVector) {
-    Column(Modifier.fillMaxWidth().padding(horizontal=24.dp,vertical=24.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
-        TransitIconTile(icon)
-        Text(title,style=MaterialTheme.typography.titleLarge)
-        Text(body,style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+internal fun EmptyState(title: String, body: String, icon: ImageVector,
+                        shape: androidx.graphics.shapes.RoundedPolygon = MaterialShapes.Cookie9Sided) {
+    Column(Modifier.fillMaxWidth().padding(horizontal=32.dp,vertical=28.dp),horizontalAlignment=Alignment.CenterHorizontally,
+        verticalArrangement=Arrangement.spacedBy(12.dp)) {
+        ShapeIconTile(icon, Modifier.padding(bottom=4.dp), shape)
+        Text(title,style=MaterialTheme.typography.titleLarge,textAlign=androidx.compose.ui.text.style.TextAlign.Center)
+        Text(body,style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign=androidx.compose.ui.text.style.TextAlign.Center)
     }
 }
 
