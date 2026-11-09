@@ -22,7 +22,7 @@ class EmmaFeedClient(
     private var snapshot: Feed? = null
 
     companion object {
-        internal val vehicleBackoff = EmmaRequestBackoff()
+        internal val vehicleBackoff get() = EmmaGraphqlClient.sharedBackoff
     }
 
     suspend fun get(force: Boolean = false): Feed = mutex.withLock {

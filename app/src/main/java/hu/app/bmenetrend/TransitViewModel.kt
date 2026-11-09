@@ -366,8 +366,6 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun refresh() {
-        EmmaGraphqlClient.sharedBackoff.reset()
-        EmmaFeedClient.vehicleBackoff.reset()
         mapSettledJob?.cancel()
         if (!state.value.stopIndexLoaded) viewModelScope.launch { refreshStopIndex() }
         viewModelScope.launch { refreshData(forceNetwork = true) }
@@ -380,7 +378,6 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
 
     private suspend fun refreshEmmaData(force: Boolean = false) {
         if (NetworkAccessPolicy.offline.value) return
-        if (force) EmmaFeedClient.vehicleBackoff.reset()
         if (emmaMutex.isLocked) return
         emmaMutex.withLock {
             val generation = NetworkAccessPolicy.generation
@@ -1016,7 +1013,6 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private fun ensureBoardRequest(force: Boolean = false) {
         if (NetworkAccessPolicy.offline.value) { recalculateOffline(); return }
         if (!mapVisible) return
-        if (force) EmmaGraphqlClient.sharedBackoff.reset()
         if (state.value.showNearby) { boardJob?.cancel(); boardKey = null; return }
         val key = state.value.boardRequestKey
         if (!force && key == boardKey) return
@@ -1176,7 +1172,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         lineJob = viewModelScope.launch {
             try {
                 val text = journeyClient.execute(EmmaRouteParser.QUERY, org.json.JSONObject().put("id", emmaRouteId)
-                    .put("date", LocalDate.now(budapest).format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE)), bypassCooldown = true)
+                    .put("date", LocalDate.now(budapest).format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE)))
                 val details = kotlinx.coroutines.withContext(Dispatchers.Default) { EmmaRouteParser.parse(text, id) }
                 if (lineGeneration == generation) {
                     lineLoadedAt[id] = Instant.now()
@@ -1273,7 +1269,6 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         if(ids.isEmpty()) return
         closeVehicle()
         manualStop = true
-        EmmaGraphqlClient.sharedBackoff.reset()
         val network=state.value.network
         val selectedIds=ids.map { id -> network?.let { SharedStops.resolve(it,id) } ?: SharedStops.canonicalId(id) }.toSet()
         mutableState.update { it.copy(showNearby=false,selectedStopId=selectedIds.first(),selectedPlatformIds=selectedIds,

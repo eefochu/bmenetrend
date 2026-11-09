@@ -192,13 +192,17 @@ fun NativeTransitMap(
         val memoryCallbacks = object : ComponentCallbacks2 {
             override fun onConfigurationChanged(newConfig: Configuration) = Unit
             override fun onLowMemory() = mapView.onLowMemory()
-            override fun onTrimMemory(level: Int) { if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) mapView.onLowMemory() }
+            override fun onTrimMemory(level: Int) { if (MapMemoryPolicy.shouldTrim(level)) mapView.onLowMemory() }
         }
         context.applicationContext.registerComponentCallbacks(memoryCallbacks)
         mapView.addOnDidFailLoadingMapListener { onError(resources.getString(R.string.engine_map_unavailable)) }
         boostRenderThread(mapView)
         mapView.getMapAsync { ready ->
             map = ready
+            // Keep the neighbouring zoom's basemap tiles warm for zoom-out/back-in.
+            // The default preview is four levels away and may miss neighbouring
+            // levels. Use the SDK's bounded cache rather than retaining maps ourselves.
+            ready.setPrefetchZoomDelta(1)
             ready.uiSettings.apply {
                 isAttributionEnabled = false
                 isLogoEnabled = false

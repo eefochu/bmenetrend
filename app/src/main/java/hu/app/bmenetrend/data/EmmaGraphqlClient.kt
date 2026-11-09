@@ -13,20 +13,27 @@ import kotlin.coroutines.resumeWithException
 
 /** Shared EMMA transport for vehicles, stops and departure boards. */
 class EmmaGraphqlClient(private val client: OkHttpClient = defaultHttpClient(), private val backoff: EmmaRequestBackoff = sharedBackoff) {
-    fun resetCooldown() {
-        backoff.reset()
-    }
-    suspend fun execute(query: String, variables: JSONObject = JSONObject(), bypassCooldown: Boolean = false): String {
+    private data class RequestKey(val client: OkHttpClient, val backoff: EmmaRequestBackoff, val body: String, val generation: Long)
+    // Avoid automatic retries of 503/Retry-After: 0 before recording the denial.
+    private val transportClient = client.newBuilder().retryOnConnectionFailure(false).build()
+
+    suspend fun execute(query: String, variables: JSONObject = JSONObject()): String {
         hu.app.bmenetrend.offline.NetworkAccessPolicy.requireOnline()
         val networkGeneration = hu.app.bmenetrend.offline.NetworkAccessPolicy.generation
-        if (!bypassCooldown) {
-            backoff.check(Instant.now())
-        }
+        backoff.check(Instant.now())
         val body = JSONObject().put("query", query).put("variables", variables).toString()
+        return inFlight.execute(RequestKey(client, backoff, body, networkGeneration)) {
+            backoff.check(Instant.now())
+            executeRequest(body, networkGeneration)
+        }
+    }
+
+    private suspend fun executeRequest(body: String, networkGeneration: Long): String {
+        if (networkGeneration != hu.app.bmenetrend.offline.NetworkAccessPolicy.generation) throw IOException("Network mode changed")
         val request = Request.Builder().url(EmmaParser.ENDPOINT).header("Accept", "application/json")
             .header("User-Agent", "BMenetrendAndroid/0.3 (native transit viewer)")
             .post(body.toRequestBody("application/json; charset=utf-8".toMediaType())).build()
-        val call = hu.app.bmenetrend.offline.NetworkAccessPolicy.protect(client).newCall(request)
+        val call = hu.app.bmenetrend.offline.NetworkAccessPolicy.protect(transportClient).newCall(request)
         return suspendCancellableCoroutine { continuation ->
             continuation.invokeOnCancellation { call.cancel() }
             call.enqueue(object : Callback {
@@ -46,6 +53,7 @@ class EmmaGraphqlClient(private val client: OkHttpClient = defaultHttpClient(), 
     }
     companion object {
         internal val sharedBackoff = EmmaRequestBackoff()
+        private val inFlight = EmmaInFlightRequests()
         // Repositories and MapLibre share connections, TLS sessions and dispatcher threads.
         // Callers needing different timeouts use newBuilder(), which retains these pools.
         private val sharedHttpClient by lazy {
