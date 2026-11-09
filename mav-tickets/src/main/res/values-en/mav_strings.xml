@@ -7,6 +7,8 @@
     <string name="mav_password_label">Password</string>
     <string name="mav_login_btn">Log in</string>
     <string name="mav_offline_badge">Offline mode</string>
+    <string name="mav_session_expired">Your MÁV login has expired. Log out and back in to refresh your tickets.</string>
+    <string name="mav_session_expired_notice">Your MÁV login has expired; saved tickets are shown. Log in again to refresh.</string>
     <string name="mav_offline_notice">You are in offline mode. Synced tickets and barcodes are available.</string>
     <string name="mav_sync_time">Synced: %1$s</string>
     <string name="mav_logging_in">Logging in…</string>

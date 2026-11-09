@@ -318,8 +318,11 @@ class MavRepository(
         // 3. Fetch active orders (valid tickets and passes)
         val active = deduplicateOrders(apiClient.getOrders(currentSession, validOnly = true))
 
-        // 4. Fetch past orders (strictly exclude any active or currently valid tickets/passes)
-        val pastRaw = runCatching { apiClient.getOrders(currentSession, validOnly = false) }.getOrDefault(emptyList())
+        // 4. Fetch past orders (strictly exclude any active or currently valid tickets/passes).
+        // If this request fails, keep the previously cached past orders instead of erasing them.
+        val previousCache = cacheStore.getOrders()
+        val pastRaw = runCatching { apiClient.getOrders(currentSession, validOnly = false) }
+            .getOrElse { previousCache?.second.orEmpty() }
         val activeOrderIds = active.map { it.orderId }.toSet()
         val activeReceiptIds = active.flatMap { it.receipts }.map { it.receiptId }.toSet()
         val past = deduplicateOrders(pastRaw).filter { pastOrder ->
@@ -328,7 +331,13 @@ class MavRepository(
             !pastOrder.isValidNow
         }
 
-        // 5. Cache orders to disk
+        // 5. Cache orders to disk. A completely empty answer while we have tickets cached is far
+        // more likely a server/session problem than every ticket vanishing, so don't persist it.
+        val hadCachedOrders = previousCache != null &&
+            (previousCache.first.isNotEmpty() || previousCache.second.isNotEmpty())
+        if (active.isEmpty() && past.isEmpty() && hadCachedOrders) {
+            throw MavApiException("A MÁV szerver nem adott vissza jegyeket, a mentett adatok maradnak.")
+        }
         cacheStore.saveOrders(active, past)
 
         // 6. Pre-fetch ticket images and pass holders for active tickets

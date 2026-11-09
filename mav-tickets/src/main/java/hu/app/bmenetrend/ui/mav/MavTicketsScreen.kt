@@ -84,6 +84,7 @@ fun MavTicketsScreen(
             ) {
                 val isOffline = (ticketsState as? TicketsUiState.Success)?.isOffline == true
                 val lastSyncTime = (ticketsState as? TicketsUiState.Success)?.lastSyncTime ?: 0L
+                val sessionExpired = (ticketsState as? TicketsUiState.Success)?.sessionExpired == true
 
                 MavHeader(
                     user = session?.user,
@@ -113,7 +114,10 @@ fun MavTicketsScreen(
                                 modifier = Modifier.size(16.dp)
                             )
                             Text(
-                                stringResource(R.string.mav_offline_notice),
+                                stringResource(
+                                    if (sessionExpired) R.string.mav_session_expired_notice
+                                    else R.string.mav_offline_notice
+                                ),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onTertiaryContainer,
                                 modifier = Modifier.weight(1f)
