@@ -106,6 +106,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         customAccentArgb = preferences.getInt("custom_accent_argb", 0xFF6750A4.toInt()),
         accentColor = AccentColor.fromKey(preferences.getString("accent_color", "system")),
         themeMode = ThemeMode.fromKey(preferences.getString("theme_mode", "system")),
+        mapStyle = hu.app.bmenetrend.ui.MapStyle.fromKey(preferences.getString("map_style", "street")),
         nationwideNetwork = preferences.getBoolean("emma_nationwide", true),
         windowMinutes = preferences.getInt("window", 120).takeIf { it in DepartureTime.windows } ?: 120,
         otaChannel = UpdateChannel.fromKey(preferences.getString("ota_channel", "stable")),
@@ -142,6 +143,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private var nearbyLoading = false
     private var mapError: String? = null
     private var mapVisible = true
+    private var departuresVisible = true
     private var favoritesVisible = false
     private var visibleFavorites = emptySet<String>()
     private var favoriteSelection = emptyList<NearbyStation>()
@@ -208,7 +210,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         if (favoritesVisible) ensureFavoriteRequest()
         launch {
             while (isActive) {
-                if (mapVisible) ensureNearbyRequest(force = true)
+                if (mapVisible && departuresVisible) ensureNearbyRequest(force = true)
                 delay(30_000)
             }
         }
@@ -221,7 +223,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         launch {
             while (isActive) {
                 if (mapVisible) refreshEmmaData()
-                delay(5_000)
+                delay(10_000)
             }
         }
         launch {
@@ -260,6 +262,20 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             ensureBoardRequest(force = true)
             ensureNearbyRequest()
         } else { mapSettledJob?.cancel(); nearbyJob?.cancel(); boardJob?.cancel(); mapStopsJob?.cancel(); mapStopsGeneration++ }
+    }
+
+    /** The planner uses the map/vehicles, but has no departure panel to keep polling. */
+    fun setDeparturesVisible(visible: Boolean) {
+        if (departuresVisible == visible) return
+        departuresVisible = visible
+        if (!visible) {
+            boardJob?.cancel()
+            nearbyJob?.cancel()
+        } else {
+            boardKey = null
+            ensureBoardRequest()
+            ensureNearbyRequest()
+        }
     }
 
     fun setFavoritesVisible(visible: Boolean) {
@@ -366,8 +382,6 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun refresh() {
-        EmmaGraphqlClient.sharedBackoff.reset()
-        EmmaFeedClient.vehicleBackoff.reset()
         mapSettledJob?.cancel()
         if (!state.value.stopIndexLoaded) viewModelScope.launch { refreshStopIndex() }
         viewModelScope.launch { refreshData(forceNetwork = true) }
@@ -380,7 +394,6 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
 
     private suspend fun refreshEmmaData(force: Boolean = false) {
         if (NetworkAccessPolicy.offline.value) return
-        if (force) EmmaFeedClient.vehicleBackoff.reset()
         if (emmaMutex.isLocked) return
         emmaMutex.withLock {
             val generation = NetworkAccessPolicy.generation
@@ -488,8 +501,10 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             val selectedId = current.selectedStopId.takeUnless { current.showNearby }
             val cluster = if(selectedId!=null) current.selectedPlatforms else emptyList()
             val hasEmma = cluster.any { it.id.startsWith("emma:") } || selectedId?.startsWith("emma:") == true
-            val validBoard = board?.takeIf { boardKey==current.boardRequestKey && it.stopId == selectedId && Duration.between(it.fetchedAt, now).seconds in 0..60 }
-            val emmaDepartures = if (hasEmma) EmmaStopsParser.freshDepartures(validBoard, selectedId, now, current.windowMinutes) else emptyList()
+            val validBoard = board?.takeIf { boardKey==current.boardRequestKey && it.stopId == selectedId && Duration.between(it.fetchedAt, now).seconds in 0..EmmaStopsParser.STALE_BOARD_SECONDS }
+            // Predictions older than a minute are still far better than an empty panel; they are labelled.
+            val boardStale = validBoard != null && Duration.between(validBoard.fetchedAt, now).seconds > EmmaStopsParser.FRESH_BOARD_SECONDS
+            val emmaDepartures = if (hasEmma) EmmaStopsParser.freshDepartures(validBoard, selectedId, now, current.windowMinutes, EmmaStopsParser.STALE_BOARD_SECONDS) else emptyList()
             val localStops = if (cluster.isNotEmpty()) cluster.filterNot { it.id.startsWith("emma:") }
                 else emptyList()
             val localDepartures = current.network?.let { network ->
@@ -545,7 +560,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 favoritesLoading = favoriteLoading || !current.stopIndexLoaded && !stopIndexFailed && current.favorites.any { it.startsWith("emma:") },
                 nearbyStations = nearbySelection.mapNotNull { station ->
                     val rows = station.platforms.flatMap { platform ->
-                        if (platform.id.startsWith("emma:")) EmmaStopsParser.freshDepartures(nearbyBoards[platform.id], platform.id, now, current.windowMinutes)
+                        if (platform.id.startsWith("emma:")) EmmaStopsParser.freshDepartures(nearbyBoards[platform.id], platform.id, now, current.windowMinutes, EmmaStopsParser.STALE_BOARD_SECONDS)
                         else current.network?.let { repository.departures(it, snapshot, platform.id, now, current.windowMinutes) }.orEmpty()
                     }.distinctBy { listOf(it.routeId, it.directionId, it.expectedAt) }.sortedBy { it.expectedAt }
                     if (!nearbyLoading && rows.isEmpty()) {
@@ -559,12 +574,12 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 boardUpdatedAt = if (hasEmma) validBoard?.fetchedAt else null,
                 error = null,
                 departureBoardLoading = hasEmma && boardLoading,
-                departureBoardUnavailable = hasEmma && !boardLoading && !isOfflineActive && (boardFailure || (validBoard == null && localDepartures.isEmpty())),
+                departureBoardUnavailable = hasEmma && !boardLoading && !isOfflineActive && ((boardFailure && emmaDepartures.isEmpty()) || (validBoard == null && localDepartures.isEmpty())),
                 departureStatus = if (isOfflineActive) {
                     getApplication<Application>().getString(R.string.ui_offline_timetable_active)
                 } else if (!hasEmma) null else when {
                     boardLoading && validBoard == null -> getApplication<Application>().getString(R.string.emma_board_loading)
-                    boardFailure && validBoard != null -> getApplication<Application>().getString(R.string.emma_board_stale)
+                    (boardFailure || boardStale) && validBoard != null -> getApplication<Application>().getString(R.string.emma_board_stale)
                     boardFailure || validBoard == null -> getApplication<Application>().getString(R.string.emma_board_unavailable)
                     validBoard.limitReached -> getApplication<Application>().getString(R.string.emma_board_limit)
                     else -> null
@@ -716,7 +731,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
 
     private fun ensureNearbyRequest(force: Boolean = false) {
         if (NetworkAccessPolicy.offline.value) { recalculateOffline(); return }
-        if (!mapVisible || !nearbyActive || !state.value.showNearby) return
+        if (!mapVisible || !departuresVisible || !nearbyActive || !state.value.showNearby) return
         val current = state.value
         val anchor = NearbyDepartures.anchor(mapCenter, mapBounds, current.userLocation)
         nearbySelection = NearbyDepartures.select(current.stops, anchor, mapBounds, maxStations = 6)
@@ -738,9 +753,10 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         nearbyJob = viewModelScope.launch {
             val semaphore = kotlinx.coroutines.sync.Semaphore(3)
             val results = coroutineScope {
-                stations.map { station -> async {
-                    val stationResults = fetchBoards(station.platforms, window, nearbyBoards, force, semaphore)
-                    // One slow station must not hold back departures that are already available.
+                // Six platforms share one request, whichever stations they belong to.
+                stations.flatMap { it.platforms }.distinctBy { it.id }.filter { it.id.startsWith("emma:") }.chunked(6).map { platforms -> async {
+                    val stationResults = fetchBoards(platforms, window, nearbyBoards, force, semaphore)
+                    // One slow batch must not hold back departures that are already available.
                     if (generation == nearbyGeneration) {
                         nearbyFailed = nearbyFailed + stationResults.filter { it.second == null }.map { it.first }
                         stationResults.forEach { (id, board) -> if (board != null) nearbyBoards[id] = board }
@@ -939,6 +955,12 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         mutableState.update { it.copy(themeMode = mode) }
     }
 
+    fun setMapStyle(style: hu.app.bmenetrend.ui.MapStyle) {
+        if (state.value.mapStyle == style) return
+        preferences.edit().putString("map_style", style.key).apply()
+        mutableState.update { it.copy(mapStyle = style) }
+    }
+
     fun setNationwideNetwork(enabled: Boolean) {
         if (state.value.nationwideNetwork == enabled) return
         preferences.edit().putBoolean("emma_nationwide", enabled).apply()
@@ -1015,8 +1037,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
 
     private fun ensureBoardRequest(force: Boolean = false) {
         if (NetworkAccessPolicy.offline.value) { recalculateOffline(); return }
-        if (!mapVisible) return
-        if (force) EmmaGraphqlClient.sharedBackoff.reset()
+        if (!mapVisible || !departuresVisible) return
         if (state.value.showNearby) { boardJob?.cancel(); boardKey = null; return }
         val key = state.value.boardRequestKey
         if (!force && key == boardKey) return
@@ -1024,11 +1045,10 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         boardJob?.cancel()
         // Revisiting an exact station/platform/window selection can display its
         // still-fresh board immediately. Forced refresh always bypasses this path.
-        board = if (force) null else recentBoards[key]?.takeIf {
-            Duration.between(it.fetchedAt, Instant.now()).seconds in 0..19
-        }
+        val remembered = recentBoards[key]?.let { it to Duration.between(it.fetchedAt, Instant.now()).seconds }
+        board = remembered?.takeIf { it.second in 0..EmmaStopsParser.STALE_BOARD_SECONDS }?.first
         boardFailure = false
-        if (board != null) {
+        if (!force && board != null && remembered!!.second in 0..19) {
             boardLoading = false
             recalculate()
             return
@@ -1045,7 +1065,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
 
     private suspend fun refreshBoard(waitForCurrent: Boolean = false) {
         if (NetworkAccessPolicy.offline.value) { recalculateOffline(); return }
-        if (!mapVisible || state.value.showNearby) return
+        if (!mapVisible || !departuresVisible || state.value.showNearby) return
         if (!waitForCurrent && boardMutex.isLocked) return
         boardMutex.withLock {
             val selection=state.value
@@ -1176,7 +1196,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         lineJob = viewModelScope.launch {
             try {
                 val text = journeyClient.execute(EmmaRouteParser.QUERY, org.json.JSONObject().put("id", emmaRouteId)
-                    .put("date", LocalDate.now(budapest).format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE)), bypassCooldown = true)
+                    .put("date", LocalDate.now(budapest).format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE)))
                 val details = kotlinx.coroutines.withContext(Dispatchers.Default) { EmmaRouteParser.parse(text, id) }
                 if (lineGeneration == generation) {
                     lineLoadedAt[id] = Instant.now()
@@ -1273,7 +1293,6 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         if(ids.isEmpty()) return
         closeVehicle()
         manualStop = true
-        EmmaGraphqlClient.sharedBackoff.reset()
         val network=state.value.network
         val selectedIds=ids.map { id -> network?.let { SharedStops.resolve(it,id) } ?: SharedStops.canonicalId(id) }.toSet()
         mutableState.update { it.copy(showNearby=false,selectedStopId=selectedIds.first(),selectedPlatformIds=selectedIds,

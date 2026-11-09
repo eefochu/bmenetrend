@@ -74,6 +74,7 @@ data class UiState(
     val nationwideNetwork: Boolean = true,
     val accentColor: AccentColor = AccentColor.SYSTEM,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val mapStyle: MapStyle = MapStyle.STREET,
     val customAccentArgb: Int = 0xFF6750A4.toInt(),
     val emmaStatus: String? = null,
     val cameraRequest: Int = 0,

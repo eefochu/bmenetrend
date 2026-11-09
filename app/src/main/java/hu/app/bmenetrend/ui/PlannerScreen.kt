@@ -332,7 +332,8 @@ fun PlannerScreen(
                 if (result != null && result.itineraries.isNotEmpty()) {
                     if (!state.planning && result.partial) item(key = "partial", contentType = "notice") {
                         Text(
-                            stringResource(R.string.planner_partial),
+                            stringResource(if (result.offlinePack != null && !state.offline)
+                                R.string.planner_saved_fallback else R.string.planner_partial),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -351,7 +352,7 @@ fun PlannerScreen(
                         )
                     }
                     items(result.itineraries, key = { it.id }, contentType = { "itinerary" }) { itinerary ->
-                        ItineraryCard(itinerary, itinerary == result.itineraries.first(), now) {
+                        ItineraryCard(itinerary, itinerary == result.itineraries.first(), now, result.readyAt) {
                             model.selectItinerary(itinerary.id)
                         }
                     }

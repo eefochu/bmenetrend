@@ -108,7 +108,7 @@ class TripPlannerTest {
         }
         assertTrue(parse(root.toString()).itineraries.isEmpty())
     }
-    @Test fun preparationTimeExcludesAlreadyMissedStarts() {
+    @Test fun currentTimeExcludesAlreadyMissedStarts() {
         val text=fixture("metro")
         assertTrue(TripPlanner.parse(text,origin,destination,requested(text).plusSeconds(86_400)).itineraries.isEmpty())
     }
@@ -151,6 +151,27 @@ class TripPlannerTest {
         assertEquals(trip.end,segments.last().end)
         assertTrue(segments.zipWithNext().all { (a,b)->a.end == b.start })
         assertEquals(Duration.between(trip.start,trip.end).toMillis(),segments.sumOf { Duration.between(it.start,it.end).toMillis() })
+    }
+    @Test fun initialWaitCountsTowardTotalWithoutChangingSourceLegTimes() {
+        val ready = Instant.parse("2026-11-09T12:00:00Z")
+        val bus = leg("BUS", ready.plusSeconds(600), 600)
+        val trip = TripItinerary("bus", bus.start, bus.end, listOf(bus))
+        assertEquals(600L, trip.durationSeconds)
+        assertEquals(1200L, trip.totalSeconds(ready))
+        val segments = trip.segments(ready)
+        assertEquals(2, segments.size)
+        assertNull(segments.first().leg)
+        assertEquals(ready, segments.first().start)
+        assertEquals(bus.start, segments.first().end)
+        assertSame(bus, segments.last().leg)
+        assertEquals(trip.totalSeconds(ready), segments.sumOf { Duration.between(it.start, it.end).seconds })
+    }
+    @Test fun parseDefaultsToActualNowWithoutTwoMinutePreparationDelay() {
+        val text = fixture("metro")
+        val now = requested(text)
+        val plan = TripPlanner.parse(text, origin, destination, now)
+        assertEquals(now, plan.readyAt)
+        assertTrue(plan.itineraries.isNotEmpty())
     }
     @Test fun walkingOnlyJourneyAcrossMidnightKeepsItsFullDuration() {
         val start=Instant.parse("2026-10-30T22:55:00Z")

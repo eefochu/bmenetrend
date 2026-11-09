@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="map_provider_privacy">OpenFreeMap supplies the basemap without an API key or account. Its tile servers receive your IP address and the map areas requested.</string>
+    <string name="map_style_title">Map type</string>
+    <string name="map_style_street">Street map</string>
+    <string name="map_style_satellite">Satellite</string>
+    <string name="map_style_hint">EOX Sentinel-2 imagery (2016), with lower detail. Internet connection required.</string>
+    <string name="map_style_offline_hint">Offline mode uses the downloaded street map. Satellite imagery returns when online.</string>
+    <string name="map_satellite_attribution">EOxCloudless by EOX IT Services GmbH\nContains modified Copernicus Sentinel data 2016</string>
+    <string name="map_satellite_credit">Satellite imagery: EOxCloudless by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2016), CC BY 4.0. https://cloudless.eox.at</string>
+    <string name="map_provider_privacy">OpenFreeMap supplies street maps; EOX supplies optional Sentinel-2 satellite imagery. Neither requires an API key or account. The selected tile provider receives your IP address and requested map areas.</string>
     <string name="map_provider_source">OpenFreeMap · map source</string>
     <string name="map_style_credit">Night map design adapted from OpenFreeMap / OpenMapTiles Dark Matter and CartoDB Basemaps by Stamen and Paul Norman (CC BY 3.0 / 4.0).</string>
     <string name="map_exit_route">Exit route view</string>

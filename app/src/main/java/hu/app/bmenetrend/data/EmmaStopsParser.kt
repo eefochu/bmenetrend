@@ -287,8 +287,11 @@ object EmmaStopsParser {
         val limit = boards.any { it.limitReached }
         return Board(clusterStopId, allDepartures, Catalogue(allStops, allRoutes), maxFetchedAt, limit)
     }
-    fun freshDepartures(board: Board?, stopId: String?, now: Instant, windowMinutes: Int): List<Departure> {
-        if (board == null || board.stopId != stopId || Duration.between(board.fetchedAt, now).seconds !in 0..60) return emptyList()
+    /** Fresh for a minute; a board that cannot be refreshed stays displayable, marked stale, this long. */
+    const val FRESH_BOARD_SECONDS = 60L
+    const val STALE_BOARD_SECONDS = 600L
+    fun freshDepartures(board: Board?, stopId: String?, now: Instant, windowMinutes: Int, maxAgeSeconds: Long = FRESH_BOARD_SECONDS): List<Departure> {
+        if (board == null || board.stopId != stopId || Duration.between(board.fetchedAt, now).seconds !in 0..maxAgeSeconds) return emptyList()
         val until = now.plusSeconds(windowMinutes * 60L)
         return board.departures.filter { it.expectedAt >= now && it.expectedAt <= until }
     }

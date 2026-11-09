@@ -31,6 +31,14 @@ class StationMarkersTest {
 
     private val budapest = MapBounds(18.9, 47.4, 19.2, 47.6)
 
+    @Test fun zoomingBelowRoadVisibilityAndBackKeepsUploadedRegion() {
+        val close = MapBounds(19.04, 47.49, 19.06, 47.51)
+        val loaded = requireNotNull(StationMarkers.nextRegion(null, close, 16.0))
+        val zoomedOut = StationMarkers.nextRegion(loaded, MapBounds(18.7, 47.2, 19.4, 47.8), 11.5)
+        assertSame("Hidden road markers must not replace the warm city region with a huge source", loaded, zoomedOut)
+        assertSame(loaded, StationMarkers.nextRegion(zoomedOut, close, 16.0))
+    }
+
     @Test fun railIsNationwideButRoadStopsOnlyInsideRegion() {
         val data = build(scene(
             stop("road-in", 47.5, 19.05),

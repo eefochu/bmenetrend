@@ -96,7 +96,11 @@ class MainActivity : ComponentActivity() {
                     try { awaitCancellation() } finally { close() }
                 }
             }
-            LaunchedEffect(tab) { model.setMapVisible(tab == MainTab.MAP || tab == MainTab.PLANNER); model.setFavoritesVisible(tab == MainTab.FAVORITES) }
+            LaunchedEffect(tab) {
+                model.setDeparturesVisible(tab == MainTab.MAP)
+                model.setMapVisible(tab == MainTab.MAP || tab == MainTab.PLANNER)
+                model.setFavoritesVisible(tab == MainTab.FAVORITES)
+            }
             LaunchedEffect(state.userLocation) { planner.updateLocation(state.userLocation) }
             LaunchedEffect(state.offlinePack.metadata?.id) { planner.updateOfflinePack(state.offlinePack.metadata) }
             LaunchedEffect(tab, state.network?.stops, state.emmaStops) {
@@ -133,6 +137,8 @@ class MainActivity : ComponentActivity() {
                     pendingCrash = null
                 } }
                 val isViewingTicket = tickets?.isViewingTicket() == true
+                CompositionLocalProvider(hu.app.bmenetrend.ui.LocalMapAppearance provides
+                    hu.app.bmenetrend.ui.MapAppearance(state.mapStyle, state.offlineMode)) {
                 MainNavigation(
                     tab,
                     { tab = it },
@@ -221,6 +227,7 @@ class MainActivity : ComponentActivity() {
                     onAccentColorChanged = model::setAccentColor,
                     onCustomAccentChanged = model::setCustomAccentColor,
                     onThemeModeChanged = model::setThemeMode,
+                    onMapStyleChanged = model::setMapStyle,
                     onLineOpened = model::loadLine,
                     onBoardingStop = model::selectBoardingStop,
                     onClearBoarding = model::clearBoardingSelection,
@@ -297,6 +304,7 @@ class MainActivity : ComponentActivity() {
                 }
                 })
 
+                }
                 if (state.showOtaDialog && state.otaUpdateAvailable != null) {
                     hu.app.bmenetrend.ui.OtaUpdateDialog(
                         update = state.otaUpdateAvailable!!,

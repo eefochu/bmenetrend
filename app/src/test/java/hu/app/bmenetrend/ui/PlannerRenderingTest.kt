@@ -122,6 +122,29 @@ class PlannerRenderingTest {
         compose.onAllNodesWithText(app.getString(R.string.planner_view_steps))[0].performClick()
         compose.onAllNodesWithText(app.getString(R.string.planner_steps)).assertCountEquals(1)
     }
+    @Test fun cardAndDetailsIncludeInitialWaitingInTotalTime() {
+        val ready = Instant.parse("2026-11-09T12:00:00Z")
+        val from = PlanPoint("Origin", GeoPoint(47.4,18.8))
+        val to = PlanPoint("Destination", GeoPoint(47.5,18.9))
+        val route = TransitRoute("volan:762", "762", "Bus", emptyList(), "volan", transportMode="BUS")
+        val leg = PlanLeg("BUS", ready.plusSeconds(600), ready.plusSeconds(1200), 1000.0,
+            from, to, route, to.name, false, false, emptyList())
+        val trip = TripItinerary("wait-bus", leg.start, leg.end, listOf(leg))
+        val plan = TripPlan(PlannerEndpoint("a",from.name,"",from.position),
+            PlannerEndpoint("b",to.name,"",to.position), ready, ready, listOf(trip))
+        val detail = mutableStateOf(false)
+        val app = ApplicationProvider.getApplicationContext<android.app.Application>()
+        compose.setContent { ViaBuszTheme {
+            if (detail.value) JourneyDetail(plan, trip, ready) { detail.value = false }
+            else ItineraryCard(trip, true, ready, ready) { detail.value = true }
+        } }
+        compose.onNodeWithText(app.getString(R.string.ui_minutes_short,20)).assertIsDisplayed()
+        compose.onNodeWithText(app.getString(R.string.planner_best_route)).assertIsDisplayed()
+        compose.onNodeWithText(app.getString(R.string.planner_view_steps)).performClick()
+        compose.onNodeWithText(app.getString(R.string.planner_duration,20)).assertIsDisplayed()
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText(app.getString(R.string.planner_wait,10)))
+        compose.onNodeWithText(app.getString(R.string.planner_wait,10)).assertIsDisplayed()
+    }
     @Test fun settingsCanScrollToTheBottomOnAndroid11() {
         val app=ApplicationProvider.getApplicationContext<android.app.Application>()
         compose.setContent { ViaBuszTheme { SettingsPage(UiState(),{}, {}, {}, {}, {}) } }

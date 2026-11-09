@@ -6,6 +6,7 @@ import java.time.Instant
 /** Presentation selection only: every operator still participates in routing. */
 internal object PlannerAlternatives {
     const val MAX_ARRIVAL_DELAY_SECONDS = 1200L
+    private const val SIMILAR_ARRIVAL_SECONDS = 120L
     fun select(journeys: List<TripItinerary>, ready: Instant? = null): List<TripItinerary> {
         val sorted = journeys.distinctBy { it.id }.sortedWith(TripPlanner.order)
         val distinct = mutableListOf<TripItinerary>()
@@ -22,11 +23,20 @@ internal object PlannerAlternatives {
                 fastest.walkMeters-trip.walkMeters >= 200 || fastest.walkSeconds-trip.walkSeconds >= 180 ||
                 restricted(fastest) && !restricted(trip))
         }
-        // Prefer genuine trade-offs: quickest arrival, easiest connections, and least walking.
+        // With almost the same arrival, waiting for a reachable service is preferable
+        // to several extra minutes on foot. Keep the actual fastest alternative too.
+        val recommended = useful.filter { trip ->
+            trip === fastest || Duration.between(fastest.end, trip.end).seconds <= SIMILAR_ARRIVAL_SECONDS &&
+                (!restricted(trip) || restricted(fastest)) && trip.transfers <= fastest.transfers &&
+                fastest.walkSeconds - trip.walkSeconds >= 180
+        }.minWith(compareBy<TripItinerary> { restricted(it) }.thenBy { it.walkSeconds }.then(TripPlanner.order))
+        // Preserve meaningful choices for arrival, connections and walking.
         val easy = compareBy<TripItinerary> { it.transfers }.then(TripPlanner.order)
         val walking = compareBy<TripItinerary> { it.walkSeconds }.thenBy { it.walkMeters }.then(TripPlanner.order)
-        return (listOf(fastest,useful.minWith(easy),useful.minWith(walking)) + useful)
-            .distinctBy { it.id }.take(3).sortedWith(TripPlanner.order)
+        return (listOf(recommended,fastest,useful.minWith(easy),useful.minWith(walking)) + useful)
+            .distinctBy { it.id }.take(3).let { choices ->
+                listOf(recommended) + choices.filterNot { it.id == recommended.id }.sortedWith(TripPlanner.order)
+            }
     }
 
     private fun restricted(trip: TripItinerary) = trip.legs.any { it.restrictedService }

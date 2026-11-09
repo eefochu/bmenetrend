@@ -14,7 +14,7 @@ object EmmaParser {
             vehicleId lat lon heading label lastUpdated speed
             nextStop { stopPosition stop { gtfsId name lat lon parentStation { gtfsId } } }
             trip { gtfsId tripShortName tripHeadsign
-              route { gtfsId shortName longName mode color textColor }
+              route { gtfsId shortName longName mode color }
             }
           }
         }

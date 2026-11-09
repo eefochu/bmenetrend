@@ -14,6 +14,7 @@ internal class StationScene(
     val groups: List<StationGroup>,
     val chunks: StationChunkIndex<StationGroup>,
     val offsets: Map<String, StopMarkerLayout.Offset>,
+    val preparedRegion: MapBounds? = null,
 )
 
 internal fun stationAnchor(members: List<TransitStop>): TransitStop = members.first().let { first ->
@@ -58,10 +59,12 @@ internal object StationMarkers {
     /**
      * The region whose road stops are loaded, or [current] unchanged. It changes only when the
      * viewport (at a zoom where road stops matter) nears the region's edge, so ordinary panning and
-     * zooming never trigger a rebuild. Below [REGION_MIN_ZOOM] the region is kept as it is.
+     * zooming never trigger a rebuild. Once loaded, keep the region while road stops are hidden;
+     * replacing it with the much wider zoomed-out viewport needlessly re-tiles thousands of stops.
      */
     fun nextRegion(current: MapBounds?, viewport: MapBounds, zoom: Double): MapBounds? {
         if (zoom < REGION_MIN_ZOOM) return current
+        if (current != null && zoom < ROAD_MIN_ZOOM) return current
         if (current != null) {
             val insetLon = (current.east - current.west) * REGION_EDGE_SHARE
             val insetLat = (current.north - current.south) * REGION_EDGE_SHARE

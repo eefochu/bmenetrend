@@ -57,7 +57,7 @@ object EmmaRouteParser {
 
     val QUERY = """query LineDetails(${'$'}id:String!, ${'$'}date:String!) {
         route(id:${'$'}id) { gtfsId shortName longName mode color
-            patterns { code name directionId headsign tripsForDate(serviceDate:${'$'}date) { gtfsId } stops { gtfsId name lat lon vehicleMode platformCode parentStation { gtfsId } } geometry { lat lon } }
+            patterns { code directionId headsign tripsForDate(serviceDate:${'$'}date) { gtfsId } stops { gtfsId name lat lon vehicleMode platformCode parentStation { gtfsId } } geometry { lat lon } }
         }
     }""".trimIndent()
     fun parse(text: String, expectedRouteId: String): LineDetails {

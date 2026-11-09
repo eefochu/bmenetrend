@@ -30,11 +30,10 @@ data class VehicleJourney(
 /** The actual vehicle trip's ordered stops, never a guessed route variant or nearest-stop path. */
 object EmmaJourneyParser {
     val QUERY = """query VehicleTrip(${'$'}id: String!) {
-        trip(id:${'$'}id) { gtfsId tripShortName tripHeadsign geometry pattern { code } route { gtfsId shortName longName mode }
+        trip(id:${'$'}id) { gtfsId tripHeadsign geometry pattern { code } route { gtfsId shortName longName mode }
             stops { gtfsId name lat lon vehicleMode platformCode parentStation { gtfsId } }
             stoptimes {
                 scheduledArrival realtimeArrival scheduledDeparture realtimeDeparture realtime realtimeState serviceDay
-                stop { gtfsId }
             }
         }
     }""".trimIndent()

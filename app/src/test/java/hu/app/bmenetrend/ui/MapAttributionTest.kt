@@ -20,6 +20,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ApplicationProvider
 import hu.app.bmenetrend.PlannerState
 import hu.app.bmenetrend.R
@@ -105,8 +106,8 @@ class MapAttributionTest {
         compose.onNodeWithText("OpenStreetMap · ODbL 1.0").assertIsDisplayed()
         compose.onNodeWithText("OpenMapTiles · CC BY 4.0").assertIsDisplayed()
         compose.onNodeWithText("OpenFreeMap").assertIsDisplayed()
-        compose.onNodeWithText("Geofabrik").assertIsDisplayed()
-        compose.onNodeWithText("MapLibre Native · BSD 2-Clause").assertIsDisplayed()
+        compose.onNodeWithText("Geofabrik").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("MapLibre Native · BSD 2-Clause").performScrollTo().assertIsDisplayed()
 
         // Selection state must not have changed
         assertEquals("route-initial", selectedItem)

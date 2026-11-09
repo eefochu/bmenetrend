@@ -24,12 +24,14 @@ internal fun mapAttributionLiftPx(visibleSheetPx: Float, peekHeightPx: Float, co
 /** On-map credit; the complete source and licence links remain one tap away. */
 @Composable
 internal fun MapAttribution(modifier: Modifier = Modifier) {
+    val satellite = LocalMapAppearance.current.satellite
     var expanded by rememberSaveable { mutableStateOf(false) }
     Surface(onClick = { expanded = true }, modifier = modifier,
         shape = RoundedCornerShape(8.dp),
         color = MaterialTheme.colorScheme.secondaryContainer,
         contentColor = MaterialTheme.colorScheme.onSecondaryContainer) {
-        Text(stringResource(R.string.map_info), Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+        Text(stringResource(if (satellite) R.string.map_satellite_attribution else R.string.map_info),
+            Modifier.widthIn(max = 260.dp).padding(horizontal = 8.dp, vertical = 3.dp),
             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, lineHeight = 12.sp))
     }
     if (expanded) MapCreditsDialog { expanded = false }
@@ -45,10 +47,13 @@ internal fun MapCreditsDialog(onDismiss: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(stringResource(R.string.map_credits_data))
                 Text(stringResource(R.string.map_style_credit), style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.map_satellite_credit), style = MaterialTheme.typography.bodySmall)
                 listOf(
                     "OpenStreetMap · ODbL 1.0" to "https://www.openstreetmap.org/copyright",
                     "OpenMapTiles · CC BY 4.0" to "https://openmaptiles.org/",
                     "OpenFreeMap" to "https://openfreemap.org/",
+                    "EOxCloudless · EOX · Copernicus Sentinel 2016" to "https://cloudless.eox.at/",
+                    "Sentinel-2 2016 · CC BY 4.0" to "https://creativecommons.org/licenses/by/4.0/",
                     "BKK · M1–M4 / H5–H9" to "https://bkk.hu/fejlesztoknek/",
                     "Geofabrik" to "https://www.geofabrik.de/data/download.html",
                     "MapLibre Native · BSD 2-Clause" to "https://github.com/maplibre/maplibre-native/blob/main/LICENSE.md"

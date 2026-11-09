@@ -107,7 +107,7 @@ class EmmaStopsRepository(context: Context, private val graphql: EmmaGraphqlClie
         val now = Instant.now()
         val variables = org.json.JSONObject().put("id", EmmaStopsParser.sourceId(stopId))
             .put("start", now.epochSecond).put("range", windowMinutes.coerceIn(30, 300) * 60)
-        val text = graphql.execute(EmmaStopsParser.BOARD_QUERY, variables)
+        val text = executeBoard(EmmaStopsParser.BOARD_QUERY, variables)
         return withContext(Dispatchers.Default) { EmmaStopsParser.board(text, stopId, now, windowMinutes) }
     }
 
@@ -118,8 +118,18 @@ class EmmaStopsRepository(context: Context, private val graphql: EmmaGraphqlClie
         val query = EmmaStopsParser.batchQuery(ids.size)
         val variables = org.json.JSONObject().put("start", now.epochSecond).put("range", windowMinutes.coerceIn(30,300) * 60)
         ids.forEachIndexed { index, id -> variables.put("id$index", EmmaStopsParser.sourceId(id)) }
-        val text = graphql.execute(query, variables)
+        val text = executeBoard(query, variables)
         return withContext(Dispatchers.Default) { EmmaStopsParser.batch(text, ids, now, windowMinutes) }
+    }
+
+    /** A dropped socket or cell handover is retried once; denials and cooldowns are not. */
+    private suspend fun executeBoard(query: String, variables: org.json.JSONObject): String = try {
+        graphql.execute(query, variables)
+    } catch (cancelled: CancellationException) { throw cancelled
+    } catch (error: java.io.IOException) {
+        if (error is EmmaHttpException || error is EmmaCooldownException || hu.app.bmenetrend.offline.NetworkAccessPolicy.offline.value) throw error
+        kotlinx.coroutines.delay(400)
+        graphql.execute(query, variables)
     }
 
 }
