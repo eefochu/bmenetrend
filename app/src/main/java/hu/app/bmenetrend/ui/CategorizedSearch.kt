@@ -1,3 +1,4 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 package hu.app.bmenetrend.ui
 
 import androidx.activity.compose.BackHandler
@@ -7,6 +8,10 @@ import androidx.compose.foundation.lazy.*
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.LocationOn
+import androidx.compose.material3.MaterialShapes
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.rounded.SearchOff
+import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -84,6 +89,8 @@ internal fun CategorizedSearch(
     val matchingVehicles = if (vehicleMatches.query == parsed.text) vehicleMatches.items else emptyList()
     val matchingStops = if (stopMatches.query == parsed.text) stopMatches.items else emptyList()
     val recommendation = stopMatches.recommended.takeIf { stopMatches.query == parsed.text }
+    val recommendedId = recommendation?.id.takeIf { category == SearchCategory.ALL || category == SearchCategory.STATIONS }
+    val otherStops = remember(matchingStops, recommendedId) { matchingStops.filter { it.id != recommendedId } }
     val stopsLoading = stopMatches.query != parsed.text || stopIndex == null
     val routesLoading = routeMatches.query != parsed.text
     val vehiclesLoading = vehicleMatches.query != parsed.text
@@ -92,12 +99,8 @@ internal fun CategorizedSearch(
     val uri = LocalUriHandler.current
     Column(Modifier.fillMaxSize()) {
         if (state.offlineMode) Text(stringResource(R.string.offline_live_unavailable), Modifier.padding(horizontal = 22.dp, vertical = 8.dp), style = MaterialTheme.typography.bodySmall)
-        LazyRow(contentPadding = PaddingValues(horizontal = 18.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(SearchCategory.entries, key = { it.name }, contentType = { "category_chip" }) { section ->
-                FilterChip(selected = category == section, onClick = { onCategoryChanged(section) },shape=TransitDesign.controlShape,
-                    modifier=Modifier.heightIn(min=48.dp),label = { Text(stringResource(section.title)) })
-            }
-        }
+        ConnectedSelector(SearchCategory.entries, category, onCategoryChanged, stringResource(R.string.ui_search_short),
+            Modifier.padding(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 6.dp)) { stringResource(it.title) }
         LazyColumn(state = listState, contentPadding = PaddingValues(bottom = 32.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())) {
             if (query.isBlank()) {
                 item(key = "discover", contentType = "intro") {
@@ -105,42 +108,59 @@ internal fun CategorizedSearch(
                     SearchGroupTitle(stringResource(R.string.search_examples))
                     FlowRow(Modifier.padding(horizontal = 20.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("Keleti pályaudvar", "Kelenföld", "1 villamos").forEach { example ->
-                            SuggestionChip(onClick = { onQueryChanged(example) }, label = { Text(example) }, modifier = Modifier.heightIn(min = 48.dp))
+                            SuggestionChip(onClick = { onQueryChanged(example) }, label = { Text(example) }, modifier = Modifier.heightIn(min = 48.dp),
+                                icon = { Icon(Icons.Rounded.Search, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary) })
                         }
                     }
                 }
                 if (matchingStops.isNotEmpty()) {
                     item(key = "favorites_header", contentType = "section_header") { SearchGroupTitle(stringResource(R.string.search_favorites)) }
-                    items(matchingStops, key = { "favorite-${it.id}" }, contentType = { "station" }) { stop -> StopSearchRow(stop, state, true, onStop) }
+                    itemsIndexed(matchingStops, key = { _, it -> "favorite-${it.id}" }, contentType = { _, _ -> "station" }) { index, stop ->
+                        StopSearchRow(stop, state, true, onStop, index, matchingStops.size)
+                    }
                 }
                 return@LazyColumn
             }
             if (recommendation != null && (category == SearchCategory.ALL || category == SearchCategory.STATIONS)) {
                 item(key = "recommendation", contentType = "recommendation") {
+                    // The same station in the result list carries the full, consolidated line set (rail included).
+                    val lineSource = matchingStops.firstOrNull { it.id == recommendation.id } ?: recommendation
+                    val lines = remember(lineSource.routeIds, routes) {
+                        lineSource.routeIds.mapNotNull(state::findRoute).distinctBy { it.number to it.transportMode }
+                    }
                     SearchRecommendation(StopClusters.stopDisplayName(recommendation.name), providerNames(recommendation.providerIds),
-                        { onStop(recommendation.id) }, leading = { StopMapDot(recommendation) })
+                        { onStop(recommendation.id) },
+                        leading = { StopModeBadge(recommendation, lines, size = 56.dp, color = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary) },
+                        // The recommendation carries its lines itself, so it no longer repeats as the first stop result.
+                        supporting = { OneLineBadges(lines, Modifier.padding(top = 4.dp)) })
                 }
             }
             // Stations primarily
-            if (category == SearchCategory.STATIONS || category == SearchCategory.ALL && (matchingStops.isNotEmpty() || stopsLoading || state.stopStatus != null)) {
-                item(contentType = "section_header") { SearchSectionHeader(SearchCategory.STATIONS, matchingStops.size > 3 && category == SearchCategory.ALL) { onCategoryChanged(SearchCategory.STATIONS) } }
-                if (stopsLoading || matchingStops.isEmpty() && !state.stopIndexLoaded && state.stopStatus == null) item(contentType = "progress") { LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = 22.dp)) }
+            if (category == SearchCategory.STATIONS || category == SearchCategory.ALL && (otherStops.isNotEmpty() || stopsLoading || state.stopStatus != null)) {
+                item(contentType = "section_header") { SearchSectionHeader(SearchCategory.STATIONS, otherStops.size > 3 && category == SearchCategory.ALL) { onCategoryChanged(SearchCategory.STATIONS) } }
+                if (stopsLoading || matchingStops.isEmpty() && !state.stopIndexLoaded && state.stopStatus == null) item(contentType = "progress") { TransitRefreshBar(true, Modifier.padding(horizontal = 22.dp)) }
                 state.stopStatus?.let { status -> item(contentType = "status") { Text(status, Modifier.padding(horizontal = 22.dp, vertical = 8.dp), style = MaterialTheme.typography.bodyMedium) } }
-                items(matchingStops.take(limit), key = { "station-${it.id}" }, contentType = { "station" }) { stop -> StopSearchRow(stop, state, stop.id in state.favorites, onStop) }
+                val shownStops = otherStops.take(limit)
+                itemsIndexed(shownStops, key = { _, it -> "station-${it.id}" }, contentType = { _, _ -> "station" }) { index, stop ->
+                    StopSearchRow(stop, state, stop.id in state.favorites, onStop, index, shownStops.size)
+                }
                 if (category == SearchCategory.STATIONS && !stopsLoading && state.stopIndexLoaded && matchingStops.isEmpty() && recommendation == null) item(contentType = "empty") { SearchEmpty() }
             }
             // Normal places
             if (searchPlaces && (category == SearchCategory.PLACES || places.isNotEmpty() || placeLoading || state.placesUnavailable)) {
                 item(contentType = "section_header") { SearchSectionHeader(SearchCategory.PLACES, places.size > 3 && category == SearchCategory.ALL) { onCategoryChanged(SearchCategory.PLACES) } }
-                if (placeLoading) item(contentType = "progress") { LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = 22.dp)) }
+                if (placeLoading) item(contentType = "progress") { TransitRefreshBar(true, Modifier.padding(horizontal = 22.dp)) }
                 if (state.placeQuery == query && state.placesUnavailable) item(contentType = "unavailable") {
                     Row(Modifier.padding(horizontal = 22.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(stringResource(R.string.search_places_unavailable), Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
                         TextButton(onClick = { onSearchPlaces(query, true) }) { Text(stringResource(R.string.search_retry)) }
                     }
                 }
-                items(places.take(limit), key = { "place-${it.id}" }, contentType = { "place" }) { place ->
-                    SearchResultCard(place.name, place.address, { onPlace(place) }, leading = { TransitIconTile(Icons.Rounded.LocationOn) })
+                val shownPlaces = places.take(limit)
+                itemsIndexed(shownPlaces, key = { _, it -> "place-${it.id}" }, contentType = { _, _ -> "place" }) { index, place ->
+                    SearchResultCard(place.name, place.address, { onPlace(place) }, leading = { ShapeIconTile(Icons.Rounded.Place, size = 44.dp, shape = MaterialShapes.Cookie4Sided) },
+                        index = index, count = shownPlaces.size)
                 }
 
                 if (category == SearchCategory.PLACES && places.isEmpty() && !placeLoading && !state.placesUnavailable) item(contentType = "empty") { SearchEmpty() }
@@ -153,23 +173,30 @@ internal fun CategorizedSearch(
             // Vehicles / Lines
             if (category == SearchCategory.VEHICLES || category == SearchCategory.ALL && (matchingRoutes.isNotEmpty() || matchingVehicles.isNotEmpty() || routesLoading || vehiclesLoading || state.lineCatalogueLoading || state.lineCatalogueStatus != null)) {
                 item(contentType = "section_header") { SearchSectionHeader(SearchCategory.VEHICLES, matchingRoutes.size + matchingVehicles.size > 3 && category == SearchCategory.ALL) { onCategoryChanged(SearchCategory.VEHICLES) } }
-                if (routesLoading || vehiclesLoading || matchingRoutes.isEmpty() && matchingVehicles.isEmpty() && state.lineCatalogueLoading) item(contentType = "progress") { LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = 22.dp)) }
+                if (routesLoading || vehiclesLoading || matchingRoutes.isEmpty() && matchingVehicles.isEmpty() && state.lineCatalogueLoading) item(contentType = "progress") { TransitRefreshBar(true, Modifier.padding(horizontal = 22.dp)) }
                 state.lineCatalogueStatus?.let { status -> item(contentType = "status") {
                     Text(status, Modifier.padding(horizontal = 22.dp, vertical = 8.dp), style = MaterialTheme.typography.bodyMedium)
                 } }
-                items(matchingRoutes.take(limit), key = { "line-${it.id}" }, contentType = { "route" }) { route ->
+                val shownRoutes = matchingRoutes.take(limit)
+                val vehicleLimit = if (category == SearchCategory.ALL) (3 - matchingRoutes.size).coerceAtLeast(0) else 100
+                val shownVehicles = matchingVehicles.take(vehicleLimit)
+                // Lines and live vehicles form one group in "All", two groups (with a heading between) in their own tab.
+                val joined = category != SearchCategory.VEHICLES
+                val lineGroup = if (joined) shownRoutes.size + shownVehicles.size else shownRoutes.size
+                itemsIndexed(shownRoutes, key = { _, it -> "line-${it.id}" }, contentType = { _, _ -> "route" }) { index, route ->
                     SearchResultCard(if (route.name == route.number) stringResource(R.string.ui_choose_direction) else route.name,
                         listOf(providerName(route.providerId), serviceTypeLabel(route.providerId, route.transportMode)).joinToString(" · "),
-                        { onRoute(route.id) }, leading = { LineBadge(route) })
+                        { onRoute(route.id) }, leading = { LineBadge(route) }, index = index, count = lineGroup)
                 }
-                val vehicleLimit = if (category == SearchCategory.ALL) (3 - matchingRoutes.size).coerceAtLeast(0) else 100
                 if (category == SearchCategory.VEHICLES && matchingVehicles.isNotEmpty()) item(contentType = "header") {
-                    Text(stringResource(R.string.search_live_vehicles), Modifier.padding(horizontal = 22.dp, vertical = 12.dp), style = MaterialTheme.typography.titleSmall)
+                    Text(stringResource(R.string.search_live_vehicles), Modifier.padding(horizontal = 22.dp, vertical = 12.dp), style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary)
                 }
-                items(matchingVehicles.take(vehicleLimit), key = { "vehicle-${it.id}" }, contentType = { "vehicle" }) { vehicle ->
+                itemsIndexed(shownVehicles, key = { _, it -> "vehicle-${it.id}" }, contentType = { _, _ -> "vehicle" }) { index, vehicle ->
                     SearchResultCard(vehicle.serviceName ?: vehicle.registration ?: vehicle.id.substringAfterLast(":"),
                         listOfNotNull(vehicle.destination, stringResource(R.string.search_live_vehicle)).joinToString(" · "),
-                        { onVehicle(vehicle.id) }, leading = { VehicleServiceBadge(vehicle) })
+                        { onVehicle(vehicle.id) }, leading = { VehicleServiceBadge(vehicle) },
+                        index = if (joined) shownRoutes.size + index else index, count = if (joined) lineGroup else shownVehicles.size)
                 }
                 if (category == SearchCategory.VEHICLES && !routesLoading && !vehiclesLoading && !state.lineCatalogueLoading && matchingRoutes.isEmpty() && matchingVehicles.isEmpty()) item(contentType = "empty") { SearchEmpty() }
             }
@@ -193,5 +220,10 @@ private fun SearchSectionHeader(category: SearchCategory, showMore: Boolean, onM
 
 @Composable
 private fun SearchEmpty() {
-    Text(stringResource(R.string.search_no_matches), Modifier.padding(horizontal = 22.dp, vertical = 14.dp), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Column(Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 24.dp), horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        ShapeIconTile(Icons.Rounded.SearchOff, size = 72.dp, shape = MaterialShapes.Cookie7Sided)
+        Text(stringResource(R.string.search_no_matches), style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+    }
 }

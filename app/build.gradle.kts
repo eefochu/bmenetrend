@@ -18,8 +18,8 @@ android {
         applicationId = "hu.app.bmenetrend"
         minSdk = 26
         targetSdk = 36
-        versionCode = 19
-        versionName = "0.5.10"
+        versionCode = 20
+        versionName = "0.5.11"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures { compose = true; buildConfig = true }
@@ -120,11 +120,14 @@ if (!hasTicketsModule) android.sourceSets.getByName("main").java.srcDir("src/tic
 dependencies {
     if (hasTicketsModule) implementation(project(":mav-tickets"))
     implementation("androidx.work:work-runtime-ktx:2.10.1")
-    implementation(platform("androidx.compose:compose-bom:2025.05.01"))
+    implementation(platform("androidx.compose:compose-bom:2026.06.01"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.foundation:foundation")
-    implementation("androidx.compose.material3:material3")
+    // Material 3 Expressive (LoadingIndicator, button groups, segmented menus) ships only in 1.5; alpha18 is the
+    // newest one that still builds on Compose 1.11 and AGP 8 (1.5.0-rc needs Compose 1.12 / AGP 9.1).
+    implementation("androidx.compose.material3:material3:1.5.0-alpha18")
+    implementation("androidx.graphics:graphics-shapes:1.0.1")
     implementation("androidx.compose.material:material-icons-extended")
     "developmentImplementation"("androidx.compose.ui:ui-tooling")
     implementation("androidx.activity:activity-compose:1.10.1")

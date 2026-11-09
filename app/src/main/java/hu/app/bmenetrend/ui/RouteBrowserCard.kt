@@ -35,7 +35,7 @@ internal fun RouteBrowserCard(state: UiState,route: TransitRoute,directionId: St
         HorizontalDivider(color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=.6f))
         if (selectedDeparture!=null && directionId==null) {
             DepartureDetails(selectedDeparture)
-            if (state.loadingLineId==route.id) LinearProgressIndicator(Modifier.fillMaxWidth())
+            if (state.loadingLineId==route.id) TransitRefreshBar(true)
             else Column(Modifier.padding(horizontal=20.dp,vertical=8.dp)) {
                 Text(stringResource(R.string.departure_stops_unavailable),style=MaterialTheme.typography.bodyMedium)
                 TextButton(onClick=onRetry) { Text(stringResource(R.string.emma_vehicle_refresh)) }

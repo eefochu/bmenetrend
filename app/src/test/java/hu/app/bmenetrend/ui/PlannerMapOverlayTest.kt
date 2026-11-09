@@ -201,27 +201,20 @@ class PlannerMapOverlayPhoneTest {
         assertTrue("CTA touch target at least 48dp", ctaBounds.height >= 48f * density)
     }
 
-    @Test fun emptyDestinationShowsFavoriteDestinationChipsWhenAvailableAndTriggersCallback() {
+    @Test fun emptyDestinationShowsNoFavoriteShortcutsAndNoFindAction() {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
-        var chosenFavorite: PlannerEndpoint? = null
-        val favEndpoint = PlannerEndpoint("fav:kelenfold", "Kelenföld vasútállomás M", "Budapest", GeoPoint(47.4635, 19.0232))
         compose.setContent {
             ViaBuszTheme {
                 PlannerMapOverlay(
                     state = PlannerState(),
-                    favoriteDestinations = listOf(favEndpoint),
-                    onFavoriteDestination = { chosenFavorite = it },
                     onOrigin = {}, onDestination = {}, onSwap = {},
                     onDeparture = {}, onFind = {},
                     mapContent = { modifier -> Box(modifier.testTag("planner-test-map")) }
                 )
             }
         }
-        // Quick destinations remain reachable inside the scrollable header on a small phone.
-        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Kelenföld vasútállomás M"))
-        compose.onNodeWithText("Kelenföld vasútállomás M").assertIsDisplayed().performClick()
-        assertEquals(favEndpoint, chosenFavorite)
-
+        // The planner no longer lists favourite stops as quick destinations; favourites live on their own tab.
+        compose.onNodeWithText(context.getString(R.string.search_favorites)).assertDoesNotExist()
         // Find CTA is absent when destination is empty
         compose.onNodeWithText(context.getString(R.string.planner_find)).assertDoesNotExist()
     }

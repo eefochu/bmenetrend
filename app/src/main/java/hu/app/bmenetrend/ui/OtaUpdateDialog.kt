@@ -99,13 +99,7 @@ fun OtaUpdateDialog(
                         Modifier.padding(top = 4.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        LinearProgressIndicator(
-                            progress = { downloadProgress },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(8.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                        )
+                        TransitProgressBar(progress = { downloadProgress })
                         Text(
                             stringResource(R.string.ota_downloading, (downloadProgress * 100).toInt()),
                             style = MaterialTheme.typography.bodySmall,

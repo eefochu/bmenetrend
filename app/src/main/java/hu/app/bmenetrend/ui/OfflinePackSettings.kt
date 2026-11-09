@@ -81,16 +81,15 @@ fun OfflinePackSettings(state: UiState, onMode: (Boolean) -> Unit, onDownload: (
                         Text(if (detail == null) stringResource(R.string.offline_download_complete) else stringResource(detail.step.labelResource),
                             style = MaterialTheme.typography.bodyMedium)
                         val fraction = detail?.fraction
-                        if (fraction == null) LinearProgressIndicator(Modifier.fillMaxWidth())
-                        else LinearProgressIndicator(progress = { fraction }, modifier = Modifier.fillMaxWidth())
+                        if (fraction == null) TransitRefreshBar(true)
+                        else TransitProgressBar(progress = { fraction })
                         if (detail != null && detail.records > 0) Text(stringResource(R.string.offline_processed_records, detail.records),
                             style = MaterialTheme.typography.bodySmall)
                         if (detail?.step == OfflineImportStep.INDEXING) Text(stringResource(R.string.offline_index_progress,
                             detail.completed + 1, detail.total), style = MaterialTheme.typography.bodySmall)
                     } else {
-                        if (pack.total > 0) LinearProgressIndicator(progress = { (pack.bytes.toFloat() / pack.total).coerceIn(0f, 1f) },
-                            modifier = Modifier.fillMaxWidth())
-                        else LinearProgressIndicator(Modifier.fillMaxWidth())
+                        if (pack.total > 0) TransitProgressBar(progress = { (pack.bytes.toFloat() / pack.total).coerceIn(0f, 1f) })
+                        else TransitRefreshBar(true)
                         Text(StationTimetableRepository.formatFileSize(pack.bytes), style = MaterialTheme.typography.bodySmall)
                     }
                     TextButton(onClick = onCancel, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.offline_cancel)) }

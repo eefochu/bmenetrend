@@ -132,11 +132,7 @@ fun UpdatesPage(
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
                 ) {
                     if (state.otaCheckLoading) {
-                        CircularProgressIndicator(
-                            Modifier.size(20.dp),
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            strokeWidth = 2.dp
-                        )
+                        TransitLoading(size = 28.dp, color = MaterialTheme.colorScheme.onPrimary)
                         Spacer(Modifier.width(12.dp))
                         Text(stringResource(R.string.ota_checking))
                     } else {
@@ -243,10 +239,7 @@ fun UpdatesPage(
                             val progress = state.otaDownloadProgress
                             if (progress != null) {
                                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    LinearProgressIndicator(
-                                        progress = { progress },
-                                        modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp))
-                                    )
+                                    TransitProgressBar(progress = { progress })
                                     Text(
                                         stringResource(R.string.ota_downloading, (progress * 100).toInt()),
                                         style = MaterialTheme.typography.bodySmall,
