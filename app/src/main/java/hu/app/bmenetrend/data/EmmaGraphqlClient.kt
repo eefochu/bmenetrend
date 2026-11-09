@@ -16,19 +16,25 @@ class EmmaGraphqlClient(private val client: OkHttpClient = defaultHttpClient(), 
     private data class RequestKey(val client: OkHttpClient, val backoff: EmmaRequestBackoff, val body: String, val generation: Long)
     // Avoid automatic retries of 503/Retry-After: 0 before recording the denial.
     private val transportClient = client.newBuilder().retryOnConnectionFailure(false).build()
+    private val queryBackoffs = object : LinkedHashMap<String, EmmaRequestBackoff>(16, .75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, EmmaRequestBackoff>?): Boolean = size > 32
+    }
 
     suspend fun execute(query: String, variables: JSONObject = JSONObject()): String {
         hu.app.bmenetrend.offline.NetworkAccessPolicy.requireOnline()
         val networkGeneration = hu.app.bmenetrend.offline.NetworkAccessPolicy.generation
         backoff.check(Instant.now())
+        val queryBackoff = synchronized(queryBackoffs) { queryBackoffs.getOrPut(query) { EmmaRequestBackoff() } }
+        queryBackoff.check(Instant.now())
         val body = JSONObject().put("query", query).put("variables", variables).toString()
         return inFlight.execute(RequestKey(client, backoff, body, networkGeneration)) {
             backoff.check(Instant.now())
-            executeRequest(body, networkGeneration)
+            queryBackoff.check(Instant.now())
+            executeRequest(body, networkGeneration, queryBackoff)
         }
     }
 
-    private suspend fun executeRequest(body: String, networkGeneration: Long): String {
+    private suspend fun executeRequest(body: String, networkGeneration: Long, queryBackoff: EmmaRequestBackoff): String {
         if (networkGeneration != hu.app.bmenetrend.offline.NetworkAccessPolicy.generation) throw IOException("Network mode changed")
         val request = Request.Builder().url(EmmaParser.ENDPOINT).header("Accept", "application/json")
             .header("User-Agent", "BMenetrendAndroid/0.3 (native transit viewer)")
@@ -41,7 +47,12 @@ class EmmaGraphqlClient(private val client: OkHttpClient = defaultHttpClient(), 
                 override fun onResponse(call: Call, response: Response) {
                     try {
                         val text = response.use {
-                            if (!it.isSuccessful) throw EmmaHttpException(it.code, backoff.denied(it.code, it.header("Retry-After"), Instant.now()))
+                            if (!it.isSuccessful) {
+                                // 429 explicitly limits traffic globally. A 403 or 503 for a
+                                // particular operation does not prove that planning is unavailable.
+                                val policy = if (it.code == 429) backoff else queryBackoff
+                                throw EmmaHttpException(it.code, policy.denied(it.code, it.header("Retry-After"), Instant.now()))
+                            }
                             it.body?.string() ?: throw IOException("Empty EMMA response")
                         }
                         if (networkGeneration != hu.app.bmenetrend.offline.NetworkAccessPolicy.generation) throw IOException("Network mode changed")

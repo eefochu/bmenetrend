@@ -408,9 +408,12 @@ class PlannerViewModel internal constructor(
         mutable.update { it.copy(origin = origin, planning = true) }
         planJob = viewModelScope.launch {
             try {
-                val result = if (current.offline) offlinePlanner.plan(origin, destination, requested, ready, current.localProviders) else planner.plan(origin, destination, requested, ready, stopCatalogue, loadNetwork, current.localProviders) { partial ->
-                    if (generation == planGeneration) mutable.update { it.copy(result = partial) }
-                }
+                val result = if (current.offline) offlinePlanner.plan(origin, destination, requested, ready, current.localProviders)
+                else planWithRecovery(online = {
+                    planner.plan(origin, destination, requested, ready, stopCatalogue, loadNetwork, current.localProviders) { partial ->
+                        if (generation == planGeneration) mutable.update { it.copy(result = partial) }
+                    }
+                }, saved = { offlinePlanner.plan(origin, destination, requested, ready, current.localProviders) })
                 if (generation == planGeneration) mutable.update { it.copy(planning = false, result = result,
                     selectedId = it.selectedId?.takeIf { id -> result.itineraries.any { route -> route.id == id } },
                     error = if (result.itineraries.isEmpty()) {

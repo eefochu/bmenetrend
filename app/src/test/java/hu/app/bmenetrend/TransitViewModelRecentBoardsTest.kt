@@ -94,6 +94,36 @@ class TransitViewModelRecentBoardsTest {
     }
 
     @Test
+    fun plannerMapDoesNotFetchHiddenDepartureBoardsAndMapTabResumesThem() = runBlocking {
+        val calls = AtomicInteger()
+        val fixture = JSONObject(javaClass.getResource("/rail/board.json")!!.readText())
+            .getJSONObject("data").getJSONObject("stop")
+        val http = OkHttpClient.Builder().addInterceptor { chain ->
+            calls.incrementAndGet()
+            Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                .body(JSONObject().put("data", JSONObject().put("board0", fixture)).toString().toResponseBody()).build()
+        }.build()
+        val viewModel = TransitViewModel(app).also { activeModel = it }
+        try {
+            val repository = TransitViewModel::class.java.getDeclaredField("stopsRepository").apply { isAccessible = true }
+            repository.set(viewModel, EmmaStopsRepository(app, EmmaGraphqlClient(http)))
+            awaitUntil { viewModel.state.value.network != null }
+            viewModel.setDeparturesVisible(false)
+            mutableState(viewModel).update { it.copy(emmaStops = it.emmaStops + stop) }
+            viewModel.selectStopGroup(listOf(stopId))
+            repeat(10) { ShadowLooper.idleMainLooper(); Thread.sleep(5) }
+            assertEquals("Hidden planner boards must not consume API requests", 0, calls.get())
+            viewModel.setDeparturesVisible(true)
+            awaitUntil { calls.get() == 1 && !boardLoading(viewModel) }
+            assertEquals(1, calls.get())
+        } finally {
+            viewModel.viewModelScope.cancel()
+            http.dispatcher.cancelAll()
+            http.dispatcher.executorService.shutdown()
+        }
+    }
+
+    @Test
     fun recentBoardIsReusedByExactKeyUntilForcedExpiredOrInvalidated() = runBlocking {
         val calls = AtomicInteger()
         val fixture = JSONObject(javaClass.getResource("/rail/board.json")!!.readText())

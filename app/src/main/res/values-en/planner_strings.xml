@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="planner_saved_fallback">Live planning is currently unavailable. These routes use the downloaded timetable, without live delay information.</string>
     <string name="planner_nav_map">Map</string>
     <string name="planner_nav_plan">Plan</string>
     <string name="planner_title">Utazástervezés</string>

@@ -19,6 +19,27 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 class EmmaGraphqlTrafficTest {
+    @Test fun forbiddenBackgroundQueryDoesNotDisableIndependentTripPlanning() = runBlocking {
+        val calls = AtomicInteger()
+        val http = OkHttpClient.Builder().addInterceptor { chain ->
+            calls.incrementAndGet()
+            val body = okio.Buffer().also { chain.request().body!!.writeTo(it) }.readUtf8()
+            val denied = body.contains("LiveVehicles")
+            Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1)
+                .code(if (denied) 403 else 200).message(if (denied) "Forbidden" else "OK")
+                .body("response".toResponseBody()).build()
+        }.build()
+        EmmaGraphqlClient.sharedBackoff.reset()
+        try {
+            val background = EmmaGraphqlClient(http)
+            try { background.execute("query LiveVehicles"); fail("Expected denial") } catch (_: EmmaHttpException) { }
+            assertEquals("response", EmmaGraphqlClient(http).execute("query TripPlan"))
+            try { background.execute("query LiveVehicles"); fail("Denied operation must still cool down") }
+            catch (_: EmmaCooldownException) { }
+            assertEquals(2, calls.get())
+        } finally { EmmaGraphqlClient.sharedBackoff.reset() }
+    }
+
     @Test fun differentVariablesAndQueriesRemainIndependentWhileInFlight() = runBlocking {
         val entered = CountDownLatch(3)
         val release = CountDownLatch(1)

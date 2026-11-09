@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="planner_saved_fallback">Az élő tervezés most nem érhető el. Ezek az útvonalak a letöltött menetrendből származnak, élő késési adatok nélkül.</string>
     <string name="planner_nav_map">Térkép</string>
     <string name="planner_nav_plan">Tervezés</string>
     <string name="planner_title">Utazástervezés</string>

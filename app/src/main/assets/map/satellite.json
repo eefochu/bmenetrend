@@ -1,0 +1,18 @@
+{
+  "version": 8,
+  "name": "EOX Sentinel-2 satellite (2016)",
+  "sources": {
+    "satellite": {
+      "type": "raster",
+      "tiles": ["https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless_3857/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg"],
+      "tileSize": 256,
+      "minzoom": 0,
+      "maxzoom": 14,
+      "attribution": "<a href=\"https://cloudless.eox.at\">EOxCloudless</a> by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2016), <a href=\"https://creativecommons.org/licenses/by/4.0/\">CC BY 4.0</a>"
+    }
+  },
+  "layers": [
+    {"id": "background", "type": "background", "paint": {"background-color": "#13222b"}},
+    {"id": "satellite-imagery", "type": "raster", "source": "satellite", "paint": {"raster-fade-duration": 150}}
+  ]
+}

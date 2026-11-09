@@ -14,6 +14,7 @@ internal class StationScene(
     val groups: List<StationGroup>,
     val chunks: StationChunkIndex<StationGroup>,
     val offsets: Map<String, StopMarkerLayout.Offset>,
+    val preparedRegion: MapBounds? = null,
 )
 
 internal fun stationAnchor(members: List<TransitStop>): TransitStop = members.first().let { first ->

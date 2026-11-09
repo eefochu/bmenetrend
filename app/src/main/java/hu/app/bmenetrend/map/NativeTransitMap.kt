@@ -99,7 +99,10 @@ fun NativeTransitMap(
     onGestureChanged: (Boolean) -> Unit = {},
 ) {
     val darkTheme = LocalDarkTheme.current
-    val styleUri = if (offline) { if (darkTheme) "asset://map/offline-dark.json" else "asset://map/offline.json" } else if (darkTheme) "asset://map/night.json" else "https://tiles.openfreemap.org/styles/positron"
+    val satellite = hu.app.bmenetrend.ui.LocalMapAppearance.current.style == hu.app.bmenetrend.ui.MapStyle.SATELLITE && !offline
+    val styleUri = if (offline) { if (darkTheme) "asset://map/offline-dark.json" else "asset://map/offline.json" }
+        else if (satellite) "asset://map/satellite.json"
+        else if (darkTheme) "asset://map/night.json" else "https://tiles.openfreemap.org/styles/positron"
     val context = LocalContext.current
     // Strings come from LocalResources so they follow configuration changes (Compose lint).
     val resources = androidx.compose.ui.platform.LocalResources.current
@@ -124,17 +127,6 @@ fun NativeTransitMap(
     }
     // Group and allocate in a camera-independent world. Pan, zoom, selection and highlights cannot reshuffle it.
     val sceneStops=remember(stops,lineFocus?.displayStops) { (stops+lineFocus?.displayStops.orEmpty()).distinctBy { it.id } }
-    val stationScene by produceState<StationScene?>(null,sceneStops,stopBearings) {
-        val previousOffsets=value?.offsets.orEmpty()
-        value=withContext(Dispatchers.Default) {
-            val bounds=sceneStops.takeIf { it.isNotEmpty() }?.let { all -> MapBounds(
-                all.minOf { it.position.lon },all.minOf { it.position.lat },all.maxOf { it.position.lon },all.maxOf { it.position.lat }) }
-            val groups=traceMapWork("BMenetrend.StopGroups") { StopMapClustering.groups(sceneStops,bounds,16.0,stopBearings) }
-            val merged = RailStationMarkers.mergePlatforms(groups).map { StationGroup(stationAnchor(it), it) }
-            StationScene(merged, StationChunkIndex(merged) { it.anchor.position },
-                StopMarkerLayout.offsets(merged.map { it.anchor },previousOffsets))
-        }
-    }
     var savedLat by rememberSaveable { mutableDoubleStateOf(47.473) }
     var savedLon by rememberSaveable { mutableDoubleStateOf(18.825) }
     var savedZoom by rememberSaveable { mutableDoubleStateOf(13.2) }
@@ -162,6 +154,23 @@ fun NativeTransitMap(
     var markerData by remember(mapView) { mutableStateOf<StationMarkers.Data?>(null) }
     // Area whose road stops are uploaded; changes only when the view nears its edge.
     var markerRegion by remember(mapView) { mutableStateOf<MapBounds?>(null) }
+    val sceneIndex by produceState<StationSceneIndex?>(null, sceneStops) {
+        value = withContext(Dispatchers.Default) { StationSceneIndex(sceneStops) }
+    }
+    val stationScene by produceState<StationScene?>(null,sceneIndex,markerRegion,focused,stopBearings) {
+        val catalogue = sceneIndex ?: return@produceState
+        val region = markerRegion
+        val previousOffsets=value?.offsets.orEmpty()
+        value=withContext(Dispatchers.Default) {
+            val selectedStops = catalogue.select(region, focused)
+            val bounds=selectedStops.takeIf { it.isNotEmpty() }?.let { all -> MapBounds(
+                all.minOf { it.position.lon },all.minOf { it.position.lat },all.maxOf { it.position.lon },all.maxOf { it.position.lat }) }
+            val groups=traceMapWork("BMenetrend.StopGroups") { StopMapClustering.groups(selectedStops,bounds,16.0,stopBearings) }
+            val merged = RailStationMarkers.mergePlatforms(groups).map { StationGroup(stationAnchor(it), it) }
+            StationScene(merged, StationChunkIndex(merged) { it.anchor.position },
+                StopMarkerLayout.offsets(merged.map { it.anchor },previousOffsets), region)
+        }
+    }
     val markerImageNames = remember { HashMap<String, String>() }
     var styleLoaded by remember(mapView) { mutableStateOf(false) }
     var styleGeneration by remember(mapView) { mutableIntStateOf(0) }
@@ -505,6 +514,9 @@ fun NativeTransitMap(
         val nativeMap=map ?: return@LaunchedEffect
         if(!styleLoaded) return@LaunchedEffect
         val scene=stationScene ?: return@LaunchedEffect
+        // Keep the previous upload until grouping for the new region is ready;
+        // applying a new region to an old subset would briefly erase its stops.
+        if (scene.preparedRegion != markerRegion) return@LaunchedEffect
         // Startup delivers scene, bearings and route colours in quick succession: settle first so
         // the country is serialized and natively re-tiled once, not once per input.
         delay(300)

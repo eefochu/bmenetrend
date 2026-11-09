@@ -46,6 +46,7 @@ fun SettingsPage(
     onOfflineDelete: () -> Unit = {},
     onOfflineImport: (android.net.Uri) -> Unit = {},
     onThemeMode: (ThemeMode) -> Unit = {},
+    onMapStyle: (MapStyle) -> Unit = {},
 ) {
     var mapCredits by rememberSaveable { mutableStateOf(false) }
     if (mapCredits) MapCreditsDialog { mapCredits = false }
@@ -73,6 +74,26 @@ fun SettingsPage(
                                 }
                             }
                         }
+                    }
+                }
+                TransitSectionTitle(stringResource(R.string.map_style_title))
+                Surface(shape = TransitDesign.groupShape, color = MaterialTheme.colorScheme.surfaceContainerLowest) {
+                    Column(Modifier.fillMaxWidth().padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            MapStyle.entries.forEach { style ->
+                                val selected = state.mapStyle == style
+                                Surface(Modifier.weight(1f), shape = TransitDesign.controlShape,
+                                    color = if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent) {
+                                    Box(Modifier.heightIn(min = 48.dp).selectable(selected, role = Role.RadioButton,
+                                        onClick = { onMapStyle(style) }).padding(12.dp), contentAlignment = Alignment.Center) {
+                                        Text(stringResource(style.labelRes), style = MaterialTheme.typography.labelLarge)
+                                    }
+                                }
+                            }
+                        }
+                        Text(stringResource(if (state.offlineMode) R.string.map_style_offline_hint else R.string.map_style_hint),
+                            Modifier.padding(horizontal = 8.dp, vertical = 4.dp), style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 OfflinePackSettings(state, onOfflineMode, onOfflineDownload, onOfflineCancel, onOfflineDelete, onOfflineImport, onAutomaticOfflineUpdates)

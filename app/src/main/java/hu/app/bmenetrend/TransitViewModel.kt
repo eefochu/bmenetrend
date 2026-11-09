@@ -106,6 +106,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         customAccentArgb = preferences.getInt("custom_accent_argb", 0xFF6750A4.toInt()),
         accentColor = AccentColor.fromKey(preferences.getString("accent_color", "system")),
         themeMode = ThemeMode.fromKey(preferences.getString("theme_mode", "system")),
+        mapStyle = hu.app.bmenetrend.ui.MapStyle.fromKey(preferences.getString("map_style", "street")),
         nationwideNetwork = preferences.getBoolean("emma_nationwide", true),
         windowMinutes = preferences.getInt("window", 120).takeIf { it in DepartureTime.windows } ?: 120,
         otaChannel = UpdateChannel.fromKey(preferences.getString("ota_channel", "stable")),
@@ -142,6 +143,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private var nearbyLoading = false
     private var mapError: String? = null
     private var mapVisible = true
+    private var departuresVisible = true
     private var favoritesVisible = false
     private var visibleFavorites = emptySet<String>()
     private var favoriteSelection = emptyList<NearbyStation>()
@@ -208,7 +210,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         if (favoritesVisible) ensureFavoriteRequest()
         launch {
             while (isActive) {
-                if (mapVisible) ensureNearbyRequest(force = true)
+                if (mapVisible && departuresVisible) ensureNearbyRequest(force = true)
                 delay(30_000)
             }
         }
@@ -260,6 +262,20 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             ensureBoardRequest(force = true)
             ensureNearbyRequest()
         } else { mapSettledJob?.cancel(); nearbyJob?.cancel(); boardJob?.cancel(); mapStopsJob?.cancel(); mapStopsGeneration++ }
+    }
+
+    /** The planner uses the map/vehicles, but has no departure panel to keep polling. */
+    fun setDeparturesVisible(visible: Boolean) {
+        if (departuresVisible == visible) return
+        departuresVisible = visible
+        if (!visible) {
+            boardJob?.cancel()
+            nearbyJob?.cancel()
+        } else {
+            boardKey = null
+            ensureBoardRequest()
+            ensureNearbyRequest()
+        }
     }
 
     fun setFavoritesVisible(visible: Boolean) {
@@ -713,7 +729,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
 
     private fun ensureNearbyRequest(force: Boolean = false) {
         if (NetworkAccessPolicy.offline.value) { recalculateOffline(); return }
-        if (!mapVisible || !nearbyActive || !state.value.showNearby) return
+        if (!mapVisible || !departuresVisible || !nearbyActive || !state.value.showNearby) return
         val current = state.value
         val anchor = NearbyDepartures.anchor(mapCenter, mapBounds, current.userLocation)
         nearbySelection = NearbyDepartures.select(current.stops, anchor, mapBounds, maxStations = 6)
@@ -936,6 +952,12 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         mutableState.update { it.copy(themeMode = mode) }
     }
 
+    fun setMapStyle(style: hu.app.bmenetrend.ui.MapStyle) {
+        if (state.value.mapStyle == style) return
+        preferences.edit().putString("map_style", style.key).apply()
+        mutableState.update { it.copy(mapStyle = style) }
+    }
+
     fun setNationwideNetwork(enabled: Boolean) {
         if (state.value.nationwideNetwork == enabled) return
         preferences.edit().putBoolean("emma_nationwide", enabled).apply()
@@ -1012,7 +1034,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
 
     private fun ensureBoardRequest(force: Boolean = false) {
         if (NetworkAccessPolicy.offline.value) { recalculateOffline(); return }
-        if (!mapVisible) return
+        if (!mapVisible || !departuresVisible) return
         if (state.value.showNearby) { boardJob?.cancel(); boardKey = null; return }
         val key = state.value.boardRequestKey
         if (!force && key == boardKey) return
@@ -1041,7 +1063,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
 
     private suspend fun refreshBoard(waitForCurrent: Boolean = false) {
         if (NetworkAccessPolicy.offline.value) { recalculateOffline(); return }
-        if (!mapVisible || state.value.showNearby) return
+        if (!mapVisible || !departuresVisible || state.value.showNearby) return
         if (!waitForCurrent && boardMutex.isLocked) return
         boardMutex.withLock {
             val selection=state.value
