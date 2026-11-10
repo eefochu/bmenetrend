@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BKK API map test</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  :root { color-scheme: dark; --bg:#14161a; --panel:#1c1f25; --line:#2c313a; --fg:#e6e8ec; --dim:#8b93a1; --ok:#4ade80; --warn:#fbbf24; --bad:#f87171; --acc:#60a5fa; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; background: var(--bg); color: var(--fg); font: 13px/1.4 -apple-system, system-ui, sans-serif; }
+  #app { display: grid; grid-template-columns: 1fr 400px; height: 100%; }
+  #map { height: 100%; background: #0d0f12; }
+  #side { background: var(--panel); border-left: 1px solid var(--line); overflow-y: auto; padding: 12px; }
+  h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--dim); margin: 16px 0 6px; }
+  h2:first-child { margin-top: 0; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  button, select, input { background: #262a32; color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: 5px 9px; font: inherit; }
+  button { cursor: pointer; } button:hover { border-color: var(--acc); } button:disabled { opacity: .5; cursor: default; }
+  label { display: inline-flex; gap: 4px; align-items: center; color: var(--dim); }
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .tile { background: #23272e; border-radius: 8px; padding: 8px; }
+  .tile b { display: block; font-size: 18px; font-variant-numeric: tabular-nums; }
+  .tile span { color: var(--dim); font-size: 11px; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { text-align: right; padding: 3px 4px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { color: var(--dim); font-weight: 500; font-size: 11px; }
+  th:first-child, td:first-child { text-align: left; }
+  #log { font: 11px/1.5 ui-monospace, Menlo, monospace; max-height: 220px; overflow-y: auto; background: #111317; border-radius: 6px; padding: 6px; }
+  #log div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ok { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--bad); } .dim { color: var(--dim); }
+  #bench { white-space: pre; font: 11px/1.5 ui-monospace, Menlo, monospace; background: #111317; border-radius: 6px; padding: 6px; overflow-x: auto; }
+  .osm-dark { filter: invert(1) hue-rotate(180deg) brightness(.85) contrast(.9) saturate(.6); }
+  .veh { display: flex; align-items: center; justify-content: center; }
+  .veh i { position: absolute; inset: -5px; pointer-events: none; }
+  .veh i::before { content: ""; position: absolute; left: 50%; top: -3px; margin-left: -4px; border: 4px solid transparent; border-bottom: 6px solid var(--c); border-top: 0; }
+  .veh b { min-width: 22px; height: 18px; padding: 0 4px; border-radius: 5px; font: 700 11px/18px system-ui, sans-serif; text-align: center; white-space: nowrap; box-shadow: 0 0 0 1.5px rgba(0,0,0,.65); }
+  .veh.stale b { opacity: .45; }
+  .leaflet-popup-content { font: 12px/1.45 system-ui, sans-serif; margin: 10px 12px; min-width: 200px; }
+  .leaflet-popup-content table td { border: 0; padding: 1px 6px 1px 0; text-align: left; color: #222; }
+  .pill { display: inline-block; padding: 0 5px; border-radius: 4px; font-weight: 700; }
+  #searchForm { display: flex; gap: 6px; margin-bottom: 6px; }
+  #searchInput { flex: 1; min-width: 0; padding: 9px; }
+  #searchStatus { font-size: 12px; color: var(--dim); margin: 6px 0; }
+  #searchResults { max-height: 300px; overflow-y: auto; }
+  .search-result { display: block; width: 100%; text-align: left; padding: 8px; margin: 4px 0; }
+  .search-result small { display: block; color: var(--dim); margin-top: 3px; }
+  #planner { border-block: 1px solid var(--line); margin-top: 12px; padding: 12px 0; }
+  #planner label { display: block; margin-bottom: 4px; }
+  #planner [hidden] { display: none; }
+  #planner .row { flex-wrap: nowrap; margin-bottom: 6px; }
+  #planner .row input { min-width: 0; flex: 1; }
+  .place-results { max-height: 150px; overflow-y: auto; }
+  #planStatus { margin: 8px 0; color: var(--dim); }
+  #planResults { max-height: 390px; overflow-y: auto; }
+  .itinerary { display: block; width: 100%; text-align: left; margin: 6px 0; padding: 9px; }
+  .itinerary[aria-pressed="true"] { border-color: var(--acc); background: #23354d; }
+  .itinerary small { display: block; color: var(--dim); margin-top: 4px; }
+  #planLegs { padding-left: 22px; }
+  #planLegs li { margin: 9px 0; }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+  @media (max-width: 800px) { #app { grid-template-columns: 1fr; grid-template-rows: 55% 45%; } #side { border-left: 0; border-top: 1px solid var(--line); } }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="map"></div>
+  <div id="side">
+    <form id="searchForm" role="search">
+      <input id="searchInput" type="search" aria-label="Search vehicles or stations" placeholder="Station, route, vehicle ID or plate" autocomplete="off" aria-controls="searchResults" aria-describedby="searchHelp">
+      <button type="submit">Search</button>
+    </form>
+    <div id="searchHelp" class="dim">Stations and routes across BKK’s feed; plates and models in the current view. Try Keleti, 105 or BKK_2035.</div>
+    <div id="searchStatus" role="status" aria-live="polite"></div>
+    <div id="searchResults" aria-label="Search results"></div>
+    <section id="planner" aria-label="Trip planner">
+      <h2>Trip planner</h2>
+      <form id="planForm">
+        <label for="planFrom">From</label>
+        <div class="row"><input id="planFrom" type="search" placeholder="Search a station" autocomplete="off" aria-controls="fromResults" required><button type="button" id="pickFrom" aria-label="Pick origin on map">Pick on map</button></div>
+        <div id="fromResults" class="place-results"></div>
+        <label for="planTo">To</label>
+        <div class="row"><input id="planTo" type="search" placeholder="Search a station" autocomplete="off" aria-controls="toResults" required><button type="button" id="pickTo" aria-label="Pick destination on map">Pick on map</button></div>
+        <div id="toResults" class="place-results"></div>
+        <div class="row"><button type="button" id="swapPlaces">Swap</button><select id="planWhen" aria-label="Journey time"><option value="now">Leave now</option><option value="depart">Depart at</option><option value="arrive">Arrive by</option></select><select id="planMode" aria-label="Travel mode"><option value="TRANSIT,WALK">Transit + walk</option><option value="WALK">Walk only</option></select></div>
+        <label id="planTimeLabel" for="planTime" hidden>Budapest time</label>
+        <input id="planTime" type="datetime-local" hidden style="width:100%;margin-bottom:8px">
+        <div class="row"><button type="submit" id="planSubmit">Plan journey</button><button type="button" id="clearPlan">Clear</button></div>
+      </form>
+      <div id="planStatus" role="status" aria-live="polite">Choose stations or pick two points on the map.</div>
+      <div id="planResults"></div>
+      <ol id="planLegs"></ol>
+    </section>
+    <h2>Controls</h2>
+    <div class="row">
+      <button id="toggle">Pause</button>
+      <button id="once">Refresh now</button>
+      <label>every <select id="interval">
+        <option value="2000">2 s</option><option value="5000" selected>5 s</option>
+        <option value="10000">10 s</option><option value="30000">30 s</option>
+      </select></label>
+      <label><input type="checkbox" id="showStops" checked> stops (zoom ≥ 15)</label>
+      <button id="setKey">Key…</button>
+      <button id="setBackend">Backend URL…</button>
+    </div>
+    <div id="backendStatus" class="dim" style="margin-top:6px"></div>
+    <div id="fallbackStatus" class="dim" role="status" style="margin-top:6px"></div>
+
+    <h2>Live</h2>
+    <div class="tiles">
+      <div class="tile"><b id="tVeh">–</b><span>vehicles in view</span></div>
+      <div class="tile"><b id="tStops">–</b><span>stops in view</span></div>
+      <div class="tile"><b id="tLast">–</b><span>last vehicles req</span></div>
+      <div class="tile"><b id="tAge">–</b><span>median position age</span></div>
+      <div class="tile"><b id="tStale">–</b><span>positions &gt; 60 s old</span></div>
+      <div class="tile"><b id="tRender">–</b><span>map render</span></div>
+    </div>
+    <div class="dim" id="types" style="margin-top:6px"></div>
+
+    <h2>Request timings (ms)</h2>
+    <table id="stats"><thead><tr><th>endpoint</th><th>n</th><th>last</th><th>p50</th><th>p95</th><th>max</th><th>kB</th><th>err</th></tr></thead><tbody></tbody></table>
+    <div class="dim" style="margin-top:4px">time = request start → JSON parsed. kB = decoded body size.</div>
+
+    <h2>Benchmark</h2>
+    <div class="row">
+      <button id="runBench">Run (10× each, current view)</button>
+    </div>
+    <div id="bench" class="dim" style="margin-top:6px">Compares endpoints and includeReferences variants, sequentially.</div>
+
+    <h2>Request log</h2>
+    <div id="log"></div>
+  </div>
+</div>
+
+<script type="module">
+const BASE = 'https://futar.bkk.hu/api/query/v1/ws/otp/api/where/';
+const $ = id => document.getElementById(id);
+const PROXY = localStorage.getItem('bkkProxy') || '';
+// Never load the local key file when using the backend.
+if (!PROXY) await new Promise(resolve => {
+  const script = document.createElement('script'); script.src = 'key.js';
+  script.onload = script.onerror = resolve; document.head.append(script);
+});
+let KEY = window.BKK_KEY || localStorage.getItem('bkkKey') || '';
+const hasApi = () => !!(PROXY || KEY);
+function askKey() {
+  const k = prompt('BKK API key (stored in this browser only):', KEY);
+  if (k !== null) { KEY = k.trim(); localStorage.setItem('bkkKey', KEY); }
+}
+if (!hasApi()) askKey();
+$('setKey').onclick = () => { askKey(); tick(); };
+$('setKey').hidden = !!PROXY;
+$('backendStatus').textContent = PROXY ? 'Using backend: ' + PROXY : 'Direct BKK access (key is in this browser).';
+$('setBackend').onclick = () => {
+  const value = prompt('Worker URL, e.g. https://bmenetrend-bkk-proxy.your-name.workers.dev\nLeave empty to use BKK directly.', PROXY);
+  if (value === null) return;
+  if (!value.trim()) localStorage.removeItem('bkkProxy');
+  else {
+    try {
+      const url = new URL(value.trim());
+      if ((url.protocol !== 'https:' && !(url.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(url.hostname))) || url.username || url.password || url.search || url.hash || !['/', '/api', '/api/'].includes(url.pathname)) throw new Error();
+      localStorage.setItem('bkkProxy', url.origin);
+    } catch { alert('Enter an HTTPS Worker URL (or http://localhost:8787 for development).'); return; }
+  }
+  location.reload();
+};
+
+// ---------- measured fetch ----------
+const samples = {};   // endpoint -> [{ms, ttfb, bytes, ok}]
+async function api(ep, params, label = ep, record = true) {
+  const qs = new URLSearchParams({ version: 4, ...params });
+  if (!PROXY) qs.set('key', KEY);
+  const t0 = performance.now();
+  let ttfb = 0, bytes = 0, ok = false, status = 0, json = null, err = '';
+  try {
+    const res = await fetch((PROXY ? PROXY + '/api/' : BASE) + ep + '.json?' + qs, { cache: 'no-store' });
+    ttfb = performance.now() - t0; status = res.status;
+    const text = await res.text(); bytes = text.length;
+    json = JSON.parse(text);
+    ok = res.ok && json.status === 'OK';
+    if (!ok) err = json.text || json.status || ('HTTP ' + status);
+  } catch (e) { err = e.message; }
+  const ms = performance.now() - t0;
+  const s = { ms, ttfb, bytes, ok };
+  if (record) {
+    (samples[label] ||= []).push(s);
+    if (samples[label].length > 500) samples[label].shift();
+    const n = json?.data?.list?.length;
+    logLine(`${new Date().toLocaleTimeString()}  ${label.padEnd(24)} ${ms.toFixed(0).padStart(5)}ms  ttfb ${ttfb.toFixed(0).padStart(4)}  ${(bytes / 1024).toFixed(1).padStart(6)}kB${n != null ? '  n=' + n : ''}${ok ? '' : '  ✗ ' + err}`, ok ? (ms > 1000 ? 'warn' : '') : 'bad');
+    renderStats();
+  }
+  return { json, ok, err, ...s };
+}
+function logLine(text, cls) {
+  const d = document.createElement('div'); d.textContent = text; if (cls) d.className = cls;
+  $('log').prepend(d);
+  while ($('log').childElementCount > 200) $('log').lastChild.remove();
+}
+const pct = (a, p) => { const s = [...a].sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.floor(p * s.length))]; };
+function renderStats() {
+  $('stats').tBodies[0].innerHTML = Object.entries(samples).map(([ep, arr]) => {
+    const good = arr.filter(s => s.ok), ms = good.map(s => s.ms), last = arr.at(-1);
+    const f = v => v == null ? '–' : v.toFixed(0);
+    return `<tr><td>${ep}</td><td>${arr.length}</td><td class="${last.ok ? '' : 'bad'}">${f(last.ms)}</td><td>${f(ms.length ? pct(ms, .5) : null)}</td><td>${f(ms.length ? pct(ms, .95) : null)}</td><td>${f(ms.length ? Math.max(...ms) : null)}</td><td>${(last.bytes / 1024).toFixed(1)}</td><td class="${arr.length - good.length ? 'bad' : ''}">${arr.length - good.length}</td></tr>`;
+  }).join('');
+}
+
+// ---------- map ----------
+const map = L.map('map', { preferCanvas: true }).setView([47.4979, 19.0402], 14);
+const esri = name => L.tileLayer(`https://server.arcgisonline.com/ArcGIS/rest/services/${name}/MapServer/tile/{z}/{y}/{x}`, { maxZoom: 19, attribution: '© Esri · data: BKK' });
+const bases = {
+  'OSM dark': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, className: 'osm-dark', attribution: '© OpenStreetMap · data: BKK' }),
+  'OSM': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap · data: BKK' }),
+  'Esri streets': esri('World_Street_Map'),
+  'Esri satellite': esri('World_Imagery'),
+};
+const savedBase = localStorage.getItem('bkkBase');
+// OSM refuses tile requests without a Referer, which is what a page opened from file:// sends.
+(bases[savedBase] || bases[location.protocol === 'file:' ? 'Esri streets' : 'OSM dark']).addTo(map);
+L.control.layers(bases, null, { position: 'topright' }).addTo(map);
+map.on('baselayerchange', e => localStorage.setItem('bkkBase', e.name));
+const stopLayer = L.layerGroup().addTo(map);
+const vehLayer = L.layerGroup().addTo(map);
+const tripLayer = L.layerGroup().addTo(map);
+const searchLayer = L.layerGroup().addTo(map);
+const planLayer = L.featureGroup().addTo(map);
+const vehMarkers = new Map();
+let routes = {};
+
+// The API treats latSpan/lonSpan as distance from the centre to the edge, so send half the view (plus a small margin).
+const SPAN = 0.55;
+function viewParams() {
+  const b = map.getBounds(), c = b.getCenter();
+  return { lat: c.lat.toFixed(6), lon: c.lng.toFixed(6), latSpan: ((b.getNorth() - b.getSouth()) * SPAN).toFixed(6), lonSpan: ((b.getEast() - b.getWest()) * SPAN).toFixed(6) };
+}
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function vehIcon(v, stale) {
+  const r = routes[v.routeId] || {};
+  const bg = '#' + (r.color || v.style?.icon?.color || '888888'), fg = '#' + (r.textColor || 'FFFFFF');
+  const arrow = v.bearing != null ? `<i style="--c:${bg};transform:rotate(${v.bearing}deg)"></i>` : '';
+  return L.divIcon({ className: '', iconSize: [28, 18], iconAnchor: [14, 9],
+    html: `<div class="veh${stale ? ' stale' : ''}" style="position:relative;height:18px">${arrow}<b style="background:${bg};color:${fg}">${esc(r.shortName || '?')}</b></div>` });
+}
+function vehPopup(v, now) {
+  const r = routes[v.routeId] || {};
+  const row = (k, val) => val == null || val === '' ? '' : `<tr><td style="color:#666">${k}</td><td>${esc(val)}</td></tr>`;
+  return `<span class="pill" style="background:#${r.color || '888'};color:#${r.textColor || 'fff'}">${esc(r.shortName || '?')}</span> → <b>${esc(v.label)}</b>
+  <table>${row('type', v.vehicleRouteType)}${row('model', v.model)}${row('plate', v.licensePlate)}${row('status', v.status)}
+  ${row('position age', Math.round(now / 1000 - v.lastUpdateTime) + ' s')}${row('bearing', v.bearing)}${row('to stop', v.stopId && v.stopId + ' (' + (v.stopDistancePercent ?? '?') + '%)')}
+  ${row('train', v.trainName)}${row('source', v.source === 'emma' ? 'MÁV / EMMA fallback' : 'BKK')}${row('speed', v.speedKmh != null ? Math.round(v.speedKmh) + ' km/h' : null)}
+  ${row('capacity', v.capacity?.adults)}${row('wheelchair', v.wheelchairAccessible ? 'yes' : 'no')}${row('vehicleId', v.vehicleId)}${row('tripId', v.tripId)}</table>`;
+}
+
+let inflight = false, timer = null, paused = false;
+async function loadVehicles() {
+  const r = await api('vehicles-for-location', { ...viewParams(), includeReferences: 'routes' });
+  if (!r.ok) { $('tLast').textContent = 'ERR'; $('tLast').className = 'bad'; return; }
+  const t0 = performance.now();
+  const list = r.json.data.list.filter(v => v.location), now = r.json.currentTime;
+  $('fallbackStatus').textContent = !PROXY ? 'MÁV fallback requires the Worker backend.' : r.json.fallback?.status === 'unavailable'
+    ? 'MÁV fallback unavailable; showing BKK vehicles.' : `${list.filter(v => v.source === 'emma').length} missing trains supplied by MÁV / EMMA. BKK takes priority.`;
+  Object.assign(routes, r.json.data.references?.routes);
+  const seen = new Set(), ages = [], types = {};
+  for (const v of list) {
+    seen.add(v.vehicleId);
+    const age = now / 1000 - v.lastUpdateTime; ages.push(age);
+    types[v.vehicleRouteType] = (types[v.vehicleRouteType] || 0) + 1;
+    const stale = age > 60, sig = v.routeId + '|' + v.bearing + '|' + stale;
+    let m = vehMarkers.get(v.vehicleId);
+    if (!m) {
+      m = L.marker([v.location.lat, v.location.lon], { icon: vehIcon(v, stale) }).addTo(vehLayer);
+      m.bindPopup(() => vehPopup(m.v, m.now));
+      m.on('click', () => showTrip(m.v));
+      vehMarkers.set(v.vehicleId, m);
+    } else {
+      m.setLatLng([v.location.lat, v.location.lon]);
+      if (m.sig !== sig) m.setIcon(vehIcon(v, stale));
+    }
+    m.sig = sig; m.v = v; m.now = now;
+  }
+  for (const [id, m] of vehMarkers) if (!seen.has(id)) { vehLayer.removeLayer(m); vehMarkers.delete(id); }
+  const render = performance.now() - t0;
+  $('tVeh').textContent = list.length;
+  $('tLast').textContent = r.ms.toFixed(0) + ' ms'; $('tLast').className = r.ms > 1000 ? 'warn' : 'ok';
+  $('tAge').textContent = ages.length ? pct(ages, .5).toFixed(0) + ' s' : '–';
+  $('tStale').textContent = ages.filter(a => a > 60).length;
+  $('tRender').textContent = render.toFixed(1) + ' ms';
+  $('types').textContent = Object.entries(types).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k} ${n}`).join(' · ')
+    + `  ·  clock skew ${Math.round(Date.now() - now)} ms`;
+}
+
+let stopsKey = '';
+async function loadStops() {
+  if (!$('showStops').checked || map.getZoom() < 15) { stopLayer.clearLayers(); stopsKey = ''; $('tStops').textContent = '–'; return; }
+  const p = viewParams(), key = JSON.stringify(p);
+  if (key === stopsKey) return;
+  stopsKey = key;
+  const r = await api('stops-for-location', { ...p, includeReferences: 'false' });
+  if (!r.ok) { stopsKey = ''; return; }
+  if (r.json.fallback?.status === 'unavailable') stopsKey = '';
+  stopLayer.clearLayers();
+  const stops = r.json.data.list.filter(s => s.locationType === 0);
+  for (const s of stops) {
+    const c = '#' + (s.style?.colors?.[0] || 'AAAAAA');
+    L.circleMarker([s.lat, s.lon], { radius: 5, color: '#000', weight: 1, fillColor: c, fillOpacity: 1 })
+      .addTo(stopLayer).bindTooltip(s.name).on('click', e => showArrivals(s, e.target));
+  }
+  $('tStops').textContent = stops.length;
+}
+
+async function showArrivals(s, layer) {
+  layer.bindPopup(`<b>${esc(s.name)}</b><br>loading…`).openPopup();
+  const r = await api('arrivals-and-departures-for-stop', { stopId: s.id, minutesBefore: 0, minutesAfter: 45, limit: 12, includeReferences: 'routes,trips' });
+  if (!r.ok) return layer.setPopupContent(`<b>${esc(s.name)}</b><br>error: ${esc(r.err)}`);
+  const d = r.json.data, now = r.json.currentTime / 1000, ref = d.references;
+  const rows = (d.entry.stopTimes || []).map(st => {
+    const rt = ref.routes[ref.trips[st.tripId]?.routeId] || {};
+    const sched = st.departureTime ?? st.arrivalTime, pred = st.predictedDepartureTime ?? st.predictedArrivalTime;
+    const mins = Math.max(0, Math.round(((pred ?? sched) - now) / 60));
+    const delay = pred != null ? Math.round((pred - sched) / 60) : null;
+    return `<tr><td><span class="pill" style="background:#${rt.color || '888'};color:#${rt.textColor || 'fff'}">${esc(rt.shortName || '?')}</span></td><td>${esc(st.stopHeadsign)}</td><td><b>${mins}′</b></td><td style="color:${delay == null ? '#999' : delay > 1 ? '#c00' : '#080'}">${delay == null ? 'sched' : (delay > 0 ? '+' : '') + delay}</td></tr>`;
+  }).join('');
+  layer.setPopupContent(`<b>${esc(s.name)}</b> <span style="color:#888">${esc(s.id)}</span><table>${rows || '<tr><td>no departures in 45 min</td></tr>'}</table><span style="color:#888">${r.ms.toFixed(0)} ms</span>`);
+}
+
+function decodePolyline(str) {
+  const out = []; let i = 0, lat = 0, lng = 0;
+  while (i < str.length) {
+    for (const which of [0, 1]) {
+      let b, shift = 0, res = 0;
+      do { b = str.charCodeAt(i++) - 63; res |= (b & 31) << shift; shift += 5; } while (b >= 32);
+      const d = res & 1 ? ~(res >> 1) : res >> 1;
+      which ? lng += d : lat += d;
+    }
+    out.push([lat / 1e5, lng / 1e5]);
+  }
+  return out;
+}
+async function showTrip(v) {
+  if (!v.tripId) return;
+  const r = await api('trip-details', { tripId: v.tripId, ...(v.serviceDate ? { date: v.serviceDate } : {}), includeReferences: 'stops' });
+  tripLayer.clearLayers();
+  if (!r.ok) return;
+  const e = r.json.data.entry, stops = r.json.data.references.stops || {}, c = '#' + (routes[v.routeId]?.color || '60a5fa');
+  if (e.polyline?.points) L.polyline(decodePolyline(e.polyline.points), { color: c, weight: 4, opacity: .85 }).addTo(tripLayer);
+  else if (e.geometry?.length) L.polyline(e.geometry, { color: c, weight: 4, opacity: .85 }).addTo(tripLayer);
+  for (const st of e.stopTimes || []) {
+    const s = stops[st.stopId]; if (!s) continue;
+    const t = st.predictedDepartureTime ?? st.departureTime ?? st.predictedArrivalTime ?? st.arrivalTime;
+    L.circleMarker([s.lat, s.lon], { radius: 4, color: c, weight: 2, fillColor: '#fff', fillOpacity: 1 }).addTo(tripLayer)
+      .bindTooltip(`${s.name}${t ? ' · ' + new Date(t * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}`);
+  }
+}
+map.on('click', () => tripLayer.clearLayers());
+
+// ---------- search ----------
+const normalizeSearch = s => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+let searchTimer, searchVersion = 0;
+function addSearchVehicle(vehicles, v) {
+  if (!v?.location) return;
+  const parts = v.vehicleId.replace(/^BKK_/, '').split('-');
+  for (const [id, previous] of vehicles) {
+    if (!id.replace(/^BKK_/, '').split('-').some(part => parts.includes(part))) continue;
+    if (v.source === 'emma' && previous.source !== 'emma') return;
+    vehicles.delete(id);
+  }
+  vehicles.set(v.vehicleId, v);
+}
+function searchVehicleText(v) {
+  const r = routes[v.routeId] || {};
+  return [v.vehicleId, v.licensePlate, v.model, v.label, v.trainNumber, v.trainName, r.shortName].map(normalizeSearch).join(' ');
+}
+function searchVehicleResult(v) {
+  const r = routes[v.routeId] || {};
+  return { kind: 'vehicle', value: v, title: `${r.shortName || v.vehicleRouteType || 'Vehicle'} · ${v.licensePlate || v.vehicleId}`,
+    detail: [v.trainName, v.label, v.model, v.vehicleId, v.source === 'emma' ? 'MÁV fallback' : 'BKK'].filter(Boolean).join(' · ') };
+}
+function selectSearchResult(result) {
+  searchLayer.clearLayers();
+  const v = result.value;
+  if (result.kind === 'vehicle') {
+    const current = vehMarkers.get(v.vehicleId);
+    const vehicle = current?.v || v;
+    map.setView([vehicle.location.lat, vehicle.location.lon], Math.max(map.getZoom(), 16));
+    if (current) current.openPopup();
+    else L.marker([vehicle.location.lat, vehicle.location.lon], { icon: vehIcon(vehicle, Date.now() / 1000 - vehicle.lastUpdateTime > 60) })
+      .addTo(searchLayer).bindPopup(vehPopup(vehicle, Date.now())).openPopup();
+    showTrip(vehicle);
+  } else {
+    map.setView([v.lat, v.lon], 17);
+    const marker = L.circleMarker([v.lat, v.lon], { radius: 8, color: '#60a5fa', weight: 3, fillColor: '#fff', fillOpacity: 1 }).addTo(searchLayer);
+    showArrivals(v, marker);
+  }
+}
+function renderSearchResults(results) {
+  $('searchResults').replaceChildren();
+  for (const result of results.slice(0, 40)) {
+    const button = document.createElement('button');
+    button.type = 'button'; button.className = 'search-result';
+    const title = document.createElement('strong'), detail = document.createElement('small');
+    title.textContent = `${result.kind === 'vehicle' ? 'Vehicle' : 'Station'}: ${result.title}`;
+    detail.textContent = result.detail;
+    button.append(title, detail);
+    button.onclick = () => selectSearchResult(result);
+    $('searchResults').append(button);
+  }
+}
+async function runSearch() {
+  clearTimeout(searchTimer);
+  const version = ++searchVersion, query = $('searchInput').value.trim(), normalized = normalizeSearch(query);
+  if (!query) { renderSearchResults([]); $('searchStatus').textContent = ''; searchLayer.clearLayers(); return; }
+  const vehicles = new Map();
+  for (const m of vehMarkers.values()) if (searchVehicleText(m.v).includes(normalized)) addSearchVehicle(vehicles, m.v);
+  const localResults = () => [...vehicles.values()].filter(v => v.location).map(searchVehicleResult);
+  renderSearchResults(localResults());
+  if (!hasApi()) { $('searchStatus').textContent = 'Set your API key or backend URL to search outside the view.'; return; }
+  $('searchStatus').textContent = 'Searching BKK…';
+  const c = map.getCenter();
+  const response = await api('search', { query, lat: c.lat, lon: c.lng, minResult: 10, includeReferences: 'stops,routes' });
+  if (version !== searchVersion) return;
+  const d = response.json?.data;
+  Object.assign(routes, d?.references?.routes);
+  for (const id of d?.entry?.vehicleIds || []) {
+    const v = d.references?.vehicles?.[id];
+    addSearchVehicle(vehicles, v);
+  }
+  const stations = (d?.entry?.stopIds || []).map(id => d.references?.stops?.[id])
+    .filter(s => s && Number.isFinite(s.lat) && Number.isFinite(s.lon))
+    .map(s => ({ kind: 'station', value: s, title: s.name, detail: [s.id, s.direction, s.code, s.source === 'emma' ? 'MÁV fallback' : 'BKK'].filter(Boolean).join(' · ') }));
+  // Only exact route numbers: a station name should not fetch every route serving it.
+  const routeIds = (d?.entry?.routeIds || []).filter(id => normalizeSearch(routes[id]?.shortName) === normalized).slice(0, 3);
+  const requests = [];
+  if (routeIds.length) requests.push(api('vehicles-for-route', { routeId: routeIds.join(','), includeReferences: 'routes' }));
+  if (/^(?:[a-z]+_)?\d+(?:-\d+)*$/i.test(query)) {
+    requests.push(api('vehicles', { vehicleId: query.includes('_') ? query : 'BKK_' + query, includeReferences: 'routes' }));
+  }
+  const extras = await Promise.all(requests);
+  if (version !== searchVersion) return;
+  for (const r of extras) {
+    Object.assign(routes, r.json?.data?.references?.routes);
+    for (const v of r.json?.data?.list || []) addSearchVehicle(vehicles, v);
+  }
+  const results = [...localResults(), ...stations];
+  renderSearchResults(results);
+  const failed = !response.ok || extras.some(r => !r.ok);
+  $('searchStatus').textContent = (results.length ? `${Math.min(results.length, 40)} result${results.length === 1 ? '' : 's'}${results.length > 40 ? ' shown; refine your search for more' : ''}.` : 'No matches. Try a station name, exact route number or full vehicle ID.')
+    + (failed ? ' Some BKK requests failed; try again.' : '')
+    + (response.json?.fallback?.status === 'unavailable' ? ' MÁV fallback is currently unavailable.' : '')
+    + (d?.limitExceeded ? ' BKK limited the results; refine your search.' : '');
+}
+$('searchInput').addEventListener('input', () => {
+  ++searchVersion; clearTimeout(searchTimer);
+  renderSearchResults([]);
+  if (!$('searchInput').value.trim()) { $('searchStatus').textContent = ''; searchLayer.clearLayers(); return; }
+  $('searchStatus').textContent = 'Waiting for search…';
+  searchTimer = setTimeout(runSearch, 500);
+});
+$('searchForm').addEventListener('submit', e => { e.preventDefault(); runSearch(); });
+$('searchInput').addEventListener('keydown', e => {
+  if (e.key === 'ArrowDown') { e.preventDefault(); $('searchResults').querySelector('button')?.focus(); }
+  if (e.key === 'Escape') { $('searchInput').value = ''; runSearch(); }
+});
+$('searchResults').addEventListener('keydown', e => {
+  const buttons = [...$('searchResults').querySelectorAll('button')], index = buttons.indexOf(document.activeElement);
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault(); const next = index + (e.key === 'ArrowDown' ? 1 : -1);
+    if (next < 0) $('searchInput').focus(); else buttons[Math.min(next, buttons.length - 1)]?.focus();
+  }
+  if (e.key === 'Escape') $('searchInput').focus();
+});
+
+// ---------- trip planner ----------
+const planPlaces = { from: null, to: null };
+const placeSearchVersions = { from: 0, to: 0 }, placeSearchTimers = {};
+let planVersion = 0, pickingPlace = null;
+const placeInput = side => $(side === 'from' ? 'planFrom' : 'planTo');
+const placeResults = side => $(side === 'from' ? 'fromResults' : 'toResults');
+function resetPlanResult() {
+  ++planVersion;
+  planLayer.clearLayers(); $('planResults').replaceChildren(); $('planLegs').replaceChildren();
+}
+function stopPickingPlace() {
+  pickingPlace = null; $('map').style.cursor = '';
+  $('pickFrom').setAttribute('aria-pressed', 'false'); $('pickTo').setAttribute('aria-pressed', 'false');
+}
+function setPlanPlace(side, place) {
+  clearTimeout(placeSearchTimers[side]); ++placeSearchVersions[side];
+  planPlaces[side] = place; placeInput(side).value = place.name;
+  placeResults(side).replaceChildren(); resetPlanResult(); stopPickingPlace();
+  $('planStatus').textContent = 'Ready when you have chosen both places.';
+}
+async function findPlanPlaces(side) {
+  const query = placeInput(side).value.trim(), version = ++placeSearchVersions[side];
+  if (!query || !hasApi()) { $('planStatus').textContent = hasApi() ? 'Enter a station name.' : 'Set your API key or backend URL first.'; return; }
+  const center = map.getCenter();
+  const r = await api('search', { query, lat: center.lat, lon: center.lng, minResult: 5, includeReferences: 'stops' }, 'planner station search');
+  if (version !== placeSearchVersions[side]) return;
+  const data = r.json?.data;
+  const stops = (data?.entry?.stopIds || []).map(id => data.references?.stops?.[id])
+    .filter(s => s && Number.isFinite(s.lat) && Number.isFinite(s.lon)).slice(0, 12);
+  placeResults(side).replaceChildren();
+  for (const s of stops) {
+    const button = document.createElement('button'); button.type = 'button'; button.className = 'search-result';
+    button.textContent = `${s.name} · ${s.id}${s.direction ? ' · ' + s.direction : ''}`;
+    button.onclick = () => { setPlanPlace(side, { name: s.name, lat: s.lat, lon: s.lon }); placeInput(side === 'from' ? 'to' : 'from').focus(); };
+    placeResults(side).append(button);
+  }
+  $('planStatus').textContent = !r.ok ? 'Station search failed. Try again or pick a point on the map.'
+    : stops.length ? 'Select a station from the suggestions.' : 'No stations found. Try another name or pick a point on the map.';
+}
+for (const side of ['from', 'to']) {
+  placeInput(side).addEventListener('input', () => {
+    planPlaces[side] = null; ++placeSearchVersions[side]; clearTimeout(placeSearchTimers[side]);
+    placeResults(side).replaceChildren(); resetPlanResult(); stopPickingPlace();
+    $('planStatus').textContent = placeInput(side).value.trim() ? 'Searching stations…' : 'Enter a station name or pick a point on the map.';
+    if (placeInput(side).value.trim()) placeSearchTimers[side] = setTimeout(() => findPlanPlaces(side), 500);
+  });
+  placeInput(side).addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); placeResults(side).querySelector('button')?.focus(); }
+    if (e.key === 'Enter' && !planPlaces[side]) { e.preventDefault(); clearTimeout(placeSearchTimers[side]); findPlanPlaces(side); }
+  });
+  $(side === 'from' ? 'pickFrom' : 'pickTo').onclick = () => {
+    stopPickingPlace(); pickingPlace = side; $('map').style.cursor = 'crosshair';
+    $(side === 'from' ? 'pickFrom' : 'pickTo').setAttribute('aria-pressed', 'true');
+    $('planStatus').textContent = `Click the map to choose your ${side === 'from' ? 'origin' : 'destination'}. Escape cancels.`;
+  };
+}
+map.on('click', e => {
+  if (!pickingPlace) return;
+  const { lat, lng } = e.latlng;
+  setPlanPlace(pickingPlace, { name: `${lat.toFixed(5)}, ${lng.toFixed(5)}`, lat, lon: lng });
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && pickingPlace) { stopPickingPlace(); $('planStatus').textContent = 'Map selection cancelled.'; } });
+$('swapPlaces').onclick = () => {
+  const from = planPlaces.from, fromText = $('planFrom').value;
+  for (const side of ['from', 'to']) { clearTimeout(placeSearchTimers[side]); ++placeSearchVersions[side]; placeResults(side).replaceChildren(); }
+  planPlaces.from = planPlaces.to; planPlaces.to = from;
+  $('planFrom').value = $('planTo').value; $('planTo').value = fromText;
+  resetPlanResult(); stopPickingPlace(); $('planStatus').textContent = 'Places swapped. Plan your journey again.';
+};
+const budapestTime = ms => new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Budapest', hour: '2-digit', minute: '2-digit' }).format(new Date(ms));
+function plannerTimeChanged() {
+  const scheduled = $('planWhen').value !== 'now';
+  $('planTime').hidden = $('planTimeLabel').hidden = !scheduled; $('planTime').required = scheduled;
+  if (scheduled && !$('planTime').value) {
+    const parts = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Budapest', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date()).map(p => [p.type, p.value]));
+    $('planTime').value = `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+  }
+  resetPlanResult(); $('planStatus').textContent = 'Plan your journey with the updated options.';
+}
+$('planWhen').onchange = plannerTimeChanged;
+for (const id of ['planMode', 'planTime']) $(id).onchange = () => { resetPlanResult(); $('planStatus').textContent = 'Options changed. Plan your journey again.'; };
+function planLegLabel(leg) {
+  return leg.mode === 'WALK' ? 'Walk' : `${leg.routeShortName || routes[leg.routeId]?.shortName || leg.mode}${leg.headsign ? ' → ' + leg.headsign : ''}`;
+}
+function drawItinerary(itinerary, index) {
+  planLayer.clearLayers(); $('planLegs').replaceChildren();
+  for (const [i, button] of [...$('planResults').children].entries()) button.setAttribute('aria-pressed', String(i === index));
+  for (const leg of itinerary.legs || []) {
+    const walking = leg.mode === 'WALK', rawColor = leg.routeColor || routes[leg.routeId]?.color || '60a5fa';
+    const color = walking ? '#aab2c0' : (/^[0-9a-f]{6}$/i.test(rawColor) ? '#' + rawColor : '#60a5fa');
+    const points = leg.legGeometry?.points ? decodePolyline(leg.legGeometry.points) : [leg.from, leg.to].filter(p => p && Number.isFinite(p.lat) && Number.isFinite(p.lon)).map(p => [p.lat, p.lon]);
+    if (points.length) L.polyline(points, { color, weight: walking ? 4 : 6, opacity: .9, ...(walking ? { dashArray: '5 7' } : {}) }).addTo(planLayer);
+    if (leg.from && Number.isFinite(leg.from.lat) && Number.isFinite(leg.from.lon)) L.circleMarker([leg.from.lat, leg.from.lon], { radius: 4, color, fillColor: '#fff', fillOpacity: 1 }).addTo(planLayer).bindTooltip(esc(leg.from.name));
+    const li = document.createElement('li');
+    li.textContent = `${budapestTime(leg.startTime)}–${budapestTime(leg.endTime)} · ${planLegLabel(leg)} · ${leg.from?.name || 'Start'} → ${leg.to?.name || 'End'}${leg.realTime ? ' · live prediction' : ''}`;
+    $('planLegs').append(li);
+  }
+  const destination = itinerary.legs?.at(-1)?.to;
+  if (destination && Number.isFinite(destination.lat) && Number.isFinite(destination.lon)) L.marker([destination.lat, destination.lon]).addTo(planLayer).bindTooltip(esc(destination.name));
+  const bounds = planLayer.getBounds(); if (bounds.isValid()) map.fitBounds(bounds, { padding: [30, 30], maxZoom: 17 });
+}
+$('planForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!hasApi()) { $('planStatus').textContent = 'Set your API key or backend URL first.'; return; }
+  if (!planPlaces.from || !planPlaces.to) { $('planStatus').textContent = 'Select both places from the station suggestions, or pick them on the map.'; return; }
+  resetPlanResult(); stopPickingPlace(); const version = planVersion;
+  const placeParam = p => `${p.name.replaceAll('::', ' ')}::${p.lat},${p.lon}`;
+  const params = { fromPlace: placeParam(planPlaces.from), toPlace: placeParam(planPlaces.to), mode: $('planMode').value,
+    numItineraries: 3, includeReferences: 'routes', showIntermediateStops: false, arriveBy: $('planWhen').value === 'arrive' };
+  if ($('planWhen').value !== 'now') {
+    const [date, time] = $('planTime').value.split('T');
+    if (!date || !time) { $('planStatus').textContent = 'Choose a date and time in Budapest time.'; return; }
+    Object.assign(params, { date, time });
+  }
+  $('planSubmit').disabled = true; $('planStatus').textContent = 'Planning your journey…';
+  try {
+    const response = await api('plan-trip', params);
+    if (version !== planVersion) return;
+    const entry = response.json?.data?.entry, error = entry?.error;
+    if (!response.ok || error) { $('planStatus').textContent = `Could not plan this journey: ${error?.msg || error?.message || response.err || 'try different places or a different time'}`; return; }
+    Object.assign(routes, response.json?.data?.references?.routes);
+    const itineraries = (entry?.plan?.itineraries || []).filter(i => i.legs?.length);
+    if (!itineraries.length) { $('planStatus').textContent = 'No journeys found. Try different places or a different time.'; return; }
+    for (const [index, itinerary] of itineraries.entries()) {
+      const button = document.createElement('button'); button.type = 'button'; button.className = 'itinerary'; button.setAttribute('aria-pressed', 'false');
+      const title = document.createElement('strong'), detail = document.createElement('small');
+      title.textContent = `${budapestTime(itinerary.startTime)}–${budapestTime(itinerary.endTime)} · ${Math.round(itinerary.duration / 60)} min`;
+      const rideLabels = (itinerary.legs || []).filter(l => l.mode !== 'WALK').map(l => l.routeShortName || routes[l.routeId]?.shortName || l.mode);
+      detail.textContent = `${rideLabels.join(' → ') || 'Walk'} · ${itinerary.transfers || 0} transfers · ${Math.round(itinerary.walkDistance || 0)} m walking`;
+      button.append(title, detail); button.onclick = () => drawItinerary(itinerary, index); $('planResults').append(button);
+    }
+    drawItinerary(itineraries[0], 0);
+    $('planStatus').textContent = `${itineraries.length} journey options · times in Budapest · ${response.ms.toFixed(0)} ms. Select an option to show its route.`;
+  } finally { $('planSubmit').disabled = false; }
+});
+$('clearPlan').onclick = () => {
+  for (const side of ['from', 'to']) { clearTimeout(placeSearchTimers[side]); ++placeSearchVersions[side]; planPlaces[side] = null; placeInput(side).value = ''; placeResults(side).replaceChildren(); }
+  resetPlanResult(); stopPickingPlace(); $('planStatus').textContent = 'Choose stations or pick two points on the map.';
+};
+
+// ---------- loop ----------
+async function tick() {
+  if (inflight || !hasApi()) return;
+  inflight = true;
+  try { await Promise.all([loadVehicles(), loadStops()]); } finally { inflight = false; }
+}
+function schedule() {
+  clearInterval(timer);
+  if (!paused) timer = setInterval(tick, +$('interval').value);
+}
+$('interval').onchange = schedule;
+$('toggle').onclick = () => { paused = !paused; $('toggle').textContent = paused ? 'Resume' : 'Pause'; schedule(); };
+$('once').onclick = tick;
+$('showStops').onchange = () => { stopsKey = ''; loadStops(); };
+let moveT; map.on('moveend', () => { clearTimeout(moveT); moveT = setTimeout(tick, 250); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) clearInterval(timer); else { schedule(); tick(); } });
+schedule(); tick();
+
+// ---------- benchmark ----------
+$('runBench').onclick = async () => {
+  const btn = $('runBench'), out = $('bench'), N = 10, p = viewParams();
+  const c = map.getCenter(), near = { lat: c.lat.toFixed(6), lon: c.lng.toFixed(6), radius: 300 };
+  btn.disabled = true; const wasPaused = paused; paused = true; schedule();
+  const stop = (await api('stops-for-location', { ...near, includeReferences: 'false' }, 'x', false)).json?.data?.list?.find(s => s.locationType === 0);
+  const veh = [...vehMarkers.values()].find(m => m.v.tripId)?.v;
+  const cases = [
+    ['vehicles refs=false', 'vehicles-for-location', { ...p, includeReferences: 'false' }],
+    ['vehicles refs=routes', 'vehicles-for-location', { ...p, includeReferences: 'routes' }],
+    ['vehicles refs=true', 'vehicles-for-location', { ...p, includeReferences: 'true' }],
+    ['stops refs=false', 'stops-for-location', { ...p, includeReferences: 'false' }],
+    ['stops refs=true', 'stops-for-location', { ...p, includeReferences: 'true' }],
+    stop && ['arrivals (1 stop)', 'arrivals-and-departures-for-stop', { stopId: stop.id, minutesBefore: 0, minutesAfter: 45, limit: 12, includeReferences: 'routes,trips' }],
+    veh && ['trip-details', 'trip-details', { tripId: veh.tripId, date: veh.serviceDate, includeReferences: 'stops' }],
+  ].filter(Boolean);
+  const head = 'case                    p50   p95   min   max  ttfb     kB  err\n';
+  let lines = '';
+  out.className = '';
+  for (const [name, ep, params] of cases) {
+    const rs = [];
+    for (let i = 0; i < N; i++) { rs.push(await api(ep, params, name, false)); out.textContent = head + lines + `${name.padEnd(22)} … ${i + 1}/${N}`; }
+    const good = rs.filter(r => r.ok), ms = good.map(r => r.ms), f = v => (ms.length ? v.toFixed(0) : '–').padStart(6);
+    lines += name.padEnd(22) + f(pct(ms.length ? ms : [0], .5)) + f(pct(ms.length ? ms : [0], .95)) + f(Math.min(...ms)) + f(Math.max(...ms))
+      + f(pct(good.length ? good.map(r => r.ttfb) : [0], .5)) + (rs.at(-1).bytes / 1024).toFixed(1).padStart(7) + String(N - good.length).padStart(5) + '\n';
+    out.textContent = head + lines;
+  }
+  out.textContent = head + lines + `\nview: ${p.latSpan}° × ${p.lonSpan}° @ zoom ${map.getZoom()}, ${N} sequential requests per case`;
+  paused = wasPaused; schedule(); btn.disabled = false;
+};
+</script>
+</body>
+</html>

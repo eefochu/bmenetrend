@@ -12,7 +12,7 @@ data class LinePattern(val id: String, val codes: Set<String>, val headsign: Str
 }
 
 @Immutable
-data class LineDetails(val route: TransitRoute, val patterns: List<LinePattern>) {
+data class LineDetails(val route: TransitRoute, val patterns: List<LinePattern>, val source: DataSource? = null) {
     fun boardingPattern(patternId: String, stopId: String): LinePattern? {
         val selected = patterns.find { it.id == patternId } ?: return null
         val occurrence = selected.stops.indices.filter { selected.stops[it].id == stopId }.singleOrNull() ?: return selected.takeIf { it.stops.any { stop -> stop.id == stopId } }
@@ -40,7 +40,14 @@ data class BoardingSelection(
             RailSupport.canonicalBadge(departure.routeNumber, departure.serviceName).equals(routeNumber, ignoreCase = true)
         )
         return (idMatch || numMatch) && when {
-            pattern != null -> departure.patternCode in pattern.codes
+            // BKK-served boards and BKK trip details have no EMMA pattern code; compare the
+            // source direction instead of hiding every departure of the selected line.
+            pattern != null -> when {
+                departure.patternCode != null && pattern.codes.isNotEmpty() -> departure.patternCode in pattern.codes
+                pattern.directionId != null -> departure.sourceDirectionId == pattern.directionId
+                // BKK metro variants report no GTFS direction ("[multidirection]"); their headsign is the terminus.
+                else -> pattern.codes.isEmpty() && departure.destination.trim().equals(pattern.headsign.trim(), ignoreCase = true)
+            }
             localDirectionId != null -> departure.directionId == localDirectionId
             else -> true
         }
@@ -96,7 +103,7 @@ object EmmaRouteParser {
         val grouped = parsed.groupBy { it.headsign to it.stops.map(TransitStop::id) }.values.map { aliases ->
             aliases.first().copy(codes = aliases.flatMap { it.codes }.toSet(), serviceCount = aliases.sumOf { it.serviceCount })
         }.sortedWith(compareByDescending<LinePattern> { it.serviceCount }.thenBy { it.headsign }.thenByDescending { it.stops.size })
-        return LineDetails(targetRoute, grouped)
+        return LineDetails(targetRoute, grouped, DataSource.EMMA)
     }
     fun tripGeometry(rows: JSONArray?): List<GeoPoint> = rows?.let { array -> (0 until array.length()).map { i ->
         val pair = array.getJSONArray(i)

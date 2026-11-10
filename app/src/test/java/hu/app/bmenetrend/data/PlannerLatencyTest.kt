@@ -53,9 +53,9 @@ class PlannerLatencyTest {
         println("PLANNER_LATENCY walkingPairs=$walkingPairs routeCalls=$routeCalls walkingStartedMs=$walkingStarted totalMs=${testScheduler.currentTime} progress=$progress")
         assertEquals("direct", result.itineraries.first().id)
         assertEquals(231, walkingPairs)
-        assertEquals(17, routeCalls)
+        assertTrue("Gateway fan-out pruned after direct route, took $routeCalls calls", routeCalls <= 2)
         assertEquals(1_000, walkingStarted)
-        assertTrue("Route search should finish within 32 simulated seconds, took ${testScheduler.currentTime}", testScheduler.currentTime <= 32_000)
+        assertTrue("Route search should finish promptly after direct route, took ${testScheduler.currentTime}", testScheduler.currentTime <= 5_000)
     }
 
     @Test fun requestBudgetBoundsHttpAndWalkingWork() = runTest {

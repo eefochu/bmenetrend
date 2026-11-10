@@ -10,3 +10,30 @@ secrets.properties
 __pycache__/
 .venv-import/
 scripts/raw/
+
+# JavaScript dependencies, Worker state and generated output
+node_modules/
+.wrangler/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Local environment files and secrets (safe examples stay versioned)
+.env
+.env.*
+!.env.example
+!.env.*.example
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+
+# Local logs, packaged Android builds and heap dumps
+*.log
+*.apk
+*.aab
+*.apks
+*.hprof
+
+# OS metadata
+.DS_Store
+Thumbs.db

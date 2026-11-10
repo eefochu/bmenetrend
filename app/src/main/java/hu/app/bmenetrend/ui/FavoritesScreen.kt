@@ -273,6 +273,7 @@ private fun FavoriteStationCard(station: NearbyStation, state: UiState, index: I
                 }
                 if (station.unavailable && badges.isNotEmpty()) Text(stringResource(R.string.favorites_lines_stale),
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (badges.isNotEmpty()) SourceTag(station.sources)
                 station.departures.filter { !it.isCancelled && it.expectedAt >= state.now }.minByOrNull { it.expectedAt }?.let { next ->
                     val wait = kotlin.math.ceil(java.time.Duration.between(state.now, next.expectedAt).seconds / 60.0).toInt().coerceAtLeast(0)
                     val nextRoute = state.findRoute(next.routeId)

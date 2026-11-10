@@ -69,7 +69,11 @@ fun VehiclePanel(state: UiState, onClose: () -> Unit, onRefresh: () -> Unit, onS
                     Text(destination ?: stringResource(R.string.emma_vehicle_no_direction),Modifier.weight(1f),
                         style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.SemiBold,maxLines=2,overflow=TextOverflow.Ellipsis)
                 }
-                Text("${serviceTypeLabel(vehicle.providerId,vehicle.transportMode)} · $provider",style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(6.dp)) {
+                    // Operator (above) and data feed (tag) are different things: BKK's API also reports trains.
+                    Text("${serviceTypeLabel(vehicle.providerId,vehicle.transportMode)} · $provider",Modifier.weight(1f,fill=false),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                    VehicleSourceTag(vehicle)
+                }
                 journey?.stops?.firstOrNull()?.name?.let { origin ->
                     if(origin!=destination) Text(stringResource(R.string.line_from,origin),style=MaterialTheme.typography.bodySmall,
                         color=MaterialTheme.colorScheme.onSurfaceVariant,maxLines=2,overflow=TextOverflow.Ellipsis)
@@ -115,8 +119,13 @@ fun VehiclePanel(state: UiState, onClose: () -> Unit, onRefresh: () -> Unit, onS
                 }
             }
             if (!journey?.stops.isNullOrEmpty()) {
-                item(contentType = "stops_header") { Text(pluralStringResource(R.plurals.emma_journey_stops, journey!!.stops.size, journey.stops.size),
-                    Modifier.padding(start = 22.dp, end = 22.dp, top = 20.dp, bottom = 8.dp), style = MaterialTheme.typography.titleSmall) }
+                item(contentType = "stops_header") {
+                    Row(Modifier.padding(start = 22.dp, end = 22.dp, top = 20.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(pluralStringResource(R.plurals.emma_journey_stops, journey!!.stops.size, journey.stops.size), style = MaterialTheme.typography.titleSmall)
+                        SourceTag(setOfNotNull(journey.source))
+                    }
+                }
                 itemsIndexed(journey!!.stops, key = { index, stop -> "$index-${stop.id}" }, contentType = { _, _ -> "journey_stop" }) { index, stop ->
                     val atIndex = if (progress?.at == null) null else if (progress.at.id == progress.next?.id) progress.nextIndex else progress.nextIndex?.minus(1)
                     if (index == progress?.nextIndex && progress.at == null && progress.previous != null) LineVehicleBetween(color, vehicleIcon, hevBitmap)

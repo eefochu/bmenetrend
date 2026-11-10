@@ -11,6 +11,8 @@ data class NearbyStation(
     val departures: List<Departure> = emptyList(),
     val loading: Boolean = false,
     val unavailable: Boolean = false,
+    /** Feeds behind [departures] or the favourite's serving lines, for the small source label. */
+    val sources: Set<DataSource> = emptySet(),
 )
 
 object NearbyDepartures {

@@ -33,7 +33,8 @@ class PlannerViewModel internal constructor(
     private val loadNetwork: suspend () -> TransitNetwork,
 ) : AndroidViewModel(application) {
     constructor(application: Application) : this(application,
-        EmmaPlannerBackend(EmmaGraphqlClient(EmmaGraphqlClient.plannerHttpClient())),
+        BkkFirstPlannerBackend(EmmaPlannerBackend(EmmaGraphqlClient(EmmaGraphqlClient.plannerHttpClient())),
+            BkkPlannerSource.of(BkkWorkerRepository.shared)),
         TransitRepository(application)::planningNetwork)
 
     private val offlineStore = hu.app.bmenetrend.offline.OfflinePackStore(application)
@@ -41,6 +42,7 @@ class PlannerViewModel internal constructor(
 
     private val places = PlacesRepository(application)
     private val stopsRepository = EmmaStopsRepository(application)
+    private val bkkRepository = BkkWorkerRepository.shared
     private val planner = HybridTripPlanner(backend)
     private var stopCatalogue = emptyList<TransitStop>()
     private val mutable = MutableStateFlow(PlannerState())
@@ -289,9 +291,14 @@ class PlannerViewModel internal constructor(
             try {
                 // Local matches are ready immediately; debounce only remote geocoder and station search.
                 delay(300)
+                // BKK's station search leads; EMMA only adds stations BKK did not return (railway/nationwide).
+                val bkkAsync = async {
+                    try { bkkRepository.search(query, location) }
+                    catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { null }
+                }
                 val remoteStationsAsync = async {
                     runCatching {
-                        stopsRepository.search(query).stops.take(8).map { PlannerEndpoint.fromStop(it) }
+                        stopsRepository.search(query).stops.take(8).map { PlannerEndpoint.fromStop(it, DataSource.EMMA) }
                     }.getOrDefault(emptyList())
                 }
                 val placesAsync = async {
@@ -300,11 +307,16 @@ class PlannerViewModel internal constructor(
                         it.copy(suggestions = it.suggestions.filter { endpoint -> endpoint.isStation } + results)
                     }
                 }
-                val remoteStations = remoteStationsAsync.await()
-                val stationResults = withContext(Dispatchers.Default) { consolidateEndpoints(localStationResults + remoteStations) }
-                if (generation == searchGeneration) {
-                    mutable.update { it.copy(suggestions = stationResults + it.suggestions.filterNot { endpoint -> endpoint.isStation }) }
+                suspend fun publishStations(bkk: List<PlannerEndpoint>, emma: List<PlannerEndpoint>) {
+                    val stationResults = withContext(Dispatchers.Default) { consolidateEndpoints(stationSuggestions(bkk, localStationResults, emma)) }
+                    if (generation == searchGeneration) {
+                        mutable.update { it.copy(suggestions = stationResults + it.suggestions.filterNot { endpoint -> endpoint.isStation }) }
+                    }
                 }
+                val bkk = bkkAsync.await()
+                val bkkStations = bkk?.catalogue?.stops.orEmpty().take(10).map { PlannerEndpoint.fromStop(it, bkk!!.stopSources[it.id] ?: DataSource.BKK) }
+                if (bkkStations.isNotEmpty()) publishStations(bkkStations, emptyList())
+                publishStations(bkkStations, remoteStationsAsync.await())
                 placesAsync.await()
                 // Places remain available below the station recommendation, even at the same address.
                 if (generation == searchGeneration) {
@@ -315,6 +327,20 @@ class PlannerViewModel internal constructor(
                 if (generation == searchGeneration) mutable.update { it.copy(searching = false, searchUnavailable = true) }
             }
         }
+    }
+
+    /**
+     * BKK records first and authoritative for every platform they cover; local index matches next
+     * (only for platforms BKK did not return); EMMA last, only for stations neither already has.
+     * IDs are shared across feeds (`emma:BKK:…`, `emma:1:…`), so overlap is recognised exactly.
+     */
+    internal fun stationSuggestions(bkk: List<PlannerEndpoint>, local: List<PlannerEndpoint>, emma: List<PlannerEndpoint>): List<PlannerEndpoint> {
+        val covered = HashSet<String>()
+        fun PlannerEndpoint.keys() = sourceStopIds.map { it.removePrefix("emma:") } + id.removePrefix("emma:")
+        val result = ArrayList<PlannerEndpoint>(bkk.size + local.size + emma.size)
+        for (endpoint in bkk) if (endpoint.keys().none(covered::contains)) { result += endpoint; covered += endpoint.keys() }
+        for (endpoint in local + emma) if (endpoint.keys().none(covered::contains)) { result += endpoint; covered += endpoint.keys() }
+        return result
     }
 
     fun choose(endpoint: PlannerEndpoint) {
@@ -410,13 +436,12 @@ class PlannerViewModel internal constructor(
             try {
                 val result = if (current.offline) offlinePlanner.plan(origin, destination, requested, ready, current.localProviders)
                 else planWithRecovery(online = {
-                    planner.plan(origin, destination, requested, ready, stopCatalogue, loadNetwork, current.localProviders) { partial ->
-                        if (generation == planGeneration) mutable.update { it.copy(result = partial) }
-                    }
+                    planner.plan(origin, destination, requested, ready, stopCatalogue, loadNetwork, current.localProviders)
                 }, saved = { offlinePlanner.plan(origin, destination, requested, ready, current.localProviders) })
-                if (generation == planGeneration) mutable.update { it.copy(planning = false, result = result,
-                    selectedId = it.selectedId?.takeIf { id -> result.itineraries.any { route -> route.id == id } },
-                    error = if (result.itineraries.isEmpty()) {
+                val snapshot = result.copy(itineraries = listOfNotNull(TripPlanner.bestTimely(result.itineraries, ready)))
+                if (generation == planGeneration) mutable.update { it.copy(planning = false, result = snapshot,
+                    selectedId = it.selectedId?.takeIf { id -> snapshot.itineraries.any { route -> route.id == id } },
+                    error = if (snapshot.itineraries.isEmpty()) {
                         if (current.offline) PlannerError.NO_ROUTE
                         else PlannerError.NO_ROUTE
                     } else null) }

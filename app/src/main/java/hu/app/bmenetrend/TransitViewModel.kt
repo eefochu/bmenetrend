@@ -7,6 +7,8 @@ import hu.app.bmenetrend.data.*
 import hu.app.bmenetrend.ui.AccentColor
 import hu.app.bmenetrend.ui.ThemeMode
 import hu.app.bmenetrend.ui.UiState
+import hu.app.bmenetrend.ui.RemoteStationResults
+import hu.app.bmenetrend.ui.RemoteVehicleResults
 import hu.app.bmenetrend.offline.*
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Job
@@ -72,6 +74,16 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private var lineCatalogueFailed = false
     private val lineLoadedAt = mutableMapOf<String, Instant>()
     private val journeyClient = EmmaGraphqlClient()
+    // BKK-first data through the keyless Worker; direct EMMA remains the fallback and covers
+    // Volán, MÁV and HÉV, and anything outside the Worker's query limits.
+    private val bkkRepository = BkkWorkerRepository.shared
+    private var bkkVehicles: BkkWorkerRepository.VehicleSnapshot? = null
+    private var bkkVehicleJob: Job? = null
+    private var bkkVehicleArea: MapBounds? = null
+    private var mergedVehicleSources: Triple<Any?, Any?, Any?>? = null
+    private var mergedVehicles = emptyList<Vehicle>()
+    /** Stops known only from the Worker; EMMA/index records (the saved-item identities and names) replace them. */
+    private val workerOnlyStopIds = HashSet<String>()
     private var journeyJob: Job? = null
     private var journeyKey: Pair<String, String?>? = null
     private var journeyGeneration = 0
@@ -227,6 +239,13 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             }
         }
         launch {
+            // The Worker caches vehicles for 5 s; polling faster only adds requests.
+            while (isActive) {
+                if (mapVisible) ensureBkkVehicles(force = true)
+                delay(BKK_VEHICLE_POLL_MS)
+            }
+        }
+        launch {
             while (isActive) {
                 refreshStopIndex()
                 delay(if (stopIndexFailed) 60_000 else 3_600_000)
@@ -257,11 +276,12 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         mapVisible = visible
         if (visible) {
             recalculate()
+            ensureBkkVehicles()
             viewModelScope.launch { refreshEmmaData() }
             viewModelScope.launch { refreshData() }
             ensureBoardRequest(force = true)
             ensureNearbyRequest()
-        } else { mapSettledJob?.cancel(); nearbyJob?.cancel(); boardJob?.cancel(); mapStopsJob?.cancel(); mapStopsGeneration++ }
+        } else { mapSettledJob?.cancel(); nearbyJob?.cancel(); boardJob?.cancel(); mapStopsJob?.cancel(); bkkVehicleJob?.cancel(); mapStopsGeneration++ }
     }
 
     /** The planner uses the map/vehicles, but has no departure panel to keep polling. */
@@ -305,7 +325,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         }
         return favoriteSelection.map { station ->
             val catalogued=favoriteLines[station.stop.id]?.catalogue?.stops?.singleOrNull()
-            if(catalogued==null) station else station.copy(stop=catalogued,platforms=listOf(catalogued))
+            val sources=setOfNotNull(favoriteLines[station.stop.id]?.source)
+            if(catalogued==null) station.copy(sources=sources) else station.copy(stop=catalogued,platforms=listOf(catalogued),sources=sources)
         }
     }
 
@@ -313,16 +334,31 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                                     semaphore: kotlinx.coroutines.sync.Semaphore): List<Pair<String, EmmaStopsParser.Board?>> = coroutineScope {
         val ids = stops.filter { it.id.startsWith("emma:") }.map { it.id }.distinct()
         val saved = ids.mapNotNull { id -> cache[id]?.takeIf { !force && Duration.between(it.fetchedAt, Instant.now()).seconds in 0..29 }?.let { id to it } }.toMap()
-        val fetched = ids.filterNot { it in saved }.chunked(6).map { batch -> async {
+        val missing = stops.filter { it.id in ids && it.id !in saved }.distinctBy { it.id }
+        // BKK platforms go to the Worker first, six per request; other platforms go to EMMA at the
+        // same time, so a slow EMMA batch never holds back a BKK board or the other way around.
+        val bkkTargets = missing.filter { BkkWorkerParser.workerStopId(it) != null }
+        val bkkIds = bkkTargets.mapTo(HashSet()) { it.id }
+        suspend fun emma(batch: List<String>): List<Pair<String, EmmaStopsParser.Board?>> {
             semaphore.acquire()
-            try { stopsRepository.boards(batch, window).toList() }
+            return try { stopsRepository.boards(batch, window).toList() }
             catch (cancelled: CancellationException) { throw cancelled }
             catch (error: Exception) {
                 if (BuildConfig.DEBUG) android.util.Log.w("Emma", "Station board batch failed: ${batch.joinToString()}", error)
                 batch.map { it to null }
             } finally { semaphore.release() }
-        } }.awaitAll().flatten()
-        saved.toList() + fetched
+        }
+        val bkk = async<Map<String, EmmaStopsParser.Board?>> {
+            if (bkkTargets.isEmpty()) emptyMap() else try { bkkRepository.boards(bkkTargets, window) }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (error: Exception) { if (BuildConfig.DEBUG) android.util.Log.w("BkkWorker", "Board failed", error); emptyMap() }
+        }
+        val fetched = missing.map { it.id }.filterNot { it in bkkIds }.chunked(6).map { batch -> async { emma(batch) } }
+        val bkkBoards = bkk.await()
+        // Only platforms BKK could not answer (failed stop, failed batch, budget) fall back to EMMA;
+        // a legitimately empty BKK board is a BKK answer.
+        val fallback = bkkTargets.map { it.id }.filter { bkkBoards[it] == null }.chunked(6).map { batch -> async { emma(batch) } }
+        saved.toList() + bkkBoards.mapNotNull { (id, board) -> board?.let { id to it } } + fetched.awaitAll().flatten() + fallback.awaitAll().flatten()
     }
 
     private fun ensureFavoriteRequest(force: Boolean = false) {
@@ -344,12 +380,19 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             val semaphore = kotlinx.coroutines.sync.Semaphore(3)
             try {
                 coroutineScope {
+                    // BKK platforms: serving lines from the Worker's batched boards (six stops per
+                    // request). Any stop BKK could not answer uses EMMA's daily-cached lines.
+                    val bkk = stations.map { it.stop }.filter { BkkWorkerParser.workerStopId(it) != null }.let { stops ->
+                        if (stops.isEmpty()) emptyMap() else try { bkkRepository.servingLines(stops) }
+                        catch (cancelled: CancellationException) { throw cancelled }
+                        catch (error: Exception) { if (BuildConfig.DEBUG) android.util.Log.w("BkkWorker", "Favourite lines failed", error); emptyMap() }
+                    }
                     stations.map { station -> async {
                         val id=station.stop.id
                         if(id.startsWith("emma:")) {
                             semaphore.acquire()
                             try {
-                                val result=stopsRepository.servingLines(id,force)
+                                val result=bkk[id] ?: stopsRepository.servingLines(id,force).copy(source=DataSource.EMMA)
                                 if(generation==favoriteGeneration) {
                                     favoriteLines[id]=result
                                     while(favoriteLines.size>64) favoriteLines.remove(favoriteLines.keys.first())
@@ -378,6 +421,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         live = null
         emmaLive = null
         emmaFetchedAt = null
+        bkkVehicles = null
         mutableState.update { it.copy(error = null, status = null, locationMessage = null) }
     }
 
@@ -386,6 +430,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         if (!state.value.stopIndexLoaded) viewModelScope.launch { refreshStopIndex() }
         viewModelScope.launch { refreshData(forceNetwork = true) }
         viewModelScope.launch { refreshEmmaData(force = true) }
+        ensureBkkVehicles(force = true)
         ensureNearbyRequest(force = true)
         ensureBoardRequest(force = true)
         ensureVehicleJourney(force = true)
@@ -529,7 +574,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             val emma = emmaLive?.takeIf {
                 Duration.between(it.fetchedAt, now).seconds in 0..120
             }
-            val emmaVehicles = emma?.vehicles.orEmpty().let {
+            val emmaVehicles = mergedLiveVehicles(emma, now, current).let {
                 if (current.nationwideNetwork) it else EmmaParser.localVehicles(it, bundledEmmaRoutes)
             }
             val vehicles = (snapshot?.vehicles.orEmpty() + emmaVehicles).filter {
@@ -566,7 +611,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                     if (!nearbyLoading && rows.isEmpty()) {
                         null
                     } else {
-                        station.copy(departures = rows, loading = nearbyLoading,
+                        station.copy(departures = rows, loading = nearbyLoading, sources = rows.mapNotNullTo(LinkedHashSet()) { it.source },
                             unavailable = station.platforms.any { it.id in nearbyFailed || (it.id.startsWith("emma:") && nearbyBoards[it.id]?.let { board -> Duration.between(board.fetchedAt, now).seconds !in 0..60 } != false) } && !nearbyLoading)
                     }
                 }.take(3).sameOr(current.nearbyStations),
@@ -612,7 +657,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun selectVehicle(id: String) {
-        val vehicle = state.value.vehicles.find { it.id == id } ?: return
+        // A searched vehicle may be outside the loaded map area; selecting it moves the map there.
+        val vehicle = state.value.vehicles.find { it.id == id } ?: state.value.remoteVehicles.vehicles.find { it.id == id } ?: return
         manualStop = false
         mutableState.update { it.copy(showNearby = false, selectedVehicle = vehicle, trackedVehicle = null, selectedStopId = null, selectedPlatformIds = emptySet(), selectedPlace = null, boardingSelection = null) }
         vehicle.routeId?.let { loadLine(it) }
@@ -655,6 +701,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         mapBounds = bounds
         mapCenter = center
         ensureMapStops(bounds)
+        ensureBkkVehicles()
         if (!state.value.showNearby) return
         // Zoomed out past where stops are drawn, "nearby" would mean whatever lies within 1.5 km of
         // the map centre: re-selecting it after every pan scanned every stop and fetched boards.
@@ -704,7 +751,25 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         if (area.west >= area.east || area.south >= area.north) return
 
         pendingMapBounds = area
+        val bkkArea = BkkWorkerRepository.queryArea(bounds)
         mapStopsJob = viewModelScope.launch {
+            // BKK's own stops arrive independently of EMMA's national area query.
+            if (bkkArea != null) launch {
+                try {
+                    val catalogue = bkkRepository.areaStops(bkkArea)
+                    if (generation != mapStopsGeneration || networkGeneration != NetworkAccessPolicy.generation || state.value.stopIndexLoaded) return@launch
+                    mergeStopRoutes(catalogue.routes, preferIncoming = false)
+                    mutableState.update { current ->
+                        val merged = CatalogueMerge.upsertStops(current.emmaStops, catalogue.stops) { existing, _ -> existing == null }
+                        if (merged === current.emmaStops) current else {
+                            catalogue.stops.forEach { if (it.id !in current.stopsById) workerOnlyStopIds += it.id }
+                            current.copy(emmaStops = merged)
+                        }
+                    }
+                    recalculate()
+                } catch (cancelled: CancellationException) { throw cancelled
+                } catch (error: Exception) { if (BuildConfig.DEBUG) android.util.Log.w("BkkWorker", "Map stops failed", error) }
+            }
             try {
                 val catalogue = stopsRepository.mapArea(area)
                 if (generation != mapStopsGeneration || networkGeneration != NetworkAccessPolicy.generation || state.value.stopIndexLoaded) return@launch
@@ -716,7 +781,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 mergeStopRoutes(catalogue.routes)
                 mutableState.update { current ->
                     val merged = CatalogueMerge.upsertStops(current.emmaStops, catalogue.stops) { existing, stop ->
-                        existing?.routeIds.isNullOrEmpty() || stop.transportMode == "SUBWAY" && stop.routeIds.isNotEmpty()
+                        existing == null || existing.routeIds.isEmpty() || existing.id in workerOnlyStopIds ||
+                            stop.transportMode == "SUBWAY" && stop.routeIds.isNotEmpty()
                     }
                     if (merged === current.emmaStops) current else current.copy(emmaStops = merged)
                 }
@@ -727,6 +793,51 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 if (generation == mapStopsGeneration) pendingMapBounds = null
             }
         }
+    }
+
+    /**
+     * BKK vehicles for a grid-snapped box around the viewport. Runs beside the nationwide EMMA
+     * poll; neither waits for the other. Small pans reuse the same URL and hit the caches.
+     */
+    private fun ensureBkkVehicles(force: Boolean = false) {
+        if (NetworkAccessPolicy.offline.value || !mapVisible) return
+        val area = mapBounds?.let { BkkWorkerRepository.queryArea(it) } ?: return
+        if (bkkVehicleJob?.isActive == true && area == bkkVehicleArea) return
+        val current = bkkVehicles
+        if (!force && current != null && current.covered == area && Duration.between(current.fetchedAt, Instant.now()).toMillis() in 0 until BKK_VEHICLE_POLL_MS) return
+        bkkVehicleJob?.cancel()
+        bkkVehicleArea = area
+        val generation = NetworkAccessPolicy.generation
+        bkkVehicleJob = viewModelScope.launch {
+            try {
+                val snapshot = bkkRepository.vehicles(area)
+                if (generation != NetworkAccessPolicy.generation || NetworkAccessPolicy.offline.value) return@launch
+                bkkVehicles = snapshot
+                recalculateWhenIdle()
+            } catch (cancelled: CancellationException) { throw cancelled
+            } catch (error: Exception) {
+                // EMMA keeps supplying BKK's relay until the Worker answers again.
+                if (BuildConfig.DEBUG) android.util.Log.w("BkkWorker", "Vehicle refresh failed", error)
+            }
+        }
+    }
+
+    /** Identity-memoized: recalculate runs on the main thread, the merge only when a source changes. */
+    private fun mergedLiveVehicles(emma: EmmaRepository.Result?, now: Instant, current: UiState): List<Vehicle> {
+        val bkk = bkkVehicles?.takeIf { Duration.between(it.fetchedAt, now).seconds in 0..BKK_VEHICLE_MAX_AGE_SECONDS }
+        val previous = mergedVehicleSources
+        if (previous != null && previous.first === bkk && previous.second === emma && previous.third === current.emmaStops) return mergedVehicles
+        val merged = LiveVehicleMerge.merge(bkk?.vehicles.orEmpty(), bkk?.covered, emma?.vehicles.orEmpty())
+        val named = if (bkk == null) merged else {
+            val stops = current.stopsById
+            merged.map { vehicle ->
+                val stop = vehicle.nextStopId?.takeIf { vehicle.nextStopName == null }?.let { stops[it] }
+                if (stop == null) vehicle else vehicle.copy(nextStopName = stop.name, nextStopPoint = vehicle.nextStopPoint ?: stop.position)
+            }
+        }
+        mergedVehicleSources = Triple(bkk, emma, current.emmaStops)
+        mergedVehicles = named
+        return named
     }
 
     private fun ensureNearbyRequest(force: Boolean = false) {
@@ -791,11 +902,22 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         if (tripId == null) return
         journeyJob = viewModelScope.launch {
             try {
-                val text = journeyClient.execute(EmmaJourneyParser.QUERY, org.json.JSONObject().put("id", tripId))
-                val journey = kotlinx.coroutines.withContext(Dispatchers.Default) { EmmaJourneyParser.parse(text, tripId) }
+                // BKK first whenever the vehicle has a BKK trip (its own, or BKK's trip for a train whose
+                // identity is EMMA's); EMMA serves railway/Volán trips BKK cannot supply and any failure.
+                val fromBkk = try { bkkRepository.journey(vehicle)?.copy(tripId = tripId) }
+                    catch (cancelled: CancellationException) { throw cancelled }
+                    catch (error: Exception) { if (BuildConfig.DEBUG) android.util.Log.w("BkkWorker", "Trip details failed", error); null }
+                val journey = fromBkk ?: run {
+                    val text = journeyClient.execute(EmmaJourneyParser.QUERY, org.json.JSONObject().put("id", tripId))
+                    kotlinx.coroutines.withContext(Dispatchers.Default) { EmmaJourneyParser.parse(text, tripId) }
+                }
                 if (journeyGeneration == generation && journeyKey == key) mutableState.update { current ->
-                    current.copy(vehicleJourney = journey,
-                        emmaStops = CatalogueMerge.upsertStops(current.emmaStops, journey.stops) { existing, _ -> existing == null })
+                    // Display catalogue names for stops the app already knows, so a BKK-served trip
+                    // reads like its board and map markers; BKK-only HÉV platforms stay out of the map.
+                    val known = current.stopsById
+                    val shown = if (fromBkk == null) journey else journey.copy(stops = journey.stops.map { known[it.id] ?: it })
+                    current.copy(vehicleJourney = shown,
+                        emmaStops = CatalogueMerge.upsertStops(current.emmaStops, shown.stops.filter(BkkWorkerParser::sharesCatalogueIdentity)) { existing, _ -> existing == null })
                 }
             } catch (cancelled: CancellationException) { throw cancelled
             } catch (_: Exception) {
@@ -842,7 +964,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         otaJob?.cancel(); otaDownloadJob?.cancel()
         board = null; boardKey = null; recentBoards.clear(); nearbyBoards.clear(); favoriteLines.clear()
         boardLoading = false; nearbyLoading = false; favoriteLoading = false
-        live = null; emmaLive = null
+        live = null; emmaLive = null; bkkVehicles = null; bkkVehicleJob?.cancel(); mergedVehicleSources = null
         mutableState.update { it.copy(offlineMode = enabled, vehicles = emptyList(), selectedVehicle = null, trackedVehicle = null,
             vehicleJourney = null, vehicleJourneyLoading = false, loadingLineId = null, placesLoading = false, placeResults = emptyList(),
             departureBoardLoading = false, lineDetails = emptyMap(), boardingSelection = null, otaCheckLoading = false, otaDownloadProgress = null, showOtaDialog = false) }
@@ -1053,6 +1175,9 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             recalculate()
             return
         }
+        // Tapping a stop from the nearby panel: show its already-fetched platforms at once and
+        // refresh behind them instead of an empty, loading board.
+        if (board == null) board = nearbySeed(key.stopId)
         val selectedId = key.stopId
         val emmaStops = if (selectedId != null) {
             state.value.selectedPlatforms.filter { it.id.startsWith("emma:") }
@@ -1061,6 +1186,17 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         boardLoading = emmaStops.isNotEmpty()
         recalculate()
         if (boardLoading) boardJob = viewModelScope.launch { refreshBoard(waitForCurrent = true) }
+    }
+
+    private fun nearbySeed(selectedId: String?): EmmaStopsParser.Board? {
+        if (selectedId == null || nearbyWindow != state.value.windowMinutes) return null
+        val targets = EmmaBoardTargets.select(state.value.selectedPlatforms.filter { it.id.startsWith("emma:") })
+        if (targets.isEmpty()) return null
+        val now = Instant.now()
+        val boards = targets.map { target ->
+            nearbyBoards[target.id]?.takeIf { Duration.between(it.fetchedAt, now).seconds in 0..EmmaStopsParser.FRESH_BOARD_SECONDS } ?: return null
+        }
+        return EmmaStopsParser.combineBoards(selectedId, boards)
     }
 
     private suspend fun refreshBoard(waitForCurrent: Boolean = false) {
@@ -1133,10 +1269,13 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     fun selectJourneyBoardingStop(id: String) {
         val vehicle = state.value.selectedVehicle ?: state.value.trackedVehicle
         val journey = state.value.vehicleJourney
-        if (vehicle?.routeId == null || journey == null || journey.patternCode == null || journey.tripId != vehicle.tripId || journey.stops.none { it.id == id }) {
+        if (vehicle?.routeId == null || journey == null || journey.patternCode == null && journey.directionId == null ||
+            journey.tripId != vehicle.tripId || journey.stops.none { it.id == id }) {
             selectStop(id); return
         }
-        val pattern = LinePattern(journey.patternCode, setOf(journey.patternCode), journey.destination ?: vehicle.destination.orEmpty(), journey.stops, journey.geometry)
+        // BKK trip details have no EMMA pattern code; the board then filters by source direction.
+        val pattern = LinePattern(journey.patternCode ?: "direction:${journey.directionId}", setOfNotNull(journey.patternCode),
+            journey.destination ?: vehicle.destination.orEmpty(), journey.stops, journey.geometry, directionId = journey.directionId)
         manualStop = true
         val network = state.value.network
         val selectedIds = setOf(network?.let { SharedStops.resolve(it, id) } ?: SharedStops.canonicalId(id))
@@ -1174,7 +1313,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             id.startsWith("emma:") -> id.removePrefix("emma:")
             id.startsWith("mav:") -> {
                 val rest = id.removePrefix("mav:")
-                if (rest.startsWith("1:")) rest else "1:$rest"
+                if (rest.startsWith("1:") || rest.startsWith("BKK:")) rest else "1:$rest"
             }
             id.startsWith("bkk:") -> {
                 val rest = id.removePrefix("bkk:")
@@ -1195,15 +1334,28 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         mutableState.update { it.copy(loadingLineId = id, lineErrorId = null) }
         lineJob = viewModelScope.launch {
             try {
-                val text = journeyClient.execute(EmmaRouteParser.QUERY, org.json.JSONObject().put("id", emmaRouteId)
-                    .put("date", LocalDate.now(budapest).format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE)))
-                val details = kotlinx.coroutines.withContext(Dispatchers.Default) { EmmaRouteParser.parse(text, id) }
+                // Any known BKK line identity first, including railway and HÉV lines.
+                val today = LocalDate.now(budapest)
+                val fromBkk = if (BkkWorkerParser.workerRouteId(id) == null) null else try { bkkRepository.routeDetails(id, today) }
+                    catch (cancelled: CancellationException) { throw cancelled }
+                    catch (error: Exception) { if (BuildConfig.DEBUG) android.util.Log.w("BkkWorker", "Line details failed", error); null }
+                val details = fromBkk?.let { bkk ->
+                    // Catalogue names for stops the app already knows, as for BKK trip details.
+                    val known = state.value.stopsById
+                    bkk.copy(patterns = bkk.patterns.map { pattern -> pattern.copy(stops = pattern.stops.map { stop ->
+                        known[stop.id]?.let { it.copy(routeIds = (it.routeIds + id).distinct()) } ?: stop }) })
+                } ?: run {
+                    val text = journeyClient.execute(EmmaRouteParser.QUERY, org.json.JSONObject().put("id", emmaRouteId)
+                        .put("date", today.format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE)))
+                    kotlinx.coroutines.withContext(Dispatchers.Default) { EmmaRouteParser.parse(text, id) }
+                }
                 if (lineGeneration == generation) {
                     lineLoadedAt[id] = Instant.now()
                     mergeStopRoutes(listOf(details.route.copy(name = if (details.route.name == details.route.number) (route?.name ?: details.route.name) else details.route.name)))
                     mutableState.update { current ->
                         current.copy(lineDetails = current.lineDetails + (id to details),
-                            emmaStops = CatalogueMerge.upsertStops(current.emmaStops, details.patterns.flatMap { it.stops }) { existing, _ -> existing == null })
+                            emmaStops = CatalogueMerge.upsertStops(current.emmaStops,
+                                details.patterns.flatMap { it.stops }.filter(BkkWorkerParser::sharesCatalogueIdentity)) { existing, _ -> existing == null })
                     }
                     recalculate()
                 }
@@ -1232,39 +1384,91 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     fun clearBoardingSelection() { mutableState.update { it.copy(boardingSelection = null) }; recalculate() }
     fun showWholeRoute() { mutableState.update { it.copy(fitRouteRequest = it.fitRouteRequest + 1) } }
 
+    /**
+     * Map search. Stations and live vehicles are searched remotely whenever online (whatever the tab);
+     * the geocoder only when [enabled]. BKK's station records lead; EMMA only adds stations BKK did not
+     * return (railway/nationwide), and neither replaces the other's records in the results.
+     */
     fun searchPlaces(query: String, enabled: Boolean) {
         val generation = ++placeSearchGeneration
         placeSearchJob?.cancel()
-        val shouldSearch = enabled && !NetworkAccessPolicy.offline.value && query.trim().length >= 2
+        val online = !NetworkAccessPolicy.offline.value && query.trim().length >= 2
+        val shouldSearch = enabled && online
         val cachedPlaces = if (shouldSearch) placesRepository.cached(query) else null
-        mutableState.update { it.copy(placeQuery = query, placeResults = cachedPlaces.orEmpty(), placesLoading = shouldSearch && cachedPlaces == null, placesUnavailable = false) }
-        if (!shouldSearch) return
+        mutableState.update { it.copy(placeQuery = query, placeResults = cachedPlaces.orEmpty(), placesLoading = shouldSearch && cachedPlaces == null, placesUnavailable = false,
+            remoteStations = it.remoteStations.takeIf { remote -> remote.query == query } ?: RemoteStationResults(),
+            remoteVehicles = it.remoteVehicles.takeIf { remote -> remote.query == query } ?: RemoteVehicleResults()) }
+        if (!online) return
         placeSearchJob = viewModelScope.launch {
             delay(250)
             try {
                 // A cached/fast geocoder response must not wait for station search.
-                val placesAsync = async {
+                val placesAsync = if (!shouldSearch) null else async {
                     val places = placesRepository.search(query)
                     if (generation == placeSearchGeneration) mutableState.update { it.copy(placeResults = places, placesLoading = false) }
+                }
+                val near = state.value.userLocation ?: mapCenter
+                val vehiclesAsync = async {
+                    val found = try { bkkRepository.searchVehicles(query, near).map { it.vehicle } }
+                        catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { emptyList() }
+                    if (generation == placeSearchGeneration) mutableState.update { it.copy(remoteVehicles = RemoteVehicleResults(query, found)) }
+                }
+                val bkkAsync = async {
+                    try { bkkRepository.search(query, near) }
+                    catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { null }
                 }
                 val stationsAsync = async {
                     runCatching { stopsRepository.search(query).stops }.getOrDefault(emptyList())
                 }
+                val bkk = bkkAsync.await()
+                val bkkStops = bkk?.catalogue?.stops.orEmpty()
+                // BKK's results are shown as soon as they arrive, before EMMA's supplement.
+                if (bkkStops.isNotEmpty() && generation == placeSearchGeneration) {
+                    publishRemoteStations(query, bkkStops, bkk!!.stopSources, emptyList())
+                    mergeStopRoutes(bkk.catalogue.routes, preferIncoming = false)
+                    mutableState.update { current ->
+                        // The catalogue keeps saved-stop identities; BKK only fills stops it lacks.
+                        val merged = CatalogueMerge.upsertStops(current.emmaStops, bkkStops) { existing, _ -> existing == null }
+                        if (merged === current.emmaStops) current else {
+                            bkkStops.forEach { if (it.id !in current.stopsById) workerOnlyStopIds += it.id }
+                            current.copy(emmaStops = merged)
+                        }
+                    }
+                    recalculate()
+                }
                 val stations = stationsAsync.await()
                 if (generation != placeSearchGeneration) return@launch
+                if (stations.isNotEmpty() || bkk != null) publishRemoteStations(query, bkkStops, bkk?.stopSources.orEmpty(), stations)
                 if (stations.isNotEmpty()) {
                     mutableState.update { current ->
-                        val merged = CatalogueMerge.upsertStops(current.emmaStops, stations) { existing, _ -> existing?.routeIds.isNullOrEmpty() }
+                        val merged = CatalogueMerge.upsertStops(current.emmaStops, stations) { existing, _ -> existing == null || existing.routeIds.isEmpty() || existing.id in workerOnlyStopIds }
                         if (merged === current.emmaStops) current else current.copy(emmaStops = merged)
                     }
                     recalculate()
                 }
-                placesAsync.await()
+                placesAsync?.await()
+                vehiclesAsync.await()
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) {
-                if (generation == placeSearchGeneration) mutableState.update { it.copy(placesLoading = false, placesUnavailable = true) }
+                if (generation == placeSearchGeneration) mutableState.update { it.copy(placesLoading = false, placesUnavailable = shouldSearch) }
             }
         }
+    }
+
+    private suspend fun publishRemoteStations(query: String, bkk: List<TransitStop>, bkkSources: Map<String, DataSource>, emma: List<TransitStop>) {
+        val results = withContext(Dispatchers.Default) {
+            val bkkIds = bkk.mapTo(HashSet()) { it.id }
+            val added = emma.filter { it.id !in bkkIds }
+            val sourceOf = HashMap<String, DataSource>()
+            bkk.forEach { sourceOf[it.id.removePrefix("emma:")] = bkkSources[it.id] ?: DataSource.BKK }
+            added.forEach { sourceOf.putIfAbsent(it.id.removePrefix("emma:"), DataSource.EMMA) }
+            // BKK first in the input keeps BKK's records as each consolidated group's members.
+            val stops = StopClusters.consolidateForSearch(bkk + added)
+            RemoteStationResults(query, stops, stops.associate { stop ->
+                stop.id to (stop.sourceStopIds + stop.id.removePrefix("emma:")).mapNotNullTo(LinkedHashSet()) { sourceOf[it] }
+            })
+        }
+        mutableState.update { if (it.placeQuery == query) it.copy(remoteStations = results) else it }
     }
 
     fun selectPlace(place: PlaceResult) {
@@ -1499,6 +1703,9 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
 
 private val emmaProviders = setOf("volan", "bkk", "hev", "mav")
 private val NOW_REFRESH: Duration = Duration.ofSeconds(4)
+/** BKK's vehicle cadence and the Worker's 5 s cache make a faster poll pointless. */
+private const val BKK_VEHICLE_POLL_MS = 10_000L
+private const val BKK_VEHICLE_MAX_AGE_SECONDS = 30L
 /** Ordinary stops are drawn from zoom 12; nearby boards follow the map only from just below that. */
 private const val NEARBY_MIN_ZOOM = 11.0
 

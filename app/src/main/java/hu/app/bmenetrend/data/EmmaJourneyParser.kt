@@ -25,12 +25,16 @@ data class VehicleJourney(
     val geometry: List<GeoPoint> = emptyList(),
     val patternCode: String? = null,
     val stopTimes: List<JourneyStopTime?> = emptyList(),
+    /** Source GTFS direction; boards from BKK carry no EMMA pattern code to match on. */
+    val directionId: String? = null,
+    /** Feed that served the trip details; null for older constructors. */
+    val source: DataSource? = null,
 )
 
 /** The actual vehicle trip's ordered stops, never a guessed route variant or nearest-stop path. */
 object EmmaJourneyParser {
     val QUERY = """query VehicleTrip(${'$'}id: String!) {
-        trip(id:${'$'}id) { gtfsId tripHeadsign geometry pattern { code } route { gtfsId shortName longName mode }
+        trip(id:${'$'}id) { gtfsId tripHeadsign directionId geometry pattern { code } route { gtfsId shortName longName mode }
             stops { gtfsId name lat lon vehicleMode platformCode parentStation { gtfsId } }
             stoptimes {
                 scheduledArrival realtimeArrival scheduledDeparture realtimeDeparture realtime realtimeState serviceDay
@@ -106,6 +110,8 @@ object EmmaJourneyParser {
             runCatching { EmmaRouteParser.tripGeometry(trip.optJSONArray("geometry")) }.getOrDefault(emptyList()),
             trip.optJSONObject("pattern").text("code"),
             stopTimes,
+            trip.text("directionId"),
+            DataSource.EMMA,
         )
     }
 
