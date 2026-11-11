@@ -126,17 +126,17 @@ class StationMarkersTest {
     @Test fun regionIsStableWhilePanningInsideAndMovesNearItsEdge() {
         val view = MapBounds(19.0, 47.45, 19.1, 47.55)
         assertNull(StationMarkers.nextRegion(null, view, zoom = 10.0))
-        val region = requireNotNull(StationMarkers.nextRegion(null, view, zoom = 12.5))
+        val region = requireNotNull(StationMarkers.nextRegion(null, view, zoom = 13.5))
         assertTrue(region.east - region.west >= StationMarkers.REGION_MIN_LON_SPAN - 1e-9)
         assertTrue(region.north - region.south >= StationMarkers.REGION_MIN_LAT_SPAN - 1e-9)
         assertTrue(region.west < view.west && region.east > view.east && region.south < view.south && region.north > view.north)
         // A modest pan keeps the same instance: no rebuild.
-        assertSame(region, StationMarkers.nextRegion(region, MapBounds(19.05, 47.48, 19.15, 47.58), 12.5))
+        assertSame(region, StationMarkers.nextRegion(region, MapBounds(19.05, 47.48, 19.15, 47.58), 13.5))
         // Zooming out below the road-stop zoom keeps it too.
         assertSame(region, StationMarkers.nextRegion(region, MapBounds(17.0, 46.0, 21.0, 49.0), 9.0))
         // Nearing the edge re-centres the region on the view.
         val far = MapBounds(19.2, 47.45, 19.3, 47.55)
-        val moved = requireNotNull(StationMarkers.nextRegion(region, far, 12.5))
+        val moved = requireNotNull(StationMarkers.nextRegion(region, far, 13.5))
         assertNotSame(region, moved)
         assertEquals(19.25, (moved.west + moved.east) / 2, 1e-9)
     }

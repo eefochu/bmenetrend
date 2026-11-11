@@ -67,8 +67,8 @@ class RouteMapCardTest {
         var opened:String?=null
         var lineOpened=false
         compose.setContent { ViaBuszTheme {
-            ViaBuszScreen(state().copy(selectedStopId=b.id,showNearby=false,departures=listOf(departure),vehicles=listOf(wrong,chosen)),
-                {},{},{},{},{},onVehicleOpened={opened=it},onLineOpened={_,_->lineOpened=true})
+            ViaBuszScreen(state().copy(selectedStopId=b.id,showNearby=false,departures=listOf(departure)),
+                {},{},{},{},{},onVehicleOpened={opened=it},onLineOpened={_,_->lineOpened=true},vehicles={listOf(wrong,chosen)})
         } }
         compose.waitForIdle()
         compose.onNode(hasText("762") and hasText(c.name) and hasClickAction()).performClick()
@@ -166,6 +166,7 @@ class RouteMapCardTest {
         val pattern = LinePattern("p1", setOf("p1"), "Budapest", listOf(a, b, c), listOf(GeoPoint(47.4, 19.0), GeoPoint(47.5, 19.1)))
         var returnedToVehicle = false
         var vehicleClosed = false
+        var boardingCleared = false
         val uiState = state().copy(
             showNearby = false,
             selectedStopId = b.id,
@@ -182,6 +183,7 @@ class RouteMapCardTest {
                 onWindowChanged = {},
                 onToggleFavorite = {},
                 onVehicleClosed = { vehicleClosed = true },
+                onClearBoarding = { boardingCleared = true },
                 onReturnToTrackedVehicle = { returnedToVehicle = true },
                 mapContent = { modifier, _, _, _, onDismiss ->
                     Box(modifier.testTag("map")) {
@@ -196,8 +198,9 @@ class RouteMapCardTest {
 
         compose.onNodeWithTag("map_click").performClick()
         compose.runOnIdle {
-            assertTrue(returnedToVehicle)
-            assertFalse(vehicleClosed)
+            assertFalse(returnedToVehicle)
+            assertTrue(vehicleClosed)
+            assertTrue(boardingCleared)
         }
     }
 

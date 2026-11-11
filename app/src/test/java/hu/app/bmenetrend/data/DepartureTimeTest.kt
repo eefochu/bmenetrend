@@ -21,14 +21,16 @@ class DepartureTimeTest {
         assertEquals(1,DepartureTime.minutes(now,now.plusMillis(1500)))
         assertEquals(300,DepartureTime.windows.last())
     }
-    @Test fun nationalRailRemainsVisibleAtRegionalZoomWithoutChangingOtherModes() {
-        assertTrue(TransitMapVisibility.stop("RAIL",9.5))
-        assertFalse(TransitMapVisibility.stop("BUS",9.5))
-        assertFalse(TransitMapVisibility.stop("RAIL",8.5))
-        assertTrue(TransitMapVisibility.vehicle("RAIL",7.5))
-        assertFalse(TransitMapVisibility.vehicle("BUS",7.5))
-        assertFalse(TransitMapVisibility.vehicle("RAIL",6.5))
-        assertTrue(TransitMapVisibility.stop("BUS",5.0,focused=true))
+    @Test fun stopAndVehicleVisibilityFollowSharedZoomThresholds() {
+        assertTrue(TransitMapVisibility.stop("RAIL", 13.0))
+        assertTrue(TransitMapVisibility.stop("BUS", 13.0))
+        assertFalse(TransitMapVisibility.stop("RAIL", 12.9))
+        assertFalse(TransitMapVisibility.stop("BUS", 12.9))
+        assertTrue(TransitMapVisibility.vehicle("RAIL", 14.0))
+        assertTrue(TransitMapVisibility.vehicle("BUS", 14.0))
+        assertFalse(TransitMapVisibility.vehicle("RAIL", 13.9))
+        assertFalse(TransitMapVisibility.vehicle("BUS", 13.9))
+        assertFalse(TransitMapVisibility.stop("BUS", 5.0, focused = true))
     }
     @Test fun favouriteStopsKeepOnlyTheirOwnSourcePlatformAndIgnoreMapDistance() {
         val a=TransitStop("emma:1:a_1","Station A",GeoPoint(47.4,19.0),emptyList(),"mav",parentStationId="emma:1:a")

@@ -18,6 +18,13 @@ class TripPlannerTest {
     private fun leg(mode:String, start:Instant, seconds:Long, distance:Double=0.0, stay:Boolean=false) = PlanLeg(
         mode,start,start.plusSeconds(seconds),distance,PlanPoint("A",origin.position),PlanPoint("B",destination.position),null,null,false,stay,emptyList())
 
+    @Test fun walkAverseQueryAddsReluctanceWithoutChangingDefaultQuery() {
+        for (busesOnly in listOf(false, true)) {
+            assertTrue(TripPlanner.query(busesOnly, avoidWalking = true).contains("walkReluctance:5.0,"))
+            assertFalse(TripPlanner.query(busesOnly).contains("walkReluctance"))
+        }
+    }
+
     @Test fun realMetroResponseIncludesStreetWalkingBoardingSlackAndSourceLine() {
         val text=fixture("metro"); val result=parse(text)
         assertTrue(result.itineraries.isNotEmpty())

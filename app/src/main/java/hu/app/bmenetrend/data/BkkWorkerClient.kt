@@ -125,6 +125,7 @@ class BkkWorkerClient internal constructor(
 
     /** Debug-only latency trace (`adb logcat -s BkkHttp`), the measurement for cache vs network time. */
     private fun trace(endpoint: String, startedAt: Long, outcome: String) {
+        hu.app.bmenetrend.TransitDiagnostics.event("http") { "$endpoint ms=${(System.nanoTime() - startedAt) / 1_000_000} outcome=$outcome" }
         if (!hu.app.bmenetrend.BuildConfig.DEBUG) return
         runCatching { android.util.Log.d("BkkHttp", "$endpoint ${(System.nanoTime() - startedAt) / 1_000_000}ms $outcome") }
     }

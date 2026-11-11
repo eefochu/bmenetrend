@@ -55,7 +55,10 @@ class PlannerLatencyTest {
         assertEquals(231, walkingPairs)
         assertTrue("Gateway fan-out pruned after direct route, took $routeCalls calls", routeCalls <= 2)
         assertEquals(1_000, walkingStarted)
-        assertTrue("Route search should finish promptly after direct route, took ${testScheduler.currentTime}", testScheduler.currentTime <= 5_000)
+        // LOCAL_STARTED arrives with street routing at 1000 ms, before a usable answer.
+        // Both direct answers arrive at 5000 ms while local work remains pending,
+        // starting the 2500 ms settle timer (no restart), for a 7500 ms deadline.
+        assertEquals(7_500L, testScheduler.currentTime)
     }
 
     @Test fun requestBudgetBoundsHttpAndWalkingWork() = runTest {

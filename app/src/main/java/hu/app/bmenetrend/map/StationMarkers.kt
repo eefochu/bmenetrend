@@ -15,6 +15,7 @@ internal class StationScene(
     val chunks: StationChunkIndex<StationGroup>,
     val offsets: Map<String, StopMarkerLayout.Offset>,
     val preparedRegion: MapBounds? = null,
+    val focusIds: Set<String>? = null,
 )
 
 internal fun stationAnchor(members: List<TransitStop>): TransitStop = members.first().let { first ->
@@ -37,8 +38,8 @@ internal object StationMarkers {
     const val ROAD_LAYER = "station-symbols"
     const val SELECTED_LAYER = "station-selected"
     val ARROW_LAYERS = listOf("station-arrows-0", "station-arrows-1")
-    const val RAIL_MIN_ZOOM = 9f
-    const val ROAD_MIN_ZOOM = 12f
+    const val RAIL_MIN_ZOOM = TransitMapVisibility.STOP_MIN_ZOOM
+    const val ROAD_MIN_ZOOM = TransitMapVisibility.STOP_MIN_ZOOM
     val ARROW_MIN_ZOOM = StopMapClustering.PLATFORM_ZOOM.toFloat()
     /**
      * Deepest level the source is tiled to; closer zooms reuse these tiles. geojson-vt keeps a copy
@@ -129,6 +130,9 @@ internal object StationMarkers {
             scene === this.scene && region == this.region && focused == this.focused && dark == this.dark && routeColor == this.routeColor &&
                 (bearings === this.bearings || bearings == this.bearings) && highlightedIds == this.highlightedIds &&
                 (routes === this.routes || referencedRoutes.all { sameColour(this.routes[it], routes[it]) })
+
+        fun matchesFocus(focused: Boolean, highlightedIds: Set<String>): Boolean =
+            focused == this.focused && highlightedIds == this.highlightedIds
 
         fun spriteFor(marker: Marker, selected: Boolean) = StationSprite(marker.palette, StopMarkerLayout.DIAMETER_DP.toInt(),
             focused, selected, dark, routeColor)

@@ -74,7 +74,7 @@ internal fun isTrainRoute(route: TransitRoute): Boolean {
     return RailSupport.isTrain(route.transportMode) ||
            route.providerId in setOf("mav", "gysev") ||
            route.transportMode in setOf("RAIL", "SUBURBAN_RAILWAY", "TRAMTRAIN") ||
-           route.number.matches(Regex("^[GSZgsz]\\d+.*")) ||
+           route.number.matches(hu.app.bmenetrend.data.TextPatterns.RAIL_LINE_NUMBER) ||
            route.number in setOf("S", "SZ", "G", "GY", "Z", "IC", "IR", "RJ", "RJX", "EC", "EN", "EX")
 }
 

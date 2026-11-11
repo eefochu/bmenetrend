@@ -74,7 +74,7 @@ object EmmaStopsParser {
             "mav" -> RailSupport.number(row.text("shortName"), row.text("longName"))
             else -> row.text("shortName") ?: return null
         }
-        return TransitRoute("$provider:$id", number, row.text("longName") ?: number, emptyList(), provider, transportMode = mode, color = if (provider == "hev") HevSupport.color(number) else row.text("color")?.takeIf { it.matches(Regex("[a-fA-F0-9]{6}")) })
+        return TransitRoute("$provider:$id", number, row.text("longName") ?: number, emptyList(), provider, transportMode = mode, color = if (provider == "hev") HevSupport.color(number) else row.text("color")?.takeIf { it.matches(TextPatterns.HEX_COLOR) })
     }
     private fun stops(rows: JSONArray): Catalogue {
         val routes = linkedMapOf<String, TransitRoute>()

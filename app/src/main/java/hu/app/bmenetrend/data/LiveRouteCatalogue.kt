@@ -1,6 +1,6 @@
 package hu.app.bmenetrend.data
 
-/** One immutable generation, owned by the ViewModel's main thread.
+/** One immutable generation, owned by the ViewModel's main thread; [update] is called on every UI recalculation.
  * Position/countdown updates do not invalidate route metadata or its search index.
  */
 internal class LiveRouteCatalogue {
@@ -18,6 +18,8 @@ internal class LiveRouteCatalogue {
             base = (stopRoutes + lineRoutes + bundledRoutes).distinctBy { it.id }
         }
         val previous = previousVehicles
+        // The feed keeps list identity while nothing changed, so most recalculations stop here.
+        if (!sourcesChanged && previous === vehicles) return result
         if (!sourcesChanged && previous != null && previous.size == vehicles.size && vehicles.indices.all { i ->
                 val a = previous[i]; val b = vehicles[i]
                 a.routeId == b.routeId && a.routeNumber == b.routeNumber && a.routeName == b.routeName &&

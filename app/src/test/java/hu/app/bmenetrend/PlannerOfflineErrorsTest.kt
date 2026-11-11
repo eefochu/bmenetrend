@@ -15,6 +15,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.time.Instant
 import java.time.LocalDate
+import java.util.concurrent.atomic.AtomicInteger
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [30], application = Application::class)
@@ -47,7 +48,13 @@ class PlannerOfflineErrorsTest {
             }
             override suspend fun walking(pairs: List<Pair<PlanPoint, PlanPoint>>, ready: Instant) = error("Offline walking reached HTTP backend")
         }
-        val model = PlannerViewModel(app, backend) { error("Offline submission loaded online timetables") }
+        val networkLoads = AtomicInteger()
+        val startupLoad = CompletableDeferred<Job>()
+        val model = PlannerViewModel(app, backend) {
+            networkLoads.incrementAndGet()
+            startupLoad.complete(currentCoroutineContext().job)
+            TransitNetwork(emptyList(), emptyList(), emptyList(), Instant.now(), "fixture")
+        }
         fun awaitCondition(condition: () -> Boolean) {
             val deadline = System.nanoTime() + 5_000_000_000L
             while (!condition() && System.nanoTime() < deadline) { testScheduler.runCurrent(); Thread.sleep(5) }
@@ -55,6 +62,9 @@ class PlannerOfflineErrorsTest {
         }
         try {
             awaitCondition { model.state.value.offline }
+            awaitCondition { startupLoad.isCompleted }
+            startupLoad.await().join()
+            assertEquals(1, networkLoads.get())
             model.edit(PlannerField.ORIGIN)
             model.choose(PlannerEndpoint("emma:hkir:A", "A", "", GeoPoint(47.49, 18.74)))
             model.edit(PlannerField.DESTINATION)
@@ -63,6 +73,9 @@ class PlannerOfflineErrorsTest {
             awaitCondition { !model.state.value.planning && model.state.value.error != null }
             assertEquals(expected, model.state.value.error)
             assertEquals(0, requests)
+            // Construction now preloads even in offline mode; submission must still
+            // use the saved pack without requesting another online network load.
+            assertEquals(1, networkLoads.get())
             assertTrue(NetworkAccessPolicy.offline.value)
         } finally {
             model.viewModelScope.cancel()

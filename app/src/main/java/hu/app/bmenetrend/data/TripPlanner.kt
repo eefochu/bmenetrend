@@ -77,6 +77,18 @@ data class TripItinerary(
             cursor = leg.end
         }
     }
+
+    /** Movement only; idle gaps remain in total time and in the detailed step list. */
+    fun travelLegs(): List<PlanLeg> = buildList {
+        for (leg in legs) {
+            if (leg.end <= leg.start) continue
+            val previous = lastOrNull()
+            if (leg.walking && previous?.walking == true && previous.end == leg.start) {
+                this[lastIndex] = previous.copy(end = leg.end, distance = previous.distance + leg.distance, to = leg.to,
+                    stops = previous.stops + leg.stops, routerJourney = null, routerPrevious = null)
+            } else add(leg)
+        }
+    }
 }
 @Immutable
 data class PlanSegment(val start: Instant, val end: Instant, val leg: PlanLeg?)
@@ -85,6 +97,8 @@ data class TripPlan(val origin: PlannerEndpoint, val destination: PlannerEndpoin
 
 object TripPlanner {
     const val WALK_SPEED = 1.15
+    /** EMMA reluctance for the walk-averse query; 5.0 found Biatorbágy 762→767 transfers the default hides. */
+    const val WALK_AVERSE_RELUCTANCE = 5.0
     const val BOARD_SECONDS = 60L
     const val TRANSFER_SECONDS = 180L
     val zone: ZoneId = ZoneId.of("Europe/Budapest")
@@ -97,9 +111,10 @@ object TripPlanner {
         return local.toInstant(offsets.single()).takeUnless { it < now }
     }
     val QUERY get() = query()
-    fun query(busesOnly: Boolean = false) = """query TripPlan(${'$'}from:String!,${'$'}to:String!,${'$'}date:String!,${'$'}time:String!) {
+    /** [avoidWalking] makes the router prefer waiting and changing over long walks (default reluctance is 2). */
+    fun query(busesOnly: Boolean = false, avoidWalking: Boolean = false) = """query TripPlan(${'$'}from:String!,${'$'}to:String!,${'$'}date:String!,${'$'}time:String!) {
         plan(fromPlace:${'$'}from,toPlace:${'$'}to,date:${'$'}date,time:${'$'}time,arriveBy:false,
-            walkSpeed:1.15,minTransferTime:180,boardSlack:60,alightSlack:30,numItineraries:12,maxTransfers:4,omitCanceled:true,
+            ${if (avoidWalking) "walkReluctance:$WALK_AVERSE_RELUCTANCE," else ""}walkSpeed:1.15,minTransferTime:180,boardSlack:60,alightSlack:30,numItineraries:12,maxTransfers:4,omitCanceled:true,
             transportModes:[{mode:WALK},${if (busesOnly) "{mode:BUS},{mode:COACH}" else "{mode:TRANSIT}"}],ignoreRealtimeUpdates:false) {
             itineraries { startTime endTime legs {
                 mode startTime endTime distance realTime transitLeg interlineWithPreviousLeg
@@ -223,7 +238,9 @@ object TripPlanner {
     val order = compareBy<TripItinerary> { it.end }.thenBy { it.walkSeconds }.thenBy { it.transfers }.thenBy { it.walkMeters }.thenBy { it.durationSeconds }.thenBy { it.id }
 
     /** A leave-at-requested-time suggestion must not wait hours for a later service. */
-    internal fun bestTimely(journeys: List<TripItinerary>, ready: Instant): TripItinerary? = journeys.asSequence()
+    internal fun bestTimely(journeys: List<TripItinerary>, ready: Instant): TripItinerary? = timelyChoices(journeys, ready).firstOrNull()
+
+    internal fun timelyChoices(journeys: List<TripItinerary>, ready: Instant): List<TripItinerary> = PlannerAlternatives.select(journeys.asSequence()
         .filter { feasible(it.legs, ready) }
         .filter { trip ->
             var arrived = ready
@@ -234,7 +251,7 @@ object TripPlanner {
                 arrived = leg.end
                 acceptable
             }
-        }.minWithOrNull(compareBy<TripItinerary> { trip -> trip.legs.any { it.restrictedService } }.then(order))
+        }.toList(), ready)
 
     private const val MAX_BOARDING_WAIT_SECONDS = 60 * 60L
 
@@ -244,7 +261,7 @@ object TripPlanner {
             legs.first().start, legs.last().end, legs)
     }
 
-    /** Up to three distinct, non-dominated choices; operator identity never reserves a slot. */
+    /** A practical recommendation and one distinct, useful alternative. */
     fun alternatives(journeys: List<TripItinerary>, ready: Instant? = null): List<TripItinerary> =
         PlannerAlternatives.select(journeys,ready)
     private fun point(row: JSONObject): PlanPoint {

@@ -61,11 +61,57 @@ class MapStyleSettingsTest {
             first.setMapStyle(MapStyle.SATELLITE)
             assertEquals("satellite", prefs.getString("map_style", null))
             assertEquals(MapStyle.SATELLITE, TransitViewModel(app).also { models += it }.state.value.mapStyle)
+            first.setMapStyle(MapStyle.GOOGLE)
+            assertEquals("google", prefs.getString("map_style", null))
+            assertEquals(MapStyle.GOOGLE, TransitViewModel(app).also { models += it }.state.value.mapStyle)
+            assertEquals(MapStyle.GOOGLE, MapStyle.fromKey("google"))
             assertEquals(MapStyle.STREET, MapStyle.fromKey("unsupported"))
         } finally {
             models.forEach { it.viewModelScope.cancel() }
             prefs.edit().apply { if (previous == null) remove("map_style") else putString("map_style", previous) }.commit()
         }
+    }
+
+    @Test fun googleChoiceUpdatesSelectionAndExplainsOfflineFallback() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        var state by mutableStateOf(UiState())
+        val selected = mutableListOf<MapStyle>()
+        compose.setContent {
+            ViaBuszTheme {
+                SettingsPage(state, {}, {}, {}, {}, {}, onMapStyle = {
+                    selected += it
+                    state = state.copy(mapStyle = it)
+                })
+            }
+        }
+        val radio = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton)
+        val google = compose.onNode(hasText(app.getString(R.string.map_style_google)) and radio)
+        google.performScrollTo().assertHeightIsAtLeast(48.dp).assertIsNotSelected().performClick()
+        google.assertIsSelected()
+        assertEquals(listOf(MapStyle.GOOGLE), selected)
+        compose.onNode(hasText(app.getString(R.string.map_style_street)) and radio).assertIsNotSelected()
+        compose.onNode(hasText(app.getString(R.string.map_style_satellite)) and radio).assertIsNotSelected()
+        compose.runOnIdle { state = state.copy(offlineMode = true) }
+        compose.onNodeWithText(app.getString(R.string.map_style_offline_hint)).assertExists()
+        assertEquals(MapStyle.GOOGLE, state.mapStyle)
+        assertFalse(MapAppearance(state.mapStyle, state.offlineMode).google)
+    }
+
+    @Test fun googleMapHasNoFalseOpenStreetMapAttributionAndFallsBackWhenOffline() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        var appearance by mutableStateOf(MapAppearance(MapStyle.GOOGLE, offline = false))
+        compose.setContent {
+            ViaBuszTheme {
+                CompositionLocalProvider(LocalMapAppearance provides appearance) {
+                    MapAttribution()
+                }
+            }
+        }
+        compose.onNodeWithText(app.getString(R.string.map_info)).assertDoesNotExist()
+        compose.onNodeWithText(app.getString(R.string.map_satellite_attribution)).assertDoesNotExist()
+
+        compose.runOnIdle { appearance = MapAppearance(MapStyle.GOOGLE, offline = true) }
+        compose.onNodeWithText(app.getString(R.string.map_info)).assertIsDisplayed()
     }
 
     @Test fun satelliteMapDisplaysImageryAttributionAndOpensSourceCredits() {

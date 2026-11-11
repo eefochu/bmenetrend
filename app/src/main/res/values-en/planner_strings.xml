@@ -13,7 +13,7 @@
     <string name="planner_search_hint">Search for an address, place or station</string>
     <string name="planner_find">Show routes</string>
     <string name="planner_from_vehicle">From vehicle</string>
-    <string name="planner_best_route">Best route</string>
+    <string name="planner_best_route">Recommended route</string>
     <string name="planner_settings">Settings</string>
     <string name="planner_fewest_transfers">Fewest transfers</string>
     <string name="planner_least_walking">Least walking</string>
@@ -32,14 +32,14 @@
     <string name="planner_search_error">Place search is unavailable. Try a station name or check your connection.</string>
     <string name="planner_no_places">No places found. Try a more specific name.</string>
     <string name="planner_options">Your journey options</string>
-    <string name="planner_checked">Checked at %1$s · earliest arrival first</string>
+    <string name="planner_checked">Checked: %1$s · convenience and travel time</string>
     <string name="planner_fastest">Fastest</string>
     <string name="planner_duration">%1$d min journey</string>
     <string name="planner_summary">%1$s · %2$d min walking</string>
     <string name="planner_steps">Step by step</string>
     <string name="planner_walk">Walk</string>
     <string name="planner_walk_detail">Walk %1$d min · %2$d m</string>
-    <string name="planner_wait">Allow %1$d min for boarding or transfer</string>
+    <string name="planner_wait">%1$d min waiting</string>
     <string name="planner_stay">Stay on the vehicle</string>
     <string name="planner_stops">%1$d intermediate stops</string>
     <string name="planner_stale">This journey has already started. Plan again before leaving.</string>
@@ -67,10 +67,11 @@
     <string name="planner_apply">Apply</string>
     <string name="planner_cancel">Cancel</string>
     <string name="planner_timing_later">Walking: about 4.1 km/h. Transfers allow an extra 3 minutes, plus the walk between stops. Advance journeys use available timetables.</string>
-    <string name="planner_bar_hint">Bars show walking, waiting and riding in each line’s color. Times include boarding and transfer allowances.</string>
+    <string name="planner_bar_hint">The bar shows walking and riding. Total journey time also includes waiting, which is listed separately in the steps.</string>
     <string name="planner_show_stops">Show intermediate stops</string>
     <string name="planner_hide_stops">Hide intermediate stops</string>
     <string name="planner_stations_header">Stops and stations</string>
     <string name="planner_places_header">Addresses and places</string>
     <string name="planner_view_departures">Departures</string>
+    <string name="planner_alternative">Another good option</string>
 </resources>

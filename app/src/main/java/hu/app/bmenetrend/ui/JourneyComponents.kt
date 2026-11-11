@@ -23,6 +23,8 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import hu.app.bmenetrend.R
@@ -44,11 +46,11 @@ internal fun ItineraryCard(trip: TripItinerary, recommended: Boolean, now: Insta
             JourneyBar(trip, ready)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp),
                 itemVerticalAlignment = Alignment.CenterVertically) {
-                trip.legs.forEach { leg ->
+                remember(trip) { trip.travelLegs() }.forEach { leg ->
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         if (leg.walking) {
                             Icon(Icons.AutoMirrored.Rounded.DirectionsWalk, stringResource(R.string.planner_walk), Modifier.size(22.dp))
-                            Text(stringResource(R.string.ui_minutes_short, minutes(Duration.between(leg.start, leg.end).seconds)),
+                            Text(stringResource(R.string.ui_minutes_short, legMinutes(leg.start, leg.end)),
                                 style = MaterialTheme.typography.labelLarge)
                         } else leg.route?.let { ServiceBadge(it.number, it.providerId, it.transportMode, it.color, leg.trainNumber) }
                     }
@@ -56,15 +58,15 @@ internal fun ItineraryCard(trip: TripItinerary, recommended: Boolean, now: Insta
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    if (recommended) Text(stringResource(R.string.planner_best_route), style = MaterialTheme.typography.labelLarge,
+                    Text(stringResource(if (recommended) R.string.planner_best_route else R.string.planner_alternative), style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                     Text(stringResource(R.string.planner_summary,
                         if (trip.transfers == 0) stringResource(R.string.planner_direct) else pluralStringResource(R.plurals.planner_transfers, trip.transfers, trip.transfers),
-                        minutes(trip.walkSeconds)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        trip.travelLegs().filter { it.walking }.sumOf { legMinutes(it.start, it.end) }), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     // Which planner produced this journey (BKK API, or the EMMA fallback) and how old a reused answer is.
                     SourceTag(trip.sources, fetchedAt = trip.fetchedAt, now = now)
                 }
-                Text(stringResource(R.string.ui_minutes_short, minutes(trip.totalSeconds(ready))),
+                Text(stringResource(R.string.ui_minutes_short, clockMinutes(minOf(ready, trip.start), trip.end)),
                     style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             }
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -80,30 +82,32 @@ internal fun ItineraryCard(trip: TripItinerary, recommended: Boolean, now: Insta
 }
 
 @Composable
-private fun segmentColor(segment: PlanSegment): Color = when {
-    segment.leg == null -> MaterialTheme.colorScheme.outlineVariant
-    segment.leg.walking -> MaterialTheme.colorScheme.tertiary
-    else -> segment.leg.route?.let(::lineColor) ?: MaterialTheme.colorScheme.primary
+private fun movementColor(leg: PlanLeg): Color = when {
+    leg.walking -> MaterialTheme.colorScheme.tertiary
+    else -> leg.route?.let(::lineColor) ?: MaterialTheme.colorScheme.primary
 }
 
-/** Draw-only proportions: the widths include every second of walking, riding and waiting. */
+/** Walking and riding only. Idle gaps stay in total time and in the detailed steps. */
 @Composable
 internal fun JourneyBar(trip: TripItinerary, ready: Instant = trip.start) {
     val start = minOf(ready, trip.start)
-    val segments = remember(trip, start) { trip.segments(start) }
-    val colors = segments.map { segmentColor(it) }
-    val duration = Duration.between(start, trip.end).toMillis().coerceAtLeast(1).toDouble()
+    val legs = remember(trip) { trip.travelLegs() }
+    val colors = legs.map { movementColor(it) }
+    val durations = remember(legs) { legs.map { Duration.between(it.start, it.end).toMillis().toDouble() } }
+    val duration = durations.sum().coerceAtLeast(1.0)
+    val hint = stringResource(R.string.planner_bar_hint)
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             ClockWithDate(start, start)
             ClockWithDate(trip.end, start)
         }
-        Canvas(Modifier.fillMaxWidth().height(10.dp)) {
-            segments.forEachIndexed { index, segment ->
-                val left = (Duration.between(start, segment.start).toMillis() / duration * size.width).toFloat()
-                val right = (Duration.between(start, segment.end).toMillis() / duration * size.width).toFloat()
-                val gap = minOf(2.dp.toPx(), (right - left) / 4)
-                drawRoundRect(colors[index], Offset(left + gap / 2, 0f), Size((right - left - gap).coerceAtLeast(0f), size.height), CornerRadius(2.dp.toPx()))
+        Canvas(Modifier.fillMaxWidth().height(10.dp).semantics { contentDescription = hint }) {
+            var left = 0f
+            legs.forEachIndexed { index, _ ->
+                val width = (durations[index] / duration * size.width).toFloat()
+                val gap = minOf(2.dp.toPx(), width / 4)
+                drawRoundRect(colors[index], Offset(left + gap / 2, 0f), Size((width - gap).coerceAtLeast(0f), size.height), CornerRadius(2.dp.toPx()))
+                left += width
             }
         }
     }
@@ -126,7 +130,8 @@ internal fun JourneyDetail(plan: TripPlan, trip: TripItinerary, now: Instant, on
     BackHandler(onBack = onBack)
     val walkColor = MaterialTheme.colorScheme.tertiary
     val waitColor = MaterialTheme.colorScheme.outlineVariant
-    val colors = remember(trip, walkColor) { trip.legs.map { if (it.walking) walkColor else it.route?.let(::lineColor) ?: walkColor } }
+    val legs = remember(trip) { trip.travelLegs() }
+    val colors = remember(legs, walkColor) { legs.map { if (it.walking) walkColor else it.route?.let(::lineColor) ?: walkColor } }
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         TransitPageHeader(stringResource(R.string.planner_steps),onBack)
         LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(start = 16.dp, end = 20.dp, bottom = 24.dp)) {
@@ -136,26 +141,26 @@ internal fun JourneyDetail(plan: TripPlan, trip: TripItinerary, now: Instant, on
                         Text(departureLabel(plan.readyAt), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                         Text("${endpointName(plan.origin)} → ${endpointName(plan.destination)}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                         JourneyBar(trip, plan.readyAt)
-                        Text(stringResource(R.string.planner_duration, minutes(trip.totalSeconds(plan.readyAt))), style = MaterialTheme.typography.titleMedium)
+                        Text(stringResource(R.string.planner_duration, clockMinutes(minOf(plan.readyAt, trip.start), trip.end)), style = MaterialTheme.typography.titleMedium)
                         Text(stringResource(R.string.planner_bar_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         if (trip.start < now.minusSeconds(30)) Text(stringResource(R.string.planner_stale), color = MaterialTheme.colorScheme.error)
                     }
                 }
             }
             val initialWait = Duration.between(plan.readyAt, trip.start).seconds
-            if (initialWait > 0) item(key = "initial-wait", contentType = "wait") {
-                TimelinePoint(trip.legs.first().from, plan.readyAt, plan.readyAt, endpointName(plan.origin), null, waitColor)
+            if (initialWait >= 60 && clockMinutes(plan.readyAt, trip.start) > 0) item(key = "initial-wait", contentType = "wait") {
+                TimelinePoint(legs.first().from, plan.readyAt, plan.readyAt, endpointName(plan.origin), null, waitColor)
                 TimelineRow(waitColor, waitColor) {
-                    Text(stringResource(R.string.planner_wait, minutes(initialWait)), Modifier.padding(vertical = 16.dp),
+                    Text(stringResource(R.string.planner_wait, clockMinutes(plan.readyAt, trip.start)), Modifier.padding(vertical = 16.dp),
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            trip.legs.forEachIndexed { index, leg ->
-                val previous = trip.legs.getOrNull(index - 1)
-                val next = trip.legs.getOrNull(index + 1)
+            legs.forEachIndexed { index, leg ->
+                val previous = legs.getOrNull(index - 1)
+                val next = legs.getOrNull(index + 1)
                 val color = colors[index]
                 val waitAfter = next?.let { Duration.between(leg.end, it.start).seconds } ?: 0L
-                item(key = "from-$index", contentType = "point") {
+                if (!sharedJunction(previous, leg)) item(key = "from-$index", contentType = "point") {
                     TimelinePoint(leg.from, leg.start, trip.start,
                         if (index == 0) endpointName(plan.origin) else leg.from.name,
                         top = if (previous == null) null else if (previous.end < leg.start) waitColor else color, bottom = color)
@@ -166,15 +171,16 @@ internal fun JourneyDetail(plan: TripPlan, trip: TripItinerary, now: Instant, on
                     }
                 }
                 item(key = "to-$index", contentType = "point") {
-                    TimelinePoint(leg.to, leg.end, trip.start,
+                    val point = if (sharedJunction(leg, next)) leg.to.copy(platform = leg.to.platform ?: next?.from?.platform) else leg.to
+                    TimelinePoint(point, leg.end, trip.start,
                         if (next == null) endpointName(plan.destination) else leg.to.name,
                         top = color, bottom = if (next == null) null else if (waitAfter > 0) waitColor else colors[index + 1])
                 }
-                if (waitAfter > 0) item(key = "wait-$index", contentType = "wait") {
+                if (waitAfter >= 60 && next != null && clockMinutes(leg.end, next.start) > 0) item(key = "wait-$index", contentType = "wait") {
                     TimelineRow(waitColor, waitColor) {
                         Row(Modifier.padding(vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Icon(Icons.Rounded.Schedule, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(stringResource(R.string.planner_wait, minutes(waitAfter)), style = MaterialTheme.typography.bodySmall,
+                            Text(stringResource(R.string.planner_wait, clockMinutes(leg.end, next.start)), style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
@@ -185,6 +191,10 @@ internal fun JourneyDetail(plan: TripPlan, trip: TripItinerary, now: Instant, on
         }
     }
 }
+
+/** The arrival and departure are one point when the source identifies the same instant/place. */
+private fun sharedJunction(previous: PlanLeg?, next: PlanLeg?): Boolean = previous != null && next != null &&
+    previous.end == next.start && StopClusters.distanceMeters(previous.to.position, next.from.position) <= 1.0
 
 @Composable
 private fun endpointName(endpoint: PlannerEndpoint) = if (endpoint.id == "current") stringResource(R.string.planner_current) else endpoint.name
@@ -233,7 +243,7 @@ private fun LegDescription(leg: PlanLeg) {
     Column(Modifier.fillMaxWidth().padding(vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         if (leg.walking) {
             Icon(Icons.AutoMirrored.Rounded.DirectionsWalk, null, tint = MaterialTheme.colorScheme.tertiary)
-            Text(stringResource(R.string.planner_walk_detail, minutes(Duration.between(leg.start, leg.end).seconds), leg.distance.roundToInt()),
+            Text(stringResource(R.string.planner_walk_detail, legMinutes(leg.start, leg.end), leg.distance.roundToInt()),
                 style = MaterialTheme.typography.titleSmall)
         } else {
             Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(10.dp)) {
@@ -243,7 +253,7 @@ private fun LegDescription(leg: PlanLeg) {
             }
             leg.route?.let { Text(serviceTypeLabel(it.providerId,it.transportMode),style=MaterialTheme.typography.bodySmall,
                 color=MaterialTheme.colorScheme.onSurfaceVariant) }
-            Text("${stringResource(R.string.ui_minutes_short, minutes(Duration.between(leg.start, leg.end).seconds))} · ${stringResource(if (leg.realtime) R.string.ui_live_arrival else R.string.ui_scheduled)}",
+            Text("${stringResource(R.string.ui_minutes_short, legMinutes(leg.start, leg.end))} · ${stringResource(if (leg.realtime) R.string.ui_live_arrival else R.string.ui_scheduled)}",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (leg.stayOnBoard) Text(stringResource(R.string.planner_stay), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             if (leg.restrictedService) Text(stringResource(R.string.ui_registration_required),

@@ -36,7 +36,7 @@ class PlannerViewModelAtomicResultTest {
     }
 
     @Test
-    fun resultsNeverBecomeProvisional_andOneItineraryPublishedAtomicallyWithPlanningFalse() = runBlocking {
+    fun resultsNeverBecomeProvisional_andPracticalPairPublishedAtomicallyWithPlanningFalse() = runBlocking {
         val origin = PlannerEndpoint("stop:origin", "Origin Stop", "", GeoPoint(47.460, 18.946))
         val destination = PlannerEndpoint("stop:dest", "Destination Stop", "", GeoPoint(47.470, 18.956))
 
@@ -117,14 +117,14 @@ class PlannerViewModelAtomicResultTest {
             }
         }
 
-        // Search must have completed with exactly 1 itinerary and planning = false
+        // Search must have completed with a stable recommendation and backup and planning = false
         val completedState = model.state.value
         assertFalse("Planning must be false upon completion", completedState.planning)
         assertNotNull("Result must be present", completedState.result)
-        assertEquals("Must publish exactly 1 completed itinerary", 1, completedState.result?.itineraries?.size)
+        assertEquals("Must publish the completed recommendation and backup", 2, completedState.result?.itineraries?.size)
         assertEquals("fast-direct", completedState.result?.itineraries?.first()?.id)
 
-        val publishedItinerary = completedState.result!!.itineraries.first()
+        val publishedItineraries = completedState.result!!.itineraries
 
         // Wait for slow candidate / local network / time advance to finish
         delay(1000)
@@ -133,8 +133,8 @@ class PlannerViewModelAtomicResultTest {
         val finalState = model.state.value
         assertFalse("Planning must remain false", finalState.planning)
         assertEquals("Result must remain identical after time advance and late candidate arrival",
-            publishedItinerary, finalState.result?.itineraries?.first())
-        assertEquals("Itinerary count must remain 1", 1, finalState.result?.itineraries?.size)
+            publishedItineraries, finalState.result?.itineraries)
+        assertEquals("Itinerary count must remain 2", 2, finalState.result?.itineraries?.size)
 
         collectJob.cancel()
     }

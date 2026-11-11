@@ -64,7 +64,6 @@ class VehicleMapSceneTest {
         val json = VehicleMapScene.prepare(
             context = app,
             vehicles = listOf(v1, v2),
-            focus = null,
             selectedId = "v2",
             cachedIcons = emptySet(),
             pending = pending,
@@ -114,7 +113,6 @@ class VehicleMapSceneTest {
         val json = VehicleMapScene.prepare(
             context = app,
             vehicles = listOf(metro, hev, bus),
-            focus = null,
             selectedId = null,
             cachedIcons = emptySet(),
             pending = pending,
@@ -158,6 +156,83 @@ class VehicleMapSceneTest {
     }
 
     @Test
+    fun activeTramFocusRetainsAllVehiclesInSourceWithNativeFilterProperties() = runBlocking {
+        val matchingRoute = TransitRoute("bkk:1", "1", "Tram 1", emptyList(), "bkk", transportMode = "TRAM")
+        val matchingTram = vehicle("tram-1", "1", "TRAM", provider = "bkk", routeId = "bkk:1")
+        val nonmatchingBus = vehicle("bus-7", "7", "BUS", provider = "bkk", routeId = "bkk:7")
+        val otherTramRoute = vehicle("tram-2", "2", "TRAM", provider = "bkk", routeId = "bkk:2")
+        val sameNumberOtherProvider = vehicle("bus-1-volan", "1", "BUS", provider = "volan", routeId = "volan:1")
+
+        val focus = LineMapFocus.create(
+            vehicle = matchingTram,
+            boarding = null,
+            routes = listOf(matchingRoute),
+            details = emptyMap(),
+            journey = null,
+            allStops = emptyList(),
+        )
+        val activeFocus = requireNotNull(focus)
+        // Verify focus.includes semantic baseline
+        assertTrue(activeFocus.includes(matchingTram))
+        assertFalse(activeFocus.includes(nonmatchingBus))
+        assertFalse(activeFocus.includes(otherTramRoute))
+        assertFalse(activeFocus.includes(sameNumberOtherProvider))
+
+        val pending = linkedMapOf<String, Bitmap>()
+        val json = VehicleMapScene.prepare(
+            context = app,
+            vehicles = listOf(matchingTram, nonmatchingBus, otherTramRoute, sameNumberOtherProvider),
+            selectedId = matchingTram.id,
+            cachedIcons = emptySet(),
+            pending = pending,
+        )
+
+        try {
+            val collection = FeatureCollection.fromJson(json)
+            assertNotNull(collection)
+            val features = collection.features()!!
+            assertEquals(
+                "Source must retain matching tram, nonmatching bus, other tram route, and same number other provider",
+                4,
+                features.size,
+            )
+
+            val byId = features.associateBy { it.getStringProperty("vehicle-id") }
+            assertTrue("Matching tram must be in source", byId.containsKey("tram-1"))
+            assertTrue("Nonmatching bus must be in source", byId.containsKey("bus-7"))
+            assertTrue("Other tram route must be in source", byId.containsKey("tram-2"))
+            assertTrue("Same number other provider must be in source", byId.containsKey("bus-1-volan"))
+
+            // Verify source properties needed by native layer expressions: provider-id, route-id, route-number, transport-mode
+            val fMatching = byId.getValue("tram-1")
+            assertEquals("bkk", fMatching.getStringProperty("provider-id"))
+            assertEquals("bkk:1", fMatching.getStringProperty("route-id"))
+            assertEquals("1", fMatching.getStringProperty("route-number"))
+            assertEquals("TRAM", fMatching.getStringProperty("transport-mode"))
+
+            val fBus = byId.getValue("bus-7")
+            assertEquals("bkk", fBus.getStringProperty("provider-id"))
+            assertEquals("bkk:7", fBus.getStringProperty("route-id"))
+            assertEquals("7", fBus.getStringProperty("route-number"))
+            assertEquals("BUS", fBus.getStringProperty("transport-mode"))
+
+            val fOtherTram = byId.getValue("tram-2")
+            assertEquals("bkk", fOtherTram.getStringProperty("provider-id"))
+            assertEquals("bkk:2", fOtherTram.getStringProperty("route-id"))
+            assertEquals("2", fOtherTram.getStringProperty("route-number"))
+            assertEquals("TRAM", fOtherTram.getStringProperty("transport-mode"))
+
+            val fVolan = byId.getValue("bus-1-volan")
+            assertEquals("volan", fVolan.getStringProperty("provider-id"))
+            assertEquals("volan:1", fVolan.getStringProperty("route-id"))
+            assertEquals("1", fVolan.getStringProperty("route-number"))
+            assertEquals("BUS", fVolan.getStringProperty("transport-mode"))
+        } finally {
+            pending.values.forEach(Bitmap::recycle)
+        }
+    }
+
+    @Test
     fun focusFilterIncludesOnlyMatchingVehicles() = runBlocking {
         val matchingRoute = TransitRoute("bkk:1", "1", "Tram 1", emptyList(), "bkk", transportMode = "TRAM")
         val selectedVeh = vehicle("v1", "1", "TRAM", routeId = "bkk:1")
@@ -171,13 +246,14 @@ class VehicleMapSceneTest {
             journey = null,
             allStops = emptyList(),
         )
-        assertNotNull(focus)
+        val activeFocus = requireNotNull(focus)
+        assertTrue(activeFocus.includes(selectedVeh))
+        assertFalse(activeFocus.includes(otherVeh))
 
         val pending = linkedMapOf<String, Bitmap>()
         val json = VehicleMapScene.prepare(
             context = app,
             vehicles = listOf(selectedVeh, otherVeh),
-            focus = focus,
             selectedId = selectedVeh.id,
             cachedIcons = emptySet(),
             pending = pending,
@@ -185,10 +261,88 @@ class VehicleMapSceneTest {
 
         try {
             val features = FeatureCollection.fromJson(json).features()!!
-            assertEquals("Focus filter should only include matching vehicle", 1, features.size)
-            assertEquals("v1", features.single().getStringProperty("vehicle-id"))
+            assertEquals("Source retains all vehicles regardless of focus", 2, features.size)
+            val ids = features.map { it.getStringProperty("vehicle-id") }.toSet()
+            assertEquals(setOf("v1", "v2"), ids)
         } finally {
             pending.values.forEach(Bitmap::recycle)
+        }
+    }
+
+    @Test
+    fun focusLifecycleTransitionsFromFocusToNullAndRestoresAllVehicles() = runBlocking {
+        val biatorbagyRoute = TransitRoute("volan:hkir:762", "762", "Budapest–Biatorbágy", emptyList(), "volan", transportMode = "BUS")
+        val biatorbagyVeh = vehicle("v-biatorbagy", "762", "BUS", provider = "volan", lat = 47.46, lon = 18.90, routeId = "volan:hkir:762")
+        val budapestVeh = vehicle("v-budapest", "1", "TRAM", provider = "bkk", lat = 47.49, lon = 19.04, routeId = "bkk:1")
+
+        val focus = LineMapFocus.create(
+            vehicle = biatorbagyVeh,
+            boarding = null,
+            routes = listOf(biatorbagyRoute),
+            details = emptyMap(),
+            journey = null,
+            allStops = emptyList(),
+        )
+        assertNotNull(focus)
+
+        val pending1 = linkedMapOf<String, Bitmap>()
+        try {
+            // 1. Active highlight: source retains all vehicles (layer filter handles visibility independently)
+            val jsonFocus = VehicleMapScene.prepare(
+                context = app,
+                vehicles = listOf(biatorbagyVeh, budapestVeh),
+                selectedId = biatorbagyVeh.id,
+                cachedIcons = emptySet(),
+                pending = pending1,
+            )
+            val featuresFocus = FeatureCollection.fromJson(jsonFocus).features()!!
+            assertEquals("Active highlight retains all vehicles in source", 2, featuresFocus.size)
+            val focusIds = featuresFocus.map { it.getStringProperty("vehicle-id") }.toSet()
+            assertEquals(setOf("v-biatorbagy", "v-budapest"), focusIds)
+
+            // 2. Focus cleared (focus = null) with same incoming vehicle list: all vehicles are restored unfiltered
+            val pending2 = linkedMapOf<String, Bitmap>()
+            try {
+                val jsonCleared = VehicleMapScene.prepare(
+                    context = app,
+                    vehicles = listOf(biatorbagyVeh, budapestVeh),
+                    selectedId = null,
+                    cachedIcons = pending1.keys.toSet(),
+                    pending = pending2,
+                )
+                val featuresCleared = FeatureCollection.fromJson(jsonCleared).features()!!
+                assertEquals("Clearing focus must restore all vehicles with same incoming list", 2, featuresCleared.size)
+                val restoredIds = featuresCleared.map { it.getStringProperty("vehicle-id") }.toSet()
+                assertTrue(restoredIds.contains("v-biatorbagy"))
+                assertTrue(restoredIds.contains("v-budapest"))
+            } finally {
+                pending2.values.forEach(Bitmap::recycle)
+            }
+
+            // 3. New Budapest snapshot with focus = null: all new Budapest vehicles are prepared
+            val budapestSnapshot = listOf(
+                vehicle("v-bkk-4", "4", "TRAM", provider = "bkk", lat = 47.50, lon = 19.05, routeId = "bkk:4"),
+                vehicle("v-bkk-6", "6", "TRAM", provider = "bkk", lat = 47.51, lon = 19.06, routeId = "bkk:6"),
+            )
+            val pending3 = linkedMapOf<String, Bitmap>()
+            try {
+                val jsonBudapest = VehicleMapScene.prepare(
+                    context = app,
+                    vehicles = budapestSnapshot,
+                    selectedId = null,
+                    cachedIcons = pending1.keys.toSet(),
+                    pending = pending3,
+                )
+                val featuresBudapest = FeatureCollection.fromJson(jsonBudapest).features()!!
+                assertEquals("Unfiltered prepare must contain all new Budapest snapshot vehicles", 2, featuresBudapest.size)
+                val budapestIds = featuresBudapest.map { it.getStringProperty("vehicle-id") }.toSet()
+                assertTrue(budapestIds.contains("v-bkk-4"))
+                assertTrue(budapestIds.contains("v-bkk-6"))
+            } finally {
+                pending3.values.forEach(Bitmap::recycle)
+            }
+        } finally {
+            pending1.values.forEach(Bitmap::recycle)
         }
     }
 
@@ -202,7 +356,6 @@ class VehicleMapSceneTest {
         val json1 = VehicleMapScene.prepare(
             context = app,
             vehicles = listOf(bus1, bus2),
-            focus = null,
             selectedId = null,
             cachedIcons = emptySet(),
             pending = pending,
@@ -220,7 +373,6 @@ class VehicleMapSceneTest {
             val json2 = VehicleMapScene.prepare(
                 context = app,
                 vehicles = listOf(bus1, bus2),
-                focus = null,
                 selectedId = null,
                 cachedIcons = cached,
                 pending = pending2,
@@ -247,7 +399,6 @@ class VehicleMapSceneTest {
                 VehicleMapScene.prepare(
                     context = app,
                     vehicles = vehicles,
-                    focus = null,
                     selectedId = null,
                     cachedIcons = emptySet(),
                     pending = pending,
@@ -281,7 +432,6 @@ class VehicleMapSceneTest {
         val json = VehicleMapScene.prepare(
             context = app,
             vehicles = listOf(homm, kanyargo, viabusz),
-            focus = null,
             selectedId = null,
             cachedIcons = emptySet(),
             pending = pending,

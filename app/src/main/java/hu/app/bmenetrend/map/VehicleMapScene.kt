@@ -15,12 +15,11 @@ import kotlinx.coroutines.ensureActive
 /** Camera-independent vehicle data. MapLibre handles visibility and size during gestures. */
 internal object VehicleMapScene {
     const val SOURCE = "live-vehicles"
-    val layers = arrayOf("vehicle-symbols", "vehicle-dots-rail", "vehicle-dots-road")
+    val layers = arrayOf(VehicleLayers.SYMBOLS, VehicleLayers.RAIL_DOTS, VehicleLayers.ROAD_DOTS)
 
     suspend fun prepare(
         context: Context,
         vehicles: List<Vehicle>,
-        focus: LineMapFocus?,
         selectedId: String?,
         cachedIcons: Set<String>,
         pending: MutableMap<String, Bitmap>,
@@ -30,7 +29,6 @@ internal object VehicleMapScene {
         var first = true
         for (vehicle in vehicles) {
             currentCoroutineContext().ensureActive()
-            if (focus != null && !focus.includes(vehicle)) continue
             val marker = VehicleMarkerStyle.forVehicle(vehicle)
             val metro = MetroLineStyle.forLine(vehicle.routeNumber, vehicle.transportMode)
             val hev = HevLineStyle.forLine(vehicle.routeNumber, vehicle.transportMode)
@@ -53,6 +51,10 @@ internal object VehicleMapScene {
             first = false
             json.append("{\"type\":\"Feature\",\"geometry\":{\"type\":\"Point\",\"coordinates\":[")
                 .append(lon).append(',').append(lat).append("]},\"properties\":{\"vehicle-id\":").appendJsonString(vehicle.id)
+                .append(",\"provider-id\":").appendJsonString(vehicle.providerId)
+                .append(",\"route-id\":").appendJsonString(vehicle.routeId.orEmpty())
+                .append(",\"route-number\":").appendJsonString(vehicle.routeNumber.orEmpty())
+                .append(",\"transport-mode\":").appendJsonString(vehicle.transportMode.orEmpty())
                 .append(",\"icon\":").appendJsonString(key)
                 .append(",\"dot\":").appendJsonString(dot)
                 .append(",\"rail\":").append(RailSupport.isTrain(vehicle.transportMode))

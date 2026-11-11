@@ -50,6 +50,7 @@ internal fun CategorizedSearch(
     onPlace: (PlaceResult) -> Unit,
     onSearchPlaces: (String, Boolean) -> Unit,
     onQueryChanged: (String) -> Unit = {},
+    vehicles: () -> List<Vehicle> = { emptyList() },
     buildStopIndex: suspend (List<TransitStop>, List<TransitStop>) -> List<TransitSearch.StopEntry> = ::buildSearchStopIndex,
 ) {
     val parsed = remember(query) { TransitSearch.query(query) }
@@ -69,9 +70,13 @@ internal fun CategorizedSearch(
     }
     // Loaded vehicles first; BKK search adds matching vehicles outside the loaded map area.
     val remoteVehicles = state.remoteVehicles.takeIf { it.query == query }?.vehicles.orEmpty()
-    val vehicleMatches by produceState(SearchMatches<Vehicle>(), parsed, state.vehicles, remoteVehicles) {
+    // Sampled when the query changes (or the first positions arrive), not observed: re-scoring every live
+    // position tick would churn the list.
+    val vehiclesLoaded by remember(vehicles) { derivedStateOf { vehicles().isNotEmpty() } }
+    val vehicleMatches by produceState(SearchMatches<Vehicle>(), parsed, remoteVehicles, vehiclesLoaded) {
+        val loadedVehicles = vehicles()
         value = if (parsed.text.isBlank()) SearchMatches(parsed.text) else withContext(Dispatchers.Default) {
-            val loaded = TransitSearch.vehicles(state.vehicles, parsed)
+            val loaded = TransitSearch.vehicles(loadedVehicles, parsed)
             val ids = loaded.mapTo(HashSet()) { it.id }
             SearchMatches(parsed.text, loaded + remoteVehicles.filter { it.id !in ids })
         }

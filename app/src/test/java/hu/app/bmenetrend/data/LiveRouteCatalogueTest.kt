@@ -20,6 +20,16 @@ import kotlin.random.Random
  */
 class LiveRouteCatalogueTest {
 
+    @Test
+    fun identicalVehicleAndSourceInstancesReuseResult() {
+        val catalogue = LiveRouteCatalogue()
+        val vehicles = listOf(vehicle(1, routeId = "live:1"))
+        val routes = listOf(route("base", "Base"))
+        val first = catalogue.update(vehicles, routes, noLineRoutes, noBundledRoutes)
+        assertEquals(listOf("base", "live:1"), first.map { it.id })
+        assertSame(first, catalogue.update(vehicles, routes, noLineRoutes, noBundledRoutes))
+    }
+
     private val now = Instant.parse("2026-11-01T10:00:00Z")
 
     private fun route(id: String, name: String, number: String = id, provider: String = "bkk") = TransitRoute(

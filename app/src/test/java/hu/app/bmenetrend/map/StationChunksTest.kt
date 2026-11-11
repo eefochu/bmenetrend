@@ -19,10 +19,10 @@ class StationChunksTest {
         assertEquals(points.take(2).toSet(),index.query(window).toSet())
     }
     @Test fun chunkTiersPreserveRestoredStationZoomThresholds() {
-        for (zoom in listOf(7.0,8.99,9.0,11.99,12.0,13.99,14.0,17.0)) {
-            val sampled=StationWindow.around(bounds,zoom).zoom
-            for (mode in listOf("BUS","RAIL","SUBWAY","TRAM"))
-                assertEquals(TransitMapVisibility.stop(mode,zoom),TransitMapVisibility.stop(mode,sampled))
+        for (zoom in listOf(7.0, 8.99, 9.0, 11.99, 12.0, 12.99, 14.0, 17.0)) {
+            val sampled = StationWindow.around(bounds, zoom).zoom
+            for (mode in listOf("BUS", "RAIL", "SUBWAY", "TRAM"))
+                assertEquals(TransitMapVisibility.stop(mode, zoom), TransitMapVisibility.stop(mode, sampled))
         }
     }
     @Test fun broadAndNegativeCoordinateQueriesMatchBruteForceWithoutDuplicates() {

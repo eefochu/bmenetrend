@@ -80,7 +80,7 @@ fun SettingsPage(
                 Surface(shape = TransitDesign.groupShape, color = MaterialTheme.colorScheme.surfaceContainerLowest) {
                     Column(Modifier.fillMaxWidth().padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Row(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            MapStyle.entries.forEach { style ->
+                            MapStyle.entries.filter { it != MapStyle.GOOGLE || hu.app.bmenetrend.BuildConfig.GOOGLE_MAPS_CONFIGURED }.forEach { style ->
                                 val selected = state.mapStyle == style
                                 Surface(Modifier.weight(1f), shape = TransitDesign.controlShape,
                                     color = if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent) {

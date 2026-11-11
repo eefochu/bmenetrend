@@ -13,7 +13,7 @@ object RailSupport {
         val short = clean(shortName)
         val long = clean(longName)
         if (long != null && line.matches(long)) return long.replace(" ", "").uppercase(java.util.Locale.ROOT)
-        if (short != null && short.matches(Regex("[A-Za-z0-9][A-Za-z0-9 .-]{0,14}"))) return short
+        if (short != null && short.matches(TextPatterns.SHORT_TRAIN_NAME)) return short
         val prefix = long?.substringBefore(' ')?.takeIf { it.length in 1..8 && it.any(Char::isLetterOrDigit) } ?: return "?"
         return if (prefix.lowercase(java.util.Locale.ROOT) in setOf("ic", "ir", "ec", "en", "rj", "rjx", "ex")) prefix.uppercase(java.util.Locale.ROOT) else prefix
     }
@@ -23,7 +23,7 @@ object RailSupport {
     fun isTrainDeparture(routeNumber: String, serviceName: String?): Boolean {
         val cleanService = serviceName?.trim()?.uppercase(java.util.Locale.ROOT).orEmpty()
         val cleanNum = routeNumber.trim().uppercase(java.util.Locale.ROOT)
-        return cleanNum.matches(Regex("^[GSZgsz]\\d+.*")) ||
+        return cleanNum.matches(TextPatterns.RAIL_LINE_NUMBER) ||
                cleanNum in setOf("S", "SZ", "G", "GY", "Z", "IC", "IR", "RJ", "RJX", "EC", "EN", "EX") ||
                listOf("INTERCITY", "RAILJET", "EUROCITY", "EURONIGHT", "EXPRESSZ", "GYORS", "SZEMÉLY", "ZÓNÁZÓ", "GYORSÍTOTT", "INTERRÉGIÓ", "INTERREGIO", "VONAT").any { cleanService.contains(it) }
     }
@@ -33,7 +33,7 @@ object RailSupport {
         val cleanService = serviceName?.trim()?.uppercase(java.util.Locale.ROOT).orEmpty()
         val numUpper = cleanNum.uppercase(java.util.Locale.ROOT)
         return when {
-            cleanNum.matches(Regex("^[GSZgsz]\\d+.*")) -> cleanNum.uppercase(java.util.Locale.ROOT)
+            cleanNum.matches(TextPatterns.RAIL_LINE_NUMBER) -> cleanNum.uppercase(java.util.Locale.ROOT)
             numUpper.startsWith("IR") && cleanNum.any { it.isDigit() } -> cleanNum.uppercase(java.util.Locale.ROOT)
             cleanService.contains("INTERCITY") || numUpper == "IC" -> "IC"
             cleanService.contains("INTERRÉGIÓ") || cleanService.contains("INTERREGIO") || numUpper == "IR" -> "IR"

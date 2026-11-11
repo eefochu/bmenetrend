@@ -34,6 +34,8 @@ internal object TransitLineLogo {
     }
 
     /** Decode near display resolution; reuse the small raster across rows and screens. */
+    fun cached(logo: Logo, height: Int): Bitmap? = cache.get(Key(logo, height))
+
     fun render(context: Context, logo: Logo, height: Int): Bitmap {
         val key = Key(logo, height)
         cache.get(key)?.let { return it }

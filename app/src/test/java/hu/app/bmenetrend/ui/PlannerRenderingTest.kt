@@ -69,6 +69,60 @@ class PlannerRenderingTest {
         compose.setContent { ViaBuszTheme { JourneyDetail(plan,plan.itineraries.single(),plan.readyAt) {} } }
         compose.onAllNodesWithText("Az út lépései").assertCountEquals(1)
     }
+    @Test fun walkingPausesAreWaitingAndNeverLabelledAsBoarding() {
+        val app = ApplicationProvider.getApplicationContext<android.app.Application>()
+        val ready = Instant.parse("2026-11-11T07:00:00Z")
+        val point = PlanPoint("Walk point", GeoPoint(47.5,19.0))
+        val walk1 = PlanLeg("WALK", ready.plusSeconds(60), ready.plusSeconds(120),70.0,
+            point,point,null,null,false,false,emptyList())
+        val walk2 = walk1.copy(start=ready.plusSeconds(240),end=ready.plusSeconds(300),distance=140.0)
+        val trip = TripItinerary("walking",walk1.start,walk2.end,listOf(walk1,walk2))
+        val endpoint = PlannerEndpoint("a","Walk point","",point.position)
+        val plan = TripPlan(endpoint,endpoint,ready,ready,listOf(trip))
+        compose.setContent { ViaBuszTheme { JourneyDetail(plan,trip,ready) {} } }
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText(app.getString(R.string.planner_wait,2)))
+        compose.onNodeWithText(app.getString(R.string.planner_wait,2)).assertIsDisplayed()
+        compose.onAllNodesWithText("felszáll",substring=true,ignoreCase=true).assertCountEquals(0)
+        org.junit.Assert.assertEquals(120L,trip.walkSeconds)
+        org.junit.Assert.assertEquals(0,trip.transfers)
+    }
+    @Test fun cardUsesWalkingIconsWithoutWalkingText() {
+        val plan = plan()
+        compose.setContent { ViaBuszTheme { ItineraryCard(plan.itineraries.single(),true,plan.readyAt) {} } }
+        compose.onAllNodesWithText("Gyaloglás",substring=true).assertCountEquals(0)
+        compose.onAllNodesWithText("762").assertCountEquals(1)
+    }
+    @Test fun contiguousWalkingFragmentsRenderAsOneDetailedStep() {
+        val app = ApplicationProvider.getApplicationContext<android.app.Application>()
+        val ready = Instant.parse("2026-11-11T07:00:00Z")
+        val point = PlanPoint("Walk point",GeoPoint(47.5,19.0))
+        val walk1 = PlanLeg("WALK",ready,ready.plusSeconds(60),70.0,point,point,null,null,false,false,emptyList())
+        val walk2 = walk1.copy(start=walk1.end,end=walk1.end.plusSeconds(60),distance=70.0)
+        val trip = TripItinerary("walking",ready,walk2.end,listOf(walk1,walk2))
+        val endpoint = PlannerEndpoint("a",point.name,"",point.position)
+        val plan = TripPlan(endpoint,endpoint,ready,ready,listOf(trip))
+        compose.setContent { ViaBuszTheme { JourneyDetail(plan,trip,ready) {} } }
+        val combined = app.getString(R.string.planner_walk_detail,2,140)
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText(combined))
+        compose.onNodeWithText(combined).assertIsDisplayed()
+        compose.onAllNodesWithText(app.getString(R.string.planner_walk_detail,1,70)).assertCountEquals(0)
+    }
+    @Test fun tinyPauseIsNotOneMinuteWaitAndSharedStationIsShownOnce() {
+        val app = ApplicationProvider.getApplicationContext<android.app.Application>()
+        val ready = Instant.parse("2026-11-11T07:00:00Z")
+        val origin = PlanPoint("Origin",GeoPoint(47.5,19.0))
+        val station = PlanPoint("Shared station",GeoPoint(47.501,19.0),"1")
+        val end = PlanPoint("Destination",GeoPoint(47.52,19.0))
+        val walk = PlanLeg("WALK",ready.plusSeconds(1),ready.plusSeconds(120),100.0,origin,station,null,null,false,false,emptyList())
+        val metro = PlanLeg("SUBWAY",walk.end,walk.end.plusSeconds(600),3000.0,station,end,
+            TransitRoute("m4","M4","Metro",emptyList(),"bkk",transportMode="SUBWAY"),end.name,false,false,emptyList())
+        val trip = TripItinerary("walk-metro",walk.start,metro.end,listOf(walk,metro))
+        val plan = TripPlan(PlannerEndpoint("a",origin.name,"",origin.position),PlannerEndpoint("b",end.name,"",end.position),ready,ready,listOf(trip))
+        compose.setContent { ViaBuszTheme { JourneyDetail(plan,trip,ready) {} } }
+        compose.onAllNodesWithText(app.getString(R.string.planner_wait,1)).assertCountEquals(0)
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("Shared station"))
+        compose.onAllNodesWithText("Shared station").assertCountEquals(1)
+    }
     @Test fun trainMetroAndLocalAlternativesCanReplaceEachOtherOnAndroid11() {
         val text = javaClass.getResource("/planner/biatorbagy-keleti.json")!!.readText()
         val row = JSONObject(text).getJSONObject("data").getJSONObject("plan").getJSONArray("itineraries").getJSONObject(0)
@@ -85,7 +139,7 @@ class PlannerRenderingTest {
         }
         compose.onAllNodesWithText("288", useUnmergedTree = true).assertCountEquals(2)
     }
-    @Test fun pressingRouteSearchPublishesProgressAndRendersResultsWithoutCrashing() {
+    @Test fun pressingRouteSearchPublishesStableThreeChoicesAndRendersResultsWithoutCrashing() {
         val sample = plan()
         val backend = object : PlannerBackend {
             override suspend fun routes(from:PlannerEndpoint,to:PlannerEndpoint,ready:Instant,busesOnly:Boolean):List<TripItinerary> {
@@ -111,7 +165,9 @@ class PlannerRenderingTest {
         compose.onNodeWithText(app.getString(R.string.planner_find)).performClick()
         compose.waitUntil(10_000) { !model.state.value.planning }
         org.junit.Assert.assertTrue(model.state.value.toString(),model.state.value.result?.itineraries?.isNotEmpty() == true)
-        org.junit.Assert.assertEquals(1,model.state.value.result!!.itineraries.size)
+        // Distinct lines share timing, walking and transfers: no card is 300 s later,
+        // so three choices survive the cap.
+        org.junit.Assert.assertEquals(3,model.state.value.result!!.itineraries.size)
         compose.onNode(hasScrollAction()).performScrollToNode(hasText("287-0"))
         compose.onNodeWithText("287-0").assertIsDisplayed()
         compose.onNode(hasScrollAction()).performScrollToNode(hasText(app.getString(R.string.planner_source)))

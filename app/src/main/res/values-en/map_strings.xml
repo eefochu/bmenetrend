@@ -20,4 +20,5 @@
     <string name="map_credits_title">Map sources and licences</string>
     <string name="map_credits_data">Map data © OpenStreetMap contributors, ODbL 1.0. Online tiles: OpenFreeMap, OpenMapTiles schema (CC BY 4.0). Offline extract: Geofabrik, 2026-10-25. Renderer: MapLibre Native (BSD 2-Clause).</string>
     <string name="map_info">Map info</string>
+    <string name="map_style_google">Google Maps</string>
 </resources>

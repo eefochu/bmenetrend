@@ -25,6 +25,11 @@ internal interface PlannerBackend {
     suspend fun routes(from: PlannerEndpoint, to: PlannerEndpoint, ready: Instant, busesOnly: Boolean = false): List<TripItinerary>
     suspend fun walking(pairs: List<Pair<PlanPoint, PlanPoint>>, ready: Instant): WalkingResult
     suspend fun stops(bounds: MapBounds): List<TransitStop> = emptyList()
+    /** Like [routes] without slower walk-sparing enrichment: for the many middle segments of combined journeys. */
+    suspend fun plainRoutes(from: PlannerEndpoint, to: PlannerEndpoint, ready: Instant, busesOnly: Boolean = false): List<TripItinerary> =
+        routes(from, to, ready, busesOnly)
+    /** Journeys found by a router told to avoid walking; empty when the source has no such mode. */
+    suspend fun walkAverseRoutes(from: PlannerEndpoint, to: PlannerEndpoint, ready: Instant, busesOnly: Boolean = false): List<TripItinerary> = emptyList()
     fun clearRouteCache() {}
 }
 
@@ -98,10 +103,15 @@ internal class EmmaPlannerBackend(private val client: EmmaGraphqlClient, private
         }
     }
 
-    private suspend fun fetchRoutes(from: PlannerEndpoint, to: PlannerEndpoint, ready: Instant, busesOnly: Boolean): List<TripItinerary> {
+    /** Not shared with [routes]' request cache: it is a different query, asked only after a long-walk answer. */
+    override suspend fun walkAverseRoutes(from: PlannerEndpoint, to: PlannerEndpoint, ready: Instant, busesOnly: Boolean): List<TripItinerary> =
+        budget.request { fetchRoutes(from, to, ready, busesOnly, avoidWalking = true) }
+
+    private suspend fun fetchRoutes(from: PlannerEndpoint, to: PlannerEndpoint, ready: Instant, busesOnly: Boolean,
+                                    avoidWalking: Boolean = false): List<TripItinerary> {
         for (attempt in 0..1) {
             try {
-                val text = client.execute(TripPlanner.query(busesOnly), TripPlanner.variables(from, to, ready))
+                val text = client.execute(TripPlanner.query(busesOnly, avoidWalking), TripPlanner.variables(from, to, ready))
                 return withContext(Dispatchers.Default) { TripPlanner.parse(text, from, to, ready, ready).itineraries }
             } catch (cancelled: CancellationException) { throw cancelled
             } catch (failure: IOException) {

@@ -48,7 +48,6 @@ data class UiState(
     val selectedStopId: String? = null,
     val selectedPlatformIds: Set<String> = emptySet(),
     val departures: List<Departure> = emptyList(),
-    val vehicles: List<Vehicle> = emptyList(),
     val selectedVehicle: Vehicle? = null,
     val trackedVehicle: Vehicle? = null,
     val selectedPlace: PlaceResult? = null,

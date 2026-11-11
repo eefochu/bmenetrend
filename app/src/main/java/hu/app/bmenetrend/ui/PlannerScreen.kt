@@ -57,6 +57,11 @@ import kotlin.math.roundToInt
 
 internal val planClock = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.of("Europe/Budapest"))
 internal fun minutes(seconds: Long) = ceil(seconds / 60.0).toInt().coerceAtLeast(0)
+/** Minutes between two shown HH:mm clocks, so step durations always add up to the times beside them. */
+internal fun clockMinutes(start: java.time.Instant, end: java.time.Instant): Int =
+    java.time.Duration.between(start.truncatedTo(java.time.temporal.ChronoUnit.MINUTES), end.truncatedTo(java.time.temporal.ChronoUnit.MINUTES)).toMinutes().toInt().coerceAtLeast(0)
+/** A movement step is never shown as 0 minutes. */
+internal fun legMinutes(start: java.time.Instant, end: java.time.Instant): Int = clockMinutes(start, end).coerceAtLeast(1)
 
 @Composable
 fun PlannerScreen(
@@ -575,7 +580,7 @@ private fun EndpointField(label: Int, endpoint: PlannerEndpoint?, current: Boole
                 null, tint = MaterialTheme.colorScheme.primary)
             Column(Modifier.weight(1f)) {
                 Text(stringResource(label), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                val platformCode: String? = (if (endpoint?.detail?.matches(Regex("^[A-Z0-9]{1,4}$")) == true) endpoint.detail else null)
+                val platformCode: String? = (if (endpoint?.detail?.matches(hu.app.bmenetrend.data.TextPatterns.PLATFORM_CODE) == true) endpoint.detail else null)
                     ?: hu.app.bmenetrend.data.BkkPlatformIndex.getPlatformCode(endpoint?.id)
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(if (current || endpoint?.id == "current") stringResource(R.string.planner_current)

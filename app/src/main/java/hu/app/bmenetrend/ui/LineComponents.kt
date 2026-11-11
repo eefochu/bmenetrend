@@ -13,7 +13,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import hu.app.bmenetrend.map.HevLineStyle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,7 +59,7 @@ fun lineColor(provider: String, mode: String?, source: String? = null, number: S
     if (number != null && (provider in setOf("mav", "gysev") || mode in setOf("RAIL", "TRAMTRAIN"))) {
         return railLineColor(number)
     }
-    if (mode in setOf("SUBWAY", "SUBURBAN_RAILWAY") && source?.matches(Regex("[a-fA-F0-9]{6}")) == true) return Color((0xFF000000L or source.toLong(16)).toInt())
+    if (mode in setOf("SUBWAY", "SUBURBAN_RAILWAY") && source?.matches(hu.app.bmenetrend.data.TextPatterns.HEX_COLOR) == true) return Color((0xFF000000L or source.toLong(16)).toInt())
     return when (mode) {
         "TRAM" -> Color(0xFFFFD800)
         "TROLLEYBUS" -> Color(0xFFE31B23)
@@ -87,7 +86,7 @@ fun LineBadge(number: String, provider: String, mode: String? = null, sourceColo
         val context = LocalContext.current
         val emblemHeight = uniform?.height ?: 36.dp
         val heightPx = with(LocalDensity.current) { emblemHeight.roundToPx() }
-        val emblem = remember(logo, heightPx) { TransitLineLogo.render(context, logo, heightPx).asImageBitmap() }
+        val emblem = rememberDecodedPainter(logo, heightPx, cached = { TransitLineLogo.cached(logo, heightPx) }) { TransitLineLogo.render(context, logo, heightPx) }
         val description = if (metro != null) stringResource(R.string.metro_line_badge, metro.number)
             else stringResource(R.string.hev_line_badge, requireNotNull(hev).number)
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -99,7 +98,7 @@ fun LineBadge(number: String, provider: String, mode: String? = null, sourceColo
         }
         return
     }
-    val isRail = provider in setOf("mav", "gysev") || mode in setOf("RAIL", "TRAMTRAIN") || (mode == "SUBURBAN_RAILWAY" && number.matches(Regex("^[GSZgsz]\\d.*")))
+    val isRail = provider in setOf("mav", "gysev") || mode in setOf("RAIL", "TRAMTRAIN") || (mode == "SUBURBAN_RAILWAY" && number.matches(hu.app.bmenetrend.data.TextPatterns.RAIL_LINE_NUMBER))
     val color = if (isRail) railLineColor(number) else lineColor(provider, mode, sourceColor, number)
     val textColor = if (isRail) railLineTextColor(number) else badgeTextColor(color)
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
