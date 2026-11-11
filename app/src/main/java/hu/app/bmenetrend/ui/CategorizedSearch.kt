@@ -54,11 +54,11 @@ internal fun CategorizedSearch(
 ) {
     val parsed = remember(query) { TransitSearch.query(query) }
     val searchPlaces = !state.offlineMode && (category == SearchCategory.ALL || category == SearchCategory.PLACES)
-    val localStops = state.network?.stops.orEmpty()
+    val networkStops = state.network?.stops.orEmpty()
     val nationalStops = state.emmaStops
     val routes = remember(state.network?.routes, state.emmaRoutes) { state.routes }
-    val stopIndex by produceState(TransitSearch.getCachedStopIndex(localStops, nationalStops), localStops, nationalStops) {
-        value = buildStopIndex(localStops, nationalStops)
+    val stopIndex by produceState(TransitSearch.getCachedStopIndex(networkStops, nationalStops), networkStops, nationalStops) {
+        value = buildStopIndex(networkStops, nationalStops)
     }
     // Query results belong to their data source, not to the selected tab. Stop
     // indexing and live vehicle updates must not hold up or restart line matching.
@@ -67,9 +67,13 @@ internal fun CategorizedSearch(
             SearchMatches(parsed.text, TransitSearch.routes(routes, parsed))
         }
     }
-    val vehicleMatches by produceState(SearchMatches<Vehicle>(), parsed, state.vehicles) {
+    // Loaded vehicles first; BKK search adds matching vehicles outside the loaded map area.
+    val remoteVehicles = state.remoteVehicles.takeIf { it.query == query }?.vehicles.orEmpty()
+    val vehicleMatches by produceState(SearchMatches<Vehicle>(), parsed, state.vehicles, remoteVehicles) {
         value = if (parsed.text.isBlank()) SearchMatches(parsed.text) else withContext(Dispatchers.Default) {
-            SearchMatches(parsed.text, TransitSearch.vehicles(state.vehicles, parsed))
+            val loaded = TransitSearch.vehicles(state.vehicles, parsed)
+            val ids = loaded.mapTo(HashSet()) { it.id }
+            SearchMatches(parsed.text, loaded + remoteVehicles.filter { it.id !in ids })
         }
     }
     val stopMatches by produceState(StationMatches(), parsed, stopIndex, state.userLocation, state.favorites) {
@@ -87,10 +91,24 @@ internal fun CategorizedSearch(
     val places = if (state.placeQuery == query) state.placeResults else emptyList()
     val matchingRoutes = if (routeMatches.query == parsed.text) routeMatches.items else emptyList()
     val matchingVehicles = if (vehicleMatches.query == parsed.text) vehicleMatches.items else emptyList()
-    val matchingStops = if (stopMatches.query == parsed.text) stopMatches.items else emptyList()
+    val remoteStations = state.remoteStations.takeIf { it.query == query && parsed.modes.isEmpty() }
+    val localStops = if (stopMatches.query == parsed.text) stopMatches.items else emptyList()
+    // BKK's station records lead; the local index only adds stations the remote results do not cover.
+    val matchingStops = remember(localStops, remoteStations) {
+        if (remoteStations == null || remoteStations.stops.isEmpty()) localStops else {
+            val covered = remoteStations.coveredSourceIds
+            val remoteIds = remoteStations.stops.mapTo(HashSet()) { it.id }
+            remoteStations.stops + localStops.filter { stop -> stop.id !in remoteIds &&
+                stop.id.removePrefix("emma:") !in covered && stop.sourceStopIds.none { it in covered } }
+        }
+    }
     val recommendation = stopMatches.recommended.takeIf { stopMatches.query == parsed.text }
     val recommendedId = recommendation?.id.takeIf { category == SearchCategory.ALL || category == SearchCategory.STATIONS }
-    val otherStops = remember(matchingStops, recommendedId) { matchingStops.filter { it.id != recommendedId } }
+    val otherStops = remember(matchingStops, recommendedId) {
+        val recommendedSources = recommendation?.takeIf { recommendedId != null }?.sourceStopIds.orEmpty().toSet()
+        // A remote record for the recommended station's own platforms would repeat the recommendation.
+        matchingStops.filter { it.id != recommendedId && (recommendedSources.isEmpty() || it.sourceStopIds.none(recommendedSources::contains)) }
+    }
     val stopsLoading = stopMatches.query != parsed.text || stopIndex == null
     val routesLoading = routeMatches.query != parsed.text
     val vehiclesLoading = vehicleMatches.query != parsed.text
@@ -143,7 +161,8 @@ internal fun CategorizedSearch(
                 state.stopStatus?.let { status -> item(contentType = "status") { Text(status, Modifier.padding(horizontal = 22.dp, vertical = 8.dp), style = MaterialTheme.typography.bodyMedium) } }
                 val shownStops = otherStops.take(limit)
                 itemsIndexed(shownStops, key = { _, it -> "station-${it.id}" }, contentType = { _, _ -> "station" }) { index, stop ->
-                    StopSearchRow(stop, state, stop.id in state.favorites, onStop, index, shownStops.size)
+                    StopSearchRow(stop, state, stop.id in state.favorites, onStop, index, shownStops.size,
+                        sources = remoteStations?.sources?.get(stop.id).orEmpty())
                 }
                 if (category == SearchCategory.STATIONS && !stopsLoading && state.stopIndexLoaded && matchingStops.isEmpty() && recommendation == null) item(contentType = "empty") { SearchEmpty() }
             }
@@ -196,6 +215,7 @@ internal fun CategorizedSearch(
                     SearchResultCard(vehicle.serviceName ?: vehicle.registration ?: vehicle.id.substringAfterLast(":"),
                         listOfNotNull(vehicle.destination, stringResource(R.string.search_live_vehicle)).joinToString(" · "),
                         { onVehicle(vehicle.id) }, leading = { VehicleServiceBadge(vehicle) },
+                        badge = { VehicleSourceTag(vehicle) },
                         index = if (joined) shownRoutes.size + index else index, count = if (joined) lineGroup else shownVehicles.size)
                 }
                 if (category == SearchCategory.VEHICLES && !routesLoading && !vehiclesLoading && !state.lineCatalogueLoading && matchingRoutes.isEmpty() && matchingVehicles.isEmpty()) item(contentType = "empty") { SearchEmpty() }

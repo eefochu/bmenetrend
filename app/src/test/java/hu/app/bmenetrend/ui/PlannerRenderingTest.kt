@@ -111,11 +111,9 @@ class PlannerRenderingTest {
         compose.onNodeWithText(app.getString(R.string.planner_find)).performClick()
         compose.waitUntil(10_000) { !model.state.value.planning }
         org.junit.Assert.assertTrue(model.state.value.toString(),model.state.value.result?.itineraries?.isNotEmpty() == true)
-        org.junit.Assert.assertEquals(3,model.state.value.result!!.itineraries.size)
-        for(index in 0..2) {
-            compose.onNode(hasScrollAction()).performScrollToNode(hasText("287-$index"))
-            compose.onNodeWithText("287-$index").assertIsDisplayed()
-        }
+        org.junit.Assert.assertEquals(1,model.state.value.result!!.itineraries.size)
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("287-0"))
+        compose.onNodeWithText("287-0").assertIsDisplayed()
         compose.onNode(hasScrollAction()).performScrollToNode(hasText(app.getString(R.string.planner_source)))
         compose.onNodeWithText(app.getString(R.string.planner_source)).assertIsDisplayed()
         compose.onNode(hasScrollAction()).performScrollToNode(hasText("287-0"))

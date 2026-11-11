@@ -11,6 +11,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Protocol
 import okhttp3.Response
@@ -27,6 +28,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowLooper
 import java.io.File
+import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
 
 @RunWith(RobolectricTestRunner::class)
@@ -66,11 +68,33 @@ class TransitViewModelOnlineMapStopsTest {
         .put("data", JSONObject().put("stopsByBbox", JSONArray(stops.toList())))
         .toString()
 
+    private fun emptyBkkRepository(): BkkWorkerRepository {
+        val http = OkHttpClient.Builder().addInterceptor { chain ->
+            Response.Builder()
+                .request(chain.request())
+                .protocol(Protocol.HTTP_1_1)
+                .code(500)
+                .message("Mock Offline")
+                .body("{}".toResponseBody())
+                .build()
+        }.build()
+        return BkkWorkerRepository(
+            BkkWorkerClient(
+                "https://worker.test".toHttpUrl(),
+                http,
+                { Instant.now() },
+                BkkRequestBudget()
+            )
+        )
+    }
+
     private fun injectRepository(viewModel: TransitViewModel, repo: EmmaStopsRepository) {
         models += viewModel
         val field = TransitViewModel::class.java.getDeclaredField("stopsRepository")
         field.isAccessible = true
         field.set(viewModel, repo)
+        val bkkField = TransitViewModel::class.java.getDeclaredField("bkkRepository").apply { isAccessible = true }
+        bkkField.set(viewModel, emptyBkkRepository())
     }
 
     @Test fun prefetchAndIdleShareAnInFlightCoveredArea() = runBlocking {
@@ -165,9 +189,11 @@ class TransitViewModelOnlineMapStopsTest {
             val bounds = MapBounds(19.04, 47.48, 19.06, 47.50)
             viewModel.prefetchMapArea(bounds)
 
-            // Allow coroutine on Main dispatcher to run
-            ShadowLooper.idleMainLooper()
-            delay(100)
+            val deadline = System.currentTimeMillis() + 5_000
+            while (viewModel.state.value.emmaStops.none { it.id == "emma:BKK:early_dot_1" } && System.currentTimeMillis() < deadline) {
+                ShadowLooper.idleMainLooper()
+                delay(10)
+            }
             ShadowLooper.idleMainLooper()
 
             // Map area stops should be published early!

@@ -701,7 +701,12 @@ private fun PlannerSearchResult(endpoint: PlannerEndpoint, location: GeoPoint?, 
             if (endpoint.isStation) StopModeBadge(endpoint.asSearchStop(), emptyList())
             else ShapeIconTile(Icons.Rounded.Place, size = 44.dp, shape = MaterialShapes.Cookie4Sided)
         },
-        badge = { platform?.let { PlatformBadge(it) } },
+        badge = {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                platform?.let { PlatformBadge(it) }
+                SourceTag(setOfNotNull(endpoint.source))
+            }
+        },
         supporting = {
             if (routes.isNotEmpty()) FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 routes.forEach { number ->

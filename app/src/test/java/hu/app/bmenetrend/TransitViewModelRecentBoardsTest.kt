@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.cancel
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Protocol
 import okhttp3.Response
@@ -47,6 +48,26 @@ class TransitViewModelRecentBoardsTest {
     private var activeModel: TransitViewModel? = null
     private val stopId = "emma:1:005501024_0"
     private val stop = TransitStop(stopId, "Budapest-Kelenföld", GeoPoint(47.464, 19.02), emptyList(), "mav")
+
+    private fun emptyBkkRepository(): hu.app.bmenetrend.data.BkkWorkerRepository {
+        val http = OkHttpClient.Builder().addInterceptor { chain ->
+            Response.Builder()
+                .request(chain.request())
+                .protocol(Protocol.HTTP_1_1)
+                .code(500)
+                .message("Mock Offline")
+                .body("{}".toResponseBody())
+                .build()
+        }.build()
+        return hu.app.bmenetrend.data.BkkWorkerRepository(
+            hu.app.bmenetrend.data.BkkWorkerClient(
+                "https://worker.test".toHttpUrl(),
+                http,
+                { Instant.now() },
+                hu.app.bmenetrend.data.BkkRequestBudget()
+            )
+        )
+    }
 
     @Before
     fun setup() {
@@ -107,6 +128,8 @@ class TransitViewModelRecentBoardsTest {
         try {
             val repository = TransitViewModel::class.java.getDeclaredField("stopsRepository").apply { isAccessible = true }
             repository.set(viewModel, EmmaStopsRepository(app, EmmaGraphqlClient(http)))
+            val bkkField = TransitViewModel::class.java.getDeclaredField("bkkRepository").apply { isAccessible = true }
+            bkkField.set(viewModel, emptyBkkRepository())
             awaitUntil { viewModel.state.value.network != null }
             viewModel.setDeparturesVisible(false)
             mutableState(viewModel).update { it.copy(emmaStops = it.emmaStops + stop) }
@@ -140,6 +163,8 @@ class TransitViewModelRecentBoardsTest {
             val field = TransitViewModel::class.java.getDeclaredField("stopsRepository")
             field.isAccessible = true
             field.set(viewModel, EmmaStopsRepository(app, EmmaGraphqlClient(http)))
+            val bkkField = TransitViewModel::class.java.getDeclaredField("bkkRepository").apply { isAccessible = true }
+            bkkField.set(viewModel, emptyBkkRepository())
 
             awaitUntil { viewModel.state.value.network != null }
             mutableState(viewModel).update { it.copy(emmaStops = it.emmaStops + stop, windowMinutes = 120) }

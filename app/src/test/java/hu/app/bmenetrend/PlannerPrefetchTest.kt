@@ -76,12 +76,11 @@ class PlannerPrefetchTest {
             assertEquals(2, calls.get())
             val submitted = testScheduler.currentTime
             model.plan()
-            awaitCondition { model.state.value.result?.itineraries?.isNotEmpty() == true }
+            awaitCondition { model.state.value.result?.itineraries?.isNotEmpty() == true && !model.state.value.planning }
             assertEquals("Submission reuses both prefetched HTTP answers", 2, calls.get())
             assertEquals("No debounce/network timer is added on a warm submission", submitted, testScheduler.currentTime)
-            assertTrue(model.state.value.planning)
+            assertFalse(model.state.value.planning)
             local.complete(Unit)
-            awaitCondition { !model.state.value.planning }
             model.plan(force = true)
             awaitCondition { !model.state.value.planning && calls.get() >= 4 }
             assertEquals(4, calls.get())

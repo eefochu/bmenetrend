@@ -21,6 +21,8 @@ android {
         versionCode = 20
         versionName = "0.5.11"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // Public, keyless BKK-first proxy. The BKK API key exists only as a Worker secret.
+        buildConfigField("String", "BKK_WORKER_URL", "\"https://bmenetrend-bkk-proxy.bmenetrend-backend.workers.dev\"")
     }
     buildFeatures { compose = true; buildConfig = true }
     testBuildType = "development"

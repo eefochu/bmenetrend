@@ -253,7 +253,7 @@ object EmmaStopsParser {
                 realtimeState = time.text("realtimeState"),
                 trainNumber = if (route.providerId == "mav") RailSupport.serviceNumber(trip.text("tripShortName")) else null,
                 serviceName = if (route.providerId == "mav") RailSupport.clean(trip.text("tripShortName")) else null,
-                platformCode = departurePlatform)
+                platformCode = departurePlatform, source = DataSource.EMMA)
         }.distinctBy { listOf(it.routeId, it.directionId, it.expectedAt) }.sortedBy { it.expectedAt }
         return Board(expectedId, departures, catalogue.copy(routes = routes.values.toList()), now, limitReached || groups == null && rows.length() >= BOARD_LIMIT)
     }

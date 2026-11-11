@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="source_bkk">BKK API</string>
+    <string name="source_emma">EMMA</string>
+    <string name="source_mixed">BKK + EMMA</string>
+    <string name="source_bkk_position_emma_details">BKK position · EMMA details</string>
+    <string name="source_age_seconds">%1$s · %2$d s old</string>
+    <string name="source_age_minutes">%1$s · %2$d min old</string>
+    <string name="source_description">Data source: %1$s</string>
+</resources>

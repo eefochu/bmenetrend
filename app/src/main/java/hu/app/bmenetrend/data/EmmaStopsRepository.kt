@@ -69,7 +69,7 @@ class EmmaStopsRepository(context: Context, private val graphql: EmmaGraphqlClie
         }
     }
 
-    data class Lines(val catalogue: EmmaStopsParser.Catalogue,val fetchedAt: Instant,val stale: Boolean=false)
+    data class Lines(val catalogue: EmmaStopsParser.Catalogue,val fetchedAt: Instant,val stale: Boolean=false,val source: DataSource?=null)
     private val lineMemory = object : LinkedHashMap<String, Lines>(16, 0.75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Lines>?): Boolean = size > 64
     }

@@ -14,8 +14,26 @@ import hu.app.bmenetrend.data.PlaceResult
 import hu.app.bmenetrend.data.UpdateChannel
 import hu.app.bmenetrend.data.OtaUpdateInfo
 import hu.app.bmenetrend.data.OfflineStationMetadata
+import hu.app.bmenetrend.data.DataSource
 import java.io.File
 import java.time.Instant
+
+/** Remote station search for [query]: BKK records first, EMMA only for stations BKK lacks. */
+@Immutable
+data class RemoteStationResults(
+    val query: String = "",
+    /** Search-consolidated stations, in BKK's order, then EMMA additions. */
+    val stops: List<TransitStop> = emptyList(),
+    /** Feeds behind each result (by result ID); a consolidated station can combine both. */
+    val sources: Map<String, Set<DataSource>> = emptyMap(),
+) {
+    /** Every source platform the results cover, so local index entries for the same platforms are not repeated. */
+    val coveredSourceIds: Set<String> by lazy(LazyThreadSafetyMode.NONE) { stops.flatMapTo(HashSet()) { it.sourceStopIds + it.id.removePrefix("emma:") } }
+}
+
+/** Live vehicles matching [query] anywhere BKK knows them, not only in the loaded map area. */
+@Immutable
+data class RemoteVehicleResults(val query: String = "", val vehicles: List<Vehicle> = emptyList())
 
 @Immutable
 data class UiState(
@@ -91,6 +109,8 @@ data class UiState(
     val downloadingStationIds: Set<String> = emptySet(),
     val offlineStationTimetables: Map<String, OfflineStationMetadata> = emptyMap(),
     val isOfflineTimetableActive: Boolean = false,
+    val remoteStations: RemoteStationResults = RemoteStationResults(),
+    val remoteVehicles: RemoteVehicleResults = RemoteVehicleResults(),
 ) {
     private val stopCatalogue by lazy(LazyThreadSafetyMode.NONE) {
         TransitCatalogueIndexes.stops(network?.stops.orEmpty(), emmaStops)

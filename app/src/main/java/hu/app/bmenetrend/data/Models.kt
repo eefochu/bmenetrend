@@ -4,6 +4,12 @@ import androidx.compose.runtime.Immutable
 import java.time.Instant
 import java.time.LocalDate
 
+/**
+ * Which feed actually served a result. This is never derived from an operator or provider ID:
+ * EMMA relays BKK's own lines and BKK's API also serves railway data.
+ */
+enum class DataSource { BKK, EMMA }
+
 /** Provider IDs stay stable in source assets; verified shared platforms are merged for display. */
 @Immutable
 data class GeoPoint(val lat: Double, val lon: Double)
@@ -91,6 +97,12 @@ data class Vehicle(
     val serviceName: String? = null,
     val nextStopParentId: String? = null,
     val routeEstimate: VehicleRouteEstimate? = null,
+    /** Feed of [position]/[observedAt]; null for local operator feeds and older constructors. */
+    val positionSource: DataSource? = null,
+    /** Feed of the trip, route, destination and next-stop fields. Differs from [positionSource] for merged trains. */
+    val detailsSource: DataSource? = null,
+    /** BKK's own trip for a train whose [tripId] is EMMA's; tried first for trip details. */
+    val bkkTripId: String? = null,
 ) {
     val displayRouteNumber: String? get() = routeNumber ?: routeEstimate?.number
     val isRouteEstimated: Boolean get() = routeNumber == null && routeEstimate != null
@@ -119,6 +131,8 @@ data class Departure(
     val trainNumber: String? = null,
     val serviceName: String? = null,
     val platformCode: String? = null,
+    /** Feed that served this row; null for local timetables and offline packs. */
+    val source: DataSource? = null,
 ) {
     val isCancelled: Boolean get() = realtimeState == "CANCELED"
     val delayMinutes: Long get() = scheduledAt?.let { java.time.Duration.between(it,expectedAt).toMinutes() } ?: 0L

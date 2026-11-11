@@ -7,8 +7,14 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import java.time.Duration
 import java.time.Instant
 
@@ -16,18 +22,79 @@ import java.time.Instant
 internal class HybridTripPlanner(
     private val backend: PlannerBackend,
     private val worker: CoroutineDispatcher = Dispatchers.Default,
+    private val localSettleMillis: Long = 500,
+    private val searchTimeoutMillis: Long = 10_000,
 ) {
     // Serialize orchestration state while keeping HTTP asynchronous and routing off the UI thread.
     private val dispatcher = worker.limitedParallelism(1)
     private data class Start(val endpoint: PlannerEndpoint, val path: LocalPath?)
     private data class End(val endpoint: PlannerEndpoint, val stop: TransitStop?)
     private data class RemoteKey(val from: GeoPoint, val to: GeoPoint, val time: Instant, val bus: Boolean)
+    private data class Update(val plan: TripPlan? = null, val direct: Boolean = false,
+                              val complete: Boolean = false, val failure: Exception? = null)
 
     suspend fun plan(
         origin: PlannerEndpoint, destination: PlannerEndpoint, requested: Instant, ready: Instant,
         nationalStops: List<TransitStop>, loadNetwork: suspend () -> TransitNetwork,
         localProviders: Set<String> = LocalPlanningService.providerIds,
         onProgress: (TripPlan) -> Unit = {},
+    ): TripPlan = withContext(dispatcher) { coroutineScope {
+        // Candidates stay private until one complete, feasible snapshot is selected. A good
+        // direct answer never waits for walking, local verification or gateway fan-out.
+        val updates = Channel<Update>(Channel.UNLIMITED)
+        val searchJob = launch {
+            try {
+                val complete = search(origin, destination, requested, ready, nationalStops, loadNetwork, localProviders) { plan, direct ->
+                    updates.trySend(Update(plan, direct))
+                }
+                updates.send(Update(complete, complete = true))
+            } catch (cancelled: CancellationException) {
+                updates.close(cancelled)
+                throw cancelled
+            } catch (failure: Exception) { updates.send(Update(complete = true, failure = failure)) }
+        }
+        var best: TripPlan? = null
+        var latest: TripPlan? = null
+        var settle: Deferred<Unit>? = null
+        try {
+            val chosen = withTimeoutOrNull(searchTimeoutMillis) {
+                while (true) {
+                    val update = select<Update?> {
+                        updates.onReceive { it }
+                        settle?.onAwait { null }
+                    } ?: return@withTimeoutOrNull requireNotNull(best)
+                    update.plan?.let { plan ->
+                        latest = plan
+                        TripPlanner.bestTimely(plan.itineraries + best?.itineraries.orEmpty(), ready)?.let { trip ->
+                            best = plan.copy(itineraries = listOf(trip))
+                        }
+                    }
+                    if (best != null && (update.direct || update.complete)) return@withTimeoutOrNull requireNotNull(best)
+                    if (update.complete) {
+                        update.failure?.let { throw it }
+                        return@withTimeoutOrNull requireNotNull(latest).copy(itineraries = emptyList())
+                    }
+                    // Give an in-flight direct answer a brief chance to beat a local-only
+                    // candidate. Start this timer once; gateway updates cannot prolong it.
+                    if (best != null && settle == null) settle = async { delay(localSettleMillis) }
+                }
+                @Suppress("UNREACHABLE_CODE")
+                error("Unreachable")
+            } ?: best?.copy(partial = true) ?: error("Planning services unavailable")
+            // Compatibility callback is a completion notification, never a stream of plans.
+            onProgress(chosen)
+            chosen
+        } finally {
+            settle?.cancelAndJoin()
+            searchJob.cancelAndJoin()
+            updates.close()
+        }
+    } }
+
+    private suspend fun search(
+        origin: PlannerEndpoint, destination: PlannerEndpoint, requested: Instant, ready: Instant,
+        nationalStops: List<TransitStop>, loadNetwork: suspend () -> TransitNetwork,
+        localProviders: Set<String>, onCandidate: (TripPlan, Boolean) -> Unit,
     ): TripPlan = withContext(dispatcher) { coroutineScope {
         val journeys = mutableListOf<TripItinerary>()
         var partial = false
@@ -46,7 +113,7 @@ internal class HybridTripPlanner(
 
         // The independent bus search prevents train-heavy source rankings from hiding Volán.
         val direct = listOf(false, true).map { bus -> async {
-            remote(origin, destination, ready, bus).also { journeys += it; onProgress(result()) }
+            remote(origin, destination, ready, bus).also { journeys += it; onCandidate(result(), true) }
         } }
         if (localProviders.isEmpty()) {
             direct.awaitAll()
@@ -103,7 +170,7 @@ internal class HybridTripPlanner(
         } }
         val reached = withContext(worker) { router.search(seeds, transferLinks) }
         journeys += withContext(worker) { router.finish(reached, egressLinks) }
-        onProgress(result())
+        onCandidate(result(), false)
 
         // Local access/walking does not depend on either national search. Join only when
         // their stop references are needed, so a slow bus/rail query cannot hold it up.
@@ -154,7 +221,7 @@ internal class HybridTripPlanner(
                     }
                     journeys += added
                 }
-                onProgress(result())
+                onCandidate(result(), false)
             } }.awaitAll()
         check(nationalSucceeded || journeys.isNotEmpty()) { "Planning services unavailable" }
         result()

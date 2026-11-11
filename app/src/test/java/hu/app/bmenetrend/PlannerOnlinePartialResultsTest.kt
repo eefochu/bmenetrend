@@ -45,10 +45,12 @@ class PlannerOnlinePartialResultsTest {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         app = ApplicationProvider.getApplicationContext()
         NetworkAccessPolicy.setOffline(app, false)
+        NetworkAccessPolicy.onConnectivityChanged(true)
     }
 
     @After fun cleanup() {
         NetworkAccessPolicy.setOffline(app, false)
+        NetworkAccessPolicy.onConnectivityChanged(true)
         Dispatchers.resetMain()
     }
 
@@ -57,11 +59,13 @@ class PlannerOnlinePartialResultsTest {
         val ready = Instant.now().plusSeconds(10 * 60)
         val origin = PlannerEndpoint("stop:origin", "Budaörs", "", GeoPoint(47.460, 18.946))
         val destination = PlannerEndpoint("stop:destination", "Technikum", "", GeoPoint(47.47959, 18.8091914))
-        val leg = PlanLeg("COACH", ready, ready.plusSeconds(20 * 60), 15_000.0,
+        val departure = ready.plusSeconds(60)
+        val arrival = departure.plusSeconds(20 * 60)
+        val leg = PlanLeg("COACH", departure, arrival, 15_000.0,
             PlanPoint(origin.name, origin.position), PlanPoint(destination.name, destination.position),
             TransitRoute("volan:test", "762", "Volán", emptyList(), "volan", transportMode = "COACH"),
             destination.name, false, false, emptyList())
-        val direct = TripItinerary("fast-national", ready, ready.plusSeconds(20 * 60), listOf(leg))
+        val direct = TripItinerary("fast-national", departure, arrival, listOf(leg))
 
         var endpointCalls = 0
         val backend = object : PlannerBackend {
@@ -93,9 +97,9 @@ class PlannerOnlinePartialResultsTest {
         compose.onNodeWithText(app.getString(R.string.planner_find)).performClick()
 
         try {
-            compose.waitUntil(10_000) { model.state.value.result?.itineraries?.isNotEmpty() == true }
+            compose.waitUntil(10_000) { model.state.value.result?.itineraries?.isNotEmpty() == true && !model.state.value.planning }
             assertTrue("Explicit endpoints must reach the online backend", endpointCalls > 0)
-            assertTrue("The planner is still waiting for local verification, not finished",
+            assertFalse("The planner does not wait for slow local verification when direct route exists",
                 model.state.value.planning)
             compose.onNode(hasScrollAction()).performScrollToNode(hasText("762"))
             compose.onNodeWithText("762").assertIsDisplayed()

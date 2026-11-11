@@ -21,9 +21,11 @@ data class PlannerEndpoint(
     val routeIds: List<String> = emptyList(),
     val providerIds: List<String> = emptyList(),
     val transportMode: String? = null,
+    /** Feed of a station suggestion; null for the local index and geocoded places. */
+    val source: DataSource? = null,
 ) {
     companion object {
-        fun fromStop(stop: TransitStop) = PlannerEndpoint(
+        fun fromStop(stop: TransitStop, source: DataSource? = null) = PlannerEndpoint(
             id = stop.id,
             name = stop.name,
             detail = BkkPlatformIndex.resolve(stop.id, stop.platformCode).orEmpty(),
@@ -33,6 +35,7 @@ data class PlannerEndpoint(
             routeIds = stop.routeIds,
             providerIds = stop.providerIds,
             transportMode = stop.transportMode,
+            source = source,
         )
     }
 }
@@ -45,9 +48,20 @@ data class PlanLeg(
     val realtime: Boolean, val stayOnBoard: Boolean, val stops: List<PlanPoint>,
     val trainNumber: String? = null,
     val restrictedService: Boolean = false,
+    /** Planner that produced this leg; survives local/national joins. Null for local timetables. */
+    val source: DataSource? = null,
+    /** Router provenance for this exact sequence; hybrid joins cannot inherit its slack policy. */
+    val routerJourney: String? = null,
+    val routerPrevious: String? = null,
 ) { val walking: Boolean get() = mode == "WALK" }
 @Immutable
-data class TripItinerary(val id: String, val start: Instant, val end: Instant, val legs: List<PlanLeg>) {
+data class TripItinerary(
+    val id: String, val start: Instant, val end: Instant, val legs: List<PlanLeg>,
+    /** When the source planner answered, if known; a reused answer keeps its original time. */
+    val fetchedAt: Instant? = null,
+) {
+    /** Planners that produced the vehicle legs (walking-only trips report their walking source). */
+    val sources: Set<DataSource> get() = (legs.filterNot { it.walking }.ifEmpty { legs }).mapNotNullTo(LinkedHashSet()) { it.source }
     val durationSeconds: Long get() = Duration.between(start, end).seconds
     val transfers: Int get() = (legs.count { !it.walking && !it.stayOnBoard } - 1).coerceAtLeast(0)
     val walkMeters: Double get() = legs.filter { it.walking }.sumOf { it.distance }
@@ -142,7 +156,8 @@ object TripPlanner {
                     PlanLeg(mode, start, end, distance, point(leg.getJSONObject("from")), point(leg.getJSONObject("to")), route,
                         leg.optJSONObject("trip")?.text("tripHeadsign"), leg.optBoolean("realTime"), leg.optBoolean("interlineWithPreviousLeg"),
                         (0 until (stops?.length() ?: 0)).map { point(stops!!.getJSONObject(it)) },
-                        if (RailSupport.isTrain(mode)) RailSupport.serviceNumber(leg.optJSONObject("trip")?.text("tripShortName")) else null)
+                        if (RailSupport.isTrain(mode)) RailSupport.serviceNumber(leg.optJSONObject("trip")?.text("tripShortName")) else null,
+                        source = DataSource.EMMA)
                 }
                 require(feasible(legs, ready))
                 val start = Instant.ofEpochMilli(row.getLong("startTime")); val end = Instant.ofEpochMilli(row.getLong("endTime"))
@@ -160,27 +175,68 @@ object TripPlanner {
         if (legs.zipWithNext().any { (a,b) -> b.start.isBefore(a.end) }) return false
         var previousTransit: PlanLeg? = null
         var walkingSinceTransit = 0L
+        var previousLeg: PlanLeg? = null
+        var routerChainSinceTransit = false
         for (leg in legs) {
+            val routerLink = routerLink(previousLeg, leg)
             if (leg.walking) {
-                if (previousTransit != null) walkingSinceTransit += Duration.between(leg.start, leg.end).seconds
+                if (previousTransit != null) {
+                    walkingSinceTransit += Duration.between(leg.start, leg.end).seconds
+                    routerChainSinceTransit = routerChainSinceTransit && routerLink
+                }
             } else {
                 if (leg.stayOnBoard && previousTransit == null) return false
                 if (!leg.stayOnBoard) {
                     val previous = previousTransit
-                    if (previous != null && Duration.between(previous.end, leg.start).seconds < walkingSinceTransit + TRANSFER_SECONDS) return false
+                    if (previous != null && Duration.between(previous.end, leg.start).seconds < walkingSinceTransit + TRANSFER_SECONDS &&
+                        !(routerChainSinceTransit && routerLink)) return false
                     if (previous == null) {
-                        val precedingWalk = legs.takeWhile { it !== leg }.lastOrNull()
+                        val precedingWalk = previousLeg?.takeIf { it.walking }
                         val arrived = precedingWalk?.end ?: ready
-                        if (Duration.between(arrived, leg.start).seconds < BOARD_SECONDS) return false
+                        // OTP already computed this walk-to-vehicle connection. Do not add
+                        // another boarding minute after the walk. At-stop and hybrid joins
+                        // retain the normal buffer; times are never shifted to make them fit.
+                        val routedWalk = routerLink && precedingWalk != null && precedingWalk.end > precedingWalk.start
+                        if (Duration.between(arrived, leg.start).seconds < BOARD_SECONDS && !routedWalk) return false
                     }
                 }
                 previousTransit = leg; walkingSinceTransit = 0
+                routerChainSinceTransit = leg.source == DataSource.BKK && leg.routerJourney != null
             }
+            previousLeg = leg
         }
         return true
     }
 
+    internal fun routerLegKey(leg: PlanLeg): String = listOf(leg.mode, leg.start.toEpochMilli(), leg.end.toEpochMilli(),
+        leg.from.position.lat, leg.from.position.lon, leg.to.position.lat, leg.to.position.lon).joinToString(":")
+
+    private fun routerLink(previous: PlanLeg?, next: PlanLeg): Boolean {
+        if (previous == null || previous.source != DataSource.BKK || next.source != DataSource.BKK ||
+            next.routerJourney == null || next.routerJourney != previous.routerJourney ||
+            next.routerPrevious != routerLegKey(previous)) return false
+        val seconds = Duration.between(previous.end, next.start).seconds
+        // A claimed direct router connection still cannot jump between distant points.
+        return seconds >= 0 && StopClusters.distanceMeters(previous.to.position, next.from.position) <= 20.0 + seconds * 2.2
+    }
+
     val order = compareBy<TripItinerary> { it.end }.thenBy { it.walkSeconds }.thenBy { it.transfers }.thenBy { it.walkMeters }.thenBy { it.durationSeconds }.thenBy { it.id }
+
+    /** A leave-at-requested-time suggestion must not wait hours for a later service. */
+    internal fun bestTimely(journeys: List<TripItinerary>, ready: Instant): TripItinerary? = journeys.asSequence()
+        .filter { feasible(it.legs, ready) }
+        .filter { trip ->
+            var arrived = ready
+            trip.legs.all { leg ->
+                // Include waiting before the first walk: OTP may delay that walk until
+                // just before a much later bus. Walking duration itself is not waiting.
+                val acceptable = leg.stayOnBoard || Duration.between(arrived, leg.start).seconds <= MAX_BOARDING_WAIT_SECONDS
+                arrived = leg.end
+                acceptable
+            }
+        }.minWithOrNull(compareBy<TripItinerary> { trip -> trip.legs.any { it.restrictedService } }.then(order))
+
+    private const val MAX_BOARDING_WAIT_SECONDS = 60 * 60L
 
     fun itinerary(legs: List<PlanLeg>, ready: Instant): TripItinerary? {
         if (!feasible(legs, ready)) return null

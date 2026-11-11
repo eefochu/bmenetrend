@@ -64,6 +64,65 @@ class EmmaRouteTest {
         assertTrue(local.matches(departure.copy(routeId = "viabusz:1", directionId = "out")))
         assertFalse(local.matches(departure.copy(routeId = "viabusz:1", directionId = "in")))
     }
+
+    @Test
+    fun boardingFilter_bkkVariantWithoutNumericDirection_comparesDestinationAndRejectsOppositeAndRetainsEmmaPriority() {
+        val stopA = TransitStop("emma:BKK:F00950", "Déli pályaudvar", GeoPoint(47.500, 19.025), listOf("bkk:BKK:5200"), "bkk")
+        val stopB = TransitStop("emma:BKK:F00960", "Örs vezér tere", GeoPoint(47.505, 19.136), listOf("bkk:BKK:5200"), "bkk")
+
+        // 1. BKK metro variant lacking numeric direction (directionId = null, codes = emptySet())
+        val bkkPattern = LinePattern(
+            id = "bkk:BKK_5200_0",
+            codes = emptySet(),
+            headsign = "Örs vezér tere",
+            stops = listOf(stopA, stopB),
+            geometry = emptyList(),
+            directionId = null
+        )
+        val selection = BoardingSelection("bkk:BKK:5200", "Örs vezér tere", bkkPattern)
+
+        // Matching destination name -> matches
+        val matchDep = Departure(
+            routeId = "bkk:BKK:5200",
+            routeNumber = "M2",
+            destination = "Örs vezér tere",
+            stopId = "emma:BKK:F00950",
+            scheduledAt = null,
+            expectedAt = java.time.Instant.EPOCH,
+            kind = ArrivalKind.LIVE
+        )
+        assertTrue(selection.matches(matchDep))
+
+        // Whitespace and case-insensitive matching
+        assertTrue(selection.matches(matchDep.copy(destination = "  örs vezér tere  ")))
+
+        // Opposite direction -> rejected
+        val oppositeDep = matchDep.copy(destination = "Déli pályaudvar")
+        assertFalse("Must not admit opposite direction", selection.matches(oppositeDep))
+
+        // Different route -> rejected
+        assertFalse(selection.matches(matchDep.copy(routeId = "bkk:BKK:OTHER")))
+
+        // 2. EMMA pattern codes retain priority
+        val emmaPattern = LinePattern(
+            id = "emma:pattern1",
+            codes = setOf("BKK:out:1", "BKK:out:2"),
+            headsign = "Örs vezér tere",
+            stops = listOf(stopA, stopB),
+            geometry = emptyList(),
+            directionId = null
+        )
+        val emmaSelection = BoardingSelection("bkk:BKK:5200", "Örs vezér tere", emmaPattern)
+
+        // Matching pattern code -> matches even if destination text differs
+        assertTrue(emmaSelection.matches(matchDep.copy(patternCode = "BKK:out:1", destination = "Something Else")))
+
+        // Wrong pattern code -> rejected even if destination text matches
+        assertFalse(emmaSelection.matches(matchDep.copy(patternCode = "BKK:in:1", destination = "Örs vezér tere")))
+
+        // Missing pattern code on EMMA pattern -> rejected (does not fall through to destination match)
+        assertFalse(emmaSelection.matches(matchDep.copy(patternCode = null, destination = "Örs vezér tere")))
+    }
     @Test fun reversedPatternKeepsStopOrderAndCorrectsAnOppositeHeadsign() {
         val root=response()
         root.getJSONObject("data").getJSONObject("route").getJSONArray("patterns").getJSONObject(2).put("headsign","C")

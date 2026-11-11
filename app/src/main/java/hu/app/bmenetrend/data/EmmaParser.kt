@@ -88,6 +88,7 @@ object EmmaParser {
                 } },
                 trainNumber = if (provider == "mav") RailSupport.serviceNumber(trip?.text("tripShortName")) else null,
                 serviceName = if (provider == "mav") RailSupport.clean(trip?.text("tripShortName")) else null,
+                positionSource = DataSource.EMMA, detailsSource = DataSource.EMMA,
             )
             if (vehicles[vehicle.id]?.observedAt?.let { it >= observed } != true) vehicles[vehicle.id] = vehicle
         }

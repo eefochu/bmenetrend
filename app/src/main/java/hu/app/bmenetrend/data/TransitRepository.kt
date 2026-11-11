@@ -7,18 +7,24 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import okhttp3.Call
+import okhttp3.Callback
 import okhttp3.FormBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.Response
 import java.io.File
 import java.io.IOException
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.TimeUnit
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 /** Public website adapters; no authentication, private endpoints or secret keys. */
-class TransitRepository(context: Context) {
+class TransitRepository(context: Context, httpClient: OkHttpClient? = null) {
     private val appContext = context.applicationContext
     private data class Provider(val id: String, val name: String, val url: String, val caller: String?, val asset: String)
     private val providers = listOf(
@@ -26,7 +32,7 @@ class TransitRepository(context: Context) {
         Provider("kanyargo", "KanyarGO", "https://kanyargo.paty.hu/", "KanyarGo1012", "kanyargo-network.json"),
         Provider("homm", "HOMM", "https://homm.hu/", null, "homm-network.json"),
     )
-    private val client = hu.app.bmenetrend.offline.NetworkAccessPolicy.protect(OkHttpClient.Builder()
+    private val client = hu.app.bmenetrend.offline.NetworkAccessPolicy.protect(httpClient ?: OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS).readTimeout(15, TimeUnit.SECONDS)
         .callTimeout(20, TimeUnit.SECONDS).build())
     private fun message(id: Int, vararg args: Any) = appContext.getString(id, *args)
@@ -150,21 +156,39 @@ class TransitRepository(context: Context) {
         return network.copy(serviceDate = today.takeIf { valid }, providerServiceDates = mapOf(provider.id to today.takeIf { valid }), warning = warning)
     }
 
-    private fun fetchResult(provider: Provider, service: String, extra: Map<String, String> = emptyMap()): Result<String> = try {
+    private suspend fun fetchResult(provider: Provider, service: String, extra: Map<String, String> = emptyMap()): Result<String> = try {
         Result.success(post(provider, "WebServiceConfigurator.php", mapOf("caller" to requireNotNull(provider.caller), "serviceName" to service, "ct" to "data") + extra))
     } catch (failure: IOException) { Result.failure(failure) }
 
-    private fun post(provider: Provider, path: String, values: Map<String, String>): String {
+    private suspend fun post(provider: Provider, path: String, values: Map<String, String>): String {
         val body = FormBody.Builder().apply { values.forEach { (key,value) -> add(key, value) } }.build()
         val request = Request.Builder().url(provider.url + path).header("User-Agent", "BMenetrendAndroid/0.3 (native transit viewer)").post(body).build()
         val text = execute(request).toString(Charsets.UTF_8)
         if (text.isBlank() || text.startsWith("Error;", true)) throw IOException("Provider returned no usable data")
         return text
     }
-    private fun get(provider: Provider, path: String): ByteArray = execute(Request.Builder().url(provider.url + path)
+    private suspend fun get(provider: Provider, path: String): ByteArray = execute(Request.Builder().url(provider.url + path)
         .header("User-Agent", "BMenetrendAndroid/0.3 (native transit viewer)").get().build())
-    private fun execute(request: Request): ByteArray = client.newCall(request).execute().use { response ->
-        if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
-        response.body?.bytes() ?: throw IOException("Empty response")
+    private suspend fun execute(request: Request): ByteArray = suspendCancellableCoroutine { continuation ->
+        val call = client.newCall(request)
+        // Local verification is optional once a direct plan is ready. Cancellation must
+        // close its sockets immediately, rather than waiting for a blocking read timeout.
+        continuation.invokeOnCancellation { call.cancel() }
+        call.enqueue(object : Callback {
+            override fun onFailure(call: Call, error: IOException) {
+                if (continuation.isActive) continuation.resumeWithException(error)
+            }
+            override fun onResponse(call: Call, response: Response) {
+                try {
+                    val bytes = response.use {
+                        if (!it.isSuccessful) throw IOException("HTTP ${it.code}")
+                        it.body?.bytes() ?: throw IOException("Empty response")
+                    }
+                    if (continuation.isActive) continuation.resume(bytes)
+                } catch (error: Exception) {
+                    if (continuation.isActive) continuation.resumeWithException(error)
+                }
+            }
+        })
     }
 }
