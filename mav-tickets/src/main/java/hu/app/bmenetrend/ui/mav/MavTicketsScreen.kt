@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -1060,10 +1061,15 @@ fun MavTicketDetailView(
                 .fillMaxWidth()
                 .aspectRatio(560f / 112f)
         )
+        // The host (MainNavigation) consumes the navigation-bar inset for its bottom tab bar, so
+        // windowInsetsBottomHeight() would resolve to 0 here. Read the raw inset instead so the
+        // system navigation bar gets its own strip below the GIF, like in the official app.
+        val density = LocalDensity.current
+        val navBarHeight = with(density) { WindowInsets.navigationBars.getBottom(density).toDp() }
         Spacer(
             Modifier
                 .fillMaxWidth()
-                .windowInsetsBottomHeight(WindowInsets.navigationBars)
+                .height(navBarHeight)
                 .background(screenBackground)
         )
     }
