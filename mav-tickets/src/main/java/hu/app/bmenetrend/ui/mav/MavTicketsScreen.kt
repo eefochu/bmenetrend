@@ -1,9 +1,14 @@
 package hu.app.bmenetrend.ui.mav
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.pm.ActivityInfo
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.graphics.drawable.AnimatedImageDrawable
 import android.os.Build
+import android.view.WindowManager
 import android.widget.ImageView
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.rememberScrollState
@@ -21,6 +26,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.automirrored.rounded.ReceiptLong
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,6 +39,7 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -846,119 +854,117 @@ fun MavTicketDetailView(
 ) {
     BackHandler(onBack = onDismiss)
     var showInfoDialog by remember { mutableStateOf(false) }
+    TicketDisplayWindowEffect()
 
-    Box(
+    val screenBackground = Color(0xFF0B0B0D)
+    val cardColor = Color(0xFF22242A)
+    val cardShape = RoundedCornerShape(22.dp)
+
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF101012))
+            .background(screenBackground)
+            .statusBarsPadding()
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
+                .weight(1f)
+                .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .padding(bottom = 120.dp)
+                .padding(bottom = 24.dp)
         ) {
-            // 1. Top bar: Back arrow, Title, Info button (i)
+            // 1. Top bar: thin back arrow, title, outlined info button
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 6.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .padding(start = 12.dp, end = 12.dp, top = 20.dp, bottom = 20.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    IconButton(onClick = onDismiss) {
-                        Icon(
-                            Icons.AutoMirrored.Rounded.ArrowBack,
-                            contentDescription = stringResource(R.string.mav_cancel),
-                            tint = Color.White
-                        )
-                    }
-
-                    Text(
-                        text = if (data.isPass) {
-                            stringResource(R.string.mav_pass_info_title)
-                        } else {
-                            stringResource(R.string.mav_ticket_info_title)
-                        },
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
+                IconButton(onClick = onDismiss) {
+                    Icon(
+                        Icons.AutoMirrored.Outlined.ArrowBack,
+                        contentDescription = stringResource(R.string.mav_cancel),
+                        tint = Color.White,
+                        modifier = Modifier.size(26.dp)
                     )
                 }
-
+                Spacer(Modifier.width(16.dp))
+                Text(
+                    text = if (data.isPass) {
+                        stringResource(R.string.mav_pass_info_title)
+                    } else {
+                        stringResource(R.string.mav_ticket_info_title)
+                    },
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
                 IconButton(onClick = { showInfoDialog = true }) {
                     Icon(
-                        Icons.Rounded.Info,
+                        Icons.Outlined.Info,
                         contentDescription = "Információ",
-                        tint = Color(0xFFC0C0C4),
-                        modifier = Modifier.size(26.dp)
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }
 
             Spacer(Modifier.height(8.dp))
 
-            // 2. Passenger Card (Rounded dark card, selfie on left, name & birthdate on right)
+            // 2. Passenger card: square selfie on the left, name & birth date on the right
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(18.dp),
-                color = Color(0xFF1E1F24)
+                    .padding(horizontal = 26.dp),
+                shape = cardShape,
+                color = cardColor
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .padding(horizontal = 13.dp, vertical = 13.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    horizontalArrangement = Arrangement.spacedBy(18.dp)
                 ) {
                     val passengerPhotoBitmap = remember(data.passengerPhotoBase64) { data.toPassengerPhotoBitmap() }
-                    Surface(
-                        modifier = Modifier.size(width = 56.dp, height = 66.dp),
-                        shape = RoundedCornerShape(14.dp),
-                        color = Color(0xFF2C2D32)
+                    val photoShape = RoundedCornerShape(10.dp)
+                    Box(
+                        modifier = Modifier
+                            .size(54.dp)
+                            .clip(photoShape)
+                            .background(Color(0xFF2C2D32)),
+                        contentAlignment = Alignment.Center
                     ) {
                         if (passengerPhotoBitmap != null) {
                             Image(
                                 bitmap = passengerPhotoBitmap.asImageBitmap(),
                                 contentDescription = data.passengerName ?: "Utas fénykép",
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(RoundedCornerShape(14.dp)),
+                                modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop
                             )
                         } else {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Person,
-                                    contentDescription = data.passengerName ?: "Utas fénykép",
-                                    tint = Color(0xFF8E8E93),
-                                    modifier = Modifier.size(32.dp)
-                                )
-                            }
+                            Icon(
+                                imageVector = Icons.Rounded.Person,
+                                contentDescription = data.passengerName ?: "Utas fénykép",
+                                tint = Color(0xFF8E8E93),
+                                modifier = Modifier.size(30.dp)
+                            )
                         }
                     }
 
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.weight(1f)
-                    ) {
+                    Column(modifier = Modifier.weight(1f)) {
                         val passengerName = data.passengerName?.ifBlank { null }
                             ?: data.title
                         Text(
                             text = passengerName,
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            fontWeight = FontWeight.Medium,
+                            color = Color.White,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
 
                         val birthDateStr = remember(data.birthDate) {
@@ -974,29 +980,30 @@ fun MavTicketDetailView(
                         if (!birthDateStr.isNullOrBlank()) {
                             Text(
                                 text = birthDateStr,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color(0xFF9E9EA6)
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium,
+                                color = Color.White
                             )
                         }
                     }
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(28.dp))
 
-            // 3. Middle Ticket / Pass Card
+            // 3. Ticket card: dark rounded frame with the ticket image on a plain white inset
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(16.dp),
-                color = Color.White,
-                shadowElevation = 4.dp
+                    .padding(horizontal = 26.dp),
+                shape = cardShape,
+                color = cardColor
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(8.dp),
+                        .padding(horizontal = 9.dp, vertical = 9.dp)
+                        .background(Color.White),
                     contentAlignment = Alignment.Center
                 ) {
                     when {
@@ -1038,9 +1045,7 @@ fun MavTicketDetailView(
                             Image(
                                 bitmap = data.bitmap.asImageBitmap(),
                                 contentDescription = data.title,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(12.dp)),
+                                modifier = Modifier.fillMaxWidth(),
                                 contentScale = ContentScale.FillWidth
                             )
                         }
@@ -1049,19 +1054,61 @@ fun MavTicketDetailView(
             }
         }
 
-        // 4. Moving train GIF at the bottom
+        // 4. Moving train GIF, sitting directly above the system navigation bar
         AnimatedTrainGif(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(560f / 112f)
-                .align(Alignment.BottomCenter)
         )
+        Spacer(
+            Modifier
+                .fillMaxWidth()
+                .windowInsetsBottomHeight(WindowInsets.navigationBars)
+                .background(screenBackground)
+        )
+    }
 
-        // 5. Info Dialog (Screenshot 2)
-        if (showInfoDialog) {
-            MavValidTicketInfoDialog(onDismiss = { showInfoDialog = false })
+    // 5. Info dialog
+    if (showInfoDialog) {
+        MavValidTicketInfoDialog(onDismiss = { showInfoDialog = false })
+    }
+}
+
+/**
+ * While a ticket is on screen: maximum brightness (so scanners can read the barcode) and portrait
+ * orientation, like the official MÁV app. The previous values are restored when the view closes.
+ */
+@Composable
+private fun TicketDisplayWindowEffect() {
+    val context = LocalContext.current
+    DisposableEffect(context) {
+        val activity = context.findActivity()
+        if (activity == null) {
+            onDispose { }
+        } else {
+            val window = activity.window
+            val previousBrightness = window.attributes.screenBrightness
+            val previousOrientation = activity.requestedOrientation
+
+            window.attributes = window.attributes.apply {
+                screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_FULL
+            }
+            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+
+            onDispose {
+                window.attributes = window.attributes.apply {
+                    screenBrightness = previousBrightness
+                }
+                activity.requestedOrientation = previousOrientation
+            }
         }
     }
+}
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }
 
 @Composable
