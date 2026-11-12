@@ -28,8 +28,8 @@ android {
         buildConfigField("boolean", "GOOGLE_MAPS_CONFIGURED", googleMapsKey.isNotBlank().toString())
         minSdk = 26
         targetSdk = 36
-        versionCode = 20
-        versionName = "0.5.11"
+        versionCode = 21
+        versionName = "0.7.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Public, keyless BKK-first proxy. The BKK API key exists only as a Worker secret.
         buildConfigField("String", "BKK_WORKER_URL", "\"https://bmenetrend-bkk-proxy.bmenetrend-backend.workers.dev\"")
