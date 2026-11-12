@@ -544,4 +544,58 @@ class MavApiClientTest {
         assertEquals("Ticket", image?.kind)
         assertTrue(image?.imageBase64?.isNotEmpty() == true)
     }
+
+    @Test
+    fun getTicketImageWithFinancialDatasStringFetchesFromGetCertificatesImages() = runBlocking {
+        val detailsJson = """
+            {
+                "previousPurchaseDetails": {
+                    "id": "1023744049"
+                },
+                "financialDatas": "eJyLVs3Nz0tPTi0uycxL10vOz81LLSpNTU4t1vdPSk0pS8xNLTJWgABDA6XYWAA1BxE3"
+            }
+        """.trimIndent()
+
+        val certsJson = """
+            {
+                "tiketsAndCertificates": [
+                    {
+                        "isCertificate": true,
+                        "certificateId": "INVOICE-001",
+                        "image": "aW52b2ljZQ=="
+                    },
+                    {
+                        "isCertificate": false,
+                        "certificateId": "5594003G000448895",
+                        "image": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        var certsReqBody = ""
+        val client = createMockClient { req ->
+            if (req.url.encodedPath.contains("GetPreviousPurchaseDetails")) {
+                jsonResponse(req, detailsJson)
+            } else if (req.url.encodedPath.contains("GetCertificatesImages")) {
+                val buf = okio.Buffer()
+                req.body?.writeTo(buf)
+                certsReqBody = buf.readUtf8()
+                jsonResponse(req, certsJson)
+            } else {
+                jsonResponse(req, "{}", 404)
+            }
+        }
+
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
+        val session = MavSession("ilikehacking.py@gmail.com", "user_token_xml_val", "uaid_abc", vimToken = null)
+        val image = api.getTicketImage(session, "1023744049")
+
+        assertNotNull(image)
+        assertEquals("1023744049", image?.receiptId)
+        assertEquals("5594003G000448895", image?.ticketNumber)
+        assertEquals("Ticket", image?.kind)
+        assertTrue(certsReqBody.contains("certificateType") && certsReqBody.contains("Ticket"))
+        assertTrue(certsReqBody.contains("eJyLVs3Nz0tPTi0uycxL10vOz81LLSpNTU4t1vdPSk0pS8xNLTJWgABDA6XYWAA1BxE3"))
+    }
 }

@@ -1019,88 +1019,35 @@ class MavApiClient(
         // 1. Try IK_API_PROD GetPreviousPurchaseDetails and GetCertificatesImages
         if (safeToken.isNotBlank()) {
             val result = runCatching {
-                val detBody = JSONObject().apply {
-                    put("userEmail", session.email)
-                    put("id", receiptId)
-                }.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
+                val cleanId = if (receiptId.contains("#")) receiptId.substringAfterLast("#") else receiptId
+                val idsToTry = if (cleanId != receiptId) listOf(cleanId, receiptId) else listOf(receiptId)
 
-                val detReq = Request.Builder()
-                    .url("https://jegy-a.mav.hu/IK_API_PROD/api/ProfileApi/GetPreviousPurchaseDetails")
-                    .addHeader("Accept", "application/json")
-                    .addHeader("UserSessionId", session.uaid.ifBlank { UUID.randomUUID().toString() })
-                    .addHeader("Content-Type", "application/json; charset=utf-8")
-                    .addHeader("Origin", "https://jegy.mav.hu")
-                    .addHeader("Referer", "https://jegy.mav.hu/")
-                    .addHeader("Language", "hu")
-                    .addHeader("UserTokenXml", safeToken)
-                    .addHeader("Authorization", "Bearer $safeToken")
-                    .addHeader("User-Agent", MAV_APP_USER_AGENT)
-                    .post(detBody)
-                    .build()
+                for (idToTry in idsToTry) {
+                    val detRes = fetchPreviousPurchaseDetails(session, safeToken, idToTry) ?: continue
 
-                val detRes = executeJsonRequest(detReq)
+                    // 1A. Try GetCertificatesImages with financialDatas if present (works without VIM token for all users)
+                    val financialDatas = detRes.opt("financialDatas")
+                        ?: detRes.optJSONObject("previousPurchaseDetails")?.opt("financialDatas")
+                        ?: detRes.optString("financialDatas", "").ifBlank { null }
 
-                // 1A. Try GetCertificatesImages with financialDatas if present (works without VIM token for all users)
-                val financialDatas = detRes.optJSONArray("financialDatas")
-                    ?: detRes.optJSONObject("previousPurchaseDetails")?.optJSONArray("financialDatas")
-                if (financialDatas != null && financialDatas.length() > 0) {
-                    val certResult = runCatching {
-                        val certReqBody = JSONObject().apply {
-                            val reqModel = JSONObject().apply {
-                                put("certificateType", "Ticket")
-                                put("financialDatas", financialDatas)
-                            }
-                            put("requestModel", reqModel)
-                        }.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
+                    if (financialDatas != null && financialDatas != JSONObject.NULL && financialDatas.toString().isNotBlank()) {
+                        val certImg = fetchCertificatesImage(session, safeToken, financialDatas, receiptId)
+                        if (certImg != null) return@runCatching certImg
+                    }
 
-                        val certReq = Request.Builder()
-                            .url("https://jegy-a.mav.hu/IK_API_PROD/api/OrderAndPaymentApi/GetCertificatesImages")
-                            .addHeader("Accept", "application/json")
-                            .addHeader("UserSessionId", session.uaid.ifBlank { UUID.randomUUID().toString() })
-                            .addHeader("Content-Type", "application/json; charset=utf-8")
-                            .addHeader("Origin", "https://jegy.mav.hu")
-                            .addHeader("Referer", "https://jegy.mav.hu/")
-                            .addHeader("Language", "hu")
-                            .addHeader("UserTokenXml", safeToken)
-                            .addHeader("Authorization", "Bearer $safeToken")
-                            .addHeader("User-Agent", MAV_APP_USER_AGENT)
-                            .post(certReqBody)
-                            .build()
-
-                        val certRes = executeJsonRequest(certReq)
-                        val certs = certRes.optJSONArray("tiketsAndCertificates")
-                            ?: certRes.optJSONArray("ticketsAndCertificates")
-                        if (certs != null && certs.length() > 0) {
-                            for (i in 0 until certs.length()) {
-                                val c = certs.optJSONObject(i) ?: continue
-                                val isCert = c.optBoolean("isCertificate", false)
-                                val imgB64 = c.optString("image", "").trim()
-                                if (!isCert && imgB64.isNotEmpty()) {
-                                    val certId = c.optString("certificateId", receiptId)
-                                    return@runCatching MavTicketImage(
-                                        receiptId = receiptId,
-                                        ticketNumber = certId,
-                                        kind = "Ticket",
-                                        imageBase64 = imgB64
-                                    )
-                                }
+                    // 1B. Fallback to ticketDatas with bizonylatTechnikaiAzonosito
+                    val prevDetails = detRes.optJSONObject("previousPurchaseDetails") ?: detRes
+                    val ticketDatas = prevDetails.optJSONArray("ticketDatas")
+                    if (ticketDatas != null && ticketDatas.length() > 0) {
+                        for (i in 0 until ticketDatas.length()) {
+                            val td = ticketDatas.optJSONObject(i) ?: continue
+                            val bizTechId = td.optString("bizonylatTechnikaiAzonosito", "").trim()
+                            val jegySorszam = td.optString("jegySorszam", "").trim().ifBlank { null }
+                            if (bizTechId.isNotBlank()) {
+                                val vimImg = fetchVimTicketImage(session, bizTechId, jegySorszam, receiptId)
+                                if (vimImg != null) return@runCatching vimImg
                             }
                         }
-                        null
-                    }.getOrNull()
-                    if (certResult != null) return@runCatching certResult
-                }
-
-                // 1B. Fallback to ticketDatas with bizonylatTechnikaiAzonosito
-                val prevDetails = detRes.optJSONObject("previousPurchaseDetails") ?: detRes
-                val ticketDatas = prevDetails.optJSONArray("ticketDatas")
-                if (ticketDatas != null && ticketDatas.length() > 0) {
-                    val td = ticketDatas.getJSONObject(0)
-                    val bizTechId = td.optString("bizonylatTechnikaiAzonosito", "").trim()
-                    val jegySorszam = td.optString("jegySorszam", "").trim().ifBlank { null }
-                    if (bizTechId.isNotBlank()) {
-                        val vimImg = fetchVimTicketImage(session, bizTechId, jegySorszam, receiptId)
-                        if (vimImg != null) return@runCatching vimImg
                     }
                 }
 
@@ -1111,6 +1058,122 @@ class MavApiClient(
 
         // 2. Direct / Fallback to VIM GetJegykep
         return fetchVimTicketImage(session, receiptId, null, receiptId)
+    }
+
+    private suspend fun fetchPreviousPurchaseDetails(
+        session: MavSession,
+        safeToken: String,
+        purchaseId: String
+    ): JSONObject? {
+        val baseBuilder = Request.Builder()
+            .url("https://jegy-a.mav.hu/IK_API_PROD/api/ProfileApi/GetPreviousPurchaseDetails")
+            .addHeader("Accept", "application/json")
+            .addHeader("UserSessionId", session.uaid.ifBlank { UUID.randomUUID().toString() })
+            .addHeader("Content-Type", "application/json; charset=utf-8")
+            .addHeader("Origin", "https://jegy.mav.hu")
+            .addHeader("Referer", "https://jegy.mav.hu/")
+            .addHeader("Language", "hu")
+            .addHeader("UserTokenXml", safeToken)
+            .addHeader("Authorization", "Bearer $safeToken")
+            .addHeader("User-Agent", MAV_APP_USER_AGENT)
+
+        val flatBody = JSONObject().apply {
+            put("userEmail", session.email)
+            put("id", purchaseId)
+        }.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
+
+        var res = runCatching { executeJsonRequest(baseBuilder.post(flatBody).build()) }.getOrNull()
+
+        if (res == null || (res.optJSONObject("previousPurchaseDetails") == null && res.opt("financialDatas") == null)) {
+            val wrappedBody = JSONObject().apply {
+                val reqModel = JSONObject().apply {
+                    put("userEmail", session.email)
+                    put("id", purchaseId)
+                }
+                put("requestModel", reqModel)
+            }.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
+
+            val wrappedRes = runCatching { executeJsonRequest(baseBuilder.post(wrappedBody).build()) }.getOrNull()
+            if (wrappedRes != null) res = wrappedRes
+        }
+
+        return res
+    }
+
+    private suspend fun fetchCertificatesImage(
+        session: MavSession,
+        safeToken: String,
+        financialDatas: Any,
+        originalReceiptId: String
+    ): MavTicketImage? {
+        val baseBuilder = Request.Builder()
+            .url("https://jegy-a.mav.hu/IK_API_PROD/api/OrderAndPaymentApi/GetCertificatesImages")
+            .addHeader("Accept", "application/json")
+            .addHeader("UserSessionId", session.uaid.ifBlank { UUID.randomUUID().toString() })
+            .addHeader("Content-Type", "application/json; charset=utf-8")
+            .addHeader("Origin", "https://jegy.mav.hu")
+            .addHeader("Referer", "https://jegy.mav.hu/")
+            .addHeader("Language", "hu")
+            .addHeader("UserTokenXml", safeToken)
+            .addHeader("Authorization", "Bearer $safeToken")
+            .addHeader("User-Agent", MAV_APP_USER_AGENT)
+
+        val flatBody = JSONObject().apply {
+            put("certificateType", "Ticket")
+            put("financialDatas", financialDatas)
+        }.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
+
+        var certRes = runCatching { executeJsonRequest(baseBuilder.post(flatBody).build()) }.getOrNull()
+
+        if (certRes?.optJSONArray("tiketsAndCertificates") == null &&
+            certRes?.optJSONArray("ticketsAndCertificates") == null) {
+            val wrappedBody = JSONObject().apply {
+                val reqModel = JSONObject().apply {
+                    put("certificateType", "Ticket")
+                    put("financialDatas", financialDatas)
+                }
+                put("requestModel", reqModel)
+            }.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
+            val wrappedRes = runCatching { executeJsonRequest(baseBuilder.post(wrappedBody).build()) }.getOrNull()
+            if (wrappedRes != null) certRes = wrappedRes
+        }
+
+        val certs = certRes?.optJSONArray("tiketsAndCertificates")
+            ?: certRes?.optJSONArray("ticketsAndCertificates")
+            ?: return null
+
+        if (certs.length() == 0) return null
+
+        for (i in 0 until certs.length()) {
+            val c = certs.optJSONObject(i) ?: continue
+            val isCert = c.optBoolean("isCertificate", false)
+            val imgB64 = c.optString("image", "").trim()
+            if (!isCert && imgB64.isNotEmpty()) {
+                val certId = c.optString("certificateId", originalReceiptId)
+                return MavTicketImage(
+                    receiptId = originalReceiptId,
+                    ticketNumber = certId,
+                    kind = "Ticket",
+                    imageBase64 = imgB64
+                )
+            }
+        }
+
+        for (i in 0 until certs.length()) {
+            val c = certs.optJSONObject(i) ?: continue
+            val imgB64 = c.optString("image", "").trim()
+            if (imgB64.isNotEmpty()) {
+                val certId = c.optString("certificateId", originalReceiptId)
+                return MavTicketImage(
+                    receiptId = originalReceiptId,
+                    ticketNumber = certId,
+                    kind = "Ticket",
+                    imageBase64 = imgB64
+                )
+            }
+        }
+
+        return null
     }
 
     private suspend fun fetchVimTicketImage(
