@@ -501,101 +501,118 @@ class MavApiClientTest {
         assertTrue(image?.imageBase64?.isNotEmpty() == true)
     }
     @Test
-    fun getTicketImageWithFinancialDatasFetchesFromGetCertificatesImagesWithoutVimToken() = runBlocking {
+    fun getRawSamlTokenDecodesBase64ToXml() {
+        val api = MavApiClient(client = OkHttpClient(), baseUrl = "https://mock.mav.hu/rest")
+        val rawXml = "<saml:Assertion>AlreadyRaw</saml:Assertion>"
+        assertEquals(rawXml, api.getRawSamlToken(rawXml))
+
+        val b64Xml = "PHNhbWw6QXNzZXJ0aW9uPkJhc2U2NDwvc2FtbDpBc3NlcnRpb24+"
+        assertEquals("<saml:Assertion>Base64</saml:Assertion>", api.getRawSamlToken(b64Xml))
+
+        assertEquals("regular_token", api.getRawSamlToken("regular_token"))
+    }
+
+    @Test
+    fun getTicketImageWithGoogleOAuthTokenDecodesSamlAndFetchesAztecBarcodeFromGetJegykep() = runBlocking {
         val detailsJson = """
             {
                 "previousPurchaseDetails": {
-                    "financialDatas": [
-                        { "financialId": "fin-123" }
+                    "ticketDatas": [
+                        {
+                            "bizonylatTechnikaiAzonosito": "1779935735",
+                            "jegySorszam": "5594003G000448895"
+                        }
                     ]
                 }
             }
         """.trimIndent()
 
-        val certsJson = """
+        val vimJson = """
             {
-                "tiketsAndCertificates": [
+                "Bizonylatok": [
                     {
-                        "isCertificate": false,
-                        "certificateId": "CERT-888999",
-                        "image": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+                        "BizonylatTechnikaiAzonosito": "1779935735",
+                        "BizonylatFajta": "Orszag-varmegye berlet MAVapp",
+                        "Jegysorszam": "5594003G000448895",
+                        "Jegykep": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
                     }
                 ]
             }
         """.trimIndent()
 
+        var jegykepReqBody = ""
         val client = createMockClient { req ->
             if (req.url.encodedPath.contains("GetPreviousPurchaseDetails")) {
                 jsonResponse(req, detailsJson)
-            } else if (req.url.encodedPath.contains("GetCertificatesImages")) {
-                jsonResponse(req, certsJson)
-            } else {
-                jsonResponse(req, "{}", 404)
-            }
-        }
-
-        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
-        val session = MavSession("googleuser@gmail.com", "user_token_xml_val", "uaid_abc", vimToken = null)
-        val image = api.getTicketImage(session, "1023744049")
-
-        assertNotNull(image)
-        assertEquals("1023744049", image?.receiptId)
-        assertEquals("CERT-888999", image?.ticketNumber)
-        assertEquals("Ticket", image?.kind)
-        assertTrue(image?.imageBase64?.isNotEmpty() == true)
-    }
-
-    @Test
-    fun getTicketImageWithFinancialDatasStringFetchesFromGetCertificatesImages() = runBlocking {
-        val detailsJson = """
-            {
-                "previousPurchaseDetails": {
-                    "id": "1023744049"
-                },
-                "financialDatas": "eJyLVs3Nz0tPTi0uycxL10vOz81LLSpNTU4t1vdPSk0pS8xNLTJWgABDA6XYWAA1BxE3"
-            }
-        """.trimIndent()
-
-        val certsJson = """
-            {
-                "tiketsAndCertificates": [
-                    {
-                        "isCertificate": true,
-                        "certificateId": "INVOICE-001",
-                        "image": "aW52b2ljZQ=="
-                    },
-                    {
-                        "isCertificate": false,
-                        "certificateId": "5594003G000448895",
-                        "image": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
-                    }
-                ]
-            }
-        """.trimIndent()
-
-        var certsReqBody = ""
-        val client = createMockClient { req ->
-            if (req.url.encodedPath.contains("GetPreviousPurchaseDetails")) {
-                jsonResponse(req, detailsJson)
-            } else if (req.url.encodedPath.contains("GetCertificatesImages")) {
+            } else if (req.url.encodedPath.contains("GetJegykep")) {
                 val buf = okio.Buffer()
                 req.body?.writeTo(buf)
-                certsReqBody = buf.readUtf8()
-                jsonResponse(req, certsJson)
+                jegykepReqBody = buf.readUtf8()
+                jsonResponse(req, vimJson)
             } else {
                 jsonResponse(req, "{}", 404)
             }
         }
 
         val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
-        val session = MavSession("ilikehacking.py@gmail.com", "user_token_xml_val", "uaid_abc", vimToken = null)
+        // Base64 of <saml:Assertion>GoogleSAML</saml:Assertion>
+        val b64Saml = "PHNhbWw6QXNzZXJ0aW9uPkdvb2dsZVNBTUw8L3NhbWw6QXNzZXJ0aW9uPg=="
+        val session = MavSession("googleuser@gmail.com", b64Saml, "uaid_abc", vimToken = null)
         val image = api.getTicketImage(session, "1023744049")
 
         assertNotNull(image)
         assertEquals("1023744049", image?.receiptId)
         assertEquals("5594003G000448895", image?.ticketNumber)
-        assertEquals("Ticket", image?.kind)
-        assertTrue(certsReqBody.contains("certificateType") && certsReqBody.contains("Ticket"))
-        assertTrue(certsReqBody.contains("eJyLVs3Nz0tPTi0uycxL10vOz81LLSpNTU4t1vdPSk0pS8xNLTJWgABDA6XYWAA1BxE3"))
+        assertEquals("Orszag-varmegye berlet MAVapp", image?.kind)
+        assertTrue(image?.imageBase64?.isNotEmpty() == true)
+
+        // Verify GetJegykep received raw unencoded SAML XML and numeric bizonylatId
+        assertTrue(jegykepReqBody.contains("<saml:Assertion>GoogleSAML"))
+        assertTrue(jegykepReqBody.contains("1779935735"))
+        assertTrue(jegykepReqBody.contains("googleuser@gmail.com"))
+    }
+    @Test
+    fun getTicketImageRejectsPdfAndCertificate() = runBlocking {
+        val detailsJson = """
+            {
+                "previousPurchaseDetails": {
+                    "ticketDatas": [
+                        {
+                            "bizonylatTechnikaiAzonosito": "1779935735",
+                            "jegySorszam": "5594003G000448895"
+                        }
+                    ]
+                }
+            }
+        """.trimIndent()
+
+        val vimPdfJson = """
+            {
+                "Bizonylatok": [
+                    {
+                        "BizonylatTechnikaiAzonosito": "1779935735",
+                        "BizonylatFajta": "Certificate",
+                        "Jegysorszam": "5594003G000448895",
+                        "Jegykep": "JVBERi0xLjQKJeLjz9MKN..."
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        val client = createMockClient { req ->
+            if (req.url.encodedPath.contains("GetPreviousPurchaseDetails")) {
+                jsonResponse(req, detailsJson)
+            } else if (req.url.encodedPath.contains("GetJegykep")) {
+                jsonResponse(req, vimPdfJson)
+            } else {
+                jsonResponse(req, "{}", 404)
+            }
+        }
+
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
+        val session = MavSession("test@example.com", "<saml:Assertion>XML</saml:Assertion>", "uaid")
+        val image = api.getTicketImage(session, "1023744049")
+
+        assertNull("PDF certificates should be rejected", image)
     }
 }

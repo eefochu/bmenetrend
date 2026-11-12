@@ -312,6 +312,9 @@ class MavViewModel(
                 if (ticketImage == null && receiptId.contains("#")) {
                     ticketImage = repository.getTicketImage(receiptId.substringAfterLast("#"))
                 }
+                if (ticketImage == null && receiptId.contains("#")) {
+                    ticketImage = repository.getTicketImage(receiptId.substringBefore("#"))
+                }
                 val bitmap = ticketImage?.toBitmap()
                 if (bitmap != null) {
                     _barcodeData.value = _barcodeData.value?.copy(
