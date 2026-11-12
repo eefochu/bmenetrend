@@ -3,6 +3,7 @@ const UPSTREAM = 'https://futar.bkk.hu/api/query/v1/ws/otp/api/where/';
 const ENDPOINTS = {
   'vehicles-for-location': { fields: 'lat lon latSpan lonSpan radius', required: 'lat lon', ttl: 5 },
   'stops-for-location': { fields: 'lat lon latSpan lonSpan radius', required: 'lat lon', ttl: 300 },
+  'stop-directions-for-location': { fields: 'lat lon latSpan lonSpan radius', required: 'lat lon', ttl: 3600 },
   'search': { fields: 'query lat lon minResult', required: 'query', ttl: 10 },
   'vehicles': { fields: 'vehicleId', required: 'vehicleId', ttl: 5 },
   'vehicles-for-route': { fields: 'routeId', required: 'routeId', ttl: 5 },
@@ -60,6 +61,20 @@ function sanitize(value, secret) {
   return value;
 }
 const errorResponse = (status, text, extra = {}) => Response.json({ status: 'ERROR', code: status, text }, { status, headers: { 'Cache-Control': 'no-store', ...extra } });
+
+function stopDirections(response) {
+  if (response.status !== 'OK' || !Array.isArray(response.data?.list) || response.data.limitExceeded) return null;
+  const directions = new Map();
+  for (const stop of response.data.list) {
+    if (stop.locationType !== 0 || typeof stop.id !== 'string' || !/^(BKK|volan)_[A-Za-z0-9_.-]+$/.test(stop.id)) continue;
+    const raw = stop.direction;
+    if (typeof raw !== 'number' && (typeof raw !== 'string' || !/^[+-]?\d+(?:\.\d+)?$/.test(raw.trim()))) continue;
+    const angle = Number(raw);
+    if (!Number.isFinite(angle) || angle < -360 || angle > 360) continue;
+    directions.set(stop.id, { id: stop.id, bearing: ((angle % 360) + 360) % 360 });
+  }
+  return { status: 'OK', code: 200, text: 'OK', version: 4, currentTime: Date.now(), data: { list: [...directions.values()] } };
+}
 
 // The Android planner consumes inline leg/stop data, not step-by-step geometry,
 // elevation profiles or every alternative trip in a metro pattern. Keep the
@@ -164,7 +179,7 @@ export default {
         }
         return respond(response, 'MISS');
       }
-      const details = await emmaDetails(endpoint, params, url.origin, ctx);
+      const details = endpoint === 'stop-directions-for-location' ? null : await emmaDetails(endpoint, params, url.origin, ctx);
       if (details) return respond(Response.json(details), 'BYPASS');
       if (endpoint === 'vehicles-for-route' && params.get('routeId').split(',').every(id => /^emma:1:[A-Za-z0-9_.-]+$/.test(id))) {
         const result = await supplement({ status: 'OK', code: 200, version: 4, currentTime: Date.now(), data: { list: [], references: {} } }, endpoint, params, url.origin, ctx);
@@ -172,9 +187,11 @@ export default {
       }
       const upstreamParams = new URLSearchParams(params);
       upstreamParams.delete('compact');
+      if (endpoint === 'stop-directions-for-location') upstreamParams.set('includeReferences', 'false');
       upstreamParams.set('key', env.BKK_API_KEY);
       stage = 'bkk-fetch';
-      const upstream = await fetch(UPSTREAM + endpoint + '.json?' + upstreamParams, {
+      const upstreamEndpoint = endpoint === 'stop-directions-for-location' ? 'stops-for-location' : endpoint;
+      const upstream = await fetch(UPSTREAM + upstreamEndpoint + '.json?' + upstreamParams, {
         headers: { Accept: 'application/json' }, signal: controller.signal, redirect: 'manual'
       });
       if (!upstream.ok) {
@@ -186,6 +203,16 @@ export default {
       if (body.length > 3_000_000) return respond(errorResponse(502, 'BKK response is too large. Use a smaller query.'));
       stage = 'bkk-json';
       const parsed = JSON.parse(body);
+      if (endpoint === 'stop-directions-for-location') {
+        const directions = stopDirections(sanitize(parsed, env.BKK_API_KEY));
+        if (!directions) return respond(errorResponse(502, 'BKK stop directions are incomplete. Use a smaller query.'));
+        const response = Response.json(directions);
+        if (cache) {
+          const stored = response.clone(); stored.headers.set('Cache-Control', `public, max-age=${ttl}`);
+          ctx.waitUntil(cache.put(cacheKey, stored).catch(() => {}));
+        }
+        return respond(response, 'MISS');
+      }
       const primaryData = sanitize(endpoint === 'plan-trip' && params.get('compact') === 'true' ? compactPlan(parsed) : parsed, env.BKK_API_KEY);
       stage = 'emma-supplement';
       const data = await supplement(primaryData, endpoint, params, url.origin, ctx);

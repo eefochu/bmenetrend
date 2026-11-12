@@ -2,6 +2,7 @@ package hu.app.bmenetrend.map
 
 import android.app.Application
 import android.graphics.Bitmap
+import android.graphics.Color
 import androidx.test.core.app.ApplicationProvider
 import hu.app.bmenetrend.data.GeoPoint
 import hu.app.bmenetrend.data.MapBounds
@@ -39,6 +40,7 @@ class GoogleMapSceneTest {
         lat: Double = 47.49,
         lon: Double = 19.04,
         routeId: String? = "r1",
+        heading: Double? = null,
     ) = Vehicle(
         id = id,
         position = GeoPoint(lat, lon),
@@ -48,6 +50,7 @@ class GoogleMapSceneTest {
         routeNumber = routeNumber,
         transportMode = mode,
         destination = "Terminal",
+        heading = heading,
     )
 
     private fun stop(
@@ -355,7 +358,7 @@ class GoogleMapSceneTest {
                 highlightedStopId = null,
                 routes = emptyMap(),
                 bearings = emptyMap(),
-                zoom = 13.0,
+                zoom = 14.0,
                 dark = false,
                 routeColor = 0xFF199DCF.toInt(),
                 showStops = true,
@@ -650,7 +653,7 @@ class GoogleMapSceneTest {
     }
 
     @Test
-    fun googlePrepare_noStopsWhenZoomBelow13_evenWithFocus() = runBlocking {
+    fun googlePrepare_overviewPreparesFocusedStopsAndOnlyRailWithoutFocus() = runBlocking {
         val region = MapBounds(19.00, 47.45, 19.10, 47.55)
         val s1 = stop("stop-1", "Stop 1", 47.49, 19.04, mode = "BUS")
         val s2 = stop("stop-2", "Stop 2", 47.50, 19.05, mode = "RAIL")
@@ -693,7 +696,7 @@ class GoogleMapSceneTest {
             assertEquals(setOf("stop-1", "stop-2"), preparedIds)
             assertFalse("Ordinary stops remain hidden below 13", preparedIds.contains("stop-ord"))
 
-            // Case 2: zoom = 12.9 without focus -> NO stop markers, ordinary stops remain hidden
+            // At overview zoom only rail stops are prepared without focus.
             val sceneNoFocus = GoogleMapScene.prepare(
                 context = app,
                 vehicles = listOf(v1),
@@ -704,7 +707,7 @@ class GoogleMapSceneTest {
                 highlightedStopId = null,
                 routes = emptyMap(),
                 bearings = emptyMap(),
-                zoom = 12.9,
+                zoom = 10.0,
                 dark = false,
                 routeColor = 0xFF199DCF.toInt(),
                 showStops = true,
@@ -712,7 +715,7 @@ class GoogleMapSceneTest {
                 pending = pending,
             )
             val stopMarkersNoFocus = sceneNoFocus.markers.filter { it.stops.isNotEmpty() }
-            assertTrue("No stop markers prepared when zoom < 13 without focus", stopMarkersNoFocus.isEmpty())
+            assertEquals(setOf("stop-2"), stopMarkersNoFocus.flatMap { it.stops }.map { it.id }.toSet())
         } finally {
             pending.values.forEach(Bitmap::recycle)
         }
@@ -773,7 +776,9 @@ class GoogleMapSceneTest {
             assertEquals(setOf("focus-stop-1", "focus-stop-2"), focusedIds)
             assertFalse("Background stops must be hidden at focused overview", focusedIds.contains("bg-stop-1") || focusedIds.contains("bg-stop-2"))
             assertEquals("focusKey must match active focus", "focus:bkk:7", sceneFocusedOverview.focusKey)
-            assertFalse("Vehicles hidden by renderer gate below 14 even when focused", TransitMapVisibility.vehicle("BUS", 12.0, focused = true))
+            assertTrue("Focused vehicles visible by renderer gate at overview", TransitMapVisibility.vehicle("BUS", 12.0, focused = true))
+            assertTrue("Focus includes matching route vehicle", focus.includes(vehicle1))
+            assertFalse("Focus excludes unrelated route vehicle", focus.includes(vehicle2))
 
             // Step 2: Dismissed at SAME overview (zoom 12.0, focus = null)
             val sceneDismissedOverview = GoogleMapScene.prepare(
@@ -798,9 +803,12 @@ class GoogleMapSceneTest {
             val dismissedStopMarkers = sceneDismissedOverview.markers.filter { it.stops.isNotEmpty() }
             assertTrue("Dismissed same overview at zoom 12.0 must have NO stop markers (no lingering focused markers)", dismissedStopMarkers.isEmpty())
             assertNull("focusKey must be null after dismiss", sceneDismissedOverview.focusKey)
-            assertFalse("Vehicles hidden by renderer gate below 14 without focus", TransitMapVisibility.vehicle("BUS", 12.0, focused = false))
+            assertFalse("Vehicles hidden by renderer gate below 15 without focus", TransitMapVisibility.vehicle("BUS", 12.0, focused = false))
+            val vehicle1VisibleAtOverviewDismissed = (null as LineMapFocus?)?.includes(vehicle1) != false &&
+                TransitMapVisibility.vehicle(vehicle1.transportMode, 12.0, focused = false)
+            assertFalse("Dismissing focus at same overview hides vehicles again", vehicle1VisibleAtOverviewDismissed)
 
-            // Step 3: Transition to normal detail (zoom 15.0, focus = null)
+            // Step 3: Transition to normal detail (zoom 16.0, focus = null)
             val sceneNormalDetail = GoogleMapScene.prepare(
                 context = app,
                 vehicles = vehicles,
@@ -811,7 +819,7 @@ class GoogleMapSceneTest {
                 highlightedStopId = null,
                 routes = emptyMap(),
                 bearings = emptyMap(),
-                zoom = 15.0,
+                zoom = 16.0,
                 dark = false,
                 routeColor = 0xFF199DCF.toInt(),
                 showStops = true,
@@ -828,64 +836,16 @@ class GoogleMapSceneTest {
             assertTrue("Former focused stops must have selected=false in normal detail", normalDetailStopMarkers.none { it.selected })
             assertNull("focusKey must be null in normal detail", sceneNormalDetail.focusKey)
 
-            assertTrue("Vehicles visible by renderer gate at zoom 15.0", TransitMapVisibility.vehicle("BUS", 15.0, focused = false))
+            assertTrue("Vehicles visible by renderer gate at zoom 16.0", TransitMapVisibility.vehicle("BUS", 16.0, focused = false))
             val vehicleMarkers = sceneNormalDetail.markers.filter { it.vehicle != null }
-            assertEquals("Normal detail at zoom 15.0 must show both vehicles", 2, vehicleMarkers.size)
+            assertEquals("Normal detail at zoom 16.0 must show both vehicles", 2, vehicleMarkers.size)
         } finally {
             pending.values.forEach(Bitmap::recycle)
         }
     }
 
     @Test
-    fun googlePrepare_stopsOnlyWhenZoomBetween13And14_vehiclesDtoStoredWhileRendererHides() = runBlocking {
-        val region = MapBounds(19.00, 47.45, 19.10, 47.55)
-        val s1 = stop("stop-1", "Stop 1", 47.49, 19.04, mode = "BUS")
-        val s2 = stop("stop-2", "Stop 2", 47.50, 19.05, mode = "RAIL")
-        val v1 = vehicle("veh-1", "7", "BUS", lat = 47.49, lon = 19.04)
-        val v2 = vehicle("veh-2", "S30", "RAIL", provider = "mav", lat = 47.50, lon = 19.05)
-
-        val pending = linkedMapOf<String, Bitmap>()
-        try {
-            val scene = GoogleMapScene.prepare(
-                context = app,
-                vehicles = listOf(v1, v2),
-                region = region,
-                selectedVehicleId = null,
-                stops = listOf(s1, s2),
-                focus = null,
-                highlightedStopId = null,
-                routes = emptyMap(),
-                bearings = emptyMap(),
-                zoom = 13.5,
-                dark = false,
-                routeColor = 0xFF199DCF.toInt(),
-                showStops = true,
-                cached = emptySet(),
-                pending = pending,
-            )
-
-            val stopMarkers = scene.markers.filter { it.stops.isNotEmpty() }
-            val vehicleMarkers = scene.markers.filter { it.vehicle != null }
-
-            // Stops are prepared and visible at 13.5
-            assertEquals("2 stops must be prepared at zoom 13.5", 2, stopMarkers.sumOf { it.stops.size })
-            assertTrue("TransitMapVisibility.stop must be true at 13.5", TransitMapVisibility.stop("BUS", 13.5))
-
-            // Vehicle DTOs are still stored in scene.markers (Window / GeoJSON retention)
-            assertEquals("Vehicle specs must still be stored in scene.markers", 2, vehicleMarkers.size)
-            val storedVehicleIds = vehicleMarkers.mapNotNull { it.vehicle?.id }.toSet()
-            assertEquals(setOf("veh-1", "veh-2"), storedVehicleIds)
-
-            // BUT TransitMapVisibility.vehicle evaluates to false, so GoogleMapRenderer hides them
-            assertFalse("TransitMapVisibility.vehicle must be false at 13.5 for BUS", TransitMapVisibility.vehicle("BUS", 13.5))
-            assertFalse("TransitMapVisibility.vehicle must be false at 13.5 for RAIL", TransitMapVisibility.vehicle("RAIL", 13.5))
-        } finally {
-            pending.values.forEach(Bitmap::recycle)
-        }
-    }
-
-    @Test
-    fun googlePrepare_detailZoom14AndAbove_retainsFullStopsAndVehicleSpecs() = runBlocking {
+    fun googlePrepare_stopsAtZoom14AndVehicleDtosRetainedWithRailVisible() = runBlocking {
         val region = MapBounds(19.00, 47.45, 19.10, 47.55)
         val s1 = stop("stop-1", "Stop 1", 47.49, 19.04, mode = "BUS")
         val s2 = stop("stop-2", "Stop 2", 47.50, 19.05, mode = "RAIL")
@@ -915,13 +875,62 @@ class GoogleMapSceneTest {
             val stopMarkers = scene.markers.filter { it.stops.isNotEmpty() }
             val vehicleMarkers = scene.markers.filter { it.vehicle != null }
 
-            // Detail zoom >= 14: full stops AND full vehicles retention
-            assertEquals("Full stops retained at zoom 14.5", 2, stopMarkers.sumOf { it.stops.size })
-            assertEquals("Full vehicles retained at zoom 14.5", 2, vehicleMarkers.size)
-
-            // Both stop and vehicle visibility are active at zoom 14.5
+            // Stops are prepared and visible at 14.5
+            assertEquals("2 stops must be prepared at zoom 14.5", 2, stopMarkers.sumOf { it.stops.size })
             assertTrue("TransitMapVisibility.stop must be true at 14.5", TransitMapVisibility.stop("BUS", 14.5))
-            assertTrue("TransitMapVisibility.vehicle must be true at 14.5", TransitMapVisibility.vehicle("BUS", 14.5))
+
+            // Vehicle DTOs are still stored in scene.markers (Window / GeoJSON retention)
+            assertEquals("Vehicle specs must still be stored in scene.markers", 2, vehicleMarkers.size)
+            val storedVehicleIds = vehicleMarkers.mapNotNull { it.vehicle?.id }.toSet()
+            assertEquals(setOf("veh-1", "veh-2"), storedVehicleIds)
+
+            // Non-rail vehicles remain hidden while trains are visible.
+            assertFalse("TransitMapVisibility.vehicle must be false at 14.5 for BUS", TransitMapVisibility.vehicle("BUS", 14.5))
+            assertTrue("Rail vehicles are visible at 14.5", TransitMapVisibility.vehicle("RAIL", 14.5))
+        } finally {
+            pending.values.forEach(Bitmap::recycle)
+        }
+    }
+
+    @Test
+    fun googlePrepare_detailZoom14AndAbove_retainsFullStopsAndVehicleSpecs() = runBlocking {
+        val region = MapBounds(19.00, 47.45, 19.10, 47.55)
+        val s1 = stop("stop-1", "Stop 1", 47.49, 19.04, mode = "BUS")
+        val s2 = stop("stop-2", "Stop 2", 47.50, 19.05, mode = "RAIL")
+        val v1 = vehicle("veh-1", "7", "BUS", lat = 47.49, lon = 19.04)
+        val v2 = vehicle("veh-2", "S30", "RAIL", provider = "mav", lat = 47.50, lon = 19.05)
+
+        val pending = linkedMapOf<String, Bitmap>()
+        try {
+            val scene = GoogleMapScene.prepare(
+                context = app,
+                vehicles = listOf(v1, v2),
+                region = region,
+                selectedVehicleId = null,
+                stops = listOf(s1, s2),
+                focus = null,
+                highlightedStopId = null,
+                routes = emptyMap(),
+                bearings = emptyMap(),
+                zoom = 15.5,
+                dark = false,
+                routeColor = 0xFF199DCF.toInt(),
+                showStops = true,
+                cached = emptySet(),
+                pending = pending,
+            )
+
+            val stopMarkers = scene.markers.filter { it.stops.isNotEmpty() }
+            val vehicleMarkers = scene.markers.filter { it.vehicle != null }
+
+            // Detail zoom >= 14: full stops AND full vehicles retention
+            assertEquals("Full stops retained at zoom 15.5", 2, stopMarkers.sumOf { it.stops.size })
+            assertEquals("Full vehicles retained at zoom 15.5", 2, vehicleMarkers.size)
+
+            // Stop visibility is active at zoom 15.5, vehicle visibility is active from 15.0
+            assertTrue("TransitMapVisibility.stop must be true at 15.5", TransitMapVisibility.stop("BUS", 15.5))
+            assertFalse("TransitMapVisibility.vehicle must be false at 14.99 (hidden below 15)", TransitMapVisibility.vehicle("BUS", 14.99))
+            assertTrue("TransitMapVisibility.vehicle must be true at 15.0", TransitMapVisibility.vehicle("BUS", 15.0))
         } finally {
             pending.values.forEach(Bitmap::recycle)
         }
@@ -951,7 +960,7 @@ class GoogleMapSceneTest {
                 highlightedStopId = null,
                 routes = emptyMap(),
                 bearings = emptyMap(),
-                zoom = 15.0,
+                zoom = 16.0,
                 dark = false,
                 routeColor = 0xFF199DCF.toInt(),
                 showStops = true,
@@ -1353,7 +1362,7 @@ class GoogleMapSceneTest {
     }
 
     @Test
-    fun focusedRouteOverview_retainsFocusedStopsAcrossZoomTransitions_whileHidingUnfocusedAndVehicles() = runBlocking {
+    fun focusedRouteOverview_retainsFocusedStopsAndVehiclesAcrossZoomTransitions_whileHidingUnfocused() = runBlocking {
         val region = MapBounds(19.00, 47.45, 19.20, 47.60)
 
         // Focused route stops with distinct locations along route
@@ -1436,14 +1445,22 @@ class GoogleMapSceneTest {
                 unfocusedOverviewScene.markers.none { it.stops.isNotEmpty() },
             )
 
-            // Vehicles visibility policy: vehicles remain hidden below 14 even when focused
-            assertFalse(
-                "Vehicles remain hidden below 14 even focused (zoom 12.0)",
+            // Vehicles visibility policy: focused vehicles visible at overview; unfocused remain hidden below 14
+            assertTrue(
+                "Vehicles visible at overview when focused (zoom 12.0)",
                 TransitMapVisibility.vehicle("BUS", 12.0, focused = true),
             )
-            assertFalse(
-                "Vehicles remain hidden below 14 even focused (zoom 11.5)",
+            assertTrue(
+                "Vehicles visible at overview when focused (zoom 11.5)",
                 TransitMapVisibility.vehicle("BUS", 11.5, focused = true),
+            )
+            assertFalse(
+                "Unfocused vehicles remain hidden below 14 (zoom 12.0)",
+                TransitMapVisibility.vehicle("BUS", 12.0, focused = false),
+            )
+            assertFalse(
+                "Unfocused vehicles remain hidden below 14 (zoom 11.5)",
+                TransitMapVisibility.vehicle("BUS", 11.5, focused = false),
             )
 
             // 2. Route overview zoom 12.0 (and 11.5): active LineMapFocus must retain ONLY focused stops
@@ -1555,6 +1572,430 @@ class GoogleMapSceneTest {
             "Focused TransitMapVisibility.stop must return true at overview zoom 12.0 for null mode",
             TransitMapVisibility.stop(null, 12.0, focused = true),
         )
+    }
+
+    // =========================================================================
+    // Targeted Seam Regressions: Focus Overview, Snapshot Retention, Live Priority
+    // =========================================================================
+    @Test
+    fun overviewTrainFocus_visibilityAbove0_includesOppositeDirection_andRetainsAllRegionalRecords() = runBlocking {
+        val region = MapBounds(19.00, 47.45, 19.10, 47.55)
+
+        val selectedTrain = vehicle("train-sel", "S30", "RAIL", provider = "mav", lat = 47.49, lon = 19.04, routeId = "mav:s30")
+        val oppositeTrain = vehicle("train-opp", "S30", "RAIL", provider = "mav", lat = 47.50, lon = 19.05, routeId = "mav:s30")
+        val unrelatedTrain = vehicle("train-unrel", "G43", "RAIL", provider = "mav", lat = 47.48, lon = 19.03, routeId = "mav:g43")
+        val unrelatedBus = vehicle("bus-unrel", "7", "BUS", provider = "bkk", lat = 47.51, lon = 19.06, routeId = "bkk:7")
+        val otherProviderTrain = vehicle("train-foreign", "S30", "RAIL", provider = "other", lat = 47.47, lon = 19.02, routeId = "other:s30")
+
+        val focus = LineMapFocus(
+            key = "focus:mav:s30",
+            routeId = "mav:s30",
+            providerId = "mav",
+            number = "S30",
+            mode = "RAIL",
+            paths = emptyList(),
+            stops = emptyList(),
+            selectedVehicleId = selectedTrain.id,
+        )
+
+        // 1. LineMapFocus includes selected and opposite direction train on same route, excludes unrelated
+        assertTrue("Focus must include selected train", focus.includes(selectedTrain))
+        assertTrue("Focus must include opposite direction train on same route", focus.includes(oppositeTrain))
+        assertFalse("Focus must exclude unrelated train on different route", focus.includes(unrelatedTrain))
+        assertFalse("Focus must exclude unrelated bus", focus.includes(unrelatedBus))
+        assertFalse("Focus must preserve provider isolation", focus.includes(otherProviderTrain))
+
+        // Focus extends train visibility below the overview gate.
+        assertTrue("Unfocused overview train is visible at zoom 12.0", TransitMapVisibility.vehicle("RAIL", 12.0, focused = false))
+        assertFalse("Unfocused overview bus must remain hidden at zoom 12.0", TransitMapVisibility.vehicle("BUS", 12.0, focused = false))
+        assertTrue("Unfocused train is visible below the non-rail threshold", TransitMapVisibility.vehicle("RAIL", 14.99, focused = false))
+        assertEquals("Global unfocused min zoom must remain 15", 15f, TransitMapVisibility.VEHICLE_MIN_ZOOM)
+        assertEquals("vehicleMinZoom(focused = false) must be 15", 15f, TransitMapVisibility.vehicleMinZoom(focused = false))
+        assertEquals("vehicleMinZoom(focused = true) must be 0", 0f, TransitMapVisibility.vehicleMinZoom(focused = true))
+
+        assertTrue(
+            "TransitMapVisibility.vehicle must show matching focused vehicle at zoom 12.0",
+            TransitMapVisibility.vehicle("RAIL", 12.0, focused = true),
+        )
+        assertTrue(
+            "TransitMapVisibility.vehicle must show matching focused vehicle above zoom 0 (e.g. zoom 5.0)",
+            TransitMapVisibility.vehicle("RAIL", 5.0, focused = true),
+        )
+        assertTrue(
+            "TransitMapVisibility.vehicle must show matching focused vehicle above zoom 0 (e.g. zoom 1.0)",
+            TransitMapVisibility.vehicle("RAIL", 1.0, focused = true),
+        )
+
+        // 3. GoogleMapScene retains all regional records regardless of focus; visibility filter is separate
+        val pending = linkedMapOf<String, Bitmap>()
+        try {
+            val scene = GoogleMapScene.prepare(
+                context = app,
+                vehicles = listOf(selectedTrain, oppositeTrain, unrelatedTrain, unrelatedBus),
+                region = region,
+                selectedVehicleId = selectedTrain.id,
+                stops = emptyList(),
+                focus = focus,
+                highlightedStopId = null,
+                routes = emptyMap(),
+                bearings = emptyMap(),
+                zoom = 12.0,
+                dark = false,
+                routeColor = 0xFF199DCF.toInt(),
+                showStops = false,
+                cached = emptySet(),
+                pending = pending,
+                selectedVehicle = selectedTrain,
+            )
+
+            val vehicleMarkers = scene.markers.filter { it.vehicle != null }
+            assertEquals("Google scene retains all regional records regardless of focus", 4, vehicleMarkers.size)
+            val vehicleIds = vehicleMarkers.mapNotNull { it.vehicle?.id }.toSet()
+            assertEquals(setOf(selectedTrain.id, oppositeTrain.id, unrelatedTrain.id, unrelatedBus.id), vehicleIds)
+            assertTrue("Selected vehicle marker has selected = true", vehicleMarkers.first { it.vehicle?.id == selectedTrain.id }.selected)
+            assertFalse("Opposite train marker has selected = false", vehicleMarkers.first { it.vehicle?.id == oppositeTrain.id }.selected)
+        } finally {
+            pending.values.forEach(Bitmap::recycle)
+        }
+    }
+
+    @Test
+    fun googlePrepare_selectedTrainSnapshotAbsentFromFeed_isStillInSceneMarkers_evenOutsideRegion() = runBlocking {
+        val region = MapBounds(19.00, 47.45, 19.10, 47.55)
+        val insideBus = vehicle("v-bus", "7", "BUS", lat = 47.50, lon = 19.05)
+        val outsideSnapshotTrain = vehicle("mav-snap-train", "S30", "RAIL", provider = "mav", lat = 47.10, lon = 18.50)
+
+        val pending = linkedMapOf<String, Bitmap>()
+        try {
+            val scene = GoogleMapScene.prepare(
+                context = app,
+                vehicles = listOf(insideBus),
+                region = region,
+                selectedVehicleId = outsideSnapshotTrain.id,
+                stops = emptyList(),
+                focus = null,
+                highlightedStopId = null,
+                routes = emptyMap(),
+                bearings = emptyMap(),
+                zoom = 12.0,
+                dark = false,
+                routeColor = 0xFF199DCF.toInt(),
+                showStops = false,
+                cached = emptySet(),
+                pending = pending,
+                selectedVehicle = outsideSnapshotTrain,
+            )
+
+            val vehicleMarkers = scene.markers.filter { it.vehicle != null }
+            assertTrue(
+                "Selected train snapshot absent from feed must be retained in scene markers even outside region",
+                vehicleMarkers.any { it.vehicle?.id == outsideSnapshotTrain.id },
+            )
+            val marker = vehicleMarkers.first { it.vehicle?.id == outsideSnapshotTrain.id }
+            assertEquals("Snapshot marker must retain original coordinates", outsideSnapshotTrain.position, marker.point)
+            assertTrue("Snapshot marker must have selected = true", marker.selected)
+            assertEquals("Snapshot marker offset must be zero", StopMarkerLayout.Offset(), marker.offset)
+        } finally {
+            pending.values.forEach(Bitmap::recycle)
+        }
+    }
+
+    @Test
+    fun googlePrepare_freshLiveVehicleSameIdWinsOverCachedSnapshot_withoutDuplicate() = runBlocking {
+        val region = MapBounds(19.00, 47.45, 19.10, 47.55)
+        val liveTrain = vehicle("train-1", "S30", "RAIL", provider = "mav", lat = 47.50, lon = 19.05)
+        val cachedSnapshot = vehicle("train-1", "S30", "RAIL", provider = "mav", lat = 47.45, lon = 19.00)
+
+        val pending = linkedMapOf<String, Bitmap>()
+        try {
+            val scene = GoogleMapScene.prepare(
+                context = app,
+                vehicles = listOf(liveTrain),
+                region = region,
+                selectedVehicleId = "train-1",
+                stops = emptyList(),
+                focus = null,
+                highlightedStopId = null,
+                routes = emptyMap(),
+                bearings = emptyMap(),
+                zoom = 14.5,
+                dark = false,
+                routeColor = 0xFF199DCF.toInt(),
+                showStops = false,
+                cached = emptySet(),
+                pending = pending,
+                selectedVehicle = cachedSnapshot,
+            )
+
+            val vehicleMarkers = scene.markers.filter { it.vehicle?.id == "train-1" }
+            assertEquals("Exactly one marker for the vehicle ID (no duplicate)", 1, vehicleMarkers.size)
+            assertEquals("Fresh live vehicle position must win over cached snapshot", liveTrain.position, vehicleMarkers.first().point)
+        } finally {
+            pending.values.forEach(Bitmap::recycle)
+        }
+    }
+
+    @Test
+    fun googlePrepare_dismissedSelection_noSnapshotRetained() = runBlocking {
+        val region = MapBounds(19.00, 47.45, 19.10, 47.55)
+        val insideBus = vehicle("v-bus", "7", "BUS", lat = 47.50, lon = 19.05)
+
+        val pending = linkedMapOf<String, Bitmap>()
+        try {
+            val scene = GoogleMapScene.prepare(
+                context = app,
+                vehicles = listOf(insideBus),
+                region = region,
+                selectedVehicleId = null,
+                stops = emptyList(),
+                focus = null,
+                highlightedStopId = null,
+                routes = emptyMap(),
+                bearings = emptyMap(),
+                zoom = 14.5,
+                dark = false,
+                routeColor = 0xFF199DCF.toInt(),
+                showStops = false,
+                cached = emptySet(),
+                pending = pending,
+                selectedVehicle = null,
+            )
+
+            val vehicleIds = scene.markers.mapNotNull { it.vehicle?.id }
+            assertEquals(listOf("v-bus"), vehicleIds)
+        } finally {
+            pending.values.forEach(Bitmap::recycle)
+        }
+    }
+
+    @Test
+    fun googlePrepare_snapshotChangingPositionSameId_usesLatestSnapshot_andDismissDoesNotRetainFallback() = runBlocking {
+        val region = MapBounds(19.00, 47.45, 19.10, 47.55)
+        val insideBus = vehicle("v-bus", "7", "BUS", lat = 47.50, lon = 19.05)
+        val feed = listOf(insideBus)
+
+        val pos1 = GeoPoint(47.10, 18.50)
+        val pos2 = GeoPoint(47.12, 18.52)
+        val snapshot1 = vehicle("train-snap-1", "S30", "RAIL", provider = "mav", lat = pos1.lat, lon = pos1.lon)
+        val snapshot2 = vehicle("train-snap-1", "S30", "RAIL", provider = "mav", lat = pos2.lat, lon = pos2.lon)
+
+        val pending = linkedMapOf<String, Bitmap>()
+        try {
+            // 1. Initial prepare with snapshot1
+            val scene1 = GoogleMapScene.prepare(
+                context = app,
+                vehicles = feed,
+                region = region,
+                selectedVehicleId = snapshot1.id,
+                stops = emptyList(),
+                focus = null,
+                highlightedStopId = null,
+                routes = emptyMap(),
+                bearings = emptyMap(),
+                zoom = 12.0,
+                dark = false,
+                routeColor = 0xFF199DCF.toInt(),
+                showStops = false,
+                cached = emptySet(),
+                pending = pending,
+                selectedVehicle = snapshot1,
+            )
+            val marker1 = scene1.markers.firstOrNull { it.vehicle?.id == "train-snap-1" }
+            assertNotNull("Snapshot 1 must be present in scene markers", marker1)
+            assertEquals("Snapshot 1 position must match pos1", pos1, marker1?.point)
+
+            // 2. Position updates with same id: prepare with snapshot2 (latest position)
+            val scene2 = GoogleMapScene.prepare(
+                context = app,
+                vehicles = feed,
+                region = region,
+                selectedVehicleId = snapshot2.id,
+                stops = emptyList(),
+                focus = null,
+                highlightedStopId = null,
+                routes = emptyMap(),
+                bearings = emptyMap(),
+                zoom = 12.0,
+                dark = false,
+                routeColor = 0xFF199DCF.toInt(),
+                showStops = false,
+                cached = emptySet(),
+                pending = pending,
+                selectedVehicle = snapshot2,
+            )
+            val marker2 = scene2.markers.firstOrNull { it.vehicle?.id == "train-snap-1" }
+            assertNotNull("Snapshot 2 must be present in scene markers", marker2)
+            assertEquals("Position updates with same id must use latest snapshot position", pos2, marker2?.point)
+            assertEquals("Exactly one marker for snapshot id", 1, scene2.markers.count { it.vehicle?.id == "train-snap-1" })
+
+            // 3. Selection dismissed: no fallback snapshot retained
+            val sceneDismissed = GoogleMapScene.prepare(
+                context = app,
+                vehicles = feed,
+                region = region,
+                selectedVehicleId = null,
+                stops = emptyList(),
+                focus = null,
+                highlightedStopId = null,
+                routes = emptyMap(),
+                bearings = emptyMap(),
+                zoom = 12.0,
+                dark = false,
+                routeColor = 0xFF199DCF.toInt(),
+                showStops = false,
+                cached = emptySet(),
+                pending = pending,
+                selectedVehicle = null,
+            )
+            assertNull(
+                "Dismissed selection must not retain fallback snapshot in scene markers",
+                sceneDismissed.markers.firstOrNull { it.vehicle?.id == "train-snap-1" },
+            )
+            val dismissedIds = sceneDismissed.markers.mapNotNull { it.vehicle?.id }
+            assertEquals(listOf("v-bus"), dismissedIds)
+        } finally {
+            pending.values.forEach(Bitmap::recycle)
+        }
+    }
+
+    @Test
+    fun googlePrepare_customCenterColor_emitsSpriteCenterMatchingSuppliedColor_coordsAndDirectionsUnaffected() = runBlocking {
+        val region = MapBounds(19.00, 47.45, 19.10, 47.55)
+        val stopPos = GeoPoint(47.50, 19.05)
+        val myStop = stop("stop-custom-center", "Custom Center Stop", stopPos.lat, stopPos.lon, mode = "BUS", routes = listOf("bkk:7"))
+        val route = TransitRoute("bkk:7", "7", "7", emptyList(), providerId = "bkk", transportMode = "BUS")
+        val customCenter = StationSprite.deepCenterColor(0xFF199DCF.toInt())
+        val bearings = mapOf("stop-custom-center" to listOf(45.0))
+
+        val pending = linkedMapOf<String, Bitmap>()
+        try {
+            val scene = GoogleMapScene.prepare(
+                context = app,
+                vehicles = emptyList(),
+                region = region,
+                selectedVehicleId = null,
+                stops = listOf(myStop),
+                focus = null,
+                highlightedStopId = null,
+                routes = mapOf("bkk:7" to route),
+                bearings = bearings,
+                zoom = 15.0,
+                dark = false,
+                routeColor = 0xFF199DCF.toInt(),
+                showStops = true,
+                cached = emptySet(),
+                pending = pending,
+                centerColor = customCenter,
+            )
+
+            val stopMarkers = scene.markers.filter { it.stops.isNotEmpty() }
+            assertEquals(1, stopMarkers.size)
+            val marker = stopMarkers.first()
+            assertEquals("Stop marker coordinate must remain original position", stopPos, marker.point)
+            assertEquals("Stop marker ID must match anchor", "stop:stop-custom-center", marker.id)
+
+            val bitmap = pending[marker.icon]
+            assertNotNull("Sprite bitmap must be emitted in pending", bitmap)
+            val c = bitmap!!.width / 2
+            assertEquals("Emitted sprite center pixel must match custom centerColor", customCenter, bitmap.getPixel(c, c))
+            assertEquals("Emitted sprite outer ring must remain white", Color.WHITE, bitmap.getPixel(c + 35, c))
+        } finally {
+            pending.values.forEach(Bitmap::recycle)
+        }
+    }
+
+    @Test
+    fun googlePrepare_parityCopiesHeadingAndArrowKeysCoordsAndSelectedSnapshot() = runBlocking {
+        val region = MapBounds(19.00, 47.45, 19.10, 47.55)
+        val pos1 = GeoPoint(47.49, 19.04)
+        val pos2 = GeoPoint(47.50, 19.05)
+        val pos3 = GeoPoint(47.51, 19.06)
+
+        val v1 = vehicle("veh-bus", "7", "BUS", provider = "bkk", lat = pos1.lat, lon = pos1.lon, heading = 90.0)
+        val v2 = vehicle("veh-metro", "M4", "SUBWAY", provider = "bkk", lat = pos2.lat, lon = pos2.lon, heading = 0.0)
+        val v3 = vehicle("veh-train", "S30", "RAIL", provider = "mav", lat = pos3.lat, lon = pos3.lon, heading = null)
+
+        val pending = linkedMapOf<String, Bitmap>()
+        try {
+            val scene = GoogleMapScene.prepare(
+                context = app,
+                vehicles = listOf(v1, v2, v3),
+                region = region,
+                selectedVehicleId = v3.id,
+                stops = emptyList(),
+                focus = null,
+                highlightedStopId = null,
+                routes = emptyMap(),
+                bearings = emptyMap(),
+                zoom = 15.0,
+                dark = false,
+                routeColor = 0xFF199DCF.toInt(),
+                showStops = false,
+                cached = emptySet(),
+                pending = pending,
+                selectedVehicle = v3,
+            )
+
+            val vehicleMarkers = scene.markers.filter { it.vehicle != null }
+            assertEquals(3, vehicleMarkers.size)
+            val byId = vehicleMarkers.associateBy { it.vehicle?.id }
+
+            // Marker 1: v1 (bus with heading 90)
+            val m1 = byId.getValue("veh-bus")
+            assertEquals("Heading copied from vehicle to GoogleMarkerSpec", 90f, m1.heading)
+            assertEquals("vehicle-heading-${VehicleMarkerStyle.BKK_BUS.color}", m1.arrow)
+            assertEquals("Coordinates preserved exactly", pos1, m1.point)
+            assertFalse(m1.selected)
+
+            // Marker 2: v2 (M4 subway with heading 0 -> metro line color arrow)
+            val m2 = byId.getValue("veh-metro")
+            assertEquals("Heading copied from vehicle to GoogleMarkerSpec", 0f, m2.heading)
+            val m4Color = MetroLineStyle.forLine("M4", "SUBWAY")!!.color
+            assertEquals("vehicle-heading-$m4Color", m2.arrow)
+            assertEquals("Coordinates preserved exactly", pos2, m2.point)
+            assertFalse(m2.selected)
+
+            // Marker 3: v3 (train without heading -> null heading and arrow, selected = true)
+            val m3 = byId.getValue("veh-train")
+            assertNull("Missing heading must produce null heading in GoogleMarkerSpec", m3.heading)
+            assertNull("Missing heading must produce null arrow in GoogleMarkerSpec", m3.arrow)
+            assertEquals("Coordinates preserved exactly", pos3, m3.point)
+            assertTrue("Selected snapshot vehicle must have selected = true", m3.selected)
+        } finally {
+            pending.values.forEach(Bitmap::recycle)
+        }
+    }
+
+    @Test
+    fun googlePrepare_defaultZoom15Threshold_normalHidden14To1499_visible15_focusedOverviewUnchanged() {
+        val allModes = listOf("BUS", "COACH", "TRAM", "TROLLEYBUS", "SUBWAY")
+
+        // Unfocused normal vehicles: hidden at 14.0, 14.5, 14.99
+        for (zoom in listOf(14.0, 14.5, 14.99)) {
+            for (mode in allModes) {
+                assertFalse("Normal unfocused vehicle mode $mode must be hidden at zoom $zoom", TransitMapVisibility.vehicle(mode, zoom, focused = false))
+            }
+        }
+
+        // Unfocused normal vehicles: visible at 15.0, 15.1, 17.0
+        for (zoom in listOf(15.0, 15.1, 17.0)) {
+            for (mode in allModes) {
+                assertTrue("Normal unfocused vehicle mode $mode must be visible at zoom $zoom", TransitMapVisibility.vehicle(mode, zoom, focused = false))
+            }
+        }
+
+        // Focused overview vehicles: visible from zoom 0.0 upwards (unchanged)
+        for (zoom in listOf(0.0, 5.0, 10.0, 12.0, 14.0, 15.0)) {
+            for (mode in allModes) {
+                assertTrue("Focused vehicle mode $mode must be visible at overview zoom $zoom", TransitMapVisibility.vehicle(mode, zoom, focused = true))
+            }
+        }
+
+        // Shared helper thresholds
+        assertEquals(15f, TransitMapVisibility.VEHICLE_MIN_ZOOM)
+        assertEquals(15f, TransitMapVisibility.VEHICLE_SYMBOL_MIN_ZOOM)
+        assertEquals(15f, TransitMapVisibility.vehicleMinZoom(focused = false))
+        assertEquals(0f, TransitMapVisibility.vehicleMinZoom(focused = true))
     }
 }
 

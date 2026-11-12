@@ -162,6 +162,13 @@ class BkkWorkerRepository(private val client: BkkWorkerClient = BkkWorkerClient(
         return withContext(Dispatchers.Default) { BkkWorkerParser.areaStops(text) }
     }
 
+    suspend fun stopDirections(area: MapBounds): Map<String, Double> = coroutineScope {
+        tiles(area).map { tile -> async {
+            val text = client.get("stop-directions-for-location", tile.params())
+            withContext(Dispatchers.Default) { BkkWorkerParser.stopDirections(text) }
+        } }.awaitAll().fold(emptyMap()) { combined, tile -> combined + tile }
+    }
+
     suspend fun plan(from: PlannerEndpoint, to: PlannerEndpoint, ready: Instant): List<TripItinerary> = planResult(from, to, ready, false).itineraries
 
     /** BKK's planner for any accepted Hungarian coordinates. Bus-only uses the Worker's `BUS,COACH,WALK` mode. */

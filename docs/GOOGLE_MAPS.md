@@ -1,8 +1,11 @@
 # Google Maps in BMenetrend
 
-The Settings map style selector offers Google Maps when a local Android SDK key is configured.
+The Settings map style selector offers Google Maps and Google satellite when a local Android SDK key is configured.
 Street and Satellite continue to use MapLibre. Offline mode uses the bundled MapLibre map.
 Vehicles, stops, predictions, and routing continue to use the existing transit services.
+Google satellite uses the SDK's hybrid map type, retaining place and road labels over imagery.
+Both renderers use BKK platform bearings when supplied by the compact Worker metadata endpoint,
+with existing route and journey geometry as the fallback for platforms without BKK directions.
 
 ## Local setup
 

@@ -21,4 +21,6 @@
     <string name="map_credits_data">Térképadatok: © OpenStreetMap közreműködők, ODbL 1.0. Online csempék: OpenFreeMap, OpenMapTiles séma (CC BY 4.0). Offline kivonat: Geofabrik, 2026-10-25. Térképmotor: MapLibre Native (BSD 2-Clause).</string>
     <string name="map_info">Térképinfó</string>
     <string name="map_style_google">Google Maps</string>
+    <string name="map_style_google_satellite">Google műhold</string>
+    <string name="map_style_google_hint">Google térkép és műholdképek. Internetkapcsolat szükséges.</string>
 </resources>

@@ -101,8 +101,12 @@ class TransitViewModelBkkIntegrationTest {
         val bkkCalls = AtomicInteger(0)
 
         val bkkClient = OkHttpClient.Builder().addInterceptor { chain ->
-            bkkCalls.incrementAndGet()
+            val url = chain.request().url
+            val path = url.encodedPath
             val callNow = Instant.now()
+            if (path.contains("arrivals-and-departures") || path.contains("stop")) {
+                bkkCalls.incrementAndGet()
+            }
             val json = JSONObject().put("status", "OK").put("data", JSONObject()
                 .put("references", JSONObject()
                     .put("routes", JSONObject().put("BKK_B0070", JSONObject().put("id", "BKK_B0070").put("type", "BUS").put("shortName", "7")))
@@ -117,6 +121,7 @@ class TransitViewModelBkkIntegrationTest {
                         .put("departureTime", callNow.epochSecond + 180)
                         .put("pickupAllowed", true)))
                 )
+                .put("list", JSONArray())
             ).toString()
             Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK")
                 .body(json.toResponseBody()).build()
@@ -352,6 +357,7 @@ class TransitViewModelBkkIntegrationTest {
         injectStopsRepository(viewModel, emmaRepo)
 
         awaitUntil { viewModel.state.value.network != null }
+        mutableState(viewModel).update { it.copy(stopIndexLoaded = true) }
 
         // 1. Start fetching Biatorbágy (slow in-flight request)
         viewModel.updateMapArea(biatorbagyBounds, biatorbagyCenter)
@@ -885,5 +891,335 @@ class TransitViewModelBkkIntegrationTest {
         } finally {
             releaseCovering.countDown()
         }
+    }
+
+    @Test
+    fun updateMapArea_fetchesAndPublishesBkkStopDirections_evenWhenStopIndexLoaded() = runBlocking {
+        val budapestBounds = MapBounds(19.04, 47.49, 19.06, 47.51)
+        val budapestCenter = GeoPoint(47.50, 19.05)
+        val stopDirectionsCalls = AtomicInteger(0)
+
+        val bkkClient = OkHttpClient.Builder().addInterceptor { chain ->
+            val url = chain.request().url
+            val path = url.encodedPath
+            if (path.contains("stop-directions-for-location")) {
+                stopDirectionsCalls.incrementAndGet()
+                val json = JSONObject().put("status", "OK").put("data", JSONObject()
+                    .put("list", JSONArray().put(JSONObject()
+                        .put("id", "BKK_F01020")
+                        .put("bearing", 182.0)
+                    ))
+                ).toString()
+                Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                    .body(json.toResponseBody()).build()
+            } else {
+                val emptyJson = JSONObject().put("status", "OK").put("data", JSONObject()
+                    .put("references", JSONObject())
+                    .put("list", JSONArray())
+                ).toString()
+                Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                    .body(emptyJson.toResponseBody()).build()
+            }
+        }.build()
+
+        val emmaClient = OkHttpClient.Builder().addInterceptor { chain ->
+            Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                .body("""{"data":{"station":null,"stopsByBbox":[]}}""".toResponseBody()).build()
+        }.build()
+
+        val viewModel = TransitViewModel(app).also { models += it }
+        val bkkRepo = BkkWorkerRepository(BkkWorkerClient("https://worker.test".toHttpUrl(), bkkClient, { Instant.now() }, BkkRequestBudget()))
+        val emmaRepo = EmmaStopsRepository(app, EmmaGraphqlClient(emmaClient))
+
+        injectBkkRepository(viewModel, bkkRepo)
+        injectStopsRepository(viewModel, emmaRepo)
+
+        awaitUntil { viewModel.state.value.network != null }
+
+        // Set stopIndexLoaded = true
+        mutableState(viewModel).update { it.copy(stopIndexLoaded = true) }
+        assertTrue(viewModel.state.value.stopIndexLoaded)
+
+        // Trigger updateMapArea
+        viewModel.updateMapArea(budapestBounds, budapestCenter)
+
+        // Must fetch /api/stop-directions-for-location.json and publish bkkStopDirections to UiState
+        awaitUntil(timeoutMs = 1500) {
+            stopDirectionsCalls.get() >= 1 && viewModel.state.value.bkkStopDirections.isNotEmpty()
+        }
+
+        assertTrue("stop-directions-for-location endpoint must be queried", stopDirectionsCalls.get() >= 1)
+        assertEquals(182.0, viewModel.state.value.bkkStopDirections["emma:BKK:F01020"]!!, 1e-4)
+    }
+
+    private fun stopDirectionsJsonResponse(id: String, bearing: Double): String = JSONObject().put("status", "OK").put("data", JSONObject()
+        .put("list", JSONArray().put(JSONObject()
+            .put("id", id)
+            .put("bearing", bearing)
+        ))
+    ).toString()
+
+    @Test
+    fun stopDirections_nestedViewportContainedByCoveredArea_reusesDirectionCache_withoutExtraHttpCall() = runBlocking {
+        val largeBounds = MapBounds(19.00, 47.45, 19.10, 47.55)
+        val largeCenter = GeoPoint(47.50, 19.05)
+        val nestedBounds = MapBounds(19.04, 47.49, 19.06, 47.51)
+        val nestedCenter = GeoPoint(47.50, 19.05)
+
+        val stopDirectionsCalls = AtomicInteger(0)
+        val bkkClient = OkHttpClient.Builder().addInterceptor { chain ->
+            val url = chain.request().url
+            if (url.encodedPath.contains("stop-directions-for-location")) {
+                stopDirectionsCalls.incrementAndGet()
+                val json = stopDirectionsJsonResponse("BKK_F01020", 90.0)
+                Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                    .body(json.toResponseBody()).build()
+            } else {
+                val emptyJson = JSONObject().put("status", "OK").put("data", JSONObject()
+                    .put("references", JSONObject())
+                    .put("list", JSONArray())
+                ).toString()
+                Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                    .body(emptyJson.toResponseBody()).build()
+            }
+        }.build()
+
+        val emmaClient = OkHttpClient.Builder().addInterceptor { chain ->
+            Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                .body("""{"data":{"station":null,"stopsByBbox":[]}}""".toResponseBody()).build()
+        }.build()
+
+        val viewModel = TransitViewModel(app).also { models += it }
+        val bkkRepo = BkkWorkerRepository(BkkWorkerClient("https://worker.test".toHttpUrl(), bkkClient, { Instant.now() }, BkkRequestBudget()))
+        val emmaRepo = EmmaStopsRepository(app, EmmaGraphqlClient(emmaClient))
+
+        injectBkkRepository(viewModel, bkkRepo)
+        injectStopsRepository(viewModel, emmaRepo)
+
+        awaitUntil { viewModel.state.value.network != null }
+        mutableState(viewModel).update { it.copy(stopIndexLoaded = true) }
+
+        // 1. Initial query for large covering area
+        viewModel.updateMapArea(largeBounds, largeCenter)
+        awaitUntil { stopDirectionsCalls.get() == 1 && viewModel.state.value.bkkStopDirections.containsKey("emma:BKK:F01020") }
+        assertEquals(1, stopDirectionsCalls.get())
+
+        // 2. Pan/zoom into nested viewport contained within large area
+        viewModel.updateMapArea(nestedBounds, nestedCenter)
+        ShadowLooper.idleMainLooper()
+        Thread.sleep(50)
+        ShadowLooper.idleMainLooper()
+
+        // 3. Cache must be reused without dispatching a new HTTP request
+        assertEquals("Nested viewport must reuse direction cache without extra HTTP call", 1, stopDirectionsCalls.get())
+        assertTrue("Directions must remain present in UiState", viewModel.state.value.bkkStopDirections.containsKey("emma:BKK:F01020"))
+    }
+
+    @Test
+    fun stopDirections_inFlightCoveringRequest_sharedWithNestedViewport_withoutCancelOrRefetch() = runBlocking {
+        val largeBounds = MapBounds(19.00, 47.45, 19.10, 47.55)
+        val largeCenter = GeoPoint(47.50, 19.05)
+        val nestedBounds = MapBounds(19.04, 47.49, 19.06, 47.51)
+        val nestedCenter = GeoPoint(47.50, 19.05)
+
+        val coveringStarted = CountDownLatch(1)
+        val releaseCovering = CountDownLatch(1)
+        val stopDirectionsCalls = AtomicInteger(0)
+
+        val bkkClient = OkHttpClient.Builder().addInterceptor { chain ->
+            val url = chain.request().url
+            if (url.encodedPath.contains("stop-directions-for-location")) {
+                stopDirectionsCalls.incrementAndGet()
+                coveringStarted.countDown()
+                releaseCovering.await(5, TimeUnit.SECONDS)
+                val json = stopDirectionsJsonResponse("BKK_SHARED_STOP", 180.0)
+                Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                    .body(json.toResponseBody()).build()
+            } else {
+                val emptyJson = JSONObject().put("status", "OK").put("data", JSONObject()
+                    .put("references", JSONObject())
+                    .put("list", JSONArray())
+                ).toString()
+                Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                    .body(emptyJson.toResponseBody()).build()
+            }
+        }.build()
+
+        val emmaClient = OkHttpClient.Builder().addInterceptor { chain ->
+            Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                .body("""{"data":{"station":null,"stopsByBbox":[]}}""".toResponseBody()).build()
+        }.build()
+
+        val viewModel = TransitViewModel(app).also { models += it }
+        val bkkRepo = BkkWorkerRepository(BkkWorkerClient("https://worker.test".toHttpUrl(), bkkClient, { Instant.now() }, BkkRequestBudget()))
+        val emmaRepo = EmmaStopsRepository(app, EmmaGraphqlClient(emmaClient))
+
+        injectBkkRepository(viewModel, bkkRepo)
+        injectStopsRepository(viewModel, emmaRepo)
+
+        awaitUntil { viewModel.state.value.network != null }
+        mutableState(viewModel).update { it.copy(stopIndexLoaded = true) }
+
+        try {
+            // 1. Initial large covering area request starts and is held in-flight
+            viewModel.updateMapArea(largeBounds, largeCenter)
+            assertTrue("Covering stop-directions HTTP request should have started", coveringStarted.await(5, TimeUnit.SECONDS))
+            assertEquals(1, stopDirectionsCalls.get())
+
+            // 2. Viewport zooms into nested viewport while covering request is still in-flight
+            viewModel.updateMapArea(nestedBounds, nestedCenter)
+            ShadowLooper.idleMainLooper()
+
+            // In-flight covering request must be shared: no new HTTP call should be dispatched
+            assertEquals("In-flight request should be shared without refetching", 1, stopDirectionsCalls.get())
+
+            // 3. Release covering request
+            releaseCovering.countDown()
+            awaitUntil { viewModel.state.value.bkkStopDirections.containsKey("emma:BKK:SHARED_STOP") }
+
+            assertEquals("No extra HTTP request should be made", 1, stopDirectionsCalls.get())
+            assertEquals(180.0, viewModel.state.value.bkkStopDirections["emma:BKK:SHARED_STOP"]!!, 1e-4)
+        } finally {
+            releaseCovering.countDown()
+        }
+    }
+
+    @Test
+    fun stopDirections_offlineModeCancelsInFlightAndPreventsStalePublication() = runBlocking {
+        val budapestBounds = MapBounds(19.04, 47.49, 19.06, 47.51)
+        val budapestCenter = GeoPoint(47.50, 19.05)
+
+        val requestStarted = CountDownLatch(1)
+        val releaseRequest = CountDownLatch(1)
+        val stopDirectionsCalls = AtomicInteger(0)
+
+        val bkkClient = OkHttpClient.Builder().addInterceptor { chain ->
+            val url = chain.request().url
+            if (url.encodedPath.contains("stop-directions-for-location")) {
+                stopDirectionsCalls.incrementAndGet()
+                requestStarted.countDown()
+                releaseRequest.await(5, TimeUnit.SECONDS)
+                val json = stopDirectionsJsonResponse("BKK_STALE_STOP", 270.0)
+                Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                    .body(json.toResponseBody()).build()
+            } else {
+                val emptyJson = JSONObject().put("status", "OK").put("data", JSONObject()
+                    .put("references", JSONObject())
+                    .put("list", JSONArray())
+                ).toString()
+                Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                    .body(emptyJson.toResponseBody()).build()
+            }
+        }.build()
+
+        val emmaClient = OkHttpClient.Builder().addInterceptor { chain ->
+            Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                .body("""{"data":{"station":null,"stopsByBbox":[]}}""".toResponseBody()).build()
+        }.build()
+
+        val viewModel = TransitViewModel(app).also { models += it }
+        val bkkRepo = BkkWorkerRepository(BkkWorkerClient("https://worker.test".toHttpUrl(), bkkClient, { Instant.now() }, BkkRequestBudget()))
+        val emmaRepo = EmmaStopsRepository(app, EmmaGraphqlClient(emmaClient))
+
+        injectBkkRepository(viewModel, bkkRepo)
+        injectStopsRepository(viewModel, emmaRepo)
+
+        awaitUntil { viewModel.state.value.network != null }
+        mutableState(viewModel).update { it.copy(stopIndexLoaded = true) }
+
+        try {
+            // 1. Start fetching stop-directions
+            viewModel.updateMapArea(budapestBounds, budapestCenter)
+            assertTrue("HTTP request should be initiated", requestStarted.await(5, TimeUnit.SECONDS))
+
+            // 2. User switches to offline mode while request is in-flight
+            viewModel.setOfflineMode(true)
+            ShadowLooper.idleMainLooper()
+
+            // 3. Complete HTTP response
+            releaseRequest.countDown()
+            ShadowLooper.idleMainLooper()
+            Thread.sleep(50)
+            ShadowLooper.idleMainLooper()
+
+            // 4. Stale publication must NOT occur while offline
+            assertFalse(
+                "Stale stop-directions must not be published when switched to offline mode",
+                viewModel.state.value.bkkStopDirections.containsKey("emma:BKK:STALE_STOP")
+            )
+        } finally {
+            releaseRequest.countDown()
+            viewModel.setOfflineMode(false)
+        }
+    }
+
+    @Test
+    fun stopDirections_failureAllowsImmediateRetry_withoutFalseCoverage() = runBlocking {
+        val budapestBounds = MapBounds(19.04, 47.49, 19.06, 47.51)
+        val budapestCenter = GeoPoint(47.50, 19.05)
+
+        val stopDirectionsCalls = AtomicInteger(0)
+        var shouldFail = true
+
+        val bkkClient = OkHttpClient.Builder().addInterceptor { chain ->
+            val url = chain.request().url
+            if (url.encodedPath.contains("stop-directions-for-location")) {
+                stopDirectionsCalls.incrementAndGet()
+                if (shouldFail) {
+                    Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(502).message("Bad Gateway")
+                        .body("""{"status":"ERROR","message":"Upstream failed"}""".toResponseBody()).build()
+                } else {
+                    val json = stopDirectionsJsonResponse("BKK_RETRY_STOP", 45.0)
+                    Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                        .body(json.toResponseBody()).build()
+                }
+            } else {
+                val emptyJson = JSONObject().put("status", "OK").put("data", JSONObject()
+                    .put("references", JSONObject())
+                    .put("list", JSONArray())
+                ).toString()
+                Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                    .body(emptyJson.toResponseBody()).build()
+            }
+        }.build()
+
+        val emmaClient = OkHttpClient.Builder().addInterceptor { chain ->
+            Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                .body("""{"data":{"station":null,"stopsByBbox":[]}}""".toResponseBody()).build()
+        }.build()
+
+        val viewModel = TransitViewModel(app).also { models += it }
+        val bkkRepo = BkkWorkerRepository(BkkWorkerClient("https://worker.test".toHttpUrl(), bkkClient, { Instant.now() }, BkkRequestBudget()))
+        val emmaRepo = EmmaStopsRepository(app, EmmaGraphqlClient(emmaClient))
+
+        injectBkkRepository(viewModel, bkkRepo)
+        injectStopsRepository(viewModel, emmaRepo)
+
+        awaitUntil { viewModel.state.value.network != null }
+        mutableState(viewModel).update { it.copy(stopIndexLoaded = true) }
+
+        // 1. Initial attempt fails with 502
+        shouldFail = true
+        viewModel.updateMapArea(budapestBounds, budapestCenter)
+        awaitUntil { stopDirectionsCalls.get() >= 1 }
+        ShadowLooper.idleMainLooper()
+        Thread.sleep(50)
+        ShadowLooper.idleMainLooper()
+
+        assertEquals("First attempt should have been made", 1, stopDirectionsCalls.get())
+        assertFalse(
+            "Directions must not be published on failure",
+            viewModel.state.value.bkkStopDirections.containsKey("emma:BKK:RETRY_STOP")
+        )
+
+        // 2. Retry with failure cleared: must not be suppressed by false coverage
+        shouldFail = false
+        viewModel.updateMapArea(budapestBounds, budapestCenter)
+        awaitUntil {
+            stopDirectionsCalls.get() >= 2 && viewModel.state.value.bkkStopDirections.containsKey("emma:BKK:RETRY_STOP")
+        }
+
+        assertEquals("Second attempt must be dispatched without being blocked by false coverage", 2, stopDirectionsCalls.get())
+        assertEquals(45.0, viewModel.state.value.bkkStopDirections["emma:BKK:RETRY_STOP"]!!, 1e-4)
     }
 }

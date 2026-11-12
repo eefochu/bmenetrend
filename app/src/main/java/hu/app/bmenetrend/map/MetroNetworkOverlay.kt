@@ -41,7 +41,7 @@ internal object MetroNetworkOverlay {
 
     internal fun lineAnchor(layerIds: List<String>): String? {
         val foreground = setOf("selected-line-casing", "selected-line-stroke", "station-symbols", "station-selected",
-            VehicleLayers.RAIL_DOTS, VehicleLayers.ROAD_DOTS, VehicleLayers.SYMBOLS, MapLibreConstants.LAYER_ID_ANNOTATIONS)
+            VehicleLayers.RAIL_DOTS, VehicleLayers.ROAD_DOTS, VehicleLayers.SYMBOLS, UserLocationLayer.CONE, MapLibreConstants.LAYER_ID_ANNOTATIONS)
         return layerIds.firstOrNull { it in foreground }
     }
 

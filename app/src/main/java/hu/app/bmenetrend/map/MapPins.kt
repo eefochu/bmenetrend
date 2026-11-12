@@ -15,17 +15,13 @@ import org.maplibre.android.annotations.MarkerOptions
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
 
-/** The user's position and planner/search endpoints; they never change on camera gestures or vehicle ticks. */
+/** Planner/search endpoints; they never change on camera gestures or vehicle ticks. The user's position is [UserLocationLayer]. */
 internal class MapPins(private val context: Context) {
-    private var location: Marker? = null
     private var origin: Marker? = null
     private var place: Marker? = null
 
-    fun update(map: MapLibreMap, userLocation: GeoPoint?, routeOrigin: GeoPoint?, selectedPlace: PlaceResult?) {
+    fun update(map: MapLibreMap, routeOrigin: GeoPoint?, selectedPlace: PlaceResult?) {
         val resources = context.resources
-        location = map.pin(location, userLocation) {
-            MarkerOptions().title(resources.getString(R.string.engine_you_are_here)).icon(locationIcon())
-        }
         origin = map.pin(origin, routeOrigin) {
             MarkerOptions().title(resources.getString(R.string.planner_from)).icon(endpointIcon("origin-pin-marker", Color.rgb(117, 117, 117)))
         }
@@ -48,11 +44,6 @@ internal class MapPins(private val context: Context) {
     }
 
     private val density get() = context.resources.displayMetrics.density
-
-    private fun locationIcon(): Icon = icons.getOrPut("user-location@$density") {
-        val size = (18 * density).toInt().coerceAtLeast(1)
-        circles(size, listOf(size / 2f to Color.WHITE, size / 2f - 2 * density to Color.rgb(53, 109, 219)))
-    }
 
     private fun endpointIcon(key: String, color: Int): Icon = icons.getOrPut("$key@$density") {
         val size = (34 * density).toInt().coerceAtLeast(1)

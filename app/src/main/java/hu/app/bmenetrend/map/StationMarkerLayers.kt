@@ -31,7 +31,7 @@ internal object StationMarkerLayers {
             PropertyFactory.iconRotationAlignment("map"), PropertyFactory.iconPitchAlignment("viewport"),
         ).withFilter(Expression.eq(Expression.get("id"), Expression.literal("")))
         // Arrows sit under dots, as they did inside each baked sprite.
-        val below = style.getLayer(VehicleLayers.RAIL_DOTS)?.id
+        val below = style.getLayer(VehicleLayers.RAIL_DOTS)?.id ?: UserLocationLayer.below(style)
             ?: MapLibreConstants.LAYER_ID_ANNOTATIONS.takeIf { style.getLayer(it) != null }
         (StationMarkers.ARROW_LAYERS.mapIndexed { index, id -> arrows(id, index) } +
             listOf(dots(StationMarkers.RAIL_LAYER, true), dots(StationMarkers.ROAD_LAYER, false), selected)).forEach { layer ->
@@ -51,11 +51,11 @@ internal object StationMarkerLayers {
                 Expression.stop(zoom, size / StopMarkerLayout.DIAMETER_DP)
             }.toTypedArray())
         allLayers.forEach { id -> style.getLayerAs<SymbolLayer>(id)?.setProperties(PropertyFactory.iconSize(iconScale)) }
-        StationMarkers.ARROW_LAYERS.forEach { id ->
-            style.getLayerAs<SymbolLayer>(id)?.apply { setProperties(PropertyFactory.iconImage(arrowImage)); minZoom = StationMarkers.ARROW_MIN_ZOOM }
-        }
         val stopMinZoom = TransitMapVisibility.stopMinZoom(focused)
-        style.getLayer(StationMarkers.RAIL_LAYER)?.minZoom = stopMinZoom
+        StationMarkers.ARROW_LAYERS.forEach { id ->
+            style.getLayerAs<SymbolLayer>(id)?.apply { setProperties(PropertyFactory.iconImage(arrowImage)); minZoom = stopMinZoom }
+        }
+        style.getLayer(StationMarkers.RAIL_LAYER)?.minZoom = TransitMapVisibility.railStopMinZoom(focused)
         style.getLayer(StationMarkers.ROAD_LAYER)?.minZoom = stopMinZoom
     }
 
@@ -97,9 +97,9 @@ internal class UploadCoalescer(private val clock: () -> Long = android.os.System
     fun skipped() { pendingSince = -1 }
 
     companion object {
-        const val QUIET_DELAY_MS = 300L
-        const val BURST_DELAY_MS = 800L
-        const val BURST_WINDOW_MS = 2_000L
-        const val MAX_WAIT_MS = 2_000L
+        const val QUIET_DELAY_MS = 30L
+        const val BURST_DELAY_MS = 350L
+        const val BURST_WINDOW_MS = 1_500L
+        const val MAX_WAIT_MS = 800L
     }
 }

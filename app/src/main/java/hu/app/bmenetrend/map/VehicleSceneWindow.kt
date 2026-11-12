@@ -21,7 +21,11 @@ internal object VehicleSceneWindow {
         return MapBounds(lon - halfLon, lat - halfLat, lon + halfLon, lat + halfLat)
     }
 
-    fun select(vehicles: List<Vehicle>, region: MapBounds, selectedId: String?): List<Vehicle> =
-        vehicles.filter { it.id == selectedId ||
+    fun select(vehicles: List<Vehicle>, region: MapBounds, selectedId: String?, selectedVehicle: Vehicle? = null): List<Vehicle> {
+        val nearby = vehicles.filter { it.id == selectedId ||
             it.position.lon in region.west..region.east && it.position.lat in region.south..region.north }
+        // A partial feed refresh must not erase the train the user is inspecting.
+        return if (selectedVehicle != null && selectedVehicle.id == selectedId && nearby.none { it.id == selectedId })
+            nearby + selectedVehicle else nearby
+    }
 }

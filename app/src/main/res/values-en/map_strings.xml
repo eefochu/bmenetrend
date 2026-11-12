@@ -21,4 +21,6 @@
     <string name="map_credits_data">Map data © OpenStreetMap contributors, ODbL 1.0. Online tiles: OpenFreeMap, OpenMapTiles schema (CC BY 4.0). Offline extract: Geofabrik, 2026-10-25. Renderer: MapLibre Native (BSD 2-Clause).</string>
     <string name="map_info">Map info</string>
     <string name="map_style_google">Google Maps</string>
+    <string name="map_style_google_satellite">Google satellite</string>
+    <string name="map_style_google_hint">Google maps and satellite imagery. Internet connection required.</string>
 </resources>

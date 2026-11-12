@@ -389,4 +389,107 @@ class VehicleSceneWindowTest {
         assertTrue("Local JSON must be valid GeoJSON FeatureCollection", localJson.startsWith("{\"type\":\"FeatureCollection\",\"features\":["))
         assertTrue("Country JSON must be valid GeoJSON FeatureCollection", countryJson.startsWith("{\"type\":\"FeatureCollection\",\"features\":["))
     }
+
+    // =========================================================================
+    // 9. Selected vehicle snapshot absent from feed is retained in source
+    // =========================================================================
+    @Test
+    fun select_whenSelectedVehicleSnapshotAbsentFromFeed_isRetainedInSource_includingOutsideRegion() {
+        val region = MapBounds(18.95, 47.45, 19.15, 47.55)
+        val insideBus = testVehicle("v-inside", 47.50, 19.05, routeNumber = "7", mode = "BUS", provider = "bkk")
+        val feed = listOf(insideBus)
+
+        // Selected train snapshot absent from feed, located outside the region
+        val outsideTrain = testVehicle("mav-train-snap", 47.10, 18.50, routeNumber = "S30", mode = "RAIL", provider = "mav")
+
+        val selected = VehicleSceneWindow.select(
+            vehicles = feed,
+            region = region,
+            selectedId = outsideTrain.id,
+            selectedVehicle = outsideTrain,
+        )
+
+        assertEquals("Feed vehicle inside region and selected vehicle snapshot outside region must both be in source", 2, selected.size)
+        assertTrue("Selected train snapshot absent from feed must be retained in source", selected.any { it.id == outsideTrain.id })
+        val retained = selected.first { it.id == outsideTrain.id }
+        assertEquals("Retained snapshot must preserve original geographic coordinates", outsideTrain.position, retained.position)
+        assertEquals("Retained snapshot must preserve original provider", "mav", retained.providerId)
+    }
+
+    @Test
+    fun select_whenFreshLiveVehicleInFeedHasSameId_freshLiveWinsOverCachedSnapshotWithoutDuplicate() {
+        val region = MapBounds(18.95, 47.45, 19.15, 47.55)
+        val livePosition = GeoPoint(47.50, 19.05)
+        val cachedPosition = GeoPoint(47.48, 19.00)
+
+        val freshLiveTrain = testVehicle("train-1", livePosition.lat, livePosition.lon, routeNumber = "S30", mode = "RAIL", provider = "mav")
+        val cachedSnapshotTrain = testVehicle("train-1", cachedPosition.lat, cachedPosition.lon, routeNumber = "S30", mode = "RAIL", provider = "mav")
+
+        val selected = VehicleSceneWindow.select(
+            vehicles = listOf(freshLiveTrain),
+            region = region,
+            selectedId = "train-1",
+            selectedVehicle = cachedSnapshotTrain,
+        )
+
+        assertEquals("Exactly one vehicle with the ID must be present (no duplicate)", 1, selected.size)
+        assertEquals("Fresh live vehicle must win over cached snapshot", livePosition, selected.first().position)
+    }
+
+    @Test
+    fun select_whenSelectionDismissed_noSnapshotRetained() {
+        val region = MapBounds(18.95, 47.45, 19.15, 47.55)
+        val insideBus = testVehicle("v-inside", 47.50, 19.05, routeNumber = "7", mode = "BUS", provider = "bkk")
+        val feed = listOf(insideBus)
+
+        val selected = VehicleSceneWindow.select(
+            vehicles = feed,
+            region = region,
+            selectedId = null,
+            selectedVehicle = null,
+        )
+
+        assertEquals(1, selected.size)
+        assertEquals("v-inside", selected.first().id)
+    }
+
+    @Test
+    fun select_snapshotChangingPositionSameId_usesLatestSnapshot_andDismissDoesNotRetainFallback() {
+        val region = MapBounds(18.95, 47.45, 19.15, 47.55)
+        val insideBus = testVehicle("v-inside", 47.50, 19.05, routeNumber = "7", mode = "BUS", provider = "bkk")
+        val feed = listOf(insideBus)
+
+        val pos1 = GeoPoint(47.10, 18.50)
+        val pos2 = GeoPoint(47.12, 18.52)
+        val snapshot1 = testVehicle("train-1", pos1.lat, pos1.lon, routeNumber = "S30", mode = "RAIL", provider = "mav")
+        val snapshot2 = testVehicle("train-1", pos2.lat, pos2.lon, routeNumber = "S30", mode = "RAIL", provider = "mav")
+
+        val selected1 = VehicleSceneWindow.select(
+            vehicles = feed,
+            region = region,
+            selectedId = snapshot1.id,
+            selectedVehicle = snapshot1,
+        )
+        assertEquals(2, selected1.size)
+        assertEquals(pos1, selected1.first { it.id == "train-1" }.position)
+
+        val selected2 = VehicleSceneWindow.select(
+            vehicles = feed,
+            region = region,
+            selectedId = snapshot2.id,
+            selectedVehicle = snapshot2,
+        )
+        assertEquals(2, selected2.size)
+        assertEquals(pos2, selected2.first { it.id == "train-1" }.position)
+
+        val selectedDismissed = VehicleSceneWindow.select(
+            vehicles = feed,
+            region = region,
+            selectedId = null,
+            selectedVehicle = null,
+        )
+        assertEquals(1, selectedDismissed.size)
+        assertEquals("v-inside", selectedDismissed.first().id)
+        assertFalse(selectedDismissed.any { it.id == "train-1" })
+    }
 }

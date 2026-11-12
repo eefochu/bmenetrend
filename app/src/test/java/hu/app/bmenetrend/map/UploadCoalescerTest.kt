@@ -27,7 +27,7 @@ class UploadCoalescerTest {
         val coalescer = UploadCoalescer { now }
         coalescer.uploaded()
         val started = now
-        for (elapsed in listOf(0L, 400L, 800L, 1_200L, 1_600L, 1_999L)) {
+        for (elapsed in listOf(0L, 200L, 400L, 600L, UploadCoalescer.MAX_WAIT_MS - 1)) {
             now = started + elapsed
             val delay = coalescer.delayMillis()
             assertTrue(delay >= 0)
@@ -41,8 +41,8 @@ class UploadCoalescerTest {
         val coalescer = UploadCoalescer { now }
         coalescer.uploaded()
         coalescer.delayMillis()
-        now += 1_600
-        assertEquals(400L, coalescer.delayMillis())
+        now += UploadCoalescer.MAX_WAIT_MS - 200
+        assertEquals(200L, coalescer.delayMillis())
         coalescer.skipped()
         assertEquals(UploadCoalescer.BURST_DELAY_MS, coalescer.delayMillis())
     }

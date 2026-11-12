@@ -42,6 +42,13 @@ https://YOUR-WORKER.workers.dev/api/search.json?query=Keleti&lat=47.4979&lon=19.
 
 ## Supported requests
 
+`GET /api/stop-directions-for-location.json?lat=47.4979&lon=19.0402&radius=1500` returns compact
+platform directions as `data.list` entries containing only `id` and a clockwise-from-north `bearing`
+in `[0, 360)`. It reads BKK's signed `direction` field, including valid zero-degree headings, and omits
+parent stations and platforms with missing or invalid angles. One bounded BKK stop query supplies
+the response; no route-detail fan-out or EMMA supplement is used. Successful complete responses
+cache for one hour. The usual location bounds and per-IP request limit still apply.
+
 All use API version 4. Available BKK endpoints are `search`, `vehicles`, `vehicles-for-location`, `vehicles-for-route`, `stops-for-location`, `arrivals-and-departures-for-stop`, `trip-details`, `route-details`, `route-details-for-stop`, `references`, `schedule-for-stop`, and `plan-trip`. They use BKK's existing parameter names. The Worker also provides the bounded batch endpoint described below.
 
 - Location queries: `lat`, `lon`, and either both `latSpan`/`lonSpan` (maximum **0.09 each**, centre to edge) or `radius` (maximum **5000 m**). Zoom in if the test page reports a query-size error.

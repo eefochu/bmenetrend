@@ -36,7 +36,7 @@ internal object RouteLineLayer {
             val stroke = LineLayer(STROKE, SOURCE).withProperties(*round)
             // Below every station layer (arrows are the lowest), above the basemap.
             val above = style.getLayer(StationMarkers.ARROW_LAYERS.first())?.id ?: style.getLayer(VehicleLayers.RAIL_DOTS)?.id
-                ?: MapLibreConstants.LAYER_ID_ANNOTATIONS
+                ?: UserLocationLayer.below(style) ?: MapLibreConstants.LAYER_ID_ANNOTATIONS
             if (style.getLayer(above) != null) style.addLayerBelow(casing, above) else style.addLayer(casing)
             style.addLayerAbove(stroke, CASING)
         }

@@ -914,5 +914,59 @@ class BkkWorkerParserTest {
         assertTrue(routeNumbers.contains("735"))
         assertFalse("Rail must not leak into bus platform catalogue", routeNumbers.contains("S10"))
     }
+
+    @Test
+    fun stopDirections_parsesValidAppStopIdsAndNormalizedBearings() {
+        val json = JSONObject().put("status", "OK").put("data", JSONObject()
+            .put("list", JSONArray()
+                // BKK stop: BKK_F01020 -> emma:BKK:F01020
+                .put(JSONObject().put("id", "BKK_F01020").put("bearing", 182.0))
+                // Volán stop: volan_773532_2 -> emma:hkir:hkir_773532_2
+                .put(JSONObject().put("id", "volan_773532_2").put("bearing", 0.0))
+                // Rail stop: BKK_005510009_1 -> emma:1:005510009_1
+                .put(JSONObject().put("id", "BKK_005510009_1").put("bearing", 45.5))
+            )
+        ).toString()
+
+        val result = BkkWorkerParser.stopDirections(json)
+        assertEquals(3, result.size)
+        assertEquals(182.0, result["emma:BKK:F01020"]!!, 1e-4)
+        assertEquals(0.0, result["emma:hkir:hkir_773532_2"]!!, 1e-4)
+        assertEquals(45.5, result["emma:1:005510009_1"]!!, 1e-4)
+    }
+
+    @Test
+    fun stopDirections_strictValidationFiltersInvalidBearingsAndUnknownIds() {
+        val json = JSONObject().put("status", "OK").put("data", JSONObject()
+            .put("list", JSONArray()
+                // Valid entry:
+                .put(JSONObject().put("id", "BKK_VALID").put("bearing", 90.0))
+                // Bearing out of range 0 <= x < 360:
+                .put(JSONObject().put("id", "BKK_NEG").put("bearing", -1.0))
+                .put(JSONObject().put("id", "BKK_360").put("bearing", 360.0))
+                .put(JSONObject().put("id", "BKK_OVER").put("bearing", 361.0))
+                // Non-numeric / boolean / NaN / Infinity:
+                .put(JSONObject().put("id", "BKK_BOOL_TRUE").put("bearing", true))
+                .put(JSONObject().put("id", "BKK_BOOL_FALSE").put("bearing", false))
+                .put(JSONObject().put("id", "BKK_STR").put("bearing", "not_a_number"))
+                .put(JSONObject().put("id", "BKK_NAN").put("bearing", "NaN"))
+                .put(JSONObject().put("id", "BKK_INF").put("bearing", "Infinity"))
+                // Unknown / blank / invalid IDs:
+                .put(JSONObject().put("id", "").put("bearing", 90.0))
+                .put(JSONObject().put("id", "unknown_12345").put("bearing", 90.0))
+                .put(JSONObject().put("id", "BKK_").put("bearing", 90.0))
+                .put(JSONObject().put("id", "volan_").put("bearing", 90.0))
+            )
+        ).toString()
+
+        val result = BkkWorkerParser.stopDirections(json)
+        assertEquals(1, result.size)
+        assertEquals(90.0, result["emma:BKK:VALID"]!!, 1e-4)
+        assertFalse(result.containsKey("emma:BKK:NEG"))
+        assertFalse(result.containsKey("emma:BKK:360"))
+        assertFalse(result.containsKey("emma:BKK:OVER"))
+        assertFalse(result.containsKey("emma:BKK:BOOL_TRUE"))
+        assertFalse(result.containsKey("emma:BKK:BOOL_FALSE"))
+    }
 }
 

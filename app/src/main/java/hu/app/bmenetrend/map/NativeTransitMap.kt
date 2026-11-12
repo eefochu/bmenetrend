@@ -6,6 +6,8 @@ import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.PointF
 import androidx.compose.runtime.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.runtime.saveable.rememberSaveable
 import hu.app.bmenetrend.ui.LocalDarkTheme
 import androidx.compose.ui.Modifier
@@ -15,6 +17,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.Dispatchers
@@ -83,8 +86,15 @@ fun NativeTransitMap(
     onViewportPrefetch: (MapBounds) -> Unit = {},
     /** True while the user's finger (or its fling) moves the map; programmatic camera moves don't count. */
     onGestureChanged: (Boolean) -> Unit = {},
+    /** Every GPS fix, read only inside the position marker's effect so it never recomposes the map. */
+    userPosition: () -> GeoPoint? = { userLocation },
+    /** Compass heading in degrees from north, or null; drives the facing cone. */
+    userHeading: () -> Float? = { null },
 ) {
-    if (hu.app.bmenetrend.ui.LocalMapAppearance.current.google && !offline) {
+    val googleContext = LocalContext.current
+    // Reading GoogleMapHealth.failed here recomposes into the built-in map the moment Google gives up.
+    if (hu.app.bmenetrend.ui.LocalMapAppearance.current.google && !offline && !GoogleMapHealth.failed &&
+        remember { GoogleMapHealth.usable(googleContext) }) {
         GoogleTransitMap(
             network = network,
             vehicles = vehicles,
@@ -119,11 +129,14 @@ fun NativeTransitMap(
             showTransitStops = showTransitStops,
             highlightedStopId = highlightedStopId,
             onViewportPrefetch = onViewportPrefetch,
-            onGestureChanged = onGestureChanged
+            onGestureChanged = onGestureChanged,
+            userPosition = userPosition,
+            userHeading = userHeading,
         )
         return
     }
     val darkTheme = LocalDarkTheme.current
+    val centerColor = StationSprite.deepCenterColor(MaterialTheme.colorScheme.primary.toArgb())
     val satellite = hu.app.bmenetrend.ui.LocalMapAppearance.current.style == hu.app.bmenetrend.ui.MapStyle.SATELLITE && !offline
     val styleUri = if (offline) { if (darkTheme) "asset://map/offline-dark.json" else "asset://map/offline.json" }
         else if (satellite) "asset://map/satellite.json"
@@ -158,6 +171,7 @@ fun NativeTransitMap(
     var zoom by remember { mutableDoubleStateOf(savedZoom) }
     val focused = lineFocus != null
     val currentVehicleFocus by rememberUpdatedState(lineFocus)
+    val currentSelectedVehicle by rememberUpdatedState(selectedVehicle)
     val focusStops = lineFocus?.displayStops.orEmpty()
     /** First record wins, in the order the scene deduplicates them: local network, national catalogue, route. */
     fun displayStop(id: String?): TransitStop? = if (id == null) null else if (focused) lineFocus!!.displayStops.find { it.id == id }
@@ -347,21 +361,36 @@ fun NativeTransitMap(
                         point.y - dx * sine + dy * cosine, diameter * density / 2)
                 }
             }
+            /** Drawn vehicles near a tap, with their on-screen centre and drawn radius. */
+            fun vehicleTargets(ready: MapLibreMap, tap: PointF, density: Double): List<MapTapResolver.VehicleTarget> {
+                val reach = ((MapTapResolver.MIN_REACH_DP + VehicleMarkerLayout.SELECTED_DIAMETER_DP / 2) * density).toFloat()
+                val overview = currentVehicleFocus == null && ready.cameraPosition.zoom < TransitMapVisibility.VEHICLE_SYMBOL_MIN_ZOOM
+                return ready.queryRenderedFeatures(android.graphics.RectF(tap.x - reach, tap.y - reach, tap.x + reach, tap.y + reach),
+                    *VehicleMapScene.layers).mapNotNull { feature ->
+                    if (!feature.hasProperty("vehicle-id")) return@mapNotNull null
+                    val geometry = feature.geometry() as? org.maplibre.geojson.Point ?: return@mapNotNull null
+                    val screen = ready.projection.toScreenLocation(LatLng(geometry.latitude(), geometry.longitude()))
+                    val scale = if (feature.hasProperty("large-scale")) feature.getNumberProperty("large-scale").toDouble() else
+                        VehicleMarkerLayout.DIAMETER_DP / VehicleMarkerLayout.ICON_DIAMETER_DP.toDouble()
+                    val diameter = scale * VehicleMarkerLayout.ICON_DIAMETER_DP * if (overview) VehicleMarkerLayout.OVERVIEW_FACTOR else 1f
+                    MapTapResolver.VehicleTarget(feature.getStringProperty("vehicle-id"), screen.x.toDouble(), screen.y.toDouble(), diameter * density / 2)
+                }.distinctBy { it.id }
+            }
             fun reveal(location: LatLng) {
                 ready.animateCamera(CameraUpdateFactory.newLatLngZoom(location,
                     maxOf(16.0,ready.cameraPosition.zoom+2).coerceAtMost(19.0)),450)
             }
             ready.addOnMapClickListener { location ->
                 val point=ready.projection.toScreenLocation(location)
-                val vehicle = ready.queryRenderedFeatures(point, *VehicleMapScene.layers)
-                    .firstOrNull { it.hasProperty("vehicle-id") }?.getStringProperty("vehicle-id")
-                if (vehicle != null) {
-                    onVehicle(vehicle)
+                val density=context.resources.displayMetrics.density.toDouble()
+                val hits=targets(point)
+                val resolved=MapTapResolver.resolve(point.x.toDouble(),point.y.toDouble(),density,
+                    vehicleTargets(ready,point,density),hits)
+                if (resolved is MapTapResolver.VehicleHit) {
+                    onVehicle(resolved.id)
                     return@addOnMapClickListener true
                 }
-                val hits=targets(point)
-                val density=context.resources.displayMetrics.density.toDouble()
-                val hit=StopHitTesting.nearest(hits,point.x.toDouble(),point.y.toDouble(),density)
+                val hit=(resolved as? MapTapResolver.StopHit)?.target
                 val candidate=hit?.stop
                 if(candidate==null) {
                     onMapClicked()
@@ -526,7 +555,7 @@ fun NativeTransitMap(
     // Every marker is built once per scene, focus, theme or palette change, off the main thread,
     // and uploaded as one source. MapLibre culls and tiles it natively, so panning and zooming
     // never rebuild, re-serialize or re-upload markers.
-    LaunchedEffect(map,styleLoaded,styleGeneration,stationScene,markerRegion,highlightedIds,focused,routeColor,stopBearings,darkTheme,routeCatalogue) {
+    LaunchedEffect(map,styleLoaded,styleGeneration,stationScene,markerRegion,highlightedIds,focused,routeColor,stopBearings,darkTheme,routeCatalogue,centerColor) {
         val nativeMap=map ?: return@LaunchedEffect
         if(!styleLoaded) return@LaunchedEffect
         val scene=stationScene ?: return@LaunchedEffect
@@ -541,7 +570,7 @@ fun NativeTransitMap(
         if(source==null) stationIconKeys.clear()
         val uploaded=markerData
         if(source!=null && uploaded!=null && withContext(Dispatchers.Default) {
-                uploaded.matches(scene,markerRegion,focused,highlightedIds,stopBearings,routeCatalogue,darkTheme,routeColor) }) {
+                uploaded.matches(scene,markerRegion,focused,highlightedIds,stopBearings,routeCatalogue,darkTheme,routeColor,centerColor) }) {
             stationUploads.skipped()
             return@LaunchedEffect
         }
@@ -554,7 +583,7 @@ fun NativeTransitMap(
                 val built=traceMapWork("BMenetrend.StationMarkers") {
                     StationMarkers.build(scene,markerRegion,focused,highlightedIds,stopBearings,routeCatalogue,darkTheme,routeColor,
                         imageName={ sprite -> markerImageName(sprite.key) },
-                        ensureActive={ ensureActive() })
+                        ensureActive={ ensureActive() }, centerColor=centerColor)
                 }
                 built.sprites.forEach { (name,sprite) ->
                     ensureActive()
@@ -613,7 +642,7 @@ fun NativeTransitMap(
             }
         }
         StationMarkerLayers.highlight(style,marker?.id,image,
-            TransitMapVisibility.stopMinZoom(focused))
+            if(marker?.rail==true) TransitMapVisibility.railStopMinZoom(focused) else TransitMapVisibility.stopMinZoom(focused))
     }
     // Focus changes only filters: it never waits for source preparation or an ongoing gesture.
     LaunchedEffect(map, styleLoaded, styleGeneration, lineFocus?.routeId, lineFocus?.providerId,
@@ -630,10 +659,10 @@ fun NativeTransitMap(
         val ready = map ?: return@LaunchedEffect
         if (!styleLoaded) return@LaunchedEffect
         val style = ready.style ?: return@LaunchedEffect
-        snapshotFlow { vehicles() to vehicleRegion }.collectLatest { (allVehicles, region) ->
+        snapshotFlow { Triple(vehicles(), vehicleRegion, currentSelectedVehicle) }.collectLatest { (allVehicles, region, selection) ->
             if (region == null) return@collectLatest
             val started = android.os.SystemClock.uptimeMillis()
-            val list = withContext(Dispatchers.Default) { VehicleSceneWindow.select(allVehicles, region, selectedVehicle?.id) }
+            val list = withContext(Dispatchers.Default) { VehicleSceneWindow.select(allVehicles, region, selection?.id, selection) }
             TransitDiagnostics.event("prepare") { "count=${list.size} total=${allVehicles.size} gesture=$userGesture generation=$styleGeneration" }
             val source = style.getSourceAs<GeoJsonSource>(VehicleMapScene.SOURCE)
             if (source == null) { vehicleIconKeys.clear(); uploadedVehicles[0] = null }
@@ -641,7 +670,7 @@ fun NativeTransitMap(
             val pending = linkedMapOf<String, Bitmap>()
             try {
                 val json = withContext(Dispatchers.Default) {
-                    VehicleMapScene.prepare(context.applicationContext, list, selectedVehicle?.id, cached, pending)
+                    VehicleMapScene.prepare(context.applicationContext, list, selection?.id, cached, pending)
                 }
                 // Live positions refresh every few seconds; never re-tile them under a moving finger.
                 TransitDiagnostics.event("prepared") { "ms=${android.os.SystemClock.uptimeMillis() - started} bytes=${json.length} waitingGesture=$userGesture" }
@@ -663,10 +692,20 @@ fun NativeTransitMap(
             } finally { pending.values.forEach(Bitmap::recycle) }
         }
     }
-    LaunchedEffect(map, styleLoaded, styleGeneration, selectedPlace, userLocation, routeOrigin) {
+    LaunchedEffect(map, styleLoaded, styleGeneration, selectedPlace, routeOrigin) {
         val nativeMap = map ?: return@LaunchedEffect
         if (!styleLoaded) return@LaunchedEffect
-        pins.update(nativeMap, userLocation, routeOrigin, selectedPlace)
+        pins.update(nativeMap, routeOrigin, selectedPlace)
+    }
+    val readPosition by rememberUpdatedState(userPosition)
+    val readHeading by rememberUpdatedState(userHeading)
+    LaunchedEffect(map, styleLoaded, styleGeneration) {
+        if (!styleLoaded) return@LaunchedEffect
+        val style = map?.style ?: return@LaunchedEffect
+        val metrics = context.resources.displayMetrics
+        UserLocationLayer.install(style, metrics.density, metrics.densityDpi)
+        launch { snapshotFlow { readHeading() }.collect { UserLocationLayer.heading(style, it) } }
+        UserLocationMarker.glide(snapshotFlow { readPosition() }) { UserLocationLayer.position(style, it) }
     }
 }
 

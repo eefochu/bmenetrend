@@ -132,6 +132,16 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     // Positions change every few seconds; outside UiState so a tick redraws only the map, not every screen.
     private val mutableVehicles = MutableStateFlow<List<Vehicle>>(emptyList())
     val vehicles: StateFlow<List<Vehicle>> = mutableVehicles
+    /**
+     * Every GPS fix, for the map's position dot. Fixes arrive about once a second; only movement that
+     * matters to stops and boards reaches [UiState.userLocation], which recomposes the whole screen.
+     */
+    private val mutableLivePosition = MutableStateFlow<GeoPoint?>(null)
+    val livePosition: StateFlow<GeoPoint?> = mutableLivePosition
+    /** Compass direction the phone faces, degrees clockwise from north; null without a usable sensor. */
+    private val mutableHeading = MutableStateFlow<Float?>(null)
+    val heading: StateFlow<Float?> = mutableHeading
+    private var lastPublishedFixAt = 0L
     private val refreshMutex = Mutex()
     private val emmaMutex = Mutex()
     private var live: LiveSnapshot? = null
@@ -153,6 +163,11 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private var pendingMapBounds: MapBounds? = null
     private var loadedMapBounds: MapBounds? = null
     private val loadedMapBoundsList = mutableListOf<MapBounds>()
+    private data class StopDirectionArea(val area: MapBounds, val fetchedAt: Instant, val directions: Map<String, Double>)
+    private val stopDirectionAreas = ArrayDeque<StopDirectionArea>()
+    private var stopDirectionsJob: Job? = null
+    private var stopDirectionsRequest: MapBounds? = null
+    private var stopDirectionsGeneration = 0
     private var nearbyKey = emptyList<String>()
     private var nearbySelection = emptyList<NearbyStation>()
     private val nearbyBoards = linkedMapOf<String, EmmaStopsParser.Board>()
@@ -287,11 +302,12 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         if (visible) {
             recalculate()
             ensureBkkVehicles()
+            mapBounds?.let(::ensureStopDirections)
             viewModelScope.launch { refreshEmmaData() }
             viewModelScope.launch { refreshData() }
             ensureBoardRequest(force = true)
             ensureNearbyRequest()
-        } else { mapSettledJob?.cancel(); nearbyJob?.cancel(); boardJob?.cancel(); mapStopsJob?.cancel(); bkkVehicleJob?.cancel(); mapStopsGeneration++ }
+        } else { mapSettledJob?.cancel(); nearbyJob?.cancel(); boardJob?.cancel(); mapStopsJob?.cancel(); bkkVehicleJob?.cancel(); mapStopsGeneration++; stopDirectionsJob?.cancel(); stopDirectionsGeneration++ }
     }
 
     /** The planner uses the map/vehicles, but has no departure panel to keep polling. */
@@ -708,6 +724,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         mapBounds = bounds
         mapCenter = center
         ensureMapStops(bounds)
+        ensureStopDirections(bounds)
         ensureBkkVehicles()
         if (!state.value.showNearby) return
         // Zoomed out past where stops are drawn, "nearby" would mean whatever lies within 1.5 km of
@@ -728,7 +745,42 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     }
 
     /** Warm the map catalogue during gestures without requesting nearby departure boards. */
-    fun prefetchMapArea(bounds: MapBounds) = ensureMapStops(bounds)
+    fun prefetchMapArea(bounds: MapBounds) {
+        ensureMapStops(bounds)
+        ensureStopDirections(bounds)
+    }
+
+    private fun ensureStopDirections(bounds: MapBounds) {
+        if (!mapVisible || NetworkAccessPolicy.offline.value) return
+        val now = Instant.now()
+        if (stopDirectionAreas.any { it.area.covers(bounds) && Duration.between(it.fetchedAt, now).seconds in 0 until 3600 }) return
+        if (stopDirectionsJob?.isActive == true && stopDirectionsRequest?.covers(bounds) == true) return
+        val area = BkkWorkerRepository.queryArea(bounds) ?: return
+        stopDirectionsJob?.cancel()
+        val generation = ++stopDirectionsGeneration
+        val networkGeneration = NetworkAccessPolicy.generation
+        stopDirectionsRequest = area
+        stopDirectionsJob = viewModelScope.launch {
+            try {
+                val directions = bkkRepository.stopDirections(area)
+                if (generation != stopDirectionsGeneration || networkGeneration != NetworkAccessPolicy.generation) return@launch
+                stopDirectionAreas.removeAll { it.area == area || Duration.between(it.fetchedAt, now).seconds !in 0 until 3600 }
+                stopDirectionAreas.addLast(StopDirectionArea(area, Instant.now(), directions))
+                while (stopDirectionAreas.size > 16) stopDirectionAreas.removeFirst()
+                val areas = stopDirectionAreas.toList()
+                val merged = withContext(Dispatchers.Default) { buildMap {
+                    areas.forEach { putAll(it.directions) }
+                } }
+                if (generation != stopDirectionsGeneration || networkGeneration != NetworkAccessPolicy.generation) return@launch
+                mutableState.update { if (it.bkkStopDirections == merged) it else it.copy(bkkStopDirections = merged) }
+            } catch (cancelled: CancellationException) { throw cancelled
+            } catch (_: Exception) {
+                // Keep shape-derived arrows when metadata is temporarily unavailable.
+            } finally {
+                if (generation == stopDirectionsGeneration) stopDirectionsRequest = null
+            }
+        }
+    }
 
     private fun ensureMapStops(bounds: MapBounds) {
         if (!mapVisible || NetworkAccessPolicy.offline.value || state.value.stopIndexLoaded) return
@@ -1031,6 +1083,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         savedBoardKey = null
         savedBoardResult = null
         mapStopsGeneration++; mapStopsJob?.cancel(); loadedMapBounds = null; loadedMapBoundsList.clear()
+        stopDirectionsJob?.cancel(); stopDirectionsGeneration++
         placeSearchGeneration++; lineGeneration++; journeyGeneration++; nearbyGeneration++; favoriteGeneration++
         placeSearchJob?.cancel(); lineJob?.cancel(); journeyJob?.cancel(); nearbyJob?.cancel(); favoriteJob?.cancel(); boardJob?.cancel()
         ota.cancel()
@@ -1604,7 +1657,15 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         return nearestStop(stops, point).also { nearestFix = Triple(point, stops, it) }
     }
 
+    fun updateHeading(degrees: Float?) { mutableHeading.value = degrees }
+
     fun updateLocation(point: GeoPoint) {
+        mutableLivePosition.value = point
+        val published = state.value.userLocation
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (published != null && distanceMeters(published, point) < LOCATION_PUBLISH_METERS &&
+            now - lastPublishedFixAt < LOCATION_PUBLISH_MS) return
+        lastPublishedFixAt = now
         mutableState.update { current ->
             val nearest = nearestToFix(current.stops, point)
             current.copy(userLocation = point, nearestStopId = nearest,
@@ -1717,6 +1778,9 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
 private val NOW_REFRESH: Duration = Duration.ofSeconds(15)
 private const val NEAREST_RESCAN_METERS = 10.0
 private const val EMMA_POLL_MS = 10_000L
+/** Smaller moves only animate the map dot; stops, boards and the planner follow at this granularity. */
+private const val LOCATION_PUBLISH_METERS = 8.0
+private const val LOCATION_PUBLISH_MS = 5_000L
 private const val EMMA_BACKGROUND_POLL_MS = 20_000L
 private const val BKK_JOURNEY_TIMEOUT_MS = 5_000L
 /** Covers nothing: a snapshot holding only the followed vehicle must not hide EMMA's vehicles anywhere. */

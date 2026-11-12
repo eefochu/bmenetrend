@@ -78,9 +78,10 @@ fun SettingsPage(
                 }
                 TransitSectionTitle(stringResource(R.string.map_style_title))
                 Surface(shape = TransitDesign.groupShape, color = MaterialTheme.colorScheme.surfaceContainerLowest) {
-                    Column(Modifier.fillMaxWidth().padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            MapStyle.entries.filter { it != MapStyle.GOOGLE || hu.app.bmenetrend.BuildConfig.GOOGLE_MAPS_CONFIGURED }.forEach { style ->
+                    Column(Modifier.fillMaxWidth().padding(8.dp).selectableGroup(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        MapStyle.entries.filter { !it.usesGoogle || hu.app.bmenetrend.BuildConfig.GOOGLE_MAPS_CONFIGURED }.chunked(2).forEach { row ->
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            row.forEach { style ->
                                 val selected = state.mapStyle == style
                                 Surface(Modifier.weight(1f), shape = TransitDesign.controlShape,
                                     color = if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent) {
@@ -90,8 +91,10 @@ fun SettingsPage(
                                     }
                                 }
                             }
+                            repeat(2 - row.size) { Spacer(Modifier.weight(1f)) }
+                            }
                         }
-                        Text(stringResource(if (state.offlineMode) R.string.map_style_offline_hint else R.string.map_style_hint),
+                        Text(stringResource(if (state.offlineMode) R.string.map_style_offline_hint else if (state.mapStyle.usesGoogle) R.string.map_style_google_hint else R.string.map_style_hint),
                             Modifier.padding(horizontal = 8.dp, vertical = 4.dp), style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }

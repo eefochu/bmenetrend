@@ -79,6 +79,7 @@ data class UiState(
     val favoritesLoading: Boolean = false,
     val liveStopMinutes: List<Int> = emptyList(),
     val emmaStops: List<TransitStop> = emptyList(),
+    val bkkStopDirections: Map<String, Double> = emptyMap(),
     val stopIndexLoaded: Boolean = false,
     val stopStatus: String? = null,
     val departureStatus: String? = null,

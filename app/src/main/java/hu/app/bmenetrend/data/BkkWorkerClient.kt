@@ -173,6 +173,7 @@ class BkkWorkerClient internal constructor(
             "arrivals-and-departures-for-stop" to 10_000L, "arrivals-and-departures-for-stops" to 10_000L,
             "trip-details" to 30_000L, "route-details" to 30_000L, "route-details-for-stop" to 30_000L,
             "references" to 300_000L, "search" to 10_000L, "stops-for-location" to 300_000L, "plan-trip" to 5_000L,
+            "stop-directions-for-location" to 3_600_000L,
         )
     }
 }

@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
-import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Bundle
 import android.provider.Settings
@@ -71,6 +70,11 @@ class MainActivity : ComponentActivity() {
             // where they use it, so a live position tick recomposes nothing else.
             val liveVehicles = model.vehicles.collectAsStateWithLifecycle()
             val readVehicles = remember(liveVehicles) { { liveVehicles.value } }
+            // Read only inside the map's effects: per-fix and compass updates never recompose the screen.
+            val livePosition = model.livePosition.collectAsStateWithLifecycle()
+            val liveHeading = model.heading.collectAsStateWithLifecycle()
+            val readPosition = remember(livePosition) { { livePosition.value } }
+            val readHeading = remember(liveHeading) { { liveHeading.value } }
             val language = LocalConfiguration.current.locales.toLanguageTags()
             LaunchedEffect(language) { model.onLocaleChanged() }
             var locationAllowed by remember { mutableStateOf(hasLocationPermission()) }
@@ -123,6 +127,11 @@ class MainActivity : ComponentActivity() {
                     snapshot.routes.filter { route -> route.directions.any { it.stopIds.size >= 2 } }
                 }
                 value = hu.app.bmenetrend.map.StopDirections.collectAsync(bearingRoutes, snapshot.stops, snapshot.lineDetails.values, snapshot.vehicleJourney)
+            }
+            val mapStopBearings by produceState(stopBearings, stopBearings, state.bkkStopDirections) {
+                value = withContext(Dispatchers.Default) {
+                    hu.app.bmenetrend.map.StopDirections.withPlatformDirections(stopBearings, state.bkkStopDirections)
+                }
             }
             val requestLocation: () -> Unit = {
                 locationAllowed = hasLocationPermission()
@@ -180,7 +189,7 @@ class MainActivity : ComponentActivity() {
                                     additionalStops = state.emmaStops,
                                     onMapZoomChanged = model::updateMapZoom,
                                     onViewportChanged = model::updateMapArea,
-                                    stopBearings = stopBearings,
+                                    stopBearings = mapStopBearings,
                                     routeCatalogue = state.routesById,
                                     onVehicleSelected = { id -> model.selectVehicle(id); tab = MainTab.MAP },
                                     browsingNearby = true,
@@ -317,7 +326,7 @@ class MainActivity : ComponentActivity() {
                             model.selectStopGroup(ids)
                         }
                     }
-                    NativeTransitMap(state.network, readVehicles, state.selectedStopId.takeUnless { state.showNearby || browsingRoute!=null || state.selectedVehicle!=null }, state.userLocation, modifier, onMapStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, vehicle, routeGeometry = geometry, routeStops = stops, routeColor = color.toArgb(), fitRouteRequest = state.fitRouteRequest, selectedPlace = state.selectedPlace, placeCameraRequest = state.placeCameraRequest, lineFocus = focus, browsingNearby = state.showNearby, locationCameraRequest = state.locationCameraRequest, onViewportChanged = model::updateMapArea,stopBearings=stopBearings,onSharedStopSelected=onMapSharedStop,onMapClick=onDismissHighlight, offline = state.offlineMode, routeCatalogue = state.routesById, highlightedStopId = state.selectedStopId, onViewportPrefetch = model::prefetchMapArea, onGestureChanged = model::setMapGesture)
+                    NativeTransitMap(state.network, readVehicles, state.selectedStopId.takeUnless { state.showNearby || browsingRoute!=null || state.selectedVehicle!=null }, state.userLocation, modifier, onMapStop, model::mapMessage, state.cameraRequest, bottomPaddingPx, state.emmaStops, model::updateMapZoom, model::selectVehicle, vehicle, routeGeometry = geometry, routeStops = stops, routeColor = color.toArgb(), fitRouteRequest = state.fitRouteRequest, selectedPlace = state.selectedPlace, placeCameraRequest = state.placeCameraRequest, lineFocus = focus, browsingNearby = state.showNearby, locationCameraRequest = state.locationCameraRequest, onViewportChanged = model::updateMapArea,stopBearings=mapStopBearings,onSharedStopSelected=onMapSharedStop,onMapClick=onDismissHighlight, offline = state.offlineMode, routeCatalogue = state.routesById, highlightedStopId = state.selectedStopId, onViewportPrefetch = model::prefetchMapArea, onGestureChanged = model::setMapGesture, userPosition = readPosition, userHeading = readHeading)
                 }
                 })
 
@@ -341,17 +350,8 @@ class MainActivity : ComponentActivity() {
 
     @SuppressLint("MissingPermission")
     private fun startLocation(model: TransitViewModel): () -> Unit {
-        val manager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        val listener = LocationListener { loc ->
-            model.updateLocation(GeoPoint(loc.latitude, loc.longitude))
-        }
-        val provider = when {
-            manager.isProviderEnabled(LocationManager.GPS_PROVIDER) -> LocationManager.GPS_PROVIDER
-            manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER) -> LocationManager.NETWORK_PROVIDER
-            else -> LocationManager.PASSIVE_PROVIDER
-        }
-        manager.requestLocationUpdates(provider, 2000L, 2f, listener)
-        manager.getLastKnownLocation(provider)?.let { listener.onLocationChanged(it) }
-        return { manager.removeUpdates(listener) }
+        val tracker = UserLocationTracker(this, model::updateLocation, model::updateHeading)
+        tracker.start()
+        return tracker::stop
     }
 }

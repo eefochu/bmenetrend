@@ -116,4 +116,42 @@ class StopDirectionsTest {
         val unmapped = stop("unmapped", 47.5).copy(routeIds = listOf("missing"), providerIds = listOf("volan"), transportMode = "BUS")
         assertEquals(listOf(0xFFF9B900.toInt()), StopMarkerColors.palette(listOf(unmapped), routes))
     }
+
+    @Test
+    fun withPlatformDirections_authoritativeBkkHeadingOverridesInferredOnSharedIdAndHandlesFallbacks() {
+        val derived = mapOf(
+            "emma:BKK:F1" to listOf(45.0),
+            "emma:BKK:F2" to listOf(270.0),
+            "emma:BKK:F4" to listOf(120.0)
+        )
+        val platformDirections = mapOf(
+            "emma:BKK:F1" to 180.0,
+            "emma:BKK:F3" to 90.0,
+            "emma:BKK:F4" to Double.NaN
+        )
+        val merged = StopDirections.withPlatformDirections(derived, platformDirections)
+
+        // Authoritative BKK heading overrides inferred on shared ID
+        assertEquals(listOf(180.0), merged["emma:BKK:F1"])
+
+        // Unknown keeps fallback
+        assertEquals(listOf(270.0), merged["emma:BKK:F2"])
+
+        // Valid metadata adds arrows even when no route geometry
+        assertEquals(listOf(90.0), merged["emma:BKK:F3"])
+
+        // Invalid metadata cannot erase fallback
+        assertEquals(listOf(120.0), merged["emma:BKK:F4"])
+    }
+
+    @Test
+    fun stationMarkers_directions_actualOutputNonEmptyForBkkPlatforms() {
+        val bkkStop = TransitStop("emma:BKK:F01020", "Deák Ferenc tér", GeoPoint(47.497, 19.054), emptyList(), "bkk")
+        val platformDirections = mapOf("emma:BKK:F01020" to 182.0)
+        val bearings = StopDirections.withPlatformDirections(emptyMap(), platformDirections)
+
+        val directions = StationMarkers.directions(listOf(bkkStop), bearings)
+        assertFalse("StationMarkers.directions must be non-empty for BKK platforms with direction metadata", directions.isEmpty())
+        assertEquals(listOf(180), directions)
+    }
 }

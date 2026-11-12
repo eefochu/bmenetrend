@@ -22,6 +22,13 @@ internal class GoogleMapRenderer(private val map: GoogleMap, private val density
         var title: String? = null
         var anchorU = .5f
         var anchorV = .5f
+        var arrowMarker: Marker? = null
+        var arrowVisible = false
+        var arrowKey = ""
+        var arrowPoint = spec.point
+        var heading = Float.NaN
+        var arrowZ = Float.NaN
+        var overview = false
     }
     private val entries = LinkedHashMap<String, Entry>()
     private val bitmaps = LinkedHashMap<String, Bitmap>()
@@ -45,7 +52,9 @@ internal class GoogleMapRenderer(private val map: GoogleMap, private val density
         entries.values.forEach { apply(it, create = false) }
     }
 
-    suspend fun sync(scene: GoogleScene, images: MutableMap<String, Bitmap>, focus: LineMapFocus?, zoom: Double) {
+    /** [budget] is the number of marker changes allowed per frame; it is re-read every frame. */
+    suspend fun sync(scene: GoogleScene, images: MutableMap<String, Bitmap>, focus: LineMapFocus?, zoom: Double,
+                     budget: () -> Int = { IDLE_BUDGET }) {
         images.forEach { (key, value) -> bitmaps.put(key, value)?.takeIf { it !== value }?.recycle() }
         images.clear() // renderer owns these even if reconciliation is cancelled between frames
         scene.offsets.forEach { (id, offset) -> offsets.remove(id); offsets[id] = offset }
@@ -56,18 +65,19 @@ internal class GoogleMapRenderer(private val map: GoogleMap, private val density
         val ids = scene.markers.mapTo(HashSet()) { it.id }
         var mutations = 0
         for (id in entries.keys.filter { it !in ids }) {
-            entries.remove(id)?.marker?.let { marker ->
-                marker.remove(); mutations++
+            entries.remove(id)?.let { entry ->
+                entry.marker?.let { it.remove(); mutations++ }
+                entry.arrowMarker?.let { it.remove(); mutations++ }
             }
-            if (mutations >= 24) { withFrameNanos { }; mutations = 0 }
+            if (mutations >= budget()) { withFrameNanos { }; mutations = 0 }
         }
         for (spec in scene.markers) {
             val entry = entries.getOrPut(spec.id) { Entry(spec) }
             entry.spec = spec
-            if (apply(entry, create = true)) mutations++
-            if (mutations >= 24) { withFrameNanos { }; mutations = 0 }
+            if (apply(entry, create = true)) mutations += if (spec.arrow != null) 2 else 1
+            if (mutations >= budget()) { withFrameNanos { }; mutations = 0 }
         }
-        val used = scene.markers.flatMapTo(HashSet()) { listOfNotNull(it.icon, it.dot) }
+        val used = scene.markers.flatMapTo(HashSet()) { listOfNotNull(it.icon, it.dot, it.arrow) }
         if (bitmaps.size > used.size + 64) {
             bitmaps.keys.filter { it !in used }.forEach { bitmaps.remove(it)?.recycle() }
             descriptors.clear()
@@ -82,15 +92,18 @@ internal class GoogleMapRenderer(private val map: GoogleMap, private val density
             focus?.includes(vehicle) != false && TransitMapVisibility.vehicle(vehicle.transportMode, zoom, focus != null)
         } else sceneFocusKey == focus?.key && TransitMapVisibility.stop(spec.stops.firstOrNull()?.transportMode, zoom, focus != null)
         if (!visible) {
-            if (entry.visible) { entry.marker?.isVisible = false; entry.visible = false; return true }
-            return false
+            var changed = hideArrow(entry)
+            if (entry.visible) { entry.marker?.isVisible = false; entry.visible = false; changed = true }
+            return changed
         }
-        val dot = vehicle != null && focus == null && zoom < TransitMapVisibility.VEHICLE_SYMBOL_MIN_ZOOM
-        val rawKey = if (dot) spec.dot ?: spec.icon else spec.icon
+        // Only trains are visible below the vehicle zoom: they keep their icon, drawn smaller.
+        val overview = vehicle != null && focus == null && zoom < TransitMapVisibility.VEHICLE_SYMBOL_MIN_ZOOM
+        entry.overview = overview
+        val rawKey = spec.icon
         val bitmap = bitmaps[rawKey] ?: return false
         if (entry.marker == null && !create) return false
         val pixels = if (vehicle != null) {
-            ((if (dot) 6f else if (zoom >= 13.5) 36f else 24f) + if (spec.selected) 6f else 0f) * density
+            VehicleMarkerLayout.diameterDp(spec.selected, overview) * density
         } else bitmap.width / 3f * density * spec.scale
         val side = pixels.roundToInt().coerceAtLeast(1)
         val placement = GoogleMarkerPlacement.create(side, spec.offset, if (vehicle == null) density * spec.scale else 0f)
@@ -132,8 +145,75 @@ internal class GoogleMapRenderer(private val map: GoogleMap, private val density
         }
         if (entry.zIndex != z) { marker.zIndex = z; entry.zIndex = z; changed = true }
         if (!entry.visible) { marker.isVisible = true; entry.visible = true; changed = true }
+        return applyArrow(entry, create) || changed
+    }
+
+    private fun hideArrow(entry: Entry): Boolean {
+        if (!entry.arrowVisible) return false
+        entry.arrowMarker?.isVisible = false; entry.arrowVisible = false
+        return true
+    }
+
+    private fun applyArrow(entry: Entry, create: Boolean): Boolean {
+        val spec = entry.spec
+        val rawKey = spec.arrow ?: return hideArrow(entry)
+        val heading = spec.heading ?: return hideArrow(entry)
+        val bitmap = bitmaps[rawKey] ?: return false
+        if (entry.arrowMarker == null && !create) return false
+        val side = (VehicleMarkerLayout.ARROW_CANVAS_DP * density *
+            VehicleMarkerLayout.arrowScale(spec.selected, entry.overview)).roundToInt().coerceAtLeast(1)
+        val key = "$rawKey@$side+0"
+        val descriptor = descriptors.getOrPut(key) {
+            val scaled = Bitmap.createScaledBitmap(bitmap, side, side, true)
+            try { BitmapDescriptorFactory.fromBitmap(scaled) } finally { if (scaled !== bitmap) scaled.recycle() }
+        }
+        val z = if (spec.selected) 39f else 29f
+        var changed = false
+        val marker = entry.arrowMarker ?: map.addMarker(MarkerOptions()
+            .position(spec.point.latLng()).anchor(.5f, .5f).icon(descriptor).flat(true)
+            .rotation(heading).zIndex(z).visible(false))?.also {
+            it.tag = spec.id; entry.arrowMarker = it; entry.arrowPoint = spec.point
+            entry.arrowKey = key; entry.heading = heading; entry.arrowZ = z; changed = true
+        } ?: return false
+        if (entry.arrowPoint != spec.point) {
+            marker.position = spec.point.latLng(); entry.arrowPoint = spec.point; changed = true
+        }
+        if (entry.arrowKey != key) { marker.setIcon(descriptor); entry.arrowKey = key; changed = true }
+        if (entry.heading != heading) { marker.rotation = heading; entry.heading = heading; changed = true }
+        if (entry.arrowZ != z) { marker.zIndex = z; entry.arrowZ = z; changed = true }
+        if (!entry.arrowVisible) { marker.isVisible = true; entry.arrowVisible = true; changed = true }
         return changed
     }
+
+    /** Visible markers near a screen point, positioned as drawn, for [MapTapResolver]. */
+    fun tapTargets(x: Float, y: Float): Pair<List<MapTapResolver.VehicleTarget>, List<StopHitTesting.Target>> {
+        val projection = map.projection
+        val angle = Math.toRadians(map.cameraPosition.bearing.toDouble())
+        val cos = kotlin.math.cos(angle); val sin = kotlin.math.sin(angle)
+        val reach = 80 * density
+        val vehicles = ArrayList<MapTapResolver.VehicleTarget>()
+        val stops = ArrayList<StopHitTesting.Target>()
+        for (entry in entries.values) {
+            if (!entry.visible || entry.marker == null) continue
+            val spec = entry.spec
+            val point = projection.toScreenLocation(spec.point.latLng())
+            if (kotlin.math.abs(point.x - x) > reach || kotlin.math.abs(point.y - y) > reach) continue
+            val vehicle = spec.vehicle
+            if (vehicle != null) {
+                vehicles += MapTapResolver.VehicleTarget(vehicle.id, point.x.toDouble(), point.y.toDouble(),
+                    VehicleMarkerLayout.diameterDp(spec.selected, entry.overview) * density / 2.0)
+            } else {
+                val stop = spec.stops.firstOrNull() ?: continue
+                val scale = density * spec.scale
+                val dx = spec.offset.x * scale; val dy = spec.offset.y * scale
+                stops += StopHitTesting.Target(stop, point.x + dx * cos + dy * sin, point.y - dx * sin + dy * cos,
+                    StopMarkerLayout.DIAMETER_DP * scale / 2)
+            }
+        }
+        return vehicles to stops
+    }
+
+    fun spec(stopId: String): GoogleMarkerSpec? = entries.values.firstOrNull { it.spec.vehicle == null && it.spec.stops.firstOrNull()?.id == stopId }?.spec
 
     fun route(paths: List<List<GeoPoint>>, color: Int, dark: Boolean, dotted: Boolean) {
         routeLines.forEach(Polyline::remove); routeLines.clear()
@@ -176,10 +256,50 @@ internal class GoogleMapRenderer(private val map: GoogleMap, private val density
         marker?.title = title
     }
 
+    companion object {
+        const val IDLE_BUDGET = 48
+        /** Small enough that creating markers under a moving finger does not drop frames. */
+        const val GESTURE_BUDGET = 12
+    }
+
+    private var userDot: Marker? = null
+    private var userCone: Marker? = null
+    private var userPoint: GeoPoint? = null
+    private var userBearing: Float? = null
+
+    /** The position dot and its facing cone; moved in place on every frame of a glide. */
+    fun userPosition(point: GeoPoint?) {
+        userPoint = point
+        if (point == null) {
+            userDot?.remove(); userDot = null; userCone?.remove(); userCone = null
+            return
+        }
+        val dot = userDot ?: map.addMarker(MarkerOptions().position(point.latLng()).anchor(.5f, .5f)
+            .icon(userIcon("user-dot") { UserLocationMarker.renderDot(density, 0) }).zIndex(61f))?.also { userDot = it }
+        dot?.position = point.latLng()
+        userHeading(userBearing)
+    }
+
+    fun userHeading(degrees: Float?) {
+        userBearing = degrees
+        val point = userPoint
+        if (point == null || degrees == null) { userCone?.remove(); userCone = null; return }
+        val cone = userCone ?: map.addMarker(MarkerOptions().position(point.latLng()).anchor(.5f, .5f).flat(true)
+            .icon(userIcon("user-cone") { UserLocationMarker.renderCone(density, 0) }).zIndex(60f))?.also { userCone = it }
+        cone?.position = point.latLng()
+        cone?.rotation = degrees
+    }
+
+    private fun userIcon(key: String, render: () -> Bitmap): BitmapDescriptor = descriptors.getOrPut(key) {
+        val bitmap = render()
+        try { BitmapDescriptorFactory.fromBitmap(bitmap) } finally { bitmap.recycle() }
+    }
+
     fun clear() {
-        entries.values.forEach { it.marker?.remove() }; entries.clear()
+        entries.values.forEach { it.marker?.remove(); it.arrowMarker?.remove() }; entries.clear()
         routeLines.forEach(Polyline::remove); trackLines.forEach(Polyline::remove)
         pins.values.forEach(Marker::remove); pins.clear()
+        userDot?.remove(); userDot = null; userCone?.remove(); userCone = null
         bitmaps.values.forEach(Bitmap::recycle); bitmaps.clear(); descriptors.clear()
         offsets.clear()
     }

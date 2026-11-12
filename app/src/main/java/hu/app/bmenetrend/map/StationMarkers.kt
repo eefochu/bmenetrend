@@ -38,9 +38,9 @@ internal object StationMarkers {
     const val ROAD_LAYER = "station-symbols"
     const val SELECTED_LAYER = "station-selected"
     val ARROW_LAYERS = listOf("station-arrows-0", "station-arrows-1")
-    const val RAIL_MIN_ZOOM = TransitMapVisibility.STOP_MIN_ZOOM
+    const val RAIL_MIN_ZOOM = TransitMapVisibility.RAIL_STOP_MIN_ZOOM
     const val ROAD_MIN_ZOOM = TransitMapVisibility.STOP_MIN_ZOOM
-    val ARROW_MIN_ZOOM = StopMapClustering.PLATFORM_ZOOM.toFloat()
+    const val ARROW_MIN_ZOOM = ROAD_MIN_ZOOM
     /**
      * Deepest level the source is tiled to; closer zooms reuse these tiles. geojson-vt keeps a copy
      * of every point and its properties per generated tile and never evicts them, so tiling the whole
@@ -48,8 +48,8 @@ internal object StationMarkers {
      * beyond the level where arrows appear.
      */
     val SOURCE_MAX_ZOOM = StopMapClustering.PLATFORM_ZOOM.toInt()
-    /** Road stops appear at 12; load their region one zoom level earlier. */
-    const val REGION_MIN_ZOOM = 11.0
+    /** Stops appear at [ROAD_MIN_ZOOM]; load their region two zoom levels earlier. */
+    const val REGION_MIN_ZOOM = 12.0
     /** Minimum region span (≈35 × 33 km at Budapest's latitude: the whole city at once). */
     const val REGION_MIN_LON_SPAN = 0.45
     const val REGION_MIN_LAT_SPAN = 0.3
@@ -112,6 +112,7 @@ internal object StationMarkers {
         private val routes: Map<String, TransitRoute>,
         /** Every route id a marker's colours can depend on. */
         private val referencedRoutes: Set<String>,
+        val centerColor: Int = StationSprite.DEFAULT_CENTER_COLOR,
     ) {
         /** The GeoJSON payload until it is uploaded; released afterwards (it can be megabytes). */
         var json: String? = json
@@ -126,8 +127,10 @@ internal object StationMarkers {
          * replace the catalogue every few seconds; this keeps them from re-serializing the country.
          */
         fun matches(scene: StationScene, region: MapBounds?, focused: Boolean, highlightedIds: Set<String>, bearings: Map<String, List<Double>>,
-                    routes: Map<String, TransitRoute>, dark: Boolean, routeColor: Int): Boolean =
+                    routes: Map<String, TransitRoute>, dark: Boolean, routeColor: Int,
+                    centerColor: Int = StationSprite.DEFAULT_CENTER_COLOR): Boolean =
             scene === this.scene && region == this.region && focused == this.focused && dark == this.dark && routeColor == this.routeColor &&
+                centerColor == this.centerColor &&
                 (bearings === this.bearings || bearings == this.bearings) && highlightedIds == this.highlightedIds &&
                 (routes === this.routes || referencedRoutes.all { sameColour(this.routes[it], routes[it]) })
 
@@ -135,7 +138,7 @@ internal object StationMarkers {
             focused == this.focused && highlightedIds == this.highlightedIds
 
         fun spriteFor(marker: Marker, selected: Boolean) = StationSprite(marker.palette, StopMarkerLayout.DIAMETER_DP.toInt(),
-            focused, selected, dark, routeColor)
+            focused, selected, dark, routeColor, centerColor = centerColor)
     }
 
     /** The inputs StopMarkerColors derives a route's marker colour from. */
@@ -161,6 +164,7 @@ internal object StationMarkers {
         routeColor: Int,
         imageName: (StationSprite) -> String,
         ensureActive: () -> Unit = {},
+        centerColor: Int = StationSprite.DEFAULT_CENTER_COLOR,
     ): Data {
         val groups = if (focused) scene.groups.filter { group -> group.members.any { it.id in highlightedIds } }
             else scene.groups.filter { group -> RailSupport.isTrain(group.anchor.transportMode) || region?.contains(group.anchor) == true }
@@ -183,7 +187,7 @@ internal object StationMarkers {
                 RailSupport.isTrain(anchor.transportMode), directions(group.members, bearings))
             markers[anchor.id] = marker
             group.members.forEach { anchorByStop.putIfAbsent(it.id, anchor.id) }
-            val sprite = StationSprite(palette, StopMarkerLayout.DIAMETER_DP.toInt(), focused, false, dark, routeColor)
+            val sprite = StationSprite(palette, StopMarkerLayout.DIAMETER_DP.toInt(), focused, false, dark, routeColor, centerColor = centerColor)
             val image = imageName(sprite)
             sprites[image] = sprite
             if (!first) json.append(',')
@@ -208,7 +212,7 @@ internal object StationMarkers {
         json.append("]}")
         return Data(json.toString(), sprites, markers, anchorByStop,
             StationChunkIndex(markers.values.toList()) { it.group.anchor.position }, focused, dark, routeColor,
-            scene, region, highlightedIds, bearings, routes, referencedRoutes)
+            scene, region, highlightedIds, bearings, routes, referencedRoutes, centerColor)
     }
 
     private fun appendNumber(out: StringBuilder, value: Double) {
