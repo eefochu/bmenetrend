@@ -1,6 +1,7 @@
 package hu.app.bmenetrend.data
 
 import kotlinx.coroutines.*
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Test
 import java.time.Instant
@@ -50,6 +51,16 @@ class BkkFirstPlannerBackendTest {
         return TripItinerary("itin:$routeNumber", start, end, listOf(leg), fetchedAt = fetchedAt)
     }
 
+    private data class WalkAverseCall(val from: PlannerEndpoint, val to: PlannerEndpoint,
+                                     val ready: Instant, val busesOnly: Boolean)
+
+    private fun itineraryWithWalk(routeNumber: String, walkSeconds: Long): TripItinerary {
+        val ride = sampleItinerary("BUS", routeNumber, startOffsetSec = walkSeconds + 60)
+        val walk = PlanLeg("WALK", currentTime, currentTime.plusSeconds(walkSeconds), walkSeconds * TripPlanner.WALK_SPEED,
+            deakPoint, deakPoint, null, null, false, false, emptyList())
+        return ride.copy(start = currentTime, legs = listOf(walk) + ride.legs)
+    }
+
     private class FakePlannerBackend(
         var responseDelayMs: Long = 0,
         var itineraries: List<TripItinerary> = emptyList(),
@@ -57,6 +68,16 @@ class BkkFirstPlannerBackendTest {
         var itinerariesProvider: (() -> List<TripItinerary>)? = null,
         var stopsList: List<TransitStop> = emptyList(),
     ) : PlannerBackend {
+        var walkAverseItineraries: List<TripItinerary> = emptyList()
+        var walkAverseDelayMs: Long = 0
+        var walkAverseFailure: Exception? = null
+        val walkAverseCalls = mutableListOf<WalkAverseCall>()
+        override suspend fun walkAverseRoutes(from: PlannerEndpoint, to: PlannerEndpoint, ready: Instant, busesOnly: Boolean): List<TripItinerary> {
+            walkAverseCalls += WalkAverseCall(from, to, ready, busesOnly)
+            delay(walkAverseDelayMs)
+            walkAverseFailure?.let { throw it }
+            return walkAverseItineraries
+        }
         val callCount = AtomicInteger(0)
         val clearCount = AtomicInteger(0)
         val stopsCallCount = AtomicInteger(0)
@@ -115,6 +136,108 @@ class BkkFirstPlannerBackendTest {
         }
 
         override fun planHeadroom(): Int = headroom
+    }
+
+    @Test fun plainRoutesSkipBothEnrichmentsAndKeepTheirCacheSeparateFromRoutes() = runTest {
+        for (busesOnly in listOf(false, true)) {
+            val ride = sampleItinerary("BUS", "long-walk").legs.single()
+            val walk = PlanLeg("WALK", ride.end, ride.end.plusSeconds(600), 600 * TripPlanner.WALK_SPEED,
+                kelenfoldPoint, kelenfoldPoint, null, null, false, false, emptyList())
+            val row = TripItinerary("long-egress", ride.start, walk.end, listOf(ride, walk))
+            val improved = sampleItinerary("BUS", "less-walking")
+            val emma = FakePlannerBackend().apply { walkAverseItineraries = listOf(improved) }
+            val bkk = FakeBkkPlannerSource(headroom = 10)
+            bkk.planResultProvider = {
+                // The plain primary and enriched primary return the long-walk row;
+                // the enriched connection probe has no connecting vehicle.
+                if (bkk.callCount.get() <= 2) BkkWorkerParser.PlanResult(listOf(row), 0, 1)
+                else BkkWorkerParser.PlanResult(emptyList(), 0, 0)
+            }
+            val backend = BkkFirstPlannerBackend(emma, bkk, clock = clock)
+            assertEquals(600L, row.walkSeconds)
+            assertEquals(600L, PlannerAlternatives.finalWalkSeconds(row))
+
+            assertEquals(listOf(row), backend.plainRoutes(deakTer, kelenfold, currentTime, busesOnly))
+            assertEquals(1, bkk.callCount.get())
+            assertTrue(emma.walkAverseCalls.isEmpty())
+            assertEquals(0, emma.callCount.get())
+            assertEquals(listOf(row), backend.plainRoutes(deakTer, kelenfold, currentTime, busesOnly))
+            assertEquals("Plain repeat must use its own cache", 1, bkk.callCount.get())
+
+            assertEquals(listOf(row, improved), backend.routes(deakTer, kelenfold, currentTime, busesOnly))
+            assertEquals("Enriched query must fetch its primary and probe a connection", 3, bkk.callCount.get())
+            assertEquals(listOf(WalkAverseCall(deakTer, kelenfold, currentTime, busesOnly)), emma.walkAverseCalls)
+            assertEquals(0, emma.callCount.get())
+            assertEquals(listOf(row), backend.plainRoutes(deakTer, kelenfold, currentTime, busesOnly))
+            assertEquals(listOf(row, improved), backend.routes(deakTer, kelenfold, currentTime, busesOnly))
+            assertEquals(3, bkk.callCount.get())
+            assertEquals(1, emma.walkAverseCalls.size)
+        }
+    }
+
+    @Test fun plainRoutesStillFallBackToEmmaWhenBkkFails() = runTest {
+        val row = sampleItinerary("COACH", "760", providerId = "volan")
+        val emma = FakePlannerBackend(itineraries = listOf(row))
+        val bkk = FakeBkkPlannerSource(failure = IllegalStateException("BKK unavailable"))
+        val backend = BkkFirstPlannerBackend(emma, bkk, clock = clock)
+
+        assertEquals(listOf(row), backend.plainRoutes(deakTer, kelenfold, currentTime, busesOnly = true))
+        assertEquals(1, bkk.callCount.get())
+        assertEquals(1, emma.callCount.get())
+        assertTrue(emma.walkAverseCalls.isEmpty())
+        assertEquals(true, bkk.lastBusesOnly)
+    }
+
+    @Test fun allLongWalkBkkRowsMergeWalkAverseEmmaOnceWithMatchingRequestAndVehicleDedupe() = runTest {
+        for (busesOnly in listOf(false, true)) {
+            val bkkRows = listOf(itineraryWithWalk("M4", 600), itineraryWithWalk("49", 900))
+            val distinct = sampleItinerary("BUS", "766")
+            val emma = FakePlannerBackend().apply {
+                // A different ID still represents the same vehicle journey as BKK's first row.
+                walkAverseItineraries = listOf(bkkRows.first().copy(id = "emma-duplicate"), distinct)
+            }
+            val bkk = FakeBkkPlannerSource(planResult = BkkWorkerParser.PlanResult(bkkRows, 0, 2))
+            val backend = BkkFirstPlannerBackend(emma, bkk, clock = clock)
+
+            assertEquals(bkkRows + distinct, backend.routes(deakTer, kelenfold, currentTime, busesOnly))
+            assertEquals(listOf(WalkAverseCall(deakTer, kelenfold, currentTime, busesOnly)), emma.walkAverseCalls)
+            assertEquals(0, emma.callCount.get())
+        }
+    }
+
+    @Test fun anyBkkRowBelowTenMinuteWalkSkipsWalkAverseEmma() = runTest {
+        val rows = listOf(itineraryWithWalk("M4", 900), itineraryWithWalk("49", 599))
+        val emma = FakePlannerBackend()
+        val bkk = FakeBkkPlannerSource(planResult = BkkWorkerParser.PlanResult(rows, 0, 2))
+
+        assertEquals(rows, BkkFirstPlannerBackend(emma, bkk, clock = clock).routes(deakTer, kelenfold, currentTime))
+        assertTrue(emma.walkAverseCalls.isEmpty())
+        assertEquals(0, emma.callCount.get())
+    }
+
+    @Test fun walkAverseEmmaFailureKeepsHealthyBkkRows() = runTest {
+        val rows = listOf(itineraryWithWalk("M4", 600))
+        val emma = FakePlannerBackend().apply { walkAverseFailure = IllegalStateException("EMMA unavailable") }
+        val bkk = FakeBkkPlannerSource(planResult = BkkWorkerParser.PlanResult(rows, 0, 1))
+
+        assertEquals(rows, BkkFirstPlannerBackend(emma, bkk, clock = clock).routes(deakTer, kelenfold, currentTime))
+        assertEquals(1, emma.walkAverseCalls.size)
+        assertEquals(0, emma.callCount.get())
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test fun walkAverseEmmaTimeoutKeepsHealthyBkkRowsAfterFourVirtualSeconds() = runTest {
+        val rows = listOf(itineraryWithWalk("M4", 600))
+        val emma = FakePlannerBackend().apply {
+            walkAverseDelayMs = 4_001
+            walkAverseItineraries = listOf(sampleItinerary("BUS", "766"))
+        }
+        val bkk = FakeBkkPlannerSource(planResult = BkkWorkerParser.PlanResult(rows, 0, 1))
+
+        assertEquals(rows, BkkFirstPlannerBackend(emma, bkk, clock = clock).routes(deakTer, kelenfold, currentTime))
+        assertEquals(4_000L, testScheduler.currentTime)
+        assertEquals(1, emma.walkAverseCalls.size)
+        assertEquals(0, emma.callCount.get())
     }
 
     @Test

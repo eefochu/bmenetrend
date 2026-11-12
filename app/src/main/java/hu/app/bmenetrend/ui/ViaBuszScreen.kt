@@ -1,5 +1,6 @@
 package hu.app.bmenetrend.ui
 
+import hu.app.bmenetrend.TransitDiagnostics
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -114,6 +115,7 @@ import hu.app.bmenetrend.R
 import hu.app.bmenetrend.data.ArrivalKind
 import hu.app.bmenetrend.data.BkkPlatformIndex
 import hu.app.bmenetrend.data.Departure
+import hu.app.bmenetrend.data.Vehicle
 import hu.app.bmenetrend.data.RailSupport
 import hu.app.bmenetrend.data.StationTimetableRepository
 import hu.app.bmenetrend.data.StopClusters
@@ -149,6 +151,7 @@ fun ViaBuszScreen(
     onThemeModeChanged: (ThemeMode) -> Unit = {},
     onMapStyleChanged: (MapStyle) -> Unit = {},
     onLineOpened: (String, Boolean) -> Unit = { _, _ -> },
+    onDepartureTrip: (String, Departure) -> Unit = { _, _ -> },
     onBoardingStop: (String, String, String) -> Unit = { _, _, _ -> },
     onClearBoarding: () -> Unit = {},
     onShowWholeRoute: () -> Unit = {},
@@ -172,6 +175,8 @@ fun ViaBuszScreen(
     onOtaChannelChanged: (hu.app.bmenetrend.data.UpdateChannel) -> Unit = {},
     onCheckOtaUpdates: () -> Unit = {},
     onDownloadAndInstallOta: (hu.app.bmenetrend.data.OtaUpdateInfo) -> Unit = {},
+    /** Read only where needed: live positions change every few seconds and must not recompose the screen. */
+    vehicles: () -> List<Vehicle> = { emptyList() },
     mapContent: @Composable (Modifier, Int, TransitRoute?, String?, () -> Unit) -> Unit = { modifier, _, _, _, _ -> Box(modifier) },
 ) {
     var searchOpen by rememberSaveable { mutableStateOf(false) }
@@ -231,7 +236,7 @@ fun ViaBuszScreen(
         scope.launch { sheetState.bottomSheetState.partialExpand() }
     }
     val openDeparture: (Departure) -> Unit = { departure ->
-        val observed = departureVehicle(departure,state.vehicles)
+        val observed = departureVehicle(departure,vehicles())
         if (observed != null) {
             routeId = null; directionId = null; selectedDeparture = null
             onVehicleOpened(observed.id)
@@ -247,13 +252,18 @@ fun ViaBuszScreen(
             selectedDeparture = departure
             onLineOpened(lineId,false)
             searchOpen = false
-            scope.launch { sheetState.bottomSheetState.expand() }
+            // Half open like a line opened from anywhere else, so the highlighted trip stays visible.
+            scope.launch { sheetState.bottomSheetState.partialExpand() }
         }
     }
     LaunchedEffect(routeId, state.lineDetails[routeId], selectedDeparture) {
         val departure = selectedDeparture ?: return@LaunchedEffect
         val id = routeId ?: return@LaunchedEffect
-        if (directionId == null) directionId = departureDirection(departure,state.findRoute(id),state.lineDetails[id])
+        if (directionId != null) return@LaunchedEffect
+        val details = state.lineDetails[id]
+        directionId = departureDirection(departure,state.findRoute(id),details)
+        // None of the line's variants serves this trip: load the trip itself.
+        if (directionId == null && details != null) onDepartureTrip(id, departure)
     }
 
     val navigateBack: () -> Unit = {
@@ -265,6 +275,12 @@ fun ViaBuszScreen(
         }
     }
     val sheet = sheetState.bottomSheetState
+    LaunchedEffect(routeId, directionId, state.selectedVehicle?.id, state.trackedVehicle?.id,
+        state.boardingSelection, sheet.currentValue, sheet.targetValue, searchOpen) {
+        TransitDiagnostics.event("ui") {
+            "preview=$routeId direction=$directionId selected=${state.selectedVehicle != null} tracked=${state.trackedVehicle != null} boarding=${state.boardingSelection?.routeId} sheet=${sheet.currentValue} target=${sheet.targetValue} search=$searchOpen"
+        }
+    }
     // Discrete anchor changes drive controls. Drag offsets stay inside Material's layout phase.
     val isExpanded by remember { derivedStateOf { sheet.currentValue == SheetValue.Expanded } }
     val isMinimized by remember { derivedStateOf { sheet.currentValue == SheetValue.Hidden } }
@@ -287,11 +303,7 @@ fun ViaBuszScreen(
         when {
             searchOpen -> searchOpen = false
             directionId != null || routeId != null -> closeLine()
-            state.trackedVehicle != null -> {
-                onReturnToTrackedVehicle()
-                scope.launch { sheet.partialExpand() }
-            }
-            state.selectedVehicle != null -> closeVehicle()
+            state.selectedVehicle != null || state.trackedVehicle != null -> closeVehicle()
             state.boardingSelection != null -> {
                 onClearBoarding()
                 scope.launch { sheet.partialExpand() }
@@ -331,13 +343,16 @@ fun ViaBuszScreen(
     BackHandler(enabled = searchOpen, onBack = navigateBack)
     // A restored hidden sheet is not a new dismissal of an externally selected stop.
     var sheetWasVisible by remember { mutableStateOf(sheet.currentValue != SheetValue.Hidden) }
-    LaunchedEffect(sheet.currentValue) {
-        if(sheet.currentValue == SheetValue.Hidden) { routeId=null; directionId=null }
-        if (sheet.currentValue == SheetValue.Hidden && sheetWasVisible && (state.selectedVehicle != null || state.boardingSelection != null || !state.showNearby)) {
-            onClearBoarding()
-            onReturnToNearby()
+    LaunchedEffect(sheet.currentValue, sheet.targetValue) {
+        val dismissing = sheet.targetValue == SheetValue.Hidden
+        if (dismissing && sheetWasVisible) {
+            routeId = null; directionId = null; selectedDeparture = null
+            if (state.selectedVehicle != null || state.trackedVehicle != null || state.boardingSelection != null || !state.showNearby) {
+                onClearBoarding()
+                onReturnToNearby()
+            }
         }
-        sheetWasVisible = sheet.currentValue != SheetValue.Hidden
+        sheetWasVisible = !dismissing && sheet.currentValue != SheetValue.Hidden
     }
     LaunchedEffect(state.selectedVehicle?.id) {
         if (state.selectedVehicle != null) {
@@ -559,6 +574,7 @@ fun ViaBuszScreen(
             if (searchOpen) {
                 SearchAndRoutes(
                     state = state,
+                    vehicles = vehicles,
                     query = query,
                     onQueryChanged = { query = it },
                     onBack = navigateBack,
@@ -932,6 +948,7 @@ private fun DepartureRow(departure: Departure, minutes: Int, providerId: String,
 @Composable
 private fun SearchAndRoutes(
     state: UiState,
+    vehicles: () -> List<Vehicle>,
     query: String,
     onQueryChanged: (String) -> Unit,
     onBack: () -> Unit,
@@ -945,7 +962,7 @@ private fun SearchAndRoutes(
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().statusBarsPadding().imePadding()) {
             TransitSearchInput(query, onQueryChanged, { if (category != SearchCategory.ALL) category = SearchCategory.ALL else onBack() })
-            CategorizedSearch(state, query, category, { category = it }, onRoute, onStop, onVehicle, onPlace, onSearchPlaces, onQueryChanged = onQueryChanged)
+            CategorizedSearch(state, query, category, { category = it }, onRoute, onStop, onVehicle, onPlace, onSearchPlaces, onQueryChanged = onQueryChanged, vehicles = vehicles)
         }
     }
 }

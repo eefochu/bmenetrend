@@ -24,6 +24,7 @@ internal fun mapAttributionLiftPx(visibleSheetPx: Float, peekHeightPx: Float, co
 /** On-map credit; the complete source and licence links remain one tap away. */
 @Composable
 internal fun MapAttribution(modifier: Modifier = Modifier) {
+    if (LocalMapAppearance.current.google) return
     val satellite = LocalMapAppearance.current.satellite
     var expanded by rememberSaveable { mutableStateOf(false) }
     Surface(onClick = { expanded = true }, modifier = modifier,

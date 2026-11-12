@@ -13,6 +13,14 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class TransitIconBitmapTest {
+    @Test fun cachedReturnsNullBeforeLoadAndTheSameBitmapAfterLoad() {
+        val context = ApplicationProvider.getApplicationContext<Application>()
+        val pixels = 73
+        assertNull(TransitIconBitmap.cached(context, R.drawable.vehicle_bkk_bus, pixels))
+        val loaded = TransitIconBitmap.load(context, R.drawable.vehicle_bkk_bus, pixels)
+        assertSame(loaded, TransitIconBitmap.cached(context, R.drawable.vehicle_bkk_bus, pixels))
+    }
+
     @Test fun largeBusArtworkIsSampledToBadgeSizeBeforeItCanReachTheGpu() {
         val context=ApplicationProvider.getApplicationContext<Application>()
         val bitmap=TransitIconBitmap.load(context,R.drawable.vehicle_bkk_bus,56)

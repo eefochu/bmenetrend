@@ -60,7 +60,20 @@ class PlannerViewModel internal constructor(
     private var location: GeoPoint? = null
     private var offlinePackId: String? = null
 
+    // Local timetables (ViaBusz/KanyarGO/HOMM) load from disk or the web once a day. Start
+    // that as soon as the planner exists and keep it, so the first search after app start can
+    // already use short local rides instead of returning before they are loaded.
+    private var planningNetwork: Pair<java.time.LocalDate, Deferred<TransitNetwork>>? = null
+    private fun planningNetwork(): Deferred<TransitNetwork> = synchronized(this) {
+        val today = java.time.LocalDate.now(TripPlanner.zone)
+        planningNetwork?.takeIf { (day, job) -> day == today && !job.isCancelled &&
+            !(job.isCompleted && job.getCompletionExceptionOrNull() != null) }?.second
+            ?: viewModelScope.async(Dispatchers.IO) { loadNetwork() }.also { planningNetwork = today to it }
+    }
+    private val sharedNetwork: suspend () -> TransitNetwork = { planningNetwork().await() }
+
     init {
+        planningNetwork()
         viewModelScope.launch {
             hu.app.bmenetrend.offline.NetworkAccessPolicy.offline.collect { enabled ->
                 invalidate()
@@ -278,8 +291,10 @@ class PlannerViewModel internal constructor(
         searchJob = viewModelScope.launch {
             val (localStationResults, consolidatedLocal, recommendation) = withContext(Dispatchers.Default) {
                 val parsed = TransitSearch.query(query)
-                val literal = TransitSearch.stops(index, parsed, location, emptySet()).take(10).map(PlannerEndpoint::fromStop)
-                Triple(literal, consolidateEndpoints(literal), StationRecommendations.stops(index, parsed, location, emptySet()).firstOrNull()?.let(PlannerEndpoint::fromStop))
+                // A newer keystroke cancels this job; the checkpoint stops the scans mid-way too.
+                val checkpoint = { ensureActive() }
+                val literal = TransitSearch.stops(index, parsed, location, emptySet(), checkpoint).take(10).map(PlannerEndpoint::fromStop)
+                Triple(literal, consolidateEndpoints(literal), StationRecommendations.stops(index, parsed, location, emptySet(), checkpoint).firstOrNull()?.let(PlannerEndpoint::fromStop))
             }
             if (generation != searchGeneration) return@launch
             val cachedPlaces = if (state.value.offline) emptyList() else places.cached(query).orEmpty().take(6)
@@ -436,9 +451,9 @@ class PlannerViewModel internal constructor(
             try {
                 val result = if (current.offline) offlinePlanner.plan(origin, destination, requested, ready, current.localProviders)
                 else planWithRecovery(online = {
-                    planner.plan(origin, destination, requested, ready, stopCatalogue, loadNetwork, current.localProviders)
+                    planner.plan(origin, destination, requested, ready, stopCatalogue, sharedNetwork, current.localProviders)
                 }, saved = { offlinePlanner.plan(origin, destination, requested, ready, current.localProviders) })
-                val snapshot = result.copy(itineraries = listOfNotNull(TripPlanner.bestTimely(result.itineraries, ready)))
+                val snapshot = result.copy(itineraries = TripPlanner.timelyChoices(result.itineraries, ready))
                 if (generation == planGeneration) mutable.update { it.copy(planning = false, result = snapshot,
                     selectedId = it.selectedId?.takeIf { id -> snapshot.itineraries.any { route -> route.id == id } },
                     error = if (snapshot.itineraries.isEmpty()) {

@@ -8,8 +8,15 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.util.LruCache
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.graphics.painter.Painter
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -23,12 +30,17 @@ internal object TransitIconBitmap {
         override fun sizeOf(key: Key, value: Bitmap) = value.byteCount
     }
 
+    private fun key(context: Context, drawable: Int, pixels: Int) =
+        Key(drawable, pixels.coerceAtLeast(1), context.resources.displayMetrics.densityDpi, context.resources.configuration.uiMode)
+
+    fun cached(context: Context, drawable: Int, pixels: Int): Bitmap? = synchronized(cache) { cache.get(key(context, drawable, pixels)) }
+
     fun load(context: Context, drawable: Int, pixels: Int): Bitmap {
-        val size = pixels.coerceAtLeast(1)
-        val key = Key(drawable, size, context.resources.displayMetrics.densityDpi, context.resources.configuration.uiMode)
-        return synchronized(cache) {
-            cache.get(key) ?: render(context, drawable, size).also { cache.put(key, it) }
-        }
+        val key = key(context, drawable, pixels)
+        synchronized(cache) { cache.get(key) }?.let { return it }
+        // Decode outside the lock so a slow first decode never blocks a cache hit on the main thread.
+        val rendered = render(context, drawable, key.pixels)
+        return synchronized(cache) { cache.get(key) ?: rendered.also { cache.put(key, it) } }
     }
 
     private fun render(context: Context, drawable: Int, size: Int): Bitmap {
@@ -57,12 +69,24 @@ internal object TransitIconBitmap {
     }
 }
 
+/**
+ * First use of each artwork decodes a large PNG (~12 ms). That runs off the main thread so list rows
+ * and panels never stall a frame; callers give the image a fixed size, so the late icon cannot shift layout.
+ */
 @Composable
-internal fun rememberTransitIcon(drawable: Int, size: Dp): ImageBitmap {
+internal fun rememberTransitIcon(drawable: Int, size: Dp): Painter {
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
     val pixels = with(LocalDensity.current) { size.roundToPx() }
-    return remember(context.resources, drawable, pixels, configuration.uiMode, configuration.densityDpi) {
-        TransitIconBitmap.load(context, drawable, pixels).asImageBitmap()
+    return rememberDecodedPainter(drawable, pixels, configuration.uiMode, configuration.densityDpi,
+        cached = { TransitIconBitmap.cached(context, drawable, pixels) }) { TransitIconBitmap.load(context, drawable, pixels) }
+}
+
+@Composable
+internal fun rememberDecodedPainter(vararg keys: Any?, cached: () -> Bitmap?, decode: () -> Bitmap): Painter {
+    val initial = remember(*keys) { cached()?.asImageBitmap() }
+    val bitmap by produceState(initial, *keys) {
+        if (value == null) value = withContext(Dispatchers.Default) { decode() }.asImageBitmap()
     }
+    return remember(bitmap) { bitmap?.let(::BitmapPainter) ?: ColorPainter(Color.Transparent) }
 }

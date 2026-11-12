@@ -4,11 +4,11 @@ package hu.app.bmenetrend.data
  * BKK is the primary live source inside the area the Worker covered; direct EMMA supplements it.
  *
  *  - BKK bus/tram/trolleybus/metro and EMMA's BKK relay share `emma:BKK:<n>`; the BKK record wins.
- *    EMMA's BKK vehicles inside the covered area but absent from BKK are dropped as stale relays.
+ *    Vehicles missing from a partial BKK response remain available from EMMA.
  *  - BKK trains/HÉV are matched to EMMA by any underlying vehicle number (coupled sets and HÉV
  *    plate numbers included). The EMMA identity, trip, route, train number and next stop are kept
  *    (its journey/line queries understand them); BKK supplies position, heading and timestamp,
- *    even when the EMMA report is newer.
+ *    unless the EMMA position is substantially fresher.
  *  - Worker-provided EMMA fallback trains only fill gaps not covered by BKK or direct EMMA.
  *  - Volán plates share the `emma:hkir:hkir_<plate>` identity; BKK's fields win, while the
  *    national trip/route identifiers remain available for fallback detail queries.
@@ -18,7 +18,7 @@ package hu.app.bmenetrend.data
  */
 object LiveVehicleMerge {
     fun merge(worker: List<WorkerVehicle>, covered: MapBounds?, emma: List<Vehicle>): List<Vehicle> {
-        if (worker.isEmpty() && covered == null) return emma
+        if (worker.isEmpty()) return emma
         val emmaById = HashMap<String, Vehicle>(emma.size * 2)
         val railByNumber = HashMap<Pair<String, String>, Vehicle>()
         // A BKK-only train/HÉV adopts EMMA's route for the same line, so the line list and line
@@ -51,7 +51,7 @@ object LiveVehicleMerge {
                 val matches = candidate.numbers.mapNotNull { railByNumber[vehicle.providerId to it] }.distinct()
                 consumed += matches.map { it.id }
                 matches.firstOrNull()?.let { source ->
-                    source.copy(position = vehicle.position, observedAt = vehicle.observedAt,
+                    preserveFresherPosition(source.copy(position = vehicle.position, observedAt = vehicle.observedAt,
                         heading = vehicle.heading ?: source.heading, speedKmh = null,
                         destination = source.destination ?: vehicle.destination,
                         routeNumber = source.routeNumber ?: vehicle.routeNumber,
@@ -59,10 +59,11 @@ object LiveVehicleMerge {
                         // Position from BKK, trip/route details from EMMA: labelled as exactly that.
                         positionSource = vehicle.positionSource ?: DataSource.BKK,
                         detailsSource = source.detailsSource ?: DataSource.EMMA,
-                        bkkTripId = vehicle.bkkTripId)
+                        bkkTripId = vehicle.bkkTripId), source)
                 } ?: vehicle.routeNumber?.let { railRoutes[vehicle.providerId to it] }?.let { vehicle.copy(routeId = it) } ?: vehicle
             }
-            if (seen.add(merged.id)) { result += merged; numbers += candidate.numbers }
+            val fresh = emmaById[merged.id]?.let { preserveFresherPosition(merged, it) } ?: merged
+            if (seen.add(fresh.id)) { result += fresh; numbers += candidate.numbers }
         }
         for (candidate in worker) {
             if (!candidate.fallback) continue
@@ -73,12 +74,17 @@ object LiveVehicleMerge {
         }
         for (vehicle in emma) {
             if (vehicle.id in consumed || vehicle.id in seen) continue
-            if (covered != null && vehicle.providerId == "bkk" && covered.contains(vehicle.position)) continue
             result += vehicle
         }
         return result
     }
 
     private val RAIL_PROVIDERS = setOf("hev", "mav")
-    private fun MapBounds.contains(point: GeoPoint) = point.lat in south..north && point.lon in west..east
+    // Relay timestamps can differ slightly; retain BKK priority unless its telemetry is a minute behind.
+    private fun preserveFresherPosition(primary: Vehicle, fallback: Vehicle): Vehicle =
+        if (fallback.observedAt.isAfter(primary.observedAt.plusSeconds(60))) primary.copy(
+            position = fallback.position, observedAt = fallback.observedAt, heading = fallback.heading,
+            speedKmh = fallback.speedKmh, routeEstimate = fallback.routeEstimate,
+            positionSource = fallback.positionSource ?: DataSource.EMMA,
+        ) else primary
 }

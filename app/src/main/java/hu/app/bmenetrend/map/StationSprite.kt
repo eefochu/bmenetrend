@@ -5,14 +5,16 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
+import androidx.core.graphics.ColorUtils
 import kotlin.math.*
 
 /** One bounded, composited marker: overlapping platforms have a clear front/back order. */
 internal data class StationSprite(
     val colors: List<Int>,val diameterDp: Int,val focused: Boolean,val selected: Boolean,
     val dark: Boolean,val routeColor: Int,val arrows: List<Int> = emptyList(),
+    val centerColor: Int = DEFAULT_CENTER_COLOR,
 ) {
-    val key: String ="station-${colors.joinToString("_")}-$diameterDp-$focused-$selected-$dark-${if(focused && colors.size==1) routeColor else 0}-${arrows.joinToString("_")}"
+    val key: String ="station-${colors.joinToString("_")}-$diameterDp-$focused-$selected-$dark-${if(focused && colors.size==1) routeColor else 0}-${arrows.joinToString("_")}-${if(diameterDp>=10 && (!selected || colors.size>1)) centerColor else 0}"
     fun render(): Bitmap {
         val scale=3.0
         val radius=diameterDp/2.0
@@ -37,11 +39,17 @@ internal data class StationSprite(
         circle(radius+1.5,Color.WHITE)
         circle(radius,if(colors.size>1) Color.WHITE else if(focused) routeColor else colors.first())
         if(colors.size>1) StopMarkerColors.sectors(colors,c,c,(radius-.75)*scale).forEach { polygon(it.points,it.color,true) }
-        if(radius>=5 && (!selected || colors.size>1)) circle(radius-3,if(focused && dark) 0xFF10160F.toInt() else Color.WHITE)
+        if(radius>=5 && (!selected || colors.size>1)) {
+            circle(radius-4,Color.WHITE)
+            circle(radius-4.5,centerColor)
+        }
         return bitmap
     }
 
     companion object {
+        const val DEFAULT_CENTER_COLOR = 0xFF0B1215.toInt()
+        fun deepCenterColor(accent: Int): Int = ColorUtils.blendARGB(Color.BLACK, accent, .10f)
+
         fun arrowKey(diameterDp: Int, dark: Boolean) = "station-arrow-$diameterDp-$dark"
 
         /**

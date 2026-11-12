@@ -19,6 +19,18 @@ data class WorkerVehicle(val vehicle: Vehicle, val numbers: Set<String>, val fal
  * identifiers with no shared alias retain the raw BKK identifier instead of guessing one.
  */
 object BkkWorkerParser {
+    fun stopDirections(text: String): Map<String, Double> {
+        val rows = data(text).getJSONArray("list")
+        return buildMap {
+            for (index in 0 until rows.length()) {
+                val row = rows.optJSONObject(index) ?: continue
+                val id = appStopId(row.text("id")) ?: continue
+                val bearing = (row.opt("bearing") as? Number)?.toDouble() ?: continue
+                if (bearing.isFinite() && bearing >= 0 && bearing < 360) put(id, bearing)
+            }
+        }
+    }
+
     private val RAIL_STOP = Regex("^BKK_(00\\d{7})(_\\d+)?$")
     private val BKK_MODES = setOf("BUS", "TRAM", "TROLLEYBUS", "SUBWAY")
     private val VOLAN_STOP = Regex("^volan_(\\d+_\\d+)$")

@@ -22,7 +22,10 @@ object NearbyDepartures {
     fun anchor(center: GeoPoint, bounds: MapBounds?, location: GeoPoint?): GeoPoint =
         location?.takeIf { (bounds == null || contains(bounds, it)) && StopClusters.distanceMeters(center, it) < 700 } ?: center
 
-    /** Bound the number of station boards even in dense city centres or at country-level zoom. */
+    /**
+     * Bound the number of station boards even in dense city centres or at country-level zoom. Runs on the
+     * main thread after a pan: two float comparisons reject almost every national stop before any trigonometry.
+     */
     fun select(stops: List<TransitStop>, anchor: GeoPoint, bounds: MapBounds?, maxStations: Int = 3): List<NearbyStation> {
         val candidates = stops.asSequence()
             .filter { !it.station && (bounds == null || contains(bounds, it.position)) }

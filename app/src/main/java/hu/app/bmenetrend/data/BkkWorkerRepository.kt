@@ -19,10 +19,28 @@ import kotlin.math.round
 class BkkWorkerRepository(private val client: BkkWorkerClient = BkkWorkerClient()) {
     data class VehicleSnapshot(val vehicles: List<WorkerVehicle>, val covered: MapBounds, val fetchedAt: Instant)
 
-    suspend fun vehicles(area: MapBounds): VehicleSnapshot {
-        val text = client.get("vehicles-for-location", area.params() + ("includeReferences" to "routes"))
+    /**
+     * Vehicles in [area]. One Worker request covers at most ±[MAX_HALF_SPAN]°; a larger area (see
+     * [queryArea]) is fetched as a grid of such boxes in parallel, so zoomed-out views stay on BKK.
+     */
+    suspend fun vehicles(area: MapBounds): VehicleSnapshot = coroutineScope {
+        val tiles = tiles(area)
         val now = Instant.now()
-        return VehicleSnapshot(withContext(Dispatchers.Default) { BkkWorkerParser.vehicles(text, now) }, area, now)
+        val parts = tiles.map { tile -> async {
+            val text = client.get("vehicles-for-location", tile.params() + ("includeReferences" to "routes"))
+            withContext(Dispatchers.Default) { BkkWorkerParser.vehicles(text, now) }
+        } }.awaitAll()
+        VehicleSnapshot(if (parts.size == 1) parts[0] else parts.flatten().distinctBy { it.vehicle.id }, area, now)
+    }
+
+    /**
+     * The selected vehicle straight from BKK, for when it is outside the area the map query covers
+     * (line view zoomed out, vehicle found by search). Empty when BKK does not know the vehicle.
+     */
+    suspend fun vehicle(vehicle: Vehicle): List<WorkerVehicle> {
+        val raw = workerVehicleId(vehicle) ?: return emptyList()
+        val text = client.get("vehicles", mapOf("vehicleId" to raw, "includeReferences" to "routes"))
+        return withContext(Dispatchers.Default) { BkkWorkerParser.vehicles(text, Instant.now()) }.filter { it.vehicle.id == vehicle.id }
     }
 
     /**
@@ -87,13 +105,7 @@ class BkkWorkerRepository(private val client: BkkWorkerClient = BkkWorkerClient(
     suspend fun journey(vehicle: Vehicle): VehicleJourney? {
         var trip = vehicle.bkkTripId?.takeIf { BkkWorkerParser.workerTripId(it) != null }
             ?: vehicle.tripId?.takeIf { BkkWorkerParser.workerTripId(it) != null }
-        if (trip == null && vehicle.providerId == "volan") {
-            val plate = vehicle.id.removePrefix("emma:hkir:hkir_")
-            if (!plate.matches(Regex("[A-Z]{3,4}\\d{3}"))) return null
-            val text = client.get("vehicles", mapOf("vehicleId" to "volan_$plate", "includeReferences" to "routes"))
-            trip = withContext(Dispatchers.Default) { BkkWorkerParser.vehicles(text, Instant.now()) }
-                .firstOrNull { it.vehicle.id == vehicle.id }?.vehicle?.bkkTripId
-        }
+        if (trip == null && vehicle.providerId == "volan") trip = vehicle(vehicle).firstOrNull()?.vehicle?.bkkTripId
         return trip?.let { journey(it) }
     }
 
@@ -111,9 +123,9 @@ class BkkWorkerRepository(private val client: BkkWorkerClient = BkkWorkerClient(
      */
     suspend fun searchVehicles(query: String, near: GeoPoint?): List<WorkerVehicle> = coroutineScope {
         val trimmed = query.trim()
-        val exactId = trimmed.replace(Regex("^(?:BKK_|volan_)", RegexOption.IGNORE_CASE), "")
+        val exactId = trimmed.replace(TextPatterns.FEED_ID_PREFIX, "")
         val exact = async {
-            val plate = exactId.uppercase(java.util.Locale.ROOT).replace("-", "").takeIf { it.matches(Regex("[A-Z]{3,4}\\d{3}")) }
+            val plate = exactId.uppercase(java.util.Locale.ROOT).replace("-", "").takeIf { it.matches(TextPatterns.LICENSE_PLATE) }
             if (!VEHICLE_NUMBER.matches(exactId) && plate == null) emptyList() else optional {
                 val raw = if (plate != null) "volan_$plate" else "BKK_$exactId"
                 val text = client.get("vehicles", mapOf("vehicleId" to raw, "includeReferences" to "routes"))
@@ -150,6 +162,13 @@ class BkkWorkerRepository(private val client: BkkWorkerClient = BkkWorkerClient(
         return withContext(Dispatchers.Default) { BkkWorkerParser.areaStops(text) }
     }
 
+    suspend fun stopDirections(area: MapBounds): Map<String, Double> = coroutineScope {
+        tiles(area).map { tile -> async {
+            val text = client.get("stop-directions-for-location", tile.params())
+            withContext(Dispatchers.Default) { BkkWorkerParser.stopDirections(text) }
+        } }.awaitAll().fold(emptyMap()) { combined, tile -> combined + tile }
+    }
+
     suspend fun plan(from: PlannerEndpoint, to: PlannerEndpoint, ready: Instant): List<TripItinerary> = planResult(from, to, ready, false).itineraries
 
     /** BKK's planner for any accepted Hungarian coordinates. Bus-only uses the Worker's `BUS,COACH,WALK` mode. */
@@ -181,6 +200,8 @@ class BkkWorkerRepository(private val client: BkkWorkerClient = BkkWorkerClient(
         val shared by lazy { BkkWorkerRepository(BkkWorkerClient()) }
         /** The Worker accepts at most 0.09° from centre to edge. */
         const val MAX_HALF_SPAN = 0.09
+        /** 2 × 2 requests per 10 s poll stays well inside the client's per-minute Worker budget. */
+        const val MAX_TILES_PER_AXIS = 2
         /** The Worker's batch board limit. */
         const val MAX_BATCH_STOPS = 6
         private const val MAX_SEARCH_ROUTES = 4
@@ -206,8 +227,27 @@ class BkkWorkerRepository(private val client: BkkWorkerClient = BkkWorkerClient(
             val lon = round((viewport.west + viewport.east) / 2 / STEP) * STEP
             val latSpan = ceil((max(viewport.north - lat, lat - viewport.south) + STEP / 2) / STEP) * STEP
             val lonSpan = ceil((max(viewport.east - lon, lon - viewport.west) + STEP / 2) / STEP) * STEP
-            if (latSpan > MAX_HALF_SPAN + 1e-9 || lonSpan > MAX_HALF_SPAN + 1e-9) return null
+            val limit = MAX_HALF_SPAN * MAX_TILES_PER_AXIS + 1e-9
+            if (latSpan > limit || lonSpan > limit) return null
             return MapBounds(lon - lonSpan, lat - latSpan, lon + lonSpan, lat + latSpan)
+        }
+
+        /** [area] split into the fewest equal boxes one Worker request can cover each. */
+        internal fun tiles(area: MapBounds): List<MapBounds> {
+            val columns = ceil((area.east - area.west) / (2 * MAX_HALF_SPAN) - 1e-9).toInt().coerceAtLeast(1)
+            val rows = ceil((area.north - area.south) / (2 * MAX_HALF_SPAN) - 1e-9).toInt().coerceAtLeast(1)
+            val width = (area.east - area.west) / columns
+            val height = (area.north - area.south) / rows
+            return (0 until rows).flatMap { row -> (0 until columns).map { column ->
+                MapBounds(area.west + column * width, area.south + row * height, area.west + (column + 1) * width, area.south + (row + 1) * height)
+            } }
+        }
+
+        /** BKK's own id for a vehicle the app knows under the shared EMMA identity, or null. */
+        internal fun workerVehicleId(vehicle: Vehicle): String? = when (vehicle.providerId) {
+            "volan" -> vehicle.id.removePrefix("emma:hkir:hkir_").takeIf { it.matches(TextPatterns.LICENSE_PLATE) }?.let { "volan_$it" }
+            "bkk" -> vehicle.id.removePrefix("emma:BKK:").takeIf { it != vehicle.id && VEHICLE_NUMBER.matches(it) }?.let { "BKK_$it" }
+            else -> null
         }
 
         /** Coordinates the Worker's planner accepts (the app's own Hungary bounds are narrower). */

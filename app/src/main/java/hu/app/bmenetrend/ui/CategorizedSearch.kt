@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.dp
 import hu.app.bmenetrend.R
 import hu.app.bmenetrend.data.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 
 internal enum class SearchCategory(val title: Int) {
@@ -32,7 +34,9 @@ internal enum class SearchCategory(val title: Int) {
 private data class SearchMatches<T>(val query: String = "", val items: List<T> = emptyList())
 
 @Immutable
-private data class StationMatches(val query: String = "", val items: List<TransitStop> = emptyList(), val recommended: TransitStop? = null)
+private data class StationMatches(val query: String = "", val items: List<TransitStop> = emptyList())
+
+private const val INDEX_REFRESH_DELAY_MS = 1_500L
 
 private suspend fun buildSearchStopIndex(local: List<TransitStop>, national: List<TransitStop>): List<TransitSearch.StopEntry> =
     withContext(Dispatchers.Default) { TransitSearch.indexStops(local, national) }
@@ -50,6 +54,7 @@ internal fun CategorizedSearch(
     onPlace: (PlaceResult) -> Unit,
     onSearchPlaces: (String, Boolean) -> Unit,
     onQueryChanged: (String) -> Unit = {},
+    vehicles: () -> List<Vehicle> = { emptyList() },
     buildStopIndex: suspend (List<TransitStop>, List<TransitStop>) -> List<TransitSearch.StopEntry> = ::buildSearchStopIndex,
 ) {
     val parsed = remember(query) { TransitSearch.query(query) }
@@ -58,6 +63,10 @@ internal fun CategorizedSearch(
     val nationalStops = state.emmaStops
     val routes = remember(state.network?.routes, state.emmaRoutes) { state.routes }
     val stopIndex by produceState(TransitSearch.getCachedStopIndex(networkStops, nationalStops), networkStops, nationalStops) {
+        // Each remote search merges its stations into the catalogue. Those already show from the remote
+        // results, so refreshing an existing index waits until typing pauses (a newer catalogue restarts
+        // this) instead of re-clustering the whole country between keystrokes.
+        if (value != null && TransitSearch.getCachedStopIndex(networkStops, nationalStops) == null) delay(INDEX_REFRESH_DELAY_MS)
         value = buildStopIndex(networkStops, nationalStops)
     }
     // Query results belong to their data source, not to the selected tab. Stop
@@ -69,18 +78,32 @@ internal fun CategorizedSearch(
     }
     // Loaded vehicles first; BKK search adds matching vehicles outside the loaded map area.
     val remoteVehicles = state.remoteVehicles.takeIf { it.query == query }?.vehicles.orEmpty()
-    val vehicleMatches by produceState(SearchMatches<Vehicle>(), parsed, state.vehicles, remoteVehicles) {
+    // Sampled when the query changes (or the first positions arrive), not observed: re-scoring every live
+    // position tick would churn the list.
+    val vehiclesLoaded by remember(vehicles) { derivedStateOf { vehicles().isNotEmpty() } }
+    val vehicleMatches by produceState(SearchMatches<Vehicle>(), parsed, remoteVehicles, vehiclesLoaded) {
+        val loadedVehicles = vehicles()
         value = if (parsed.text.isBlank()) SearchMatches(parsed.text) else withContext(Dispatchers.Default) {
-            val loaded = TransitSearch.vehicles(state.vehicles, parsed)
+            val loaded = TransitSearch.vehicles(loadedVehicles, parsed)
             val ids = loaded.mapTo(HashSet()) { it.id }
             SearchMatches(parsed.text, loaded + remoteVehicles.filter { it.id !in ids })
         }
     }
+    // The recommendation and the result list are separate scans running side by side, so the
+    // recommendation card shows as soon as its own scan ends. Each keystroke cancels the previous
+    // scans mid-way instead of letting them finish for nothing.
     val stopMatches by produceState(StationMatches(), parsed, stopIndex, state.userLocation, state.favorites) {
         value = if (stopIndex == null) StationMatches(parsed.text) else withContext(Dispatchers.Default) {
+            val checkpoint = { ensureActive() }
             if (parsed.text.isBlank()) StationMatches(parsed.text, stopIndex.orEmpty().filter { it.stop.id in state.favorites }.map { it.stop }.take(5))
-            else StationMatches(parsed.text, TransitSearch.stops(stopIndex.orEmpty(), parsed, state.userLocation, state.favorites),
-                StationRecommendations.stops(stopIndex.orEmpty(), parsed, state.userLocation, state.favorites).firstOrNull())
+            else StationMatches(parsed.text, TransitSearch.stops(stopIndex.orEmpty(), parsed, state.userLocation, state.favorites, checkpoint))
+        }
+    }
+    val recommendationMatch by produceState(SearchMatches<TransitStop>(), parsed, stopIndex, state.userLocation, state.favorites) {
+        val index = stopIndex
+        value = if (index == null || parsed.text.isBlank()) SearchMatches(parsed.text) else withContext(Dispatchers.Default) {
+            val checkpoint = { ensureActive() }
+            SearchMatches(parsed.text, StationRecommendations.stops(index, parsed, state.userLocation, state.favorites, checkpoint).take(1))
         }
     }
     LaunchedEffect(query, searchPlaces) { onSearchPlaces(query, searchPlaces) }
@@ -102,7 +125,7 @@ internal fun CategorizedSearch(
                 stop.id.removePrefix("emma:") !in covered && stop.sourceStopIds.none { it in covered } }
         }
     }
-    val recommendation = stopMatches.recommended.takeIf { stopMatches.query == parsed.text }
+    val recommendation = recommendationMatch.items.firstOrNull().takeIf { recommendationMatch.query == parsed.text }
     val recommendedId = recommendation?.id.takeIf { category == SearchCategory.ALL || category == SearchCategory.STATIONS }
     val otherStops = remember(matchingStops, recommendedId) {
         val recommendedSources = recommendation?.takeIf { recommendedId != null }?.sourceStopIds.orEmpty().toSet()

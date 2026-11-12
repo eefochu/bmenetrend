@@ -22,6 +22,7 @@ class PlannerLeaveNowTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         val app = ApplicationProvider.getApplicationContext<Application>()
         NetworkAccessPolicy.setOffline(app, false)
+        NetworkAccessPolicy.onConnectivityChanged(true)
         val times = java.util.Collections.synchronizedList(mutableListOf<Instant>())
         val backend = object : PlannerBackend {
             override suspend fun routes(from: PlannerEndpoint, to: PlannerEndpoint, ready: Instant, busesOnly: Boolean): List<TripItinerary> {
@@ -34,10 +35,12 @@ class PlannerLeaveNowTest {
             override suspend fun walking(pairs: List<Pair<PlanPoint, PlanPoint>>, ready: Instant) = WalkingResult(emptyMap())
         }
         val model = PlannerViewModel(app, backend) { TransitNetwork(emptyList(), emptyList(), emptyList(), Instant.now(), "fixture") }
-        suspend fun awaitPlan() {
-            withTimeout(10_000) {
-                while (model.state.value.planning) { runCurrent(); delay(1) }
-            }
+        fun awaitPlan() {
+            // The planner runs on real Default threads; virtual time must not race
+            // ahead by ten seconds before those threads get a chance to answer.
+            val deadline = System.nanoTime() + 5_000_000_000L
+            while (model.state.value.planning && System.nanoTime() < deadline) { runCurrent(); Thread.sleep(5) }
+            assertFalse("Planner did not finish within wall-clock deadline", model.state.value.planning)
             assertNull(model.state.value.error)
         }
         try {
@@ -66,6 +69,7 @@ class PlannerLeaveNowTest {
             assertTrue(times.all { it == chosen })
         } finally {
             model.viewModelScope.cancel()
+            NetworkAccessPolicy.onConnectivityChanged(true)
             Dispatchers.resetMain()
         }
     }

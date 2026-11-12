@@ -28,6 +28,12 @@ object NetworkAccessPolicy {
     @Volatile private var epoch = 0L
     val generation: Long get() = epoch
     @Volatile private var manualOffline = false
+    /**
+     * The user switched off the automatic offline fallback while connectivity looked unusable (an
+     * unvalidated network, a failed probe). Their choice wins until connectivity actually changes, so a wrong check can
+     * never lock the app offline. Not persisted.
+     */
+    @Volatile private var forceOnline = false
     private val connectivity = MutableStateFlow(true)
     val internetAvailable = connectivity.asStateFlow()
     private var callback: ConnectivityManager.NetworkCallback? = null
@@ -49,6 +55,9 @@ object NetworkAccessPolicy {
     fun setOffline(context: Context, enabled: Boolean) {
         synchronized(this) {
             context.getSharedPreferences("offline", 0).edit().putBoolean("enabled", enabled).apply()
+            // Switching off the app's own automatic fallback overrides the connectivity check; switching
+            // off a manual offline mode just returns to automatic detection.
+            forceOnline = !enabled && !manualOffline && !connectivity.value
             manualOffline = enabled
             publishMode()
         }
@@ -97,7 +106,7 @@ object NetworkAccessPolicy {
                     current = null
                     internet = false
                     probe.getAndSet(null)?.cancel()
-                    onConnectivityChanged(false)
+                    onConnectivityChanged(false, networkGone = true)
                 }
             }
             override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) {
@@ -119,7 +128,7 @@ object NetworkAccessPolicy {
                 current = null
                 internet = false
                 probe.getAndSet(null)?.cancel()
-                onConnectivityChanged(false)
+                onConnectivityChanged(false, networkGone = true)
             }
         }
         val initial = manager.activeNetwork
@@ -135,7 +144,10 @@ object NetworkAccessPolicy {
         caps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true &&
             caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
 
-    @Synchronized internal fun onConnectivityChanged(available: Boolean) {
+    @Synchronized internal fun onConnectivityChanged(available: Boolean, networkGone: Boolean = false) {
+        // A real change (back online, a drop after being online, no network at all) ends the user's
+        // override; the probe repeating "still unreachable" does not.
+        if (connectivity.value != available || networkGone) forceOnline = false
         connectivity.value = available
         publishMode()
     }
@@ -152,7 +164,7 @@ object NetworkAccessPolicy {
     }
 
     private fun publishMode() {
-        val enabled = manualOffline || !connectivity.value
+        val enabled = manualOffline || !connectivity.value && !forceOnline
         if (mutable.value != enabled) epoch++
         val changed = mutable.value != enabled
         mutable.value = enabled

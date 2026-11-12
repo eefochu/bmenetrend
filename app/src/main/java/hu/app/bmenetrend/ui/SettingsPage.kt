@@ -65,7 +65,7 @@ fun SettingsPage(
                                 color = if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent) {
                                 Box(Modifier.heightIn(min = 48.dp).selectable(selected, role = Role.RadioButton,
                                     onClick = { onThemeMode(mode) }).padding(horizontal = 8.dp, vertical = 12.dp), contentAlignment = Alignment.Center) {
-                                    Text(stringResource(when (mode) {
+                                    FitText(stringResource(when (mode) {
                                         ThemeMode.SYSTEM -> R.string.design_theme_auto
                                         ThemeMode.LIGHT -> R.string.design_theme_light
                                         ThemeMode.DARK -> R.string.design_theme_dark
@@ -78,20 +78,23 @@ fun SettingsPage(
                 }
                 TransitSectionTitle(stringResource(R.string.map_style_title))
                 Surface(shape = TransitDesign.groupShape, color = MaterialTheme.colorScheme.surfaceContainerLowest) {
-                    Column(Modifier.fillMaxWidth().padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            MapStyle.entries.forEach { style ->
+                    Column(Modifier.fillMaxWidth().padding(8.dp).selectableGroup(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        MapStyle.entries.filter { !it.usesGoogle || hu.app.bmenetrend.BuildConfig.GOOGLE_MAPS_CONFIGURED }.chunked(2).forEach { row ->
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            row.forEach { style ->
                                 val selected = state.mapStyle == style
                                 Surface(Modifier.weight(1f), shape = TransitDesign.controlShape,
                                     color = if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent) {
                                     Box(Modifier.heightIn(min = 48.dp).selectable(selected, role = Role.RadioButton,
                                         onClick = { onMapStyle(style) }).padding(12.dp), contentAlignment = Alignment.Center) {
-                                        Text(stringResource(style.labelRes), style = MaterialTheme.typography.labelLarge)
+                                        FitText(stringResource(style.labelRes), style = MaterialTheme.typography.labelLarge)
                                     }
                                 }
                             }
+                            repeat(2 - row.size) { Spacer(Modifier.weight(1f)) }
+                            }
                         }
-                        Text(stringResource(if (state.offlineMode) R.string.map_style_offline_hint else R.string.map_style_hint),
+                        Text(stringResource(if (state.offlineMode) R.string.map_style_offline_hint else if (state.mapStyle.usesGoogle) R.string.map_style_google_hint else R.string.map_style_hint),
                             Modifier.padding(horizontal = 8.dp, vertical = 4.dp), style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
@@ -100,7 +103,7 @@ fun SettingsPage(
                 TransitSectionTitle(stringResource(R.string.accent_title))
                 Text(stringResource(R.string.accent_hint),style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
                 Column(Modifier.selectableGroup(),verticalArrangement=Arrangement.spacedBy(8.dp)) {
-                    val columns=if(androidx.compose.ui.platform.LocalDensity.current.fontScale>1.4f) 2 else 3
+                    val columns=if(androidx.compose.ui.platform.LocalDensity.current.fontScale>1.2f) 2 else 3
                     AccentColor.entries.chunked(columns).forEach { row ->
                         Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                             row.forEach { choice ->
@@ -118,7 +121,7 @@ fun SettingsPage(
                                                     tint=if(color.luminance()>.35f) Color.Black else Color.White)
                                             }
                                         }
-                                        Text(stringResource(choice.labelRes),style=MaterialTheme.typography.labelLarge)
+                                        FitText(stringResource(choice.labelRes),style=MaterialTheme.typography.labelLarge)
                                     }
                                 }
                             }
@@ -154,8 +157,8 @@ fun SettingsPage(
                                 )
                             }
                             if (count > 0) {
-                                TextButton(onClick = onClearAllTimetables) {
-                                    Text(stringResource(R.string.ui_clear_all_timetables), color = MaterialTheme.colorScheme.error)
+                                TextButton(onClick = onClearAllTimetables, modifier = Modifier.widthIn(max = 160.dp)) {
+                                    Text(stringResource(R.string.ui_clear_all_timetables), color = MaterialTheme.colorScheme.error, textAlign = androidx.compose.ui.text.style.TextAlign.End)
                                 }
                             }
                         }

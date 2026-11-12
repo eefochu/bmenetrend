@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -11,15 +13,23 @@ val isBuildingBundle = gradle.startParameter.taskNames.any {
     it.contains("bundle", ignoreCase = true) || it.contains("buildrelease", ignoreCase = true)
 }
 
+val mapSecrets = Properties().apply {
+    rootProject.file("secrets.properties").takeIf { it.isFile }?.inputStream()?.use { load(it) }
+}
+val googleMapsKey = providers.environmentVariable("GOOGLE_MAPS_API_KEY").orNull
+    ?: mapSecrets.getProperty("MAPS_API_KEY", "")
+
 android {
     namespace = "hu.app.bmenetrend"
     compileSdk = 36
     defaultConfig {
         applicationId = "hu.app.bmenetrend"
+        manifestPlaceholders["GOOGLE_MAPS_API_KEY"] = googleMapsKey
+        buildConfigField("boolean", "GOOGLE_MAPS_CONFIGURED", googleMapsKey.isNotBlank().toString())
         minSdk = 26
         targetSdk = 36
-        versionCode = 20
-        versionName = "0.5.11"
+        versionCode = 21
+        versionName = "0.7.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Public, keyless BKK-first proxy. The BKK API key exists only as a Worker secret.
         buildConfigField("String", "BKK_WORKER_URL", "\"https://bmenetrend-bkk-proxy.bmenetrend-backend.workers.dev\"")
@@ -140,6 +150,7 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jsoup:jsoup:1.18.3")
     implementation("org.maplibre.gl:android-sdk:11.8.0")
+    implementation("com.google.android.gms:play-services-maps:20.1.0")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20250517")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")

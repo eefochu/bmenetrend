@@ -3,6 +3,7 @@
 **/build/
 local.properties
 secrets.properties
+/p.json
 *.jks
 *.keystore
 .idea/

@@ -67,7 +67,7 @@ object EmmaParser {
                 "mav" -> RailSupport.number(route?.text("shortName"), route?.text("longName"))
                 else -> route?.text("shortName")
             }
-            val color = route?.text("color")?.takeIf { it.matches(Regex("[a-fA-F0-9]{6}")) }
+            val color = route?.text("color")?.takeIf { it.matches(TextPatterns.HEX_COLOR) }
             val nextTime = row.optJSONObject("nextStop")
             val nextStop = nextTime?.optJSONObject("stop")
             val vehicle = Vehicle(

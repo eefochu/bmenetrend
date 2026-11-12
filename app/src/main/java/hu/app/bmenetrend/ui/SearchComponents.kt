@@ -102,8 +102,12 @@ internal fun SearchResultCard(
             horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             leading()
             Column(Modifier.weight(1f).padding(top = 2.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(name, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                // Badges sit after the name while they fit; a long name keeps the full width and pushes them
+                // onto their own line instead of being squeezed into a narrow column.
+                @OptIn(ExperimentalLayoutApi::class)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp),
+                    itemVerticalAlignment = Alignment.CenterVertically) {
+                    Text(name, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     badge()
                 }
                 if (detail.isNotBlank()) Text(detail, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -169,7 +173,7 @@ internal fun DistancePill(text: String, modifier: Modifier = Modifier) {
         Row(Modifier.padding(start = 8.dp, end = 10.dp, top = 4.dp, bottom = 4.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
             Icon(Icons.AutoMirrored.Rounded.DirectionsWalk, null, Modifier.size(14.dp))
-            Text(text, style = MaterialTheme.typography.labelMediumEmphasized, maxLines = 1)
+            Text(text, style = MaterialTheme.typography.labelMediumEmphasized, maxLines = 1, softWrap = false)
         }
     }
 }

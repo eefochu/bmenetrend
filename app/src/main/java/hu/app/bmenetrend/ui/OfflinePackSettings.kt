@@ -53,14 +53,17 @@ fun OfflinePackSettings(state: UiState, onMode: (Boolean) -> Unit, onDownload: (
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
-            val canChangeMode = state.internetAvailable && pack.metadata != null && !pack.busy
+            // Switching off is always allowed: a wrong connectivity check must never lock the app offline.
+            // Switching on needs an installed pack.
+            val canChangeMode = !pack.busy && (state.offlineMode || pack.metadata != null)
             Row(Modifier.fillMaxWidth().heightIn(min = 48.dp)
                 .toggleable(state.offlineMode, enabled = canChangeMode, role = Role.Switch, onValueChange = onMode),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(stringResource(R.string.offline_mode), Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
                 Switch(state.offlineMode, null, enabled = canChangeMode)
             }
-            Text(stringResource(if (pack.metadata == null) R.string.offline_download_first else R.string.offline_mode_hint),
+            Text(stringResource(if (state.offlineMode && !state.internetAvailable) R.string.offline_mode_override_hint
+                else if (pack.metadata == null) R.string.offline_download_first else R.string.offline_mode_hint),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (!state.internetAvailable) Text(stringResource(if (pack.metadata == null) R.string.offline_pack_missing else R.string.offline_automatic),
                 style = MaterialTheme.typography.bodyMedium)

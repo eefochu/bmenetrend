@@ -15,12 +15,11 @@ import kotlinx.coroutines.ensureActive
 /** Camera-independent vehicle data. MapLibre handles visibility and size during gestures. */
 internal object VehicleMapScene {
     const val SOURCE = "live-vehicles"
-    val layers = arrayOf("vehicle-symbols", "vehicle-dots-rail", "vehicle-dots-road")
+    val layers = arrayOf(VehicleLayers.SYMBOLS, VehicleLayers.ARROWS, VehicleLayers.RAIL_DOTS, VehicleLayers.RAIL_ARROWS, VehicleLayers.ROAD_DOTS)
 
     suspend fun prepare(
         context: Context,
         vehicles: List<Vehicle>,
-        focus: LineMapFocus?,
         selectedId: String?,
         cachedIcons: Set<String>,
         pending: MutableMap<String, Bitmap>,
@@ -30,12 +29,14 @@ internal object VehicleMapScene {
         var first = true
         for (vehicle in vehicles) {
             currentCoroutineContext().ensureActive()
-            if (focus != null && !focus.includes(vehicle)) continue
             val marker = VehicleMarkerStyle.forVehicle(vehicle)
             val metro = MetroLineStyle.forLine(vehicle.routeNumber, vehicle.transportMode)
             val hev = HevLineStyle.forLine(vehicle.routeNumber, vehicle.transportMode)
             val key = "vehicle-${marker.name}-${metro?.number}-${hev?.number}"
             val dot = "$key-dot"
+            val color = hev?.color ?: metro?.color ?: marker.color
+            val heading = VehicleMarkerLayout.heading(vehicle)
+            val arrow = VehicleMarkerLayout.arrowKey(color).takeIf { heading != null }
             if (key !in cachedIcons && key !in pending) {
                 pending[key] = when {
                     hev != null -> HevLineStyle.render(context, hev, 108)
@@ -44,23 +45,34 @@ internal object VehicleMapScene {
                 }.apply { density = 480 }
             }
             if (dot !in cachedIcons && dot !in pending) {
-                pending[dot] = renderDot(hev?.color ?: metro?.color ?: marker.color)
+                pending[dot] = renderDot(color)
             }
+            if (arrow != null && arrow !in cachedIcons && arrow !in pending) pending[arrow] = VehicleMarkerLayout.renderArrow(color)
             val selected = vehicle.id == selectedId
+            val diameter = VehicleMarkerLayout.diameterDp(selected)
             val lon = vehicle.position.lon; val lat = vehicle.position.lat
             if (!lon.isFinite() || !lat.isFinite()) continue
             if (!first) json.append(',')
             first = false
             json.append("{\"type\":\"Feature\",\"geometry\":{\"type\":\"Point\",\"coordinates\":[")
                 .append(lon).append(',').append(lat).append("]},\"properties\":{\"vehicle-id\":").appendJsonString(vehicle.id)
+                .append(",\"provider-id\":").appendJsonString(vehicle.providerId)
+                .append(",\"route-id\":").appendJsonString(vehicle.routeId.orEmpty())
+                .append(",\"route-number\":").appendJsonString(vehicle.routeNumber.orEmpty())
+                .append(",\"transport-mode\":").appendJsonString(vehicle.transportMode.orEmpty())
                 .append(",\"icon\":").appendJsonString(key)
                 .append(",\"dot\":").appendJsonString(dot)
                 .append(",\"rail\":").append(RailSupport.isTrain(vehicle.transportMode))
                 .append(",\"priority\":").append(if (selected) 1 else 0)
-                .append(",\"small-scale\":").append((24f + if (selected) 6f else 0f) / 36f)
-                .append(",\"large-scale\":").append((36f + if (selected) 6f else 0f) / 36f)
+                .append(",\"small-scale\":").append(diameter / VehicleMarkerLayout.ICON_DIAMETER_DP)
+                .append(",\"large-scale\":").append(diameter / VehicleMarkerLayout.ICON_DIAMETER_DP)
                 .append(",\"dot-scale\":").append(if (selected) 10f / 6f else 1f)
-                .append("}}")
+            if (arrow != null) {
+                json.append(",\"arrow\":").appendJsonString(arrow)
+                    .append(",\"heading\":").append(heading)
+                    .append(",\"arrow-scale\":").append(VehicleMarkerLayout.arrowScale(selected))
+            }
+            json.append("}}")
         }
         return json.append("]}").toString()
     }

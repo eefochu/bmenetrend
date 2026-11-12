@@ -13,7 +13,7 @@
     <string name="planner_search_hint">Cím, hely vagy megálló keresése</string>
     <string name="planner_find">Mutasd az útvonalakat</string>
     <string name="planner_from_vehicle">Járműről</string>
-    <string name="planner_best_route">Legjobb útvonal</string>
+    <string name="planner_best_route">Ajánlott útvonal</string>
     <string name="planner_settings">Beállítások</string>
     <string name="planner_fewest_transfers">Legkevesebb átszállás</string>
     <string name="planner_least_walking">Legkevesebb séta</string>
@@ -32,14 +32,14 @@
     <string name="planner_search_error">A helykeresés nem érhető el. Próbálj megállónévre keresni, vagy ellenőrizd a kapcsolatot.</string>
     <string name="planner_no_places">Nincs találat. Próbálj pontosabb nevet megadni.</string>
     <string name="planner_options">Útvonalak</string>
-    <string name="planner_checked">Lekérdezve: %1$s · legkorábbi érkezés szerint</string>
+    <string name="planner_checked">Lekérdezve: %1$s · kényelem és utazási idő szerint</string>
     <string name="planner_fastest">Leggyorsabb</string>
     <string name="planner_duration">%1$d perces út</string>
     <string name="planner_summary">%1$s · %2$d perc séta</string>
     <string name="planner_steps">Az út lépései</string>
     <string name="planner_walk">Gyaloglás</string>
     <string name="planner_walk_detail">Gyaloglás: %1$d perc · %2$d m</string>
-    <string name="planner_wait">%1$d perc felszállásra vagy átszállásra</string>
+    <string name="planner_wait">%1$d perc várakozás</string>
     <string name="planner_stay">Maradj a járművön</string>
     <string name="planner_stops">%1$d köztes megálló</string>
     <string name="planner_stale">Ez az út már elkezdődött. Indulás előtt tervezz újra.</string>
@@ -67,10 +67,11 @@
     <string name="planner_apply">Alkalmaz</string>
     <string name="planner_cancel">Mégse</string>
     <string name="planner_timing_later">Gyaloglás: kb. 4,1 km/h. Átszálláskor a sétán felül 3 perc tartalékkal számolunk. Az előre tervezett utak az elérhető menetrendeken alapulnak.</string>
-    <string name="planner_bar_hint">A sávok a sétát, a várakozást és az utazást mutatják a járatok színeivel. Az idők a felszállási és átszállási tartalékot is tartalmazzák.</string>
+    <string name="planner_bar_hint">A sáv a gyaloglást és az utazást mutatja. A teljes idő a várakozást is tartalmazza, amely a lépéseknél külön látható.</string>
     <string name="planner_show_stops">Köztes megállók megjelenítése</string>
     <string name="planner_hide_stops">Köztes megállók elrejtése</string>
     <string name="planner_stations_header">Megállók és állomások</string>
     <string name="planner_places_header">Címek és helyek</string>
     <string name="planner_view_departures">Indulási tábla</string>
+    <string name="planner_alternative">Másik jó választás</string>
 </resources>

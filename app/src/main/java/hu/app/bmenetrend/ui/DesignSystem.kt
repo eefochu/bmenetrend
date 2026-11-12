@@ -124,10 +124,22 @@ internal fun <T> ConnectedSelector(options: List<T>, selected: T, onSelect: (T) 
                     else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
                 },
                 contentPadding = PaddingValues(horizontal = 2.dp),
-            ) { Text(text(option), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                style = MaterialTheme.typography.labelLargeEmphasized) }
+            ) { FitText(text(option), style = MaterialTheme.typography.labelLargeEmphasized) }
         }
     }
+}
+
+/**
+ * One-line label for a fixed-width slot (segmented buttons, grid tiles): a word that does not fit
+ * shrinks down to [minSize] instead of breaking mid-word onto a second line, and only then ellipsizes.
+ */
+@Composable
+internal fun FitText(text: String, modifier: Modifier = Modifier, style: androidx.compose.ui.text.TextStyle = LocalTextStyle.current,
+                     color: Color = Color.Unspecified, minSize: androidx.compose.ui.unit.TextUnit = 10.sp) {
+    val max = style.fontSize.takeIf { it != androidx.compose.ui.unit.TextUnit.Unspecified } ?: 14.sp
+    Text(text, modifier, color = color, style = style, maxLines = 1, softWrap = false,
+        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+        autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(if (minSize < max) minSize else max, max, 0.5.sp))
 }
 
 /** A cookie that springs into a circle while pressed; between the two it is a [Morph] of both outlines. */

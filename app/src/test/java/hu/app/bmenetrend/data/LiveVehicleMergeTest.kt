@@ -62,7 +62,7 @@ class LiveVehicleMergeTest {
     }
 
     @Test
-    fun emmaBkkVehiclesInsideCoveredAreaDroppedAsStaleRelaysWhenAbsentFromBkk() {
+    fun emmaBkkVehiclesInsideCoveredAreaPreservedWhenAbsentFromBkk() {
         // EMMA has a BKK vehicle inside the covered area
         val emmaInside = vehicle("emma:BKK:9999", 47.48, 19.04, providerId = "bkk", observedAt = t0)
         // EMMA has another BKK vehicle outside the covered area
@@ -73,8 +73,8 @@ class LiveVehicleMergeTest {
         // Worker returns NO BKK vehicles
         val merged = LiveVehicleMerge.merge(emptyList(), coveredArea, listOf(emmaInside, emmaOutside, emmaVolan))
 
-        // emmaInside must be dropped because covered area includes it and BKK did not report it
-        assertFalse(merged.any { it.id == "emma:BKK:9999" })
+        // emmaInside must be kept even though covered area includes it and BKK did not report it
+        assertTrue(merged.any { it.id == "emma:BKK:9999" })
         // emmaOutside must be kept because it is outside covered area
         assertTrue(merged.any { it.id == "emma:BKK:8888" })
         // Volán vehicle must be kept regardless of location
@@ -283,8 +283,10 @@ class LiveVehicleMergeTest {
         val bkkVeh = vehicle("emma:BKK:dropped", 47.49, 19.05, providerId = "bkk")
 
         val merged = LiveVehicleMerge.merge(emptyList(), coveredArea, listOf(nationalVolan, bkkVeh))
-        // National Volán vehicle must be preserved even within coveredArea; BKK vehicle within coveredArea is dropped
-        assertEquals(1, merged.size)
-        assertEquals("emma:hkir:hkir_NAT001", merged[0].id)
+        // Both national Volán vehicle and EMMA BKK vehicle within coveredArea are preserved
+        assertEquals(2, merged.size)
+        val ids = merged.map { it.id }.toSet()
+        assertTrue(ids.contains("emma:hkir:hkir_NAT001"))
+        assertTrue(ids.contains("emma:BKK:dropped"))
     }
 }

@@ -27,7 +27,20 @@ object StopClusters {
             .lowercase(Locale.ROOT)
             .trim()
 
+    // Search re-clusters the whole national catalogue whenever a few stops are merged into it; six
+    // regex passes per name took seconds on low-end phones. Names are a finite vocabulary.
+    private const val CLEAN_NAMES_CAPACITY = 200_000
+    private val cleanNames = java.util.concurrent.ConcurrentHashMap<String, String>()
+
     fun cleanName(raw: String): String {
+        cleanNames[raw]?.let { return it }
+        val cleaned = computeCleanName(raw)
+        if (cleanNames.size >= CLEAN_NAMES_CAPACITY) cleanNames.clear()
+        cleanNames[raw] = cleaned
+        return cleaned
+    }
+
+    private fun computeCleanName(raw: String): String {
         var s = normalize(raw)
         s = s.replace(parenRegex, " ")
         s = s.replace(punctRegex, " ")

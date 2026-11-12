@@ -8,6 +8,7 @@
     <string name="engine_live_unavailable">Az élő adatok most nem érhetők el. Ellenőrizd az internetkapcsolatot; automatikusan újrapróbáljuk.</string>
     <string name="engine_live_positions">Élő járműpozíciók · a járatonkénti indulások menetrendiek</string>
     <string name="engine_no_live_positions">Jelenleg nincs friss járműpozíció · menetrendi indulások</string>
+    <string name="engine_google_unavailable">A Google Térkép ezen az eszközön nem működik, a beépített térkép látható.</string>
     <string name="engine_map_unavailable">A térképalap nem tölthető be. A megállókat a keresőből is eléred.</string>
     <string name="engine_vehicle_bus">BUSZ</string>
     <string name="engine_no_vehicle_route">A forrás nem közöl járatszámot</string>

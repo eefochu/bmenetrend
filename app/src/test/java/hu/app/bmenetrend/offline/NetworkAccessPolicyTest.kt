@@ -221,6 +221,56 @@ class NetworkAccessPolicyTest {
     }
 
     @Test
+    fun clearingAutomaticOfflineFallbackOverridesConnectivityWithoutPersistingPreference() {
+        NetworkAccessPolicy.onConnectivityChanged(false)
+        assertTrue(NetworkAccessPolicy.offline.value)
+
+        NetworkAccessPolicy.setOffline(context, false)
+
+        assertFalse(NetworkAccessPolicy.offline.value)
+        assertFalse(context.getSharedPreferences("offline", 0).getBoolean("enabled", true))
+    }
+
+    @Test
+    fun automaticOfflineOverrideSurvivesRepeatedProbeUntilConnectivityChanges() {
+        NetworkAccessPolicy.onConnectivityChanged(false)
+        NetworkAccessPolicy.setOffline(context, false)
+        assertFalse(NetworkAccessPolicy.offline.value)
+
+        NetworkAccessPolicy.onConnectivityChanged(false)
+        assertFalse(NetworkAccessPolicy.offline.value)
+        NetworkAccessPolicy.onConnectivityChanged(true)
+        assertFalse(NetworkAccessPolicy.offline.value)
+        NetworkAccessPolicy.onConnectivityChanged(false)
+        assertTrue(NetworkAccessPolicy.offline.value)
+    }
+
+    @Test
+    fun networkGoneEndsAutomaticOfflineOverride() {
+        NetworkAccessPolicy.onConnectivityChanged(false)
+        NetworkAccessPolicy.setOffline(context, false)
+        assertFalse(NetworkAccessPolicy.offline.value)
+
+        NetworkAccessPolicy.onConnectivityChanged(false, networkGone = true)
+
+        assertTrue(NetworkAccessPolicy.offline.value)
+    }
+
+    @Test
+    fun manualOfflineClearsOverrideAndReturnsToAutomaticDetectionWhenDisabled() {
+        NetworkAccessPolicy.onConnectivityChanged(false)
+        NetworkAccessPolicy.setOffline(context, false)
+        assertFalse(NetworkAccessPolicy.offline.value)
+
+        NetworkAccessPolicy.setOffline(context, true)
+        assertTrue(NetworkAccessPolicy.offline.value)
+        NetworkAccessPolicy.setOffline(context, false)
+
+        assertTrue(NetworkAccessPolicy.offline.value)
+        assertFalse(context.getSharedPreferences("offline", 0).getBoolean("enabled", true))
+    }
+
+    @Test
     fun requestGuardBlocksWhenInAutomaticOfflineMode() {
         installDummyPack()
         NetworkAccessPolicy.onConnectivityChanged(false)

@@ -8,6 +8,15 @@ import kotlin.math.*
 
 /** Travel away from a platform, from ordered stops/shape geometry; never guess from its name. */
 object StopDirections {
+    fun withPlatformDirections(derived: Map<String, List<Double>>, platformDirections: Map<String, Double>): Map<String, List<Double>> {
+        if (platformDirections.isEmpty()) return derived
+        val merged = derived.toMutableMap()
+        platformDirections.forEach { (id, bearing) ->
+            if (bearing.isFinite() && bearing >= 0 && bearing < 360) merged[id] = listOf(bearing)
+        }
+        return merged
+    }
+
     fun difference(a: Double,b: Double)=abs((a-b+540)%360-180)
     fun bearing(a: GeoPoint,b: GeoPoint): Double {
         val lat1=Math.toRadians(a.lat); val lat2=Math.toRadians(b.lat); val lon=Math.toRadians(b.lon-a.lon)

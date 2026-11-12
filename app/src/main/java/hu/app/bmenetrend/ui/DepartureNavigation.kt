@@ -6,7 +6,9 @@ import hu.app.bmenetrend.data.*
 internal fun departureVehicle(departure: Departure, vehicles: List<Vehicle>): Vehicle? {
     fun id(value: String) = value.removePrefix("emma:")
     return departure.vehicleId?.let { key -> vehicles.firstOrNull { id(it.id)==id(key) } }
-        ?: departure.directionId?.let { trip -> vehicles.firstOrNull { it.tripId==trip } }
+        // A BKK board names BKK's trip; a Volán bus merged with its EMMA record keeps EMMA's trip as
+        // tripId and BKK's as bkkTripId.
+        ?: departure.directionId?.let { trip -> vehicles.firstOrNull { it.tripId==trip || it.bkkTripId==trip } }
 }
 
 internal fun departureDirection(departure: Departure, route: TransitRoute?, details: LineDetails?): String? {
@@ -14,6 +16,8 @@ internal fun departureDirection(departure: Departure, route: TransitRoute?, deta
     fun sameName(a: String,b: String) = a.isNotBlank() && b.isNotBlank() && StopClusters.normalize(a)==StopClusters.normalize(b)
     val patterns=details?.patterns.orEmpty()
     departure.patternCode?.let { code -> patterns.firstOrNull { code in it.codes }?.let { return it.id } }
+    // The departure's own trip, when it was loaded as a variant (see TransitViewModel.loadDepartureTrip).
+    departure.directionId?.let { trip -> patterns.firstOrNull { trip in it.codes }?.let { return it.id } }
     var candidates=patterns.filter { pattern -> pattern.stops.any { stop ->
         id(stop.id)==id(departure.stopId) || stop.sourceStopIds.any { id(it)==id(departure.stopId) } ||
             stop.parentStationId?.let { id(it)==id(departure.stopId) }==true

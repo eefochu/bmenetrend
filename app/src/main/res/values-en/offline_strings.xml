@@ -8,6 +8,7 @@
     <string name="offline_limits">Optional download, at most 500 MB. Installation temporarily needs at least 1.5 GB free. Scheduled stop-to-stop planning uses only source-provided transfer links. No live vehicles, delays or address search. The bundled offline map is described below.</string>
     <string name="offline_mode">Offline mode</string>
     <string name="offline_mode_hint">Without an internet connection, the app automatically uses the downloaded pack and returns online when connectivity is restored. Manually enabled offline mode stays enabled.</string>
+    <string name="offline_mode_override_hint">The app found no internet connection and switched to offline mode. If you do have internet, turn offline mode off.</string>
     <string name="offline_download_first">Download the pack before enabling offline mode.</string>
     <string name="offline_wifi">Download on Wi-Fi only</string>
     <string name="offline_download">Download offline pack</string>

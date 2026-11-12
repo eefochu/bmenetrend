@@ -125,6 +125,7 @@ class BkkWorkerClient internal constructor(
 
     /** Debug-only latency trace (`adb logcat -s BkkHttp`), the measurement for cache vs network time. */
     private fun trace(endpoint: String, startedAt: Long, outcome: String) {
+        hu.app.bmenetrend.TransitDiagnostics.event("http") { "$endpoint ms=${(System.nanoTime() - startedAt) / 1_000_000} outcome=$outcome" }
         if (!hu.app.bmenetrend.BuildConfig.DEBUG) return
         runCatching { android.util.Log.d("BkkHttp", "$endpoint ${(System.nanoTime() - startedAt) / 1_000_000}ms $outcome") }
     }
@@ -172,6 +173,7 @@ class BkkWorkerClient internal constructor(
             "arrivals-and-departures-for-stop" to 10_000L, "arrivals-and-departures-for-stops" to 10_000L,
             "trip-details" to 30_000L, "route-details" to 30_000L, "route-details-for-stop" to 30_000L,
             "references" to 300_000L, "search" to 10_000L, "stops-for-location" to 300_000L, "plan-trip" to 5_000L,
+            "stop-directions-for-location" to 3_600_000L,
         )
     }
 }

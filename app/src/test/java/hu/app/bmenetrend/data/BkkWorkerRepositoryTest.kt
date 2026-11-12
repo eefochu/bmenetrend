@@ -17,6 +17,100 @@ class BkkWorkerRepositoryTest {
 
     private val now = Instant.parse("2026-11-10T12:00:00Z")
 
+    private fun testVehicle(id: String, provider: String) =
+        Vehicle(id, GeoPoint(47.5, 19.05), now, providerId = provider)
+
+    @Test
+    fun tiles_coverAreaExactlyWithMinimalEqualGrid() {
+        for ((area, count) in listOf(
+            MapBounds(19.0, 47.4, 19.1, 47.5) to 1,
+            MapBounds(19.0, 47.4, 19.36, 47.76) to 4,
+            MapBounds(19.0, 47.4, 19.36, 47.5) to 2,
+            MapBounds(19.0, 47.4, 19.1, 47.76) to 2
+        )) {
+            val tiles = BkkWorkerRepository.tiles(area)
+            assertEquals(count, tiles.size)
+            assertEquals(area.west, tiles.minOf { it.west }, 1e-9)
+            assertEquals(area.east, tiles.maxOf { it.east }, 1e-9)
+            assertEquals(area.south, tiles.minOf { it.south }, 1e-9)
+            assertEquals(area.north, tiles.maxOf { it.north }, 1e-9)
+            val width = tiles.first().east - tiles.first().west
+            val height = tiles.first().north - tiles.first().south
+            tiles.forEach {
+                assertTrue(it.east - it.west <= 0.18 + 1e-9)
+                assertTrue(it.north - it.south <= 0.18 + 1e-9)
+                assertEquals(width, it.east - it.west, 1e-9)
+                assertEquals(height, it.north - it.south, 1e-9)
+            }
+            tiles.groupBy { it.south }.values.forEach { row ->
+                row.sortedBy { it.west }.zipWithNext().forEach { (a, b) -> assertEquals(a.east, b.west, 1e-9) }
+            }
+            tiles.groupBy { it.west }.values.forEach { column ->
+                column.sortedBy { it.south }.zipWithNext().forEach { (a, b) -> assertEquals(a.north, b.south, 1e-9) }
+            }
+            assertEquals((area.east - area.west) * (area.north - area.south), width * height * count, 1e-9)
+        }
+    }
+
+    @Test
+    fun workerVehicleId_mapsOnlySupportedIdentities() {
+        assertEquals("volan_ABC123", BkkWorkerRepository.workerVehicleId(testVehicle("emma:hkir:hkir_ABC123", "volan")))
+        assertEquals("BKK_1234", BkkWorkerRepository.workerVehicleId(testVehicle("emma:BKK:1234", "bkk")))
+        listOf("emma:1:1234" to "mav", "emma:BKK:1234" to "hev",
+            "emma:BKK:" to "bkk", "1234" to "bkk", "emma:hkir:hkir_bad" to "volan").forEach { (id, provider) ->
+            assertNull(BkkWorkerRepository.workerVehicleId(testVehicle(id, provider)))
+        }
+    }
+
+    private fun vehicleResponse(): String = JSONObject().put("status", "OK").put("data", JSONObject()
+        .put("references", JSONObject())
+        .put("list", JSONArray(listOf("BKK_1234", "BKK_5678").map { id -> JSONObject()
+            .put("vehicleId", id).put("vehicleRouteType", "BUS")
+            .put("lastUpdateTime", Instant.now().epochSecond)
+            .put("location", JSONObject().put("lat", 47.5).put("lon", 19.05)) }))).toString()
+
+    @Test
+    fun vehicles_fansOutAcrossTilesAndDeduplicatesWholeAreaSnapshot() = runBlocking {
+        val urls = java.util.concurrent.CopyOnWriteArrayList<HttpUrl>()
+        val client = OkHttpClient.Builder().addInterceptor { chain ->
+            urls.add(chain.request().url)
+            Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                .body(vehicleResponse().toResponseBody()).build()
+        }.build()
+        val repo = BkkWorkerRepository(BkkWorkerClient("https://worker.test".toHttpUrl(), client, { now }, BkkRequestBudget()))
+        val area = MapBounds(19.0, 47.4, 19.36, 47.76)
+        val snapshot = repo.vehicles(area)
+        assertEquals(area, snapshot.covered)
+        assertEquals(setOf("emma:BKK:1234", "emma:BKK:5678"), snapshot.vehicles.map { it.vehicle.id }.toSet())
+        assertEquals(2, snapshot.vehicles.size)
+        assertEquals(4, urls.size)
+        assertEquals(4, urls.toSet().size)
+        urls.forEach {
+            assertTrue(it.encodedPath.contains("vehicles-for-location"))
+            assertEquals("0.09000", it.queryParameter("latSpan"))
+            assertEquals("0.09000", it.queryParameter("lonSpan"))
+            assertEquals("routes", it.queryParameter("includeReferences"))
+        }
+    }
+
+    @Test
+    fun vehicle_requestsExactIdentityAndFiltersUnrelatedRecords() = runBlocking {
+        val urls = java.util.concurrent.CopyOnWriteArrayList<HttpUrl>()
+        val client = OkHttpClient.Builder().addInterceptor { chain ->
+            urls.add(chain.request().url)
+            Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                .body(vehicleResponse().toResponseBody()).build()
+        }.build()
+        val repo = BkkWorkerRepository(BkkWorkerClient("https://worker.test".toHttpUrl(), client, { now }, BkkRequestBudget()))
+        assertEquals(listOf("emma:BKK:1234"), repo.vehicle(testVehicle("emma:BKK:1234", "bkk")).map { it.vehicle.id })
+        assertEquals("BKK_1234", urls.single().queryParameter("vehicleId"))
+        assertTrue(urls.single().encodedPath.endsWith("/vehicles.json"))
+        assertTrue(repo.vehicle(testVehicle("emma:hkir:hkir_ABC123", "volan")).isEmpty())
+        assertEquals("volan_ABC123", urls.last().queryParameter("vehicleId"))
+        assertTrue(repo.vehicle(testVehicle("emma:1:1234", "mav")).isEmpty())
+        assertEquals(2, urls.size)
+    }
+
     @Test
     fun queryArea_enforcesBoundsMaxSpanAndGridSnapping() {
         // 1. Valid viewport in Budapest center:
@@ -29,14 +123,16 @@ class BkkWorkerRepositoryTest {
         assertEquals(47.50, (snapped!!.south + snapped.north) / 2.0, 1e-4)
         assertEquals(19.05, (snapped.west + snapped.east) / 2.0, 1e-4)
 
-        // 2. Viewport exceeding max half-span 0.09 (zoomed out too far):
-        // lon span: 18.90..19.20 -> half-span = 0.15 > 0.09 -> must return null
+        // 2. Views beyond one tile remain supported up to the two-tile limit:
+        // Longitude half-span 0.15 requires two columns.
         val tooWide = MapBounds(18.90, 47.45, 19.20, 47.55)
-        assertNull(BkkWorkerRepository.queryArea(tooWide))
+        assertNotNull(BkkWorkerRepository.queryArea(tooWide))
+        assertNull(BkkWorkerRepository.queryArea(MapBounds(18.8, 47.45, 19.3, 47.55)))
 
-        // lat span: 47.30..47.60 -> half-span = 0.15 > 0.09 -> must return null
+        // Latitude half-span 0.15 requires two rows.
         val tooTall = MapBounds(19.00, 47.30, 19.10, 47.60)
-        assertNull(BkkWorkerRepository.queryArea(tooTall))
+        assertNotNull(BkkWorkerRepository.queryArea(tooTall))
+        assertNull(BkkWorkerRepository.queryArea(MapBounds(19.0, 47.2, 19.1, 47.7)))
 
         // 3. All Hungary within bounds <= 0.09 is accepted (e.g. Debrecen):
         val debrecen = MapBounds(21.61, 47.52, 21.63, 47.54)
