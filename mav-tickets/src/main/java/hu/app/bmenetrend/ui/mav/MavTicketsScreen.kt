@@ -667,6 +667,7 @@ fun MavGoogleLoginDialog(
 ) {
     var isLoading by remember { mutableStateOf(true) }
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
+    var handled by remember { mutableStateOf(false) }
 
     Dialog(
         onDismissRequest = onDismissRequest,
@@ -735,26 +736,11 @@ fun MavGoogleLoginDialog(
                                 settings.userAgentString = MavApiClient.CHROME_MOBILE_USER_AGENT
 
                                 webViewClient = object : WebViewClient() {
-                                    override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-                                        super.onPageStarted(view, url, favicon)
-                                        isLoading = true
-                                        handleUrl(url)
-                                    }
-
-                                    override fun onPageFinished(view: WebView?, url: String?) {
-                                        super.onPageFinished(view, url)
-                                        isLoading = false
-                                        handleUrl(url)
-                                    }
-
-                                    override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
-                                        val url = request?.url?.toString()
-                                        return handleUrl(url) || super.shouldOverrideUrlLoading(view, request)
-                                    }
-
-                                    private fun handleUrl(url: String?): Boolean {
-                                        if (url == null) return false
-                                        if (url.startsWith("https://mvapi.mav.hu/google/login") ||
+                                    private fun handleUrl(view: WebView?, url: String?): Boolean {
+                                        if (url == null || handled) return false
+                                        if (url.startsWith("https://jegy.mav.hu/app-social-login") ||
+                                            url.contains("jegy.mav.hu/app-social-login") ||
+                                            url.startsWith("https://mvapi.mav.hu/google/login") ||
                                             url.contains("mvapi.mav.hu/google/login") ||
                                             (url.contains("code=") && (url.contains("mav.hu") || url.contains("mvapi")))
                                         ) {
@@ -762,14 +748,40 @@ fun MavGoogleLoginDialog(
                                             val code = uri.getQueryParameter("code")
                                             val error = uri.getQueryParameter("error")
                                             if (!code.isNullOrBlank()) {
+                                                handled = true
+                                                view?.stopLoading()
                                                 onCodeReceived(code)
                                                 return true
                                             } else if (!error.isNullOrBlank()) {
+                                                handled = true
+                                                view?.stopLoading()
                                                 onError(uri.getQueryParameter("error_description") ?: error)
                                                 return true
                                             }
                                         }
                                         return false
+                                    }
+
+                                    override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                                        super.onPageStarted(view, url, favicon)
+                                        if (handleUrl(view, url)) return
+                                        isLoading = true
+                                    }
+
+                                    override fun onPageFinished(view: WebView?, url: String?) {
+                                        super.onPageFinished(view, url)
+                                        if (handleUrl(view, url)) return
+                                        isLoading = false
+                                    }
+
+                                    @Suppress("DEPRECATION")
+                                    override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+                                        return handleUrl(view, url) || super.shouldOverrideUrlLoading(view, url)
+                                    }
+
+                                    override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                                        val url = request?.url?.toString()
+                                        return handleUrl(view, url) || super.shouldOverrideUrlLoading(view, request)
                                     }
                                 }
 

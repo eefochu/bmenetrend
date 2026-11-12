@@ -114,23 +114,20 @@ class MavApiClientTest {
     fun loginWithGoogleCodeSuccessReturnsSessionWithJwtAndUser() = runBlocking {
         val mockJson = """
             {
-                "refreshToken": "mock_jwt_refresh_token_123",
-                "email": "googleuser@gmail.com",
+                "userTokenXml": "mock_jwt_refresh_token_123",
+                "loginEmail": "googleuser@gmail.com",
                 "firstName": "Béla",
                 "lastName": "Kovács",
-                "registrationId": "999888",
-                "userGuid": "guid-abc-123"
+                "registrationId": "999888"
             }
         """.trimIndent()
 
-        var capturedApiKey: String? = null
-        var capturedPartnerName: String? = null
+        var capturedOrigin: String? = null
         var capturedReferer: String? = null
 
         val client = createMockClient { req ->
             assertTrue(req.url.encodedPath.contains("SocialLogin"))
-            capturedApiKey = req.header("je-api-key")
-            capturedPartnerName = req.header("je-partner-name")
+            capturedOrigin = req.header("Origin")
             capturedReferer = req.header("Referer")
             jsonResponse(req, mockJson)
         }
@@ -147,9 +144,8 @@ class MavApiClientTest {
         assertEquals("Kovács Béla", session.user?.fullName)
         assertEquals("999888", session.user?.regId)
 
-        assertEquals(MavApiClient.MAV_JE_API_KEY, capturedApiKey)
-        assertEquals(MavApiClient.MAV_JE_PARTNER_NAME, capturedPartnerName)
-        assertEquals("mavpluszmobile", capturedReferer)
+        assertEquals("https://jegy.mav.hu", capturedOrigin)
+        assertEquals("https://jegy.mav.hu/", capturedReferer)
     }
 
     @Test

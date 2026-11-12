@@ -47,6 +47,23 @@ class MavApiClient(
         }
     }
 
+    private fun parseJsonBody(bodyString: String): JSONObject {
+        val trimmed = bodyString.trim()
+        if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+            return JSONObject(trimmed)
+        }
+        if (trimmed.startsWith(""") && trimmed.endsWith(""") && trimmed.length >= 2) {
+            val unquoted = runCatching {
+                org.json.JSONTokener(trimmed).nextValue() as? String
+            }.getOrNull() ?: trimmed.substring(1, trimmed.length - 1)
+            val inner = unquoted.trim()
+            if (inner.startsWith("{") || inner.startsWith("[")) {
+                return JSONObject(inner)
+            }
+        }
+        return JSONObject()
+    }
+
     private suspend fun executeJsonRequest(req: Request): JSONObject {
         return suspendCancellableCoroutine { continuation ->
             val call = client.newCall(req)
@@ -59,15 +76,19 @@ class MavApiClient(
                 override fun onResponse(call: Call, response: Response) {
                     try {
                         val bodyString = response.use { it.body?.string().orEmpty().trim() }
+                        val parsedJson = runCatching { parseJsonBody(bodyString) }.getOrDefault(JSONObject())
                         if (!response.isSuccessful) {
-                            throw MavApiException("MÁV API hiba: HTTP ${response.code}", response.code)
+                            val serverMsg = parsedJson.optString(
+                                "errorMessage",
+                                parsedJson.optString("message", parsedJson.optString("error", ""))
+                            ).ifBlank {
+                                if (bodyString.isNotBlank() && !bodyString.startsWith("<")) {
+                                    bodyString.trim('"')
+                                } else null
+                            }
+                            throw MavApiException(serverMsg ?: "MÁV API hiba: HTTP ${response.code}", response.code)
                         }
-                        val json = if (bodyString.startsWith("{") || bodyString.startsWith("[")) {
-                            JSONObject(bodyString)
-                        } else {
-                            JSONObject()
-                        }
-                        if (continuation.isActive) continuation.resume(json)
+                        if (continuation.isActive) continuation.resume(parsedJson)
                     } catch (e: Exception) {
                         if (continuation.isActive) continuation.resumeWithException(e)
                     }
@@ -169,48 +190,46 @@ class MavApiClient(
 
     suspend fun loginWithGoogleCode(code: String, uaid: String): MavSession {
         val cleanCode = code.trim()
-        val correlationId = UUID.randomUUID().toString()
-        val partnerSession = UUID.randomUUID().toString()
 
         val reqBodyJson = JSONObject().apply {
-            put("allowConnectoToJeUser", true)
-            put("allowCreateJeUser", false)
-            put("allowNonValidatedConnectoToJeUser", false)
             put("provider", "GOOGLE")
             put("socialLoginOneTimeCode", cleanCode)
+            put("allowConnectoToJeUser", true)
+            put("allowCreateJeUser", false)
+            put("allowNonValidatedConnectoToJeUser", true)
+            put("firstName", JSONObject.NULL)
+            put("lastName", JSONObject.NULL)
             put("socialClientId", GOOGLE_CLIENT_ID)
         }
         val requestBody = reqBodyJson.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
 
         val request = Request.Builder()
-            .url("${PAPI_PROD_URL}${DEFAULT_USER_PROFILE_PATH}Authentication/SocialLogin")
-            .addHeader("Accept", "text/plain, application/json, */*")
-            .addHeader("Content-Type", "application/json")
-            .addHeader("language", "hu")
-            .addHeader("je-api-key", MAV_JE_API_KEY)
-            .addHeader("je-partner-name", MAV_JE_PARTNER_NAME)
-            .addHeader("Referer", "mavpluszmobile")
+            .url("https://jegy-a.mav.hu/IK_API_PROD/api/SocialLoginApi/SocialLogin")
+            .addHeader("Accept", "application/json")
+            .addHeader("Content-Type", "application/json; charset=utf-8")
+            .addHeader("Origin", "https://jegy.mav.hu")
+            .addHeader("Referer", "https://jegy.mav.hu/")
+            .addHeader("Language", "hu")
             .addHeader("User-Agent", MAV_APP_USER_AGENT)
-            .addHeader("partner-session-name", partnerSession)
-            .addHeader("device-instance", uaid)
-            .addHeader("correlation-id", correlationId)
             .post(requestBody)
             .build()
 
         val responseJson = try {
             executeJsonRequest(request)
         } catch (e: MavApiException) {
-            val msg = if (e.statusCode == 401 || e.statusCode == 403) {
-                "Érvénytelen vagy lejárt Google azonosító. Kérjük próbálja újra!"
-            } else {
-                e.errorMessage
+            val msg = when {
+                e.statusCode == 401 || e.statusCode == 403 || e.statusCode == 500 || e.errorMessage.contains("OSB", ignoreCase = true) ->
+                    "Érvénytelen vagy lejárt Google azonosító. Kérjük próbálja újra!"
+                e.errorMessage.isNotBlank() && !e.errorMessage.startsWith("MÁV API hiba") ->
+                    e.errorMessage
+                else -> "A Google azonosítás sikertelen. Kérjük próbálja újra!"
             }
             throw MavApiException(msg, e.statusCode)
         }
 
         val token = responseJson.optString(
-            "refreshToken",
-            responseJson.optString("token", responseJson.optString("jwtToken", ""))
+            "userTokenXml",
+            responseJson.optString("refreshToken", responseJson.optString("token", responseJson.optString("jwtToken", "")))
         ).trim()
 
         if (token.isEmpty()) {
@@ -1182,9 +1201,9 @@ class MavApiClient(
     }
 
     companion object {
-        const val GOOGLE_CLIENT_ID = "989905229285-i8nk59fm0pbr7b4f0vg1lvipls56nvj0.apps.googleusercontent.com"
-        const val GOOGLE_REDIRECT_URI = "https://mvapi.mav.hu/google/login"
-        const val GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth?scope=email%20profile&redirect_uri=https://mvapi.mav.hu/google/login&client_id=989905229285-i8nk59fm0pbr7b4f0vg1lvipls56nvj0.apps.googleusercontent.com&response_type=code"
+        const val GOOGLE_CLIENT_ID = "989905229285-hqta0tjm61slvfn3mkic8qvgjob0mvqj.apps.googleusercontent.com"
+        const val GOOGLE_REDIRECT_URI = "https://jegy.mav.hu/app-social-login"
+        const val GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth?scope=email%20profile&redirect_uri=https://jegy.mav.hu/app-social-login&client_id=989905229285-hqta0tjm61slvfn3mkic8qvgjob0mvqj.apps.googleusercontent.com&response_type=code"
         const val MAV_JE_API_KEY = "232AC6FE-46BE-479B-894D-BFC96E548945"
         const val MAV_JE_PARTNER_NAME = "App2025"
         const val MAV_APP_USER_AGENT = "MAVApp/2.6.15-prod (hu.mav.emmapp; build: 950; Android 14)"
