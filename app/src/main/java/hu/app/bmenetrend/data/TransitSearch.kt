@@ -254,13 +254,17 @@ object TransitSearch {
         }
     }
 
-    fun stops(index: List<StopEntry>, query: Query, location: GeoPoint?, favorites: Set<String>): List<TransitStop> {
+    /** [checkpoint] runs every few hundred entries so a superseded keystroke can stop the scan early. */
+    fun stops(index: List<StopEntry>, query: Query, location: GeoPoint?, favorites: Set<String>,
+              checkpoint: () -> Unit = {}): List<TransitStop> {
         if (query.modes.isNotEmpty()) return emptyList()
         val hasLocation = location != null
         val locLat = location?.lat ?: 0.0
         val locLon = location?.lon ?: 0.0
+        var scanned = 0
 
         return index.asSequence().mapNotNull { entry ->
+            if (scanned++ and 511 == 0) checkpoint()
             if (query.provider != null && query.provider !in entry.stop.providerIds) return@mapNotNull null
             for (term in query.terms) {
                 if (!entry.text.contains(term)) return@mapNotNull null

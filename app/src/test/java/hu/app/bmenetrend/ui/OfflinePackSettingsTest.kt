@@ -40,16 +40,35 @@ class OfflinePackSettingsTest {
         assertTrue(enabled); assertEquals(0, downloads)
     }
 
-    @Test fun disconnectedModeExplainsFallbackAndCannotBeSwitchedOnline() {
-        var toggled = false
+    @Test fun disconnectedModeExplainsFallbackAndCanBeSwitchedOnline() {
+        var mode: Boolean? = null
         compose.setContent { ViaBuszTheme { androidx.compose.foundation.layout.Column {
             OfflinePackSettings(UiState(offlineMode = true, internetAvailable = false, offlinePack = OfflinePackState(meta, OfflinePackPhase.READY)),
-                { toggled = true }, {}, {}, {}, {})
+                { mode = it }, {}, {}, {}, {})
+        } } }
+        compose.onNodeWithText("Nincs internetelérés. A letöltött menetrendcsomag továbbra is használható.").assertExists()
+        compose.onNodeWithText("Az alkalmazás nem talált internetkapcsolatot, ezért offline módra váltott. Ha mégis van internet, kapcsold ki az offline módot.").assertExists()
+        compose.onNode(hasText("Offline mód") and hasClickAction()).assertIsEnabled().performClick()
+        assertEquals(false, mode)
+    }
+
+    @Test fun disconnectedModeWithoutPackCanBeSwitchedOnline() {
+        var mode: Boolean? = null
+        compose.setContent { ViaBuszTheme { androidx.compose.foundation.layout.Column {
+            OfflinePackSettings(UiState(offlineMode = true, internetAvailable = false, offlinePack = OfflinePackState()),
+                { mode = it }, {}, {}, {}, {})
+        } } }
+        compose.onNode(hasText("Offline mód") and hasClickAction()).assertIsEnabled().performClick()
+        assertEquals(false, mode)
+    }
+
+    @Test fun onlineModeWithoutPackCannotBeSwitchedOffline() {
+        compose.setContent { ViaBuszTheme { androidx.compose.foundation.layout.Column {
+            OfflinePackSettings(UiState(offlineMode = false, offlinePack = OfflinePackState()), {}, {}, {}, {}, {})
         } } }
         compose.onNode(hasText("Offline mód") and hasClickAction()).assertIsNotEnabled()
-        compose.onNodeWithText("Nincs internetelérés. A letöltött menetrendcsomag továbbra is használható.").assertExists()
-        assertFalse(toggled)
     }
+
     @Test fun processingDoesNotPresentFrozenDownloadBytesAsInstallationProgress() {
         compose.setContent { ViaBuszTheme { androidx.compose.foundation.layout.Column {
             OfflinePackSettings(UiState(offlineMode = false, offlinePack = OfflinePackState(phase = OfflinePackPhase.IMPORTING,

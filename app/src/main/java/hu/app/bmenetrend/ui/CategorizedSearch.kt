@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import hu.app.bmenetrend.R
 import hu.app.bmenetrend.data.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 
 internal enum class SearchCategory(val title: Int) {
@@ -32,7 +33,7 @@ internal enum class SearchCategory(val title: Int) {
 private data class SearchMatches<T>(val query: String = "", val items: List<T> = emptyList())
 
 @Immutable
-private data class StationMatches(val query: String = "", val items: List<TransitStop> = emptyList(), val recommended: TransitStop? = null)
+private data class StationMatches(val query: String = "", val items: List<TransitStop> = emptyList())
 
 private suspend fun buildSearchStopIndex(local: List<TransitStop>, national: List<TransitStop>): List<TransitSearch.StopEntry> =
     withContext(Dispatchers.Default) { TransitSearch.indexStops(local, national) }
@@ -81,11 +82,21 @@ internal fun CategorizedSearch(
             SearchMatches(parsed.text, loaded + remoteVehicles.filter { it.id !in ids })
         }
     }
+    // The recommendation and the result list are separate scans running side by side, so the
+    // recommendation card shows as soon as its own scan ends. Each keystroke cancels the previous
+    // scans mid-way instead of letting them finish for nothing.
     val stopMatches by produceState(StationMatches(), parsed, stopIndex, state.userLocation, state.favorites) {
         value = if (stopIndex == null) StationMatches(parsed.text) else withContext(Dispatchers.Default) {
+            val checkpoint = { ensureActive() }
             if (parsed.text.isBlank()) StationMatches(parsed.text, stopIndex.orEmpty().filter { it.stop.id in state.favorites }.map { it.stop }.take(5))
-            else StationMatches(parsed.text, TransitSearch.stops(stopIndex.orEmpty(), parsed, state.userLocation, state.favorites),
-                StationRecommendations.stops(stopIndex.orEmpty(), parsed, state.userLocation, state.favorites).firstOrNull())
+            else StationMatches(parsed.text, TransitSearch.stops(stopIndex.orEmpty(), parsed, state.userLocation, state.favorites, checkpoint))
+        }
+    }
+    val recommendationMatch by produceState(SearchMatches<TransitStop>(), parsed, stopIndex, state.userLocation, state.favorites) {
+        val index = stopIndex
+        value = if (index == null || parsed.text.isBlank()) SearchMatches(parsed.text) else withContext(Dispatchers.Default) {
+            val checkpoint = { ensureActive() }
+            SearchMatches(parsed.text, StationRecommendations.stops(index, parsed, state.userLocation, state.favorites, checkpoint).take(1))
         }
     }
     LaunchedEffect(query, searchPlaces) { onSearchPlaces(query, searchPlaces) }
@@ -107,7 +118,7 @@ internal fun CategorizedSearch(
                 stop.id.removePrefix("emma:") !in covered && stop.sourceStopIds.none { it in covered } }
         }
     }
-    val recommendation = stopMatches.recommended.takeIf { stopMatches.query == parsed.text }
+    val recommendation = recommendationMatch.items.firstOrNull().takeIf { recommendationMatch.query == parsed.text }
     val recommendedId = recommendation?.id.takeIf { category == SearchCategory.ALL || category == SearchCategory.STATIONS }
     val otherStops = remember(matchingStops, recommendedId) {
         val recommendedSources = recommendation?.takeIf { recommendedId != null }?.sourceStopIds.orEmpty().toSet()

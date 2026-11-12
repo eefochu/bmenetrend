@@ -291,8 +291,10 @@ class PlannerViewModel internal constructor(
         searchJob = viewModelScope.launch {
             val (localStationResults, consolidatedLocal, recommendation) = withContext(Dispatchers.Default) {
                 val parsed = TransitSearch.query(query)
-                val literal = TransitSearch.stops(index, parsed, location, emptySet()).take(10).map(PlannerEndpoint::fromStop)
-                Triple(literal, consolidateEndpoints(literal), StationRecommendations.stops(index, parsed, location, emptySet()).firstOrNull()?.let(PlannerEndpoint::fromStop))
+                // A newer keystroke cancels this job; the checkpoint stops the scans mid-way too.
+                val checkpoint = { ensureActive() }
+                val literal = TransitSearch.stops(index, parsed, location, emptySet(), checkpoint).take(10).map(PlannerEndpoint::fromStop)
+                Triple(literal, consolidateEndpoints(literal), StationRecommendations.stops(index, parsed, location, emptySet(), checkpoint).firstOrNull()?.let(PlannerEndpoint::fromStop))
             }
             if (generation != searchGeneration) return@launch
             val cachedPlaces = if (state.value.offline) emptyList() else places.cached(query).orEmpty().take(6)
