@@ -13,6 +13,13 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
+import android.os.Message
+import android.webkit.CookieManager
+import android.webkit.JavascriptInterface
+import android.webkit.WebChromeClient
+import android.widget.FrameLayout
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import android.webkit.WebViewClient
 import android.widget.ImageView
 import androidx.activity.compose.BackHandler
@@ -659,14 +666,33 @@ private fun MavLoginView(
     }
 }
 
+class GoogleAuthBridge(
+    private val onCode: (String) -> Unit,
+    private val onError: (String) -> Unit
+) {
+    @JavascriptInterface
+    fun onCodeReceived(code: String) {
+        if (code.isNotBlank()) {
+            onCode(code)
+        }
+    }
+
+    @JavascriptInterface
+    fun onError(error: String) {
+        onError(error)
+    }
+}
+
 @Composable
 fun MavGoogleLoginDialog(
     onDismissRequest: () -> Unit,
     onCodeReceived: (String) -> Unit,
     onError: (String) -> Unit
 ) {
+    val coroutineScope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(true) }
-    var webViewRef by remember { mutableStateOf<WebView?>(null) }
+    var popupWebViewRef by remember { mutableStateOf<WebView?>(null) }
+    var containerRef by remember { mutableStateOf<FrameLayout?>(null) }
     var handled by remember { mutableStateOf(false) }
 
     Dialog(
@@ -674,8 +700,13 @@ fun MavGoogleLoginDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         BackHandler {
-            if (webViewRef?.canGoBack() == true) {
-                webViewRef?.goBack()
+            if (popupWebViewRef?.canGoBack() == true) {
+                popupWebViewRef?.goBack()
+            } else if (popupWebViewRef != null) {
+                containerRef?.removeView(popupWebViewRef)
+                popupWebViewRef?.destroy()
+                popupWebViewRef = null
+                isLoading = false
             } else {
                 onDismissRequest()
             }
@@ -725,65 +756,171 @@ fun MavGoogleLoginDialog(
                 Box(modifier = Modifier.fillMaxSize()) {
                     AndroidView(
                         factory = { context ->
-                            WebView(context).apply {
-                                webViewRef = this
+                            val container = FrameLayout(context).apply {
                                 layoutParams = ViewGroup.LayoutParams(
                                     ViewGroup.LayoutParams.MATCH_PARENT,
                                     ViewGroup.LayoutParams.MATCH_PARENT
                                 )
+                            }
+                            containerRef = container
+
+                            val bridge = GoogleAuthBridge(
+                                onCode = { code ->
+                                    coroutineScope.launch(Dispatchers.Main) {
+                                        if (!handled) {
+                                            handled = true
+                                            onCodeReceived(code)
+                                        }
+                                    }
+                                },
+                                onError = { err ->
+                                    coroutineScope.launch(Dispatchers.Main) {
+                                        if (!handled) {
+                                            handled = true
+                                            onError(err)
+                                        }
+                                    }
+                                }
+                            )
+
+                            val parentWebView = WebView(context).apply {
+                                layoutParams = FrameLayout.LayoutParams(
+                                    FrameLayout.LayoutParams.MATCH_PARENT,
+                                    FrameLayout.LayoutParams.MATCH_PARENT
+                                )
                                 settings.javaScriptEnabled = true
                                 settings.domStorageEnabled = true
+                                settings.setSupportMultipleWindows(true)
+                                settings.javaScriptCanOpenWindowsAutomatically = true
                                 settings.userAgentString = MavApiClient.CHROME_MOBILE_USER_AGENT
 
+                                CookieManager.getInstance().setAcceptCookie(true)
+                                CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
+
+                                addJavascriptInterface(bridge, "AndroidBridge")
+
                                 webViewClient = object : WebViewClient() {
-                                    private fun handleUrl(view: WebView?, url: String?): Boolean {
-                                        if (url == null || handled) return false
-                                        if ((url.contains("code=") || url.contains("error=")) &&
-                                            (url.contains("jegy.mav.hu") || url.contains("mvapi.mav.hu"))
-                                        ) {
-                                            val uri = Uri.parse(url)
-                                            val code = uri.getQueryParameter("code")
-                                            val error = uri.getQueryParameter("error")
-                                            if (!code.isNullOrBlank()) {
-                                                handled = true
-                                                view?.stopLoading()
-                                                onCodeReceived(code)
-                                                return true
-                                            } else if (!error.isNullOrBlank()) {
-                                                handled = true
-                                                view?.stopLoading()
-                                                onError(uri.getQueryParameter("error_description") ?: error)
-                                                return true
-                                            }
-                                        }
-                                        return false
-                                    }
-
-                                    override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-                                        super.onPageStarted(view, url, favicon)
-                                        if (handleUrl(view, url)) return
-                                        isLoading = true
-                                    }
-
                                     override fun onPageFinished(view: WebView?, url: String?) {
                                         super.onPageFinished(view, url)
-                                        if (handleUrl(view, url)) return
-                                        isLoading = false
-                                    }
-
-                                    @Suppress("DEPRECATION")
-                                    override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
-                                        return handleUrl(view, url) || super.shouldOverrideUrlLoading(view, url)
-                                    }
-
-                                    override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
-                                        val url = request?.url?.toString()
-                                        return handleUrl(view, url) || super.shouldOverrideUrlLoading(view, request)
                                     }
                                 }
 
-                                loadUrl(MavApiClient.GOOGLE_AUTH_URL)
+                                webChromeClient = object : WebChromeClient() {
+                                    override fun onCreateWindow(
+                                        view: WebView?,
+                                        isDialog: Boolean,
+                                        isUserGesture: Boolean,
+                                        resultMsg: Message?
+                                    ): Boolean {
+                                        val popup = WebView(context).apply {
+                                            layoutParams = FrameLayout.LayoutParams(
+                                                FrameLayout.LayoutParams.MATCH_PARENT,
+                                                FrameLayout.LayoutParams.MATCH_PARENT
+                                            )
+                                            settings.javaScriptEnabled = true
+                                            settings.domStorageEnabled = true
+                                            settings.userAgentString = MavApiClient.CHROME_MOBILE_USER_AGENT
+                                            CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
+
+                                            webViewClient = object : WebViewClient() {
+                                                override fun onPageStarted(v: WebView?, url: String?, favicon: Bitmap?) {
+                                                    super.onPageStarted(v, url, favicon)
+                                                    isLoading = true
+                                                    if (url != null && (url.contains("code=") || url.contains("error=")) &&
+                                                        (url.contains("jegy.mav.hu") || url.contains("mvapi.mav.hu"))
+                                                    ) {
+                                                        val uri = Uri.parse(url)
+                                                        val code = uri.getQueryParameter("code")
+                                                        val error = uri.getQueryParameter("error")
+                                                        if (!code.isNullOrBlank() && !handled) {
+                                                            handled = true
+                                                            v?.stopLoading()
+                                                            coroutineScope.launch(Dispatchers.Main) {
+                                                                onCodeReceived(code)
+                                                            }
+                                                        } else if (!error.isNullOrBlank() && !handled) {
+                                                            handled = true
+                                                            v?.stopLoading()
+                                                            coroutineScope.launch(Dispatchers.Main) {
+                                                                onError(uri.getQueryParameter("error_description") ?: error)
+                                                            }
+                                                        }
+                                                    }
+                                                }
+
+                                                override fun onPageFinished(v: WebView?, url: String?) {
+                                                    super.onPageFinished(v, url)
+                                                    isLoading = false
+                                                }
+                                            }
+
+                                            webChromeClient = object : WebChromeClient() {
+                                                override fun onCloseWindow(window: WebView?) {
+                                                    container.removeView(window)
+                                                    window?.destroy()
+                                                    popupWebViewRef = null
+                                                    isLoading = false
+                                                }
+                                            }
+                                        }
+
+                                        popupWebViewRef = popup
+                                        container.addView(popup)
+
+                                        val transport = resultMsg?.obj as? WebView.WebViewTransport
+                                        transport?.webView = popup
+                                        resultMsg?.sendToTarget()
+                                        return true
+                                    }
+                                }
+
+                                val gisHtml = """
+                                    <!DOCTYPE html>
+                                    <html>
+                                    <head>
+                                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                        <script src="https://accounts.google.com/gsi/client"></script>
+                                    </head>
+                                    <body style="margin:0; background:#f9f9f9; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; font-family:sans-serif;">
+                                        <div style="text-align:center; padding:24px;">
+                                            <p style="font-size:16px; color:#555; font-weight:500;">Kapcsolódás a Google-fiókhoz...</p>
+                                        </div>
+                                        <script>
+                                            function triggerGoogleAuth() {
+                                                try {
+                                                    const client = google.accounts.oauth2.initCodeClient({
+                                                        client_id: '989905229285-hqta0tjm61slvfn3mkic8qvgjob0mvqj.apps.googleusercontent.com',
+                                                        scope: 'email profile',
+                                                        ux_mode: 'popup',
+                                                        callback: function(response) {
+                                                            if (response && response.code) {
+                                                                AndroidBridge.onCodeReceived(response.code);
+                                                            } else if (response && response.error) {
+                                                                AndroidBridge.onError(response.error_description || response.error);
+                                                            }
+                                                        },
+                                                        error_callback: function(err) {
+                                                            AndroidBridge.onError((err && err.message) ? err.message : 'Google azonosítási hiba');
+                                                        }
+                                                    });
+                                                    client.requestCode();
+                                                } catch(e) {
+                                                    AndroidBridge.onError(e.message || 'Hiba a Google azonosítás indításakor');
+                                                }
+                                            }
+                                            window.onload = function() {
+                                                setTimeout(triggerGoogleAuth, 300);
+                                            };
+                                        </script>
+                                    </body>
+                                    </html>
+                                """.trimIndent()
+
+                                loadDataWithBaseURL("https://jegy.mav.hu/", gisHtml, "text/html", "UTF-8", null)
                             }
+
+                            container.addView(parentWebView)
+                            container
                         },
                         modifier = Modifier.fillMaxSize()
                     )
