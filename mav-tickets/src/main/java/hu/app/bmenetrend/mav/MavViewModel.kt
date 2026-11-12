@@ -320,8 +320,8 @@ class MavViewModel(
                     )
                 } else {
                     val session = repository.session.value
-                    val errorMsg = if (session != null && session.vimToken.isNullOrBlank()) {
-                        "A jegykép betöltéséhez kérjük jelentkezzen ki és be újra a frissítés után."
+                    val errorMsg = if (session != null && session.vimToken.isNullOrBlank() && session.token.isBlank()) {
+                        "A jegykép betöltéséhez kérjük jelentkezzen be újra."
                     } else {
                         "A jegykép / vonalkód nem érhető el"
                     }

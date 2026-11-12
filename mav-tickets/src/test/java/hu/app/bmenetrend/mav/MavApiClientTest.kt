@@ -500,4 +500,48 @@ class MavApiClientTest {
         assertEquals("Orszag-varmegye berlet MAVapp", image?.kind)
         assertTrue(image?.imageBase64?.isNotEmpty() == true)
     }
+    @Test
+    fun getTicketImageWithFinancialDatasFetchesFromGetCertificatesImagesWithoutVimToken() = runBlocking {
+        val detailsJson = """
+            {
+                "previousPurchaseDetails": {
+                    "financialDatas": [
+                        { "financialId": "fin-123" }
+                    ]
+                }
+            }
+        """.trimIndent()
+
+        val certsJson = """
+            {
+                "tiketsAndCertificates": [
+                    {
+                        "isCertificate": false,
+                        "certificateId": "CERT-888999",
+                        "image": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        val client = createMockClient { req ->
+            if (req.url.encodedPath.contains("GetPreviousPurchaseDetails")) {
+                jsonResponse(req, detailsJson)
+            } else if (req.url.encodedPath.contains("GetCertificatesImages")) {
+                jsonResponse(req, certsJson)
+            } else {
+                jsonResponse(req, "{}", 404)
+            }
+        }
+
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
+        val session = MavSession("googleuser@gmail.com", "user_token_xml_val", "uaid_abc", vimToken = null)
+        val image = api.getTicketImage(session, "1023744049")
+
+        assertNotNull(image)
+        assertEquals("1023744049", image?.receiptId)
+        assertEquals("CERT-888999", image?.ticketNumber)
+        assertEquals("Ticket", image?.kind)
+        assertTrue(image?.imageBase64?.isNotEmpty() == true)
+    }
 }
