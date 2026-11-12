@@ -1202,8 +1202,8 @@ class MavApiClient(
 
     companion object {
         const val GOOGLE_CLIENT_ID = "989905229285-hqta0tjm61slvfn3mkic8qvgjob0mvqj.apps.googleusercontent.com"
-        const val GOOGLE_REDIRECT_URI = "https://jegy.mav.hu/app-social-login"
-        const val GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth?scope=email%20profile&redirect_uri=https://jegy.mav.hu/app-social-login&client_id=989905229285-hqta0tjm61slvfn3mkic8qvgjob0mvqj.apps.googleusercontent.com&response_type=code"
+        const val GOOGLE_REDIRECT_URI = "https://jegy.mav.hu/"
+        const val GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth?scope=email%20profile&redirect_uri=https%3A%2F%2Fjegy.mav.hu%2F&client_id=989905229285-hqta0tjm61slvfn3mkic8qvgjob0mvqj.apps.googleusercontent.com&response_type=code"
         const val MAV_JE_API_KEY = "232AC6FE-46BE-479B-894D-BFC96E548945"
         const val MAV_JE_PARTNER_NAME = "App2025"
         const val MAV_APP_USER_AGENT = "MAVApp/2.6.15-prod (hu.mav.emmapp; build: 950; Android 14)"

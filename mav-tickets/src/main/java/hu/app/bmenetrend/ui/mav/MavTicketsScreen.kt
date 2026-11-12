@@ -738,11 +738,8 @@ fun MavGoogleLoginDialog(
                                 webViewClient = object : WebViewClient() {
                                     private fun handleUrl(view: WebView?, url: String?): Boolean {
                                         if (url == null || handled) return false
-                                        if (url.startsWith("https://jegy.mav.hu/app-social-login") ||
-                                            url.contains("jegy.mav.hu/app-social-login") ||
-                                            url.startsWith("https://mvapi.mav.hu/google/login") ||
-                                            url.contains("mvapi.mav.hu/google/login") ||
-                                            (url.contains("code=") && (url.contains("mav.hu") || url.contains("mvapi")))
+                                        if ((url.contains("code=") || url.contains("error=")) &&
+                                            (url.contains("jegy.mav.hu") || url.contains("mvapi.mav.hu"))
                                         ) {
                                             val uri = Uri.parse(url)
                                             val code = uri.getQueryParameter("code")
