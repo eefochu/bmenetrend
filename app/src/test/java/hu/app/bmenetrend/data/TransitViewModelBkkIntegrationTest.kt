@@ -1222,4 +1222,52 @@ class TransitViewModelBkkIntegrationTest {
         assertEquals("Second attempt must be dispatched without being blocked by false coverage", 2, stopDirectionsCalls.get())
         assertEquals(45.0, viewModel.state.value.bkkStopDirections["emma:BKK:RETRY_STOP"]!!, 1e-4)
     }
+    @Test
+    fun loadDepartureTripAppendsTripPatternAndDoesNotFetchItAgain() {
+        val trip = "volan:volan_2811_21_20261102"
+        val calls = AtomicInteger(0)
+        val json = JSONObject().put("status", "OK").put("data", JSONObject()
+            .put("references", JSONObject()
+                .put("routes", JSONObject().put("volan_760", JSONObject()
+                    .put("id", "volan_760").put("type", "BUS").put("shortName", "760").put("longName", "Bus")))
+                .put("trips", JSONObject().put("volan_2811_21_20261102", JSONObject()
+                    .put("routeId", "volan_760").put("tripHeadsign", "Terminus").put("directionId", "0")))
+                .put("stops", JSONObject()
+                .put("BKK_S1", JSONObject().put("id", "BKK_S1").put("name", "Short working stop").put("lat", 47.49).put("lon", 19.05))
+                .put("BKK_S2", JSONObject().put("id", "BKK_S2").put("name", "Terminus").put("lat", 47.50).put("lon", 19.06))))
+            .put("entry", JSONObject().put("tripId", "volan_2811_21_20261102")
+                .put("stopTimes", JSONArray()
+                    .put(JSONObject().put("stopId", "BKK_S1").put("departureTime", now.epochSecond))
+                    .put(JSONObject().put("stopId", "BKK_S2").put("arrivalTime", now.epochSecond + 300)))))
+            .toString()
+        val client = OkHttpClient.Builder().addInterceptor { chain ->
+            calls.incrementAndGet()
+            Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                .body(json.toResponseBody()).build()
+        }.build()
+        val viewModel = TransitViewModel(app).also { models += it }
+        injectBkkRepository(viewModel, BkkWorkerRepository(BkkWorkerClient(
+            "https://worker.test".toHttpUrl(), client, { now }, BkkRequestBudget())))
+        val route = TransitRoute("volan:760", "760", "Bus", emptyList(), "volan")
+        val main = LinePattern("main", setOf("main-code"), "Budapest", emptyList(), emptyList())
+        mutableState(viewModel).update { it.copy(lineDetails = mapOf(route.id to LineDetails(route, listOf(main)))) }
+        val departure = Departure(route.id, "760", "Terminus", "emma:BKK:S1", now, now,
+            ArrivalKind.LIVE, directionId = trip, sourceDirectionId = "0")
+
+        viewModel.loadDepartureTrip(route.id, departure)
+        assertEquals(route.id, viewModel.state.value.loadingLineId)
+        awaitUntil { viewModel.state.value.lineDetails[route.id]?.patterns?.size == 2 && viewModel.state.value.loadingLineId == null }
+        val patterns = viewModel.state.value.lineDetails.getValue(route.id).patterns
+        assertEquals(main, patterns.first())
+        assertEquals("trip:$trip", patterns.last().id)
+        assertEquals(setOf(trip), patterns.last().codes)
+        assertEquals("0", patterns.last().directionId)
+        assertEquals("Terminus", patterns.last().headsign)
+        assertEquals(listOf("emma:BKK:S1", "emma:BKK:S2"), patterns.last().stops.map { it.id })
+        viewModel.loadDepartureTrip(route.id, departure)
+        ShadowLooper.idleMainLooper()
+        assertEquals(1, calls.get())
+        assertEquals(patterns, viewModel.state.value.lineDetails.getValue(route.id).patterns)
+    }
+
 }

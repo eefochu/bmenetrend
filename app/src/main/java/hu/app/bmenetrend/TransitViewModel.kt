@@ -87,6 +87,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     /** Stops known only from the Worker; EMMA/index records (the saved-item identities and names) replace them. */
     private val workerOnlyStopIds = HashSet<String>()
     private var journeyJob: Job? = null
+    private var departureTripJob: Job? = null
+    private var departureTripId: String? = null
     private var journeyKey: Pair<String, String?>? = null
     private var journeyGeneration = 0
     private var lineJob: Job? = null
@@ -1422,6 +1424,50 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         }
         recalculate()
         ensureBoardRequest()
+    }
+
+    /**
+     * A departure whose trip follows none of the line's published variants (a short working, such
+     * as a 762 turning back at Biatorbágy, autóbusz-forduló) gets its own trip as an extra variant,
+     * so the line card can show that trip's stops instead of "stops unavailable".
+     */
+    fun loadDepartureTrip(routeId: String, departure: Departure) {
+        val trip = departure.directionId ?: return
+        if (NetworkAccessPolicy.offline.value) return
+        val line = state.value.lineDetails[routeId] ?: return
+        if (line.patterns.any { trip in it.codes }) return
+        if (departureTripId == trip && departureTripJob?.isActive == true) return
+        departureTripId = trip
+        departureTripJob?.cancel()
+        val networkGeneration = NetworkAccessPolicy.generation
+        // The card shows its loading bar, not "stops unavailable", while the trip is fetched.
+        mutableState.update { it.copy(loadingLineId = routeId) }
+        departureTripJob = viewModelScope.launch {
+            try { loadDepartureTripPattern(routeId, departure, trip, networkGeneration) }
+            finally { if (departureTripId == trip) mutableState.update { if (it.loadingLineId == routeId) it.copy(loadingLineId = null) else it } }
+        }
+    }
+
+    private suspend fun loadDepartureTripPattern(routeId: String, departure: Departure, trip: String, networkGeneration: Long) {
+        val journey = try {
+            if (BkkWorkerParser.workerTripId(trip) != null) bkkRepository.journey(trip) else {
+                val text = journeyClient.execute(EmmaJourneyParser.QUERY, org.json.JSONObject().put("id", trip))
+                withContext(Dispatchers.Default) { EmmaJourneyParser.parse(text, trip) }
+            }
+        } catch (cancelled: CancellationException) { throw cancelled
+        } catch (error: Exception) {
+            if (BuildConfig.DEBUG) android.util.Log.w("BkkWorker", "Departure trip failed", error)
+            null
+        }
+        if (journey == null || journey.stops.size < 2 || networkGeneration != NetworkAccessPolicy.generation) return
+        val pattern = LinePattern(id = "trip:$trip", codes = setOf(trip),
+            headsign = departure.destination.ifBlank { journey.destination ?: journey.stops.last().name },
+            stops = journey.stops, geometry = journey.geometry, serviceCount = 1, directionId = departure.sourceDirectionId)
+        mutableState.update { current ->
+            val details = current.lineDetails[routeId] ?: return@update current
+            if (details.patterns.any { trip in it.codes }) current
+            else current.copy(lineDetails = current.lineDetails + (routeId to details.copy(patterns = details.patterns + pattern)))
+        }
     }
 
     fun loadLine(id: String, force: Boolean = false) {

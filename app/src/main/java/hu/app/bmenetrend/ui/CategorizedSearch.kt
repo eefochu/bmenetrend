@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import hu.app.bmenetrend.R
 import hu.app.bmenetrend.data.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 
@@ -34,6 +35,8 @@ private data class SearchMatches<T>(val query: String = "", val items: List<T> =
 
 @Immutable
 private data class StationMatches(val query: String = "", val items: List<TransitStop> = emptyList())
+
+private const val INDEX_REFRESH_DELAY_MS = 1_500L
 
 private suspend fun buildSearchStopIndex(local: List<TransitStop>, national: List<TransitStop>): List<TransitSearch.StopEntry> =
     withContext(Dispatchers.Default) { TransitSearch.indexStops(local, national) }
@@ -60,6 +63,10 @@ internal fun CategorizedSearch(
     val nationalStops = state.emmaStops
     val routes = remember(state.network?.routes, state.emmaRoutes) { state.routes }
     val stopIndex by produceState(TransitSearch.getCachedStopIndex(networkStops, nationalStops), networkStops, nationalStops) {
+        // Each remote search merges its stations into the catalogue. Those already show from the remote
+        // results, so refreshing an existing index waits until typing pauses (a newer catalogue restarts
+        // this) instead of re-clustering the whole country between keystrokes.
+        if (value != null && TransitSearch.getCachedStopIndex(networkStops, nationalStops) == null) delay(INDEX_REFRESH_DELAY_MS)
         value = buildStopIndex(networkStops, nationalStops)
     }
     // Query results belong to their data source, not to the selected tab. Stop

@@ -151,6 +151,7 @@ fun ViaBuszScreen(
     onThemeModeChanged: (ThemeMode) -> Unit = {},
     onMapStyleChanged: (MapStyle) -> Unit = {},
     onLineOpened: (String, Boolean) -> Unit = { _, _ -> },
+    onDepartureTrip: (String, Departure) -> Unit = { _, _ -> },
     onBoardingStop: (String, String, String) -> Unit = { _, _, _ -> },
     onClearBoarding: () -> Unit = {},
     onShowWholeRoute: () -> Unit = {},
@@ -251,13 +252,18 @@ fun ViaBuszScreen(
             selectedDeparture = departure
             onLineOpened(lineId,false)
             searchOpen = false
-            scope.launch { sheetState.bottomSheetState.expand() }
+            // Half open like a line opened from anywhere else, so the highlighted trip stays visible.
+            scope.launch { sheetState.bottomSheetState.partialExpand() }
         }
     }
     LaunchedEffect(routeId, state.lineDetails[routeId], selectedDeparture) {
         val departure = selectedDeparture ?: return@LaunchedEffect
         val id = routeId ?: return@LaunchedEffect
-        if (directionId == null) directionId = departureDirection(departure,state.findRoute(id),state.lineDetails[id])
+        if (directionId != null) return@LaunchedEffect
+        val details = state.lineDetails[id]
+        directionId = departureDirection(departure,state.findRoute(id),details)
+        // None of the line's variants serves this trip: load the trip itself.
+        if (directionId == null && details != null) onDepartureTrip(id, departure)
     }
 
     val navigateBack: () -> Unit = {

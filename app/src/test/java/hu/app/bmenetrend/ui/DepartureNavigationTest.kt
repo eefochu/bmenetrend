@@ -23,6 +23,29 @@ class DepartureNavigationTest {
         assertEquals(exact,departureVehicle(departure.copy(vehicleId="correct",directionId=null),listOf(wrong,exact)))
         assertNull(departureVehicle(departure,listOf(wrong)))
     }
+    @Test fun bkkBoardDepartureMatchesMergedVehiclesBkkTripId() {
+        val board = departure.copy(directionId="volan:volan_ABC",vehicleId=null)
+        val wrong = Vehicle("wrong",b.position,now,tripId="emma:other",bkkTripId="volan:volan_OTHER")
+        val merged = wrong.copy(id="merged",tripId="emma:trip",bkkTripId="volan:volan_ABC")
+        assertEquals(merged,departureVehicle(board,listOf(wrong,merged)))
+        assertNull(departureVehicle(board,listOf(wrong)))
+        assertNull(departureVehicle(board,emptyList()))
+    }
+
+    @Test fun bkkBoardDepartureStillMatchesPlainTripId() {
+        val board = departure.copy(directionId="volan:volan_ABC",vehicleId=null)
+        val exact = Vehicle("exact",b.position,now,tripId="volan:volan_ABC")
+        assertEquals(exact,departureVehicle(board,listOf(exact)))
+    }
+
+    @Test fun vehicleIdTakesPrecedenceOverBothTripIdMatches() {
+        val board = departure.copy(directionId="volan:volan_ABC",vehicleId="correct")
+        val plain = Vehicle("plain",b.position,now,tripId="volan:volan_ABC")
+        val merged = plain.copy(id="merged",tripId="emma:trip",bkkTripId="volan:volan_ABC")
+        val exact = plain.copy(id="emma:correct",tripId="another-trip")
+        assertEquals(exact,departureVehicle(board,listOf(plain,merged,exact)))
+    }
+
     @Test fun exactPatternWinsRegardlessOfListOrder() {
         assertEquals("out",departureDirection(departure.copy(patternCode="out-code"),route,details))
         assertEquals("in",departureDirection(departure.copy(patternCode="in-code"),route,details))
@@ -39,4 +62,18 @@ class DepartureNavigationTest {
             RouteDirection("local-in",a.name,listOf(c.id,b.id,a.id))))
         assertEquals("local-out",departureDirection(departure.copy(directionId="local-out"),local,null))
     }
+    @Test fun tripPatternResolvesShortWorkingOutsideMainPatterns() {
+        val trip="volan:volan_2811_21_20261102"
+        val board=departure.copy(directionId=trip)
+        val mainDetails=details.copy(patterns=listOf(inbound.copy(stops=listOf(c,a)),out.copy(stops=listOf(a,c))))
+        val variant=LinePattern("trip:$trip",setOf(trip),c.name,listOf(b,c),emptyList())
+        assertEquals("trip:$trip",departureDirection(board,route,mainDetails.copy(patterns=mainDetails.patterns+variant)))
+    }
+
+    @Test fun unmatchedShortWorkingWithoutTripPatternReturnsNull() {
+        val board=departure.copy(directionId="volan:volan_2811_21_20261102")
+        val mainDetails=details.copy(patterns=listOf(inbound.copy(stops=listOf(c,a)),out.copy(stops=listOf(a,c))))
+        assertNull(departureDirection(board,route,mainDetails))
+    }
+
 }

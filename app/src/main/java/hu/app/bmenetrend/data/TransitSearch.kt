@@ -38,6 +38,8 @@ object TransitSearch {
         val normalizedText: String,
         val compactText: String,
         val cleanRegistration: String,
+        /** The raw fields the normalized ones came from; equal source, reusable entry. */
+        val source: String,
     )
 
     private val marks = Regex("""\p{M}+""")
@@ -87,7 +89,7 @@ object TransitSearch {
     private fun getOrBuildRouteEntries(routes: List<TransitRoute>): List<RouteEntry> {
         val cached = cachedRoutes
         if (cached != null && routes === cached.source) return cached.entries
-        val entries = routes.map { route ->
+        val entries = reuseEntries(routes, cached?.entries.orEmpty(), { it.route }) { route ->
             val mode = route.transportMode ?: if (route.providerId in setOf("volan", "viabusz", "kanyargo", "homm")) "BUS" else null
             RouteEntry(
                 route = route,
@@ -165,18 +167,47 @@ object TransitSearch {
     private fun buildStopIndex(stops: List<TransitStop>, national: List<TransitStop>): List<StopEntry> {
         val combined = if (national.isEmpty()) stops else if (stops.isEmpty()) national else stops + national
         val consolidated = StopClusters.consolidateForSearch(combined)
-        val indexed = consolidated.map { stop ->
-            val multiTokens = if (stop.isMultiStop) "tobbmegallo tobb megallo multiple stations multiplestations" else ""
-            val platform = stop.platformCode ?: BkkPlatformIndex.resolve(stop.id, null).orEmpty()
-            StopEntry(
-                stop = stop,
-                text = normalize("${stop.name} ${stop.aliases.joinToString(" ")} $platform ${stop.sourceStopIds.joinToString(" ")} $multiTokens"),
-                name = normalize(stop.name),
-                isMultiStop = stop.isMultiStop,
-            )
-        }
+        val indexed = reuseEntries(consolidated, cachedStops?.entries.orEmpty(), { it.stop }, ::stopEntry)
         cachedStops = StopIndex(stops, national, indexed)
         return indexed
+    }
+
+    private fun stopEntry(stop: TransitStop): StopEntry {
+        val multiTokens = if (stop.isMultiStop) "tobbmegallo tobb megallo multiple stations multiplestations" else ""
+        val platform = stop.platformCode ?: BkkPlatformIndex.resolve(stop.id, null).orEmpty()
+        return StopEntry(
+            stop = stop,
+            text = normalize("${stop.name} ${stop.aliases.joinToString(" ")} $platform ${stop.sourceStopIds.joinToString(" ")} $multiTokens"),
+            name = normalize(stop.name),
+            isMultiStop = stop.isMultiStop,
+        )
+    }
+
+    /**
+     * Catalogue merges (a search result, a loaded line) replace the list but keep almost every item, so
+     * the previous generation's entries are reused: by identity first, then by value for items rebuilt
+     * equal (clustered stops are new objects on every pass). Only new or changed items are normalized.
+     */
+    private inline fun <T : Any, E> reuseEntries(items: List<T>, previous: List<E>, key: (E) -> T,
+                                                 build: (T) -> E): List<E> {
+        if (previous.isEmpty()) return items.map { build(it) }
+        val byIdentity = java.util.IdentityHashMap<T, E>(previous.size)
+        for (entry in previous) byIdentity[key(entry)] = entry
+        val result = ArrayList<E?>(items.size)
+        var misses = 0
+        for (item in items) {
+            val reused = byIdentity.remove(item)
+            if (reused == null) misses++
+            result.add(reused)
+        }
+        if (misses > 0) {
+            // Only the previous entries nobody claimed by identity are worth hashing by value.
+            val byValue = HashMap<T, E>(byIdentity.size)
+            for ((item, entry) in byIdentity) byValue[item] = entry
+            for (i in items.indices) if (result[i] == null) result[i] = byValue.remove(items[i]) ?: build(items[i])
+        }
+        @Suppress("UNCHECKED_CAST")
+        return result as List<E>
     }
 
     private data class VehicleIndex(val source: List<Vehicle>, val entries: List<VehicleEntry>)
@@ -185,21 +216,34 @@ object TransitSearch {
     private fun getOrBuildVehicleEntries(vehicles: List<Vehicle>): List<VehicleEntry> {
         val cached = cachedVehicles
         if (cached != null && vehicles === cached.source) return cached.entries
+        // Every live tick is a new list of moved vehicles whose names rarely change: a vehicle whose
+        // text fields are unchanged keeps its normalized text instead of a regex pass per keystroke.
+        val previous = cached?.entries?.let { old -> HashMap<String, VehicleEntry>(old.size).apply { for (e in old) put(e.vehicle.id, e) } }
         val entries = vehicles.map { vehicle ->
-            val mode = vehicle.transportMode ?: "BUS"
+            val source = vehicleSource(vehicle)
+            val reusable = previous?.get(vehicle.id)?.takeIf { it.source == source }
+            if (reusable != null) return@map if (reusable.vehicle === vehicle) reusable else reusable.copy(vehicle = vehicle)
             val text = normalize(listOfNotNull(vehicle.registration, vehicle.trainNumber, vehicle.serviceName, vehicle.id, vehicle.displayRouteNumber, vehicle.routeName, vehicle.destination, vehicle.providerId).joinToString(" "))
             VehicleEntry(
                 vehicle = vehicle,
-                mode = mode,
+                mode = vehicle.transportMode ?: "BUS",
                 providerId = vehicle.providerId,
                 normalizedNumber = normalize(vehicle.displayRouteNumber.orEmpty()),
                 normalizedText = text,
                 compactText = text.replace(nonAlphanumericRegex, ""),
                 cleanRegistration = normalize(vehicle.registration.orEmpty()).replace("-", ""),
+                source = source,
             )
         }
         cachedVehicles = VehicleIndex(vehicles, entries)
         return entries
+    }
+
+    private fun vehicleSource(vehicle: Vehicle): String = buildString {
+        for (part in arrayOf(vehicle.registration, vehicle.trainNumber, vehicle.serviceName, vehicle.displayRouteNumber,
+            vehicle.routeName, vehicle.destination, vehicle.providerId, vehicle.transportMode)) {
+            append(part.orEmpty()); append('\u0000')
+        }
     }
 
     private class ScoredVehicle(
@@ -242,17 +286,17 @@ object TransitSearch {
             .toList()
     }
 
-    private class ScoredStop(
-        val stop: TransitStop,
-        val rank: Int,
-        val distSq: Double,
-    ) : Comparable<ScoredStop> {
-        override fun compareTo(other: ScoredStop): Int {
-            val r = other.rank.compareTo(this.rank)
-            if (r != 0) return r
-            return this.distSq.compareTo(other.distSq)
-        }
+    /** [order] is the index position: equal rank and distance keep catalogue order (a stable sort). */
+    private class ScoredStop(val stop: TransitStop, val rank: Int, val distSq: Double, val order: Int)
+
+    private val bestStopFirst = Comparator<ScoredStop> { a, b ->
+        val r = b.rank.compareTo(a.rank)
+        if (r != 0) return@Comparator r
+        val d = a.distSq.compareTo(b.distSq)
+        if (d != 0) d else a.order.compareTo(b.order)
     }
+    private val worstStopFirst = bestStopFirst.reversed()
+    private const val STOP_LIMIT = 100
 
     /** [checkpoint] runs every few hundred entries so a superseded keystroke can stop the scan early. */
     fun stops(index: List<StopEntry>, query: Query, location: GeoPoint?, favorites: Set<String>,
@@ -261,14 +305,16 @@ object TransitSearch {
         val hasLocation = location != null
         val locLat = location?.lat ?: 0.0
         val locLon = location?.lon ?: 0.0
-        var scanned = 0
-
-        return index.asSequence().mapNotNull { entry ->
-            if (scanned++ and 511 == 0) checkpoint()
-            if (query.provider != null && query.provider !in entry.stop.providerIds) return@mapNotNull null
-            for (term in query.terms) {
-                if (!entry.text.contains(term)) return@mapNotNull null
-            }
+        // Only the best STOP_LIMIT are kept: a one-letter query matches most of the country, and an
+        // object per match plus a full sort cost more than the scan itself on low-end phones.
+        val best = java.util.PriorityQueue(STOP_LIMIT + 1, worstStopFirst)
+        for (i in index.indices) {
+            if (i and 511 == 0) checkpoint()
+            val entry = index[i]
+            if (query.provider != null && query.provider !in entry.stop.providerIds) continue
+            var matches = true
+            for (term in query.terms) if (!entry.text.contains(term)) { matches = false; break }
+            if (!matches) continue
             val rank = when {
                 entry.name == query.text -> 2
                 entry.stop.id in favorites -> 1
@@ -279,10 +325,14 @@ object TransitSearch {
                 val dLon = entry.stop.position.lon - locLon
                 dLat * dLat + dLon * dLon
             } else 0.0
-            ScoredStop(entry.stop, rank, distSq)
-        }.sorted()
-            .take(100)
-            .map { it.stop }
-            .toList()
+            if (best.size == STOP_LIMIT) {
+                // Later entries lose ties, so only a strictly better rank or distance gets in.
+                val worst = best.peek()!!
+                if (rank < worst.rank || rank == worst.rank && distSq >= worst.distSq) continue
+                best.poll()
+            }
+            best.add(ScoredStop(entry.stop, rank, distSq, i))
+        }
+        return best.sortedWith(bestStopFirst).map { it.stop }
     }
 }

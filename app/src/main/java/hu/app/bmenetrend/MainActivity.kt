@@ -245,6 +245,7 @@ class MainActivity : ComponentActivity() {
                     onThemeModeChanged = model::setThemeMode,
                     onMapStyleChanged = model::setMapStyle,
                     onLineOpened = model::loadLine,
+                    onDepartureTrip = model::loadDepartureTrip,
                     onBoardingStop = model::selectBoardingStop,
                     onClearBoarding = model::clearBoardingSelection,
                     onShowWholeRoute = model::showWholeRoute,

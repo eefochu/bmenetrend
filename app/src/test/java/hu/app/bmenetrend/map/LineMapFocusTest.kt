@@ -18,6 +18,35 @@ class LineMapFocusTest {
     private fun focus(details: LineDetails = LineDetails(route, listOf(outbound,inbound))) =
         LineMapFocus.create(vehicle(destination = "North"), null, listOf(route), mapOf(route.id to details), null, listOf(a,b,c))!!
 
+    @Test fun volanBoardFocusMatchesEmmaAgglomerationAliasWithinProvider() {
+        val focus = LineMapFocus("volan", "volan:volan_762", "volan", "762", "BUS", emptyList(), emptyList())
+        assertTrue(focus.includes(vehicle("emma", "volan:hkir:hkir_V-R-200-762", "volan", "BUS")))
+        assertTrue(focus.includes(vehicle("bkk-source", "volan:volan_762", "volan", "BUS")))
+        assertFalse(focus.includes(vehicle("other-line", "volan:hkir:hkir_V-R-200-763", "volan", "BUS")))
+        assertFalse(focus.includes(vehicle("other-provider", "volan:hkir:hkir_V-R-200-762", "bkk", "BUS")))
+        assertNull(BkkWorkerParser.workerRouteId("volan:hkir:hkir_V-O-123-762"))
+        assertFalse(focus.includes(vehicle("national", "volan:hkir:hkir_V-O-123-762", "volan", "BUS")))
+    }
+
+    @Test fun bkkFocusStillMatchesOnlyItsOwnLine() {
+        val focus = LineMapFocus("bkk", "bkk:BKK:0050", "bkk", "50", "BUS", emptyList(), emptyList())
+        assertTrue(focus.includes(vehicle(routeId = "bkk:BKK:0050")))
+        assertFalse(focus.includes(vehicle(routeId = "bkk:BKK:0051")))
+    }
+
+    @Test fun routeWithoutAliasStillMatchesExactly() {
+        val routeId = "volan:hkir:hkir_V-O-123-762"
+        val focus = LineMapFocus("national", routeId, "volan", "762", "BUS", emptyList(), emptyList())
+        assertNull(BkkWorkerParser.workerRouteId(routeId))
+        assertTrue(focus.includes(vehicle("exact", routeId, "volan", "BUS")))
+        assertFalse(focus.includes(vehicle("other", "volan:hkir:hkir_V-O-124-762", "volan", "BUS")))
+    }
+
+    @Test fun selectedVehicleIsIncludedDespiteDifferentProviderAndRoute() {
+        val focus = LineMapFocus("selected", "volan:volan_762", "volan", "762", "BUS", emptyList(), emptyList(), selectedVehicleId = "selected")
+        assertTrue(focus.includes(vehicle("selected", "bkk:BKK:0050", "bkk", "BUS")))
+    }
+
     @Test fun selectedVehicleShowsOnlyMatchingDirectionStopsAndPath() {
         val focusNorth = focus()
         assertEquals(listOf(outbound.geometry), focusNorth.paths)

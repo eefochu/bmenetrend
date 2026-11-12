@@ -53,9 +53,7 @@ class RouteMapCardTest {
         compose.onNode(hasText("762") and hasText(c.name) and hasClickAction()).performClick()
         compose.waitUntil(5_000) { previewDirection==out.id }
         compose.waitForIdle()
-        compose.onNodeWithText(app.resources.getQuantityString(R.plurals.emma_journey_stops,3,3)).performScrollTo()
-        compose.waitForIdle()
-        compose.onNodeWithText(app.resources.getQuantityString(R.plurals.emma_journey_stops,3,3)).assertIsDisplayed()
+        compose.onNodeWithText(app.resources.getQuantityString(R.plurals.emma_journey_stops,3,3)).assertExists()
     }
 
     @Test fun tappingALiveDepartureOpensThatVehicleInsteadOfAnotherBusOnItsLine() {

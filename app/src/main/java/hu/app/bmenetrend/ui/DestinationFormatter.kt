@@ -47,9 +47,12 @@ object DestinationFormatter {
             if (spacedDashParts.size > 1) {
                 spacedDashParts.last().trim()
             } else {
-                // Handle unspaced or hyphenated sequences like Budapest-Biatorbágy-Etyek Botpuszta
+                // Handle unspaced or hyphenated sequences like Budapest-Biatorbágy-Etyek Botpuszta.
+                // Only a chain of place names is split: a hyphen inside a stop name ("Biatorbágy,
+                // autóbusz-forduló", "Margit-sziget") must not leave just "forduló" or "sziget".
                 val parts = trimmed.split("-").map { it.trim() }.filter { it.isNotEmpty() }
-                if (parts.size >= 2) {
+                val placeChain = parts.size >= 2 && parts.none { ',' in it } && parts.all { it.first().isUpperCase() }
+                if (placeChain) {
                     val lastTwo = "${parts[parts.size - 2]}-${parts.last()}".lowercase()
                     if (lastTwo in RAIL_TERMINALS) {
                         "${parts[parts.size - 2]}-${parts.last()}"

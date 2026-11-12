@@ -53,4 +53,22 @@ class DestinationFormatterTest {
         assertEquals("Herceghalom", DestinationFormatter.clean("Herceghalom"))
         assertEquals("", DestinationFormatter.clean(""))
     }
+    @Test
+    fun preservesCommaContainingHyphenatedStops() {
+        assertEquals("Biatorbágy, autóbusz-forduló", DestinationFormatter.clean("Biatorbágy, autóbusz-forduló"))
+        assertEquals("Etyek, autóbusz-forduló", DestinationFormatter.clean("Etyek, autóbusz-forduló"))
+        assertEquals("Budapest, Margit-Sziget", DestinationFormatter.clean("Budapest, Margit-Sziget"))
+    }
+
+    @Test
+    fun preservesNamesWithLowercaseHyphenParts() {
+        assertEquals("Budapest, Margit-sziget", DestinationFormatter.clean("Budapest, Margit-sziget"))
+        assertEquals("Margit-sziget", DestinationFormatter.clean("Margit-sziget"))
+    }
+
+    @Test
+    fun preservesRailTerminalAtEndOfUnspacedRouteChain() {
+        assertEquals("Budapest-Keleti", DestinationFormatter.clean("Szolnok-Budapest-Keleti"))
+    }
+
 }

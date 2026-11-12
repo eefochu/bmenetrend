@@ -18,10 +18,17 @@ data class LineMapFocus(
     val displayStops: List<TransitStop> = (stops+contextStops).distinctBy { it.id }
     val displayPaths: List<List<GeoPoint>> = (paths+contextPaths).distinct()
 
+    /**
+     * The line's identity shared by BKK and EMMA, when it has one: a Volán line opened from a BKK board
+     * is `volan:volan_762`, while EMMA reports its buses on `volan:hkir:hkir_V-R-200-762`.
+     */
+    private val sharedRouteId: String? by lazy(LazyThreadSafetyMode.PUBLICATION) { routeId?.let(BkkWorkerParser::workerRouteId) }
+
     fun includes(vehicle: Vehicle): Boolean = when {
         vehicle.id == selectedVehicleId -> true
         vehicle.providerId != providerId -> false
-        routeId != null -> vehicle.routeId == routeId
+        routeId != null -> vehicle.routeId == routeId ||
+            sharedRouteId != null && vehicle.routeId?.let(BkkWorkerParser::workerRouteId) == sharedRouteId
         number != null -> vehicle.routeNumber == number && vehicle.transportMode == mode
         else -> false
     }

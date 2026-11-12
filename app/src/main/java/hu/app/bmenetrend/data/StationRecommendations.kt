@@ -19,23 +19,22 @@ object StationRecommendations {
         val generic = terms.all { it in stationWords }
         // Best candidate per group, so nothing has to sort every match in the country.
         val best = HashMap<String, Candidate>()
-        for ((i, entry) in index.withIndex()) {
+        for (i in index.indices) {
             if (i and 511 == 0) checkpoint()
+            val entry = index[i]
             if (query.provider != null && query.provider !in entry.stop.providerIds) continue
             val rail = entry.stop.transportMode == "RAIL" || "mav" in entry.stop.providerIds
-            // Only entries that survive the term filter pay for the hub lookup.
+            // Only entries that survive the term filter pay for the hub lookup. Plain locals, not a
+            // capturing local function: that allocated a closure and two refs for every entry.
             var hubKnown = false
             var hub: String? = null
-            fun hub(): String? {
-                if (!hubKnown) { hub = hubs.firstOrNull { key -> entry.words.any { it.startsWith(key) } }; hubKnown = true }
-                return hub
-            }
             var quality = 0
             var rejected = false
             for (term in terms) {
                 val inText = entry.text.contains(term)
                 quality += when {
-                    term in stationWords && (rail || hub() != null || entry.words.any { it in stationWords }) -> 20
+                    term in stationWords && (rail || run { if (!hubKnown) { hub = hubOf(entry); hubKnown = true }; hub != null } ||
+                        entry.words.any { it in stationWords }) -> 20
                     // Exact and prefix word matches are always substrings of the text, so most entries stop here.
                     inText && entry.words.any { it == term } -> 50
                     inText && entry.words.any { it.startsWith(term) } -> 40
@@ -45,7 +44,7 @@ object StationRecommendations {
                 }
             }
             if (rejected) continue
-            val group = hub()
+            val group = if (hubKnown) hub else hubOf(entry)
             val score = quality + (if (rail) 18 else 0) + (if (entry.stop.station || entry.isMultiStop) 12 else 0) +
                 (if (entry.stop.id in favorites) 5 else 0) + (if (generic && group != null) 120 - hubs.indexOf(group) * 40 else 0)
             val distance = location?.let { loc ->
@@ -59,6 +58,8 @@ object StationRecommendations {
         }
         return best.values.sortedWith(order).take(3).map { it.stop }
     }
+
+    private fun hubOf(entry: TransitSearch.StopEntry): String? = hubs.firstOrNull { key -> entry.words.any { it.startsWith(key) } }
 
     private val order = compareByDescending<Candidate> { it.score }.thenBy { it.distance }
 
