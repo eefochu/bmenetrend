@@ -7,26 +7,31 @@ import android.content.pm.ActivityInfo
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.graphics.drawable.AnimatedImageDrawable
+import android.net.Uri
 import android.os.Build
+import android.view.ViewGroup
 import android.view.WindowManager
+import android.webkit.WebResourceRequest
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.ImageView
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.automirrored.rounded.ReceiptLong
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -54,6 +59,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import hu.app.bmenetrend.mav.R
 import hu.app.bmenetrend.mav.*
 import java.time.Instant
@@ -83,7 +89,9 @@ fun MavTicketsScreen(
             MavLoginView(
                 loginState = loginState,
                 onLogin = viewModel::login,
-                onClearError = viewModel::clearLoginError
+                onGoogleLogin = viewModel::loginWithGoogle,
+                onClearError = viewModel::clearLoginError,
+                onError = viewModel::setLoginError
             )
         } else {
             Column(
@@ -123,28 +131,51 @@ fun MavTicketsScreen(
                                 modifier = Modifier.size(16.dp)
                             )
                             Text(
-                                stringResource(
-                                    if (sessionExpired) R.string.mav_session_expired_notice
-                                    else R.string.mav_offline_notice
-                                ),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                modifier = Modifier.weight(1f)
+                                stringResource(R.string.mav_offline_notice),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer
                             )
-                            if (lastSyncTime > 0L) {
-                                val syncDateStr = remember(lastSyncTime) {
-                                    DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault())
-                                        .withZone(ZoneId.systemDefault())
-                                        .format(Instant.ofEpochMilli(lastSyncTime))
-                                }
-                                Text(
-                                    stringResource(R.string.mav_sync_time, syncDateStr),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
-                                )
-                            }
                         }
                     }
+                } else if (sessionExpired) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                Icons.Rounded.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                stringResource(R.string.mav_session_expired_notice),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
+                }
+
+                if (lastSyncTime > 0L) {
+                    val syncFormatted = remember(lastSyncTime) {
+                        DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm", Locale.getDefault())
+                            .withZone(ZoneId.systemDefault())
+                            .format(Instant.ofEpochMilli(lastSyncTime))
+                    }
+                    Text(
+                        stringResource(R.string.mav_sync_time, syncFormatted),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                    )
                 }
 
                 TabRow(
@@ -156,146 +187,99 @@ fun MavTicketsScreen(
                     Tab(
                         selected = selectedTab == MavTab.ACTIVE,
                         onClick = { viewModel.setTab(MavTab.ACTIVE) },
-                        text = {
-                            Text(
-                                stringResource(R.string.mav_active_tab),
-                                fontWeight = if (selectedTab == MavTab.ACTIVE) FontWeight.Bold else FontWeight.Normal
-                            )
-                        },
-                        icon = { Icon(Icons.Rounded.ConfirmationNumber, contentDescription = null, modifier = Modifier.size(20.dp)) }
+                        text = { Text(stringResource(R.string.mav_active_tab)) }
                     )
                     Tab(
                         selected = selectedTab == MavTab.PAST,
                         onClick = { viewModel.setTab(MavTab.PAST) },
-                        text = {
-                            Text(
-                                stringResource(R.string.mav_past_tab),
-                                fontWeight = if (selectedTab == MavTab.PAST) FontWeight.Bold else FontWeight.Normal
-                            )
-                        },
-                        icon = { Icon(Icons.Rounded.History, contentDescription = null, modifier = Modifier.size(20.dp)) }
+                        text = { Text(stringResource(R.string.mav_past_tab)) }
                     )
                 }
 
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                ) {
-                    when (val state = ticketsState) {
-                        is TicketsUiState.Loading -> {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
+                when (val state = ticketsState) {
+                    is TicketsUiState.Loading -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                    is TicketsUiState.Error -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(24.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                                ) {
-                                    CircularProgressIndicator()
-                                    Text(
-                                        stringResource(R.string.mav_loading_data),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                Icon(
+                                    Icons.Rounded.ErrorOutline,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(48.dp)
+                                )
+                                Text(
+                                    state.message,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.error,
+                                    textAlign = TextAlign.Center
+                                )
+                                Button(onClick = viewModel::refreshTickets) {
+                                    Text(stringResource(R.string.mav_refresh))
                                 }
                             }
                         }
-                        is TicketsUiState.Error -> {
+                    }
+                    is TicketsUiState.Success -> {
+                        val currentOrders = when (selectedTab) {
+                            MavTab.ACTIVE -> state.activeOrders
+                            MavTab.PAST -> state.pastOrders
+                        }
+
+                        if (currentOrders.isEmpty()) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .padding(24.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Card(
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.errorContainer
-                                    ),
-                                    shape = RoundedCornerShape(16.dp)
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Column(
-                                        modifier = Modifier.padding(20.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Rounded.ErrorOutline,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onErrorContainer,
-                                            modifier = Modifier.size(36.dp)
-                                        )
-                                        Text(
-                                            state.message,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onErrorContainer,
-                                            textAlign = TextAlign.Center
-                                        )
-                                        Button(
-                                            onClick = viewModel::refreshTickets,
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = MaterialTheme.colorScheme.error
-                                            )
-                                        ) {
-                                            Text(stringResource(R.string.mav_retry))
-                                        }
-                                    }
+                                    Icon(
+                                        Icons.Rounded.ConfirmationNumber,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.outline,
+                                        modifier = Modifier.size(48.dp)
+                                    )
+                                    Text(
+                                        when (selectedTab) {
+                                            MavTab.ACTIVE -> stringResource(R.string.mav_empty_active)
+                                            MavTab.PAST -> stringResource(R.string.mav_empty_past)
+                                        },
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        textAlign = TextAlign.Center
+                                    )
                                 }
                             }
-                        }
-                        is TicketsUiState.Success -> {
-                            val orders = if (selectedTab == MavTab.ACTIVE) state.activeOrders else state.pastOrders
-                            if (orders.isEmpty()) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(24.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                                    ) {
-                                        Icon(
-                                            if (selectedTab == MavTab.ACTIVE) Icons.Rounded.ConfirmationNumber else Icons.Rounded.History,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                            modifier = Modifier.size(48.dp)
-                                        )
-                                        Text(
-                                            if (selectedTab == MavTab.ACTIVE) {
-                                                stringResource(R.string.mav_empty_active)
-                                            } else {
-                                                stringResource(R.string.mav_empty_past)
-                                            },
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            textAlign = TextAlign.Center
-                                        )
-                                    }
-                                }
-                            } else {
-                                LazyColumn(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentPadding = PaddingValues(16.dp),
-                                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    items(orders, key = { it.orderId }) { order ->
-                                        OrderTicketCard(
-                                            order = order,
-                                            isActiveTab = selectedTab == MavTab.ACTIVE,
-                                            onShowBarcode = { receiptId, ticketNumber, title, isPass, passengerName, birthDate ->
-                                                viewModel.showBarcode(
-                                                    receiptId = receiptId,
-                                                    ticketNumber = ticketNumber,
-                                                    title = title,
-                                                    isPass = isPass,
-                                                    passengerName = passengerName,
-                                                    birthDate = birthDate
-                                                )
-                                            }
-                                        )
-                                    }
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                items(currentOrders, key = { it.orderId.ifBlank { it.hashCode().toString() } }) { order ->
+                                    OrderTicketCard(
+                                        order = order,
+                                        isActiveTab = selectedTab == MavTab.ACTIVE,
+                                        onShowBarcode = viewModel::showBarcode
+                                    )
                                 }
                             }
                         }
@@ -315,10 +299,9 @@ fun MavTicketsScreen(
                     onClick = {
                         showLogoutConfirm = false
                         viewModel.logout()
-                    },
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    }
                 ) {
-                    Text(stringResource(R.string.mav_logout_btn))
+                    Text(stringResource(R.string.mav_logout_btn), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
@@ -452,11 +435,14 @@ private fun MavHeader(
 private fun MavLoginView(
     loginState: LoginUiState,
     onLogin: (String, String) -> Unit,
-    onClearError: () -> Unit
+    onGoogleLogin: (String) -> Unit,
+    onClearError: () -> Unit,
+    onError: (String) -> Unit
 ) {
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
+    var showGoogleLoginDialog by rememberSaveable { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
 
     Box(
@@ -592,12 +578,207 @@ private fun MavLoginView(
                     }
                 }
 
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    HorizontalDivider(
+                        modifier = Modifier.weight(1f),
+                        color = MaterialTheme.colorScheme.outlineVariant
+                    )
+                    Text(
+                        text = stringResource(R.string.mav_login_or),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 12.dp)
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.weight(1f),
+                        color = MaterialTheme.colorScheme.outlineVariant
+                    )
+                }
+
+                OutlinedButton(
+                    onClick = {
+                        focusManager.clearFocus()
+                        onClearError()
+                        showGoogleLoginDialog = true
+                    },
+                    enabled = loginState !is LoginUiState.Loading,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_google_logo),
+                            contentDescription = null,
+                            tint = Color.Unspecified,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            stringResource(R.string.mav_login_google_btn),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+
                 Text(
                     stringResource(R.string.mav_privacy_note),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     textAlign = TextAlign.Center
                 )
+            }
+        }
+    }
+
+    if (showGoogleLoginDialog) {
+        MavGoogleLoginDialog(
+            onDismissRequest = { showGoogleLoginDialog = false },
+            onCodeReceived = { code ->
+                showGoogleLoginDialog = false
+                onGoogleLogin(code)
+            },
+            onError = { errMsg ->
+                showGoogleLoginDialog = false
+                onError(errMsg)
+            }
+        )
+    }
+}
+
+@Composable
+fun MavGoogleLoginDialog(
+    onDismissRequest: () -> Unit,
+    onCodeReceived: (String) -> Unit,
+    onError: (String) -> Unit
+) {
+    var isLoading by remember { mutableStateOf(true) }
+    var webViewRef by remember { mutableStateOf<WebView?>(null) }
+
+    Dialog(
+        onDismissRequest = onDismissRequest,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        BackHandler {
+            if (webViewRef?.canGoBack() == true) {
+                webViewRef?.goBack()
+            } else {
+                onDismissRequest()
+            }
+        }
+
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding(),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = onDismissRequest) {
+                            Icon(
+                                Icons.AutoMirrored.Rounded.ArrowBack,
+                                contentDescription = stringResource(R.string.mav_cancel)
+                            )
+                        }
+                        Text(
+                            text = stringResource(R.string.mav_google_login_dialog_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.weight(1f)
+                        )
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier
+                                    .padding(end = 12.dp)
+                                    .size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                        }
+                    }
+                }
+
+                Box(modifier = Modifier.fillMaxSize()) {
+                    AndroidView(
+                        factory = { context ->
+                            WebView(context).apply {
+                                webViewRef = this
+                                layoutParams = ViewGroup.LayoutParams(
+                                    ViewGroup.LayoutParams.MATCH_PARENT,
+                                    ViewGroup.LayoutParams.MATCH_PARENT
+                                )
+                                settings.javaScriptEnabled = true
+                                settings.domStorageEnabled = true
+                                settings.userAgentString = MavApiClient.CHROME_MOBILE_USER_AGENT
+
+                                webViewClient = object : WebViewClient() {
+                                    override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                                        super.onPageStarted(view, url, favicon)
+                                        isLoading = true
+                                        handleUrl(url)
+                                    }
+
+                                    override fun onPageFinished(view: WebView?, url: String?) {
+                                        super.onPageFinished(view, url)
+                                        isLoading = false
+                                        handleUrl(url)
+                                    }
+
+                                    override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                                        val url = request?.url?.toString()
+                                        return handleUrl(url) || super.shouldOverrideUrlLoading(view, request)
+                                    }
+
+                                    private fun handleUrl(url: String?): Boolean {
+                                        if (url == null) return false
+                                        if (url.startsWith("https://mvapi.mav.hu/google/login") ||
+                                            url.contains("mvapi.mav.hu/google/login") ||
+                                            (url.contains("code=") && (url.contains("mav.hu") || url.contains("mvapi")))
+                                        ) {
+                                            val uri = Uri.parse(url)
+                                            val code = uri.getQueryParameter("code")
+                                            val error = uri.getQueryParameter("error")
+                                            if (!code.isNullOrBlank()) {
+                                                onCodeReceived(code)
+                                                return true
+                                            } else if (!error.isNullOrBlank()) {
+                                                onError(uri.getQueryParameter("error_description") ?: error)
+                                                return true
+                                            }
+                                        }
+                                        return false
+                                    }
+                                }
+
+                                loadUrl(MavApiClient.GOOGLE_AUTH_URL)
+                            }
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
         }
     }

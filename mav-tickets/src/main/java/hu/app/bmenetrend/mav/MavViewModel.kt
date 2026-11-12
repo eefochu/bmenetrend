@@ -117,6 +117,24 @@ class MavViewModel(
         }
     }
 
+    fun loginWithGoogle(code: String) {
+        if (code.isBlank()) return
+        viewModelScope.launch {
+            _loginState.value = LoginUiState.Loading
+            try {
+                repository.loginWithGoogle(code.trim())
+                _loginState.value = LoginUiState.Idle
+                loadTickets()
+            } catch (e: Exception) {
+                _loginState.value = LoginUiState.Error(e.message ?: "Google bejelentkezési hiba történt")
+            }
+        }
+    }
+
+    fun setLoginError(message: String) {
+        _loginState.value = LoginUiState.Error(message)
+    }
+
     fun onWebLoginSuccess(session: MavSession) {
         viewModelScope.launch {
             _loginState.value = LoginUiState.Idle

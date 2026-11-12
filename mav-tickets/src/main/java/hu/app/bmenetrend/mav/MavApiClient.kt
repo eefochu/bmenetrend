@@ -12,6 +12,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -92,7 +93,7 @@ class MavApiClient(
                 .addHeader("Origin", "https://jegy.mav.hu")
                 .addHeader("Referer", "https://jegy.mav.hu/")
                 .addHeader("Language", "hu")
-                .addHeader("User-Agent", "MAVApp/2.6.15-prod (hu.mav.emmapp; build: 950; Android 14)")
+                .addHeader("User-Agent", MAV_APP_USER_AGENT)
                 .post(reqBody)
                 .build()
 
@@ -166,6 +167,90 @@ class MavApiClient(
         throw MavApiException("Bejelentkezés sikertelen. Kérjük ellenőrizze az adatokat!")
     }
 
+    suspend fun loginWithGoogleCode(code: String, uaid: String): MavSession {
+        val cleanCode = code.trim()
+        val correlationId = UUID.randomUUID().toString()
+        val partnerSession = UUID.randomUUID().toString()
+
+        val reqBodyJson = JSONObject().apply {
+            put("allowConnectoToJeUser", true)
+            put("allowCreateJeUser", false)
+            put("allowNonValidatedConnectoToJeUser", false)
+            put("provider", "GOOGLE")
+            put("socialLoginOneTimeCode", cleanCode)
+            put("socialClientId", GOOGLE_CLIENT_ID)
+        }
+        val requestBody = reqBodyJson.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
+
+        val request = Request.Builder()
+            .url("${PAPI_PROD_URL}${DEFAULT_USER_PROFILE_PATH}Authentication/SocialLogin")
+            .addHeader("Accept", "text/plain, application/json, */*")
+            .addHeader("Content-Type", "application/json")
+            .addHeader("language", "hu")
+            .addHeader("je-api-key", MAV_JE_API_KEY)
+            .addHeader("je-partner-name", MAV_JE_PARTNER_NAME)
+            .addHeader("Referer", "mavpluszmobile")
+            .addHeader("User-Agent", MAV_APP_USER_AGENT)
+            .addHeader("partner-session-name", partnerSession)
+            .addHeader("device-instance", uaid)
+            .addHeader("correlation-id", correlationId)
+            .post(requestBody)
+            .build()
+
+        val responseJson = try {
+            executeJsonRequest(request)
+        } catch (e: MavApiException) {
+            val msg = if (e.statusCode == 401 || e.statusCode == 403) {
+                "Érvénytelen vagy lejárt Google azonosító. Kérjük próbálja újra!"
+            } else {
+                e.errorMessage
+            }
+            throw MavApiException(msg, e.statusCode)
+        }
+
+        val token = responseJson.optString(
+            "refreshToken",
+            responseJson.optString("token", responseJson.optString("jwtToken", ""))
+        ).trim()
+
+        if (token.isEmpty()) {
+            val errorMsg = responseJson.optString(
+                "errorMessage",
+                responseJson.optString("message", responseJson.optString("error", "A Google bejelentkezés sikertelen"))
+            )
+            throw MavApiException(errorMsg)
+        }
+
+        val email = responseJson.optString(
+            "email",
+            responseJson.optString("loginEmail", responseJson.optString("userEmail", ""))
+        ).trim()
+        val firstName = responseJson.optString("firstName", responseJson.optString("keresztNev", "")).trim()
+        val lastName = responseJson.optString("lastName", responseJson.optString("vezetekNev", "")).trim()
+        val regId = responseJson.optString(
+            "registrationId",
+            responseJson.optString("regisztraciosAzonosito", responseJson.optString("userGuid", ""))
+        ).trim()
+
+        val initialUser = if (email.isNotEmpty() || firstName.isNotEmpty() || lastName.isNotEmpty()) {
+            MavUser(
+                email = email,
+                firstName = firstName,
+                lastName = lastName,
+                regId = regId
+            )
+        } else null
+
+        return MavSession(
+            email = email,
+            token = token,
+            vimToken = null,
+            uaid = uaid,
+            expiresAt = System.currentTimeMillis() / 1000L + 86400 * 30L,
+            user = initialUser
+        )
+    }
+
     suspend fun getUserData(session: MavSession): MavUser {
         val safeToken = getSafeTokenHeader(session.token)
         var email = session.email
@@ -191,7 +276,8 @@ class MavApiClient(
                     .addHeader("Referer", "https://jegy.mav.hu/")
                     .addHeader("Language", "hu")
                     .addHeader("UserTokenXml", safeToken)
-                    .addHeader("User-Agent", "MAVApp/2.6.15-prod (hu.mav.emmapp; build: 950; Android 14)")
+                    .addHeader("Authorization", "Bearer $safeToken")
+                    .addHeader("User-Agent", MAV_APP_USER_AGENT)
                     .post(reqBody)
                     .build()
 
@@ -355,8 +441,8 @@ class MavApiClient(
                                 addHeader("Authorization", "Bearer $safeToken")
                             }
                         }
-                        .addHeader("je-api-key", "232AC6FE-46BE-479B-894D-BFC96E548945")
-                        .addHeader("User-Agent", "MAVApp/2.6.15-prod (hu.mav.emmapp; build: 950; Android 14)")
+                        .addHeader("je-api-key", MAV_JE_API_KEY)
+                        .addHeader("User-Agent", MAV_APP_USER_AGENT)
                         .post(reqBody)
                         .build()
 
@@ -581,7 +667,8 @@ class MavApiClient(
                     .addHeader("Referer", "https://jegy.mav.hu/")
                     .addHeader("Language", "hu")
                     .addHeader("UserTokenXml", safeToken)
-                    .addHeader("User-Agent", "MAVApp/2.6.15-prod (hu.mav.emmapp; build: 950; Android 14)")
+                    .addHeader("Authorization", "Bearer $safeToken")
+                    .addHeader("User-Agent", MAV_APP_USER_AGENT)
                     .post(reqBody)
                     .build()
 
@@ -648,6 +735,7 @@ class MavApiClient(
             }
             val response = postJson("MegrendelesKereses", requestJson)
             anyBackendReached = true
+
             val ordersArray = response.optJSONArray("MegrendelesLista")
                 ?: response.optJSONArray("Megrendelesek")
                 ?: JSONArray()
@@ -920,13 +1008,14 @@ class MavApiClient(
                 val detReq = Request.Builder()
                     .url("https://jegy-a.mav.hu/IK_API_PROD/api/ProfileApi/GetPreviousPurchaseDetails")
                     .addHeader("Accept", "application/json")
-                    .addHeader("UserSessionId", session.uaid.ifBlank { java.util.UUID.randomUUID().toString() })
+                    .addHeader("UserSessionId", session.uaid.ifBlank { UUID.randomUUID().toString() })
                     .addHeader("Content-Type", "application/json; charset=utf-8")
                     .addHeader("Origin", "https://jegy.mav.hu")
                     .addHeader("Referer", "https://jegy.mav.hu/")
                     .addHeader("Language", "hu")
                     .addHeader("UserTokenXml", safeToken)
-                    .addHeader("User-Agent", "MAVApp/2.6.15-prod (hu.mav.emmapp; build: 950; Android 14)")
+                    .addHeader("Authorization", "Bearer $safeToken")
+                    .addHeader("User-Agent", MAV_APP_USER_AGENT)
                     .post(detBody)
                     .build()
 
@@ -1093,6 +1182,16 @@ class MavApiClient(
     }
 
     companion object {
+        const val GOOGLE_CLIENT_ID = "989905229285-i8nk59fm0pbr7b4f0vg1lvipls56nvj0.apps.googleusercontent.com"
+        const val GOOGLE_REDIRECT_URI = "https://mvapi.mav.hu/google/login"
+        const val GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth?scope=email%20profile&redirect_uri=https://mvapi.mav.hu/google/login&client_id=989905229285-i8nk59fm0pbr7b4f0vg1lvipls56nvj0.apps.googleusercontent.com&response_type=code"
+        const val MAV_JE_API_KEY = "232AC6FE-46BE-479B-894D-BFC96E548945"
+        const val MAV_JE_PARTNER_NAME = "App2025"
+        const val MAV_APP_USER_AGENT = "MAVApp/2.6.15-prod (hu.mav.emmapp; build: 950; Android 14)"
+        const val PAPI_PROD_URL = "https://mvapi.mav.hu/IN/PROD/"
+        const val DEFAULT_USER_PROFILE_PATH = "UserProfile/4_13_0_52/"
+        const val CHROME_MOBILE_USER_AGENT = "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+
         /**
          * VIM answers rejected requests (e.g. an expired token) with HTTP 200 and a body that only
          * holds an error message: {"Uzenetek":[{"Tipus":"R","Szoveg":"Hibas input: Nem megfelelo SAML token!"}]}.

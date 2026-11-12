@@ -111,6 +111,72 @@ class MavApiClientTest {
     }
 
     @Test
+    fun loginWithGoogleCodeSuccessReturnsSessionWithJwtAndUser() = runBlocking {
+        val mockJson = """
+            {
+                "refreshToken": "mock_jwt_refresh_token_123",
+                "email": "googleuser@gmail.com",
+                "firstName": "Béla",
+                "lastName": "Kovács",
+                "registrationId": "999888",
+                "userGuid": "guid-abc-123"
+            }
+        """.trimIndent()
+
+        var capturedApiKey: String? = null
+        var capturedPartnerName: String? = null
+        var capturedReferer: String? = null
+
+        val client = createMockClient { req ->
+            assertTrue(req.url.encodedPath.contains("SocialLogin"))
+            capturedApiKey = req.header("je-api-key")
+            capturedPartnerName = req.header("je-partner-name")
+            capturedReferer = req.header("Referer")
+            jsonResponse(req, mockJson)
+        }
+
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
+        val session = api.loginWithGoogleCode("mock_auth_code_xyz", "uaid_test_google")
+
+        assertEquals("mock_jwt_refresh_token_123", session.token)
+        assertEquals("googleuser@gmail.com", session.email)
+        assertEquals("uaid_test_google", session.uaid)
+        assertNotNull(session.user)
+        assertEquals("Béla", session.user?.firstName)
+        assertEquals("Kovács", session.user?.lastName)
+        assertEquals("Kovács Béla", session.user?.fullName)
+        assertEquals("999888", session.user?.regId)
+
+        assertEquals(MavApiClient.MAV_JE_API_KEY, capturedApiKey)
+        assertEquals(MavApiClient.MAV_JE_PARTNER_NAME, capturedPartnerName)
+        assertEquals("mavpluszmobile", capturedReferer)
+    }
+
+    @Test
+    fun loginWithGoogleCodeFailureThrowsMavApiException() = runBlocking {
+        val mockErrorJson = """
+            {
+                "errorCode": 401,
+                "errorMessage": "Invalid User Key",
+                "errorDetails": null
+            }
+        """.trimIndent()
+
+        val client = createMockClient { req ->
+            assertTrue(req.url.encodedPath.contains("SocialLogin"))
+            jsonResponse(req, mockErrorJson, 401)
+        }
+
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
+        try {
+            api.loginWithGoogleCode("invalid_code", "uaid_123")
+            fail("Expected MavApiException")
+        } catch (e: MavApiException) {
+            assertTrue(e.errorMessage.contains("Google"))
+        }
+    }
+
+    @Test
     fun htmlResponseThrowsMavApiExceptionRatherThanJsonException() = runBlocking {
         val mockHtml = "<html><body><b>A kért oldal nem jeleníthető meg, mert nem felel meg a hozzáférési szabályzat követelményeinek</b></body></html>"
 

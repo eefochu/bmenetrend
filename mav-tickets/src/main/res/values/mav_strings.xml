@@ -6,6 +6,9 @@
     <string name="mav_email_label">Email cím</string>
     <string name="mav_password_label">Jelszó</string>
     <string name="mav_login_btn">Bejelentkezés</string>
+    <string name="mav_login_google_btn">Bejelentkezés Google-fiókkal</string>
+    <string name="mav_login_or">vagy</string>
+    <string name="mav_google_login_dialog_title">Google Bejelentkezés</string>
     <string name="mav_offline_badge">Offline mód</string>
     <string name="mav_session_expired">A MÁV bejelentkezés lejárt. Jelentkezz ki, majd be újra a jegyek frissítéséhez.</string>
     <string name="mav_session_expired_notice">A MÁV bejelentkezés lejárt, a mentett jegyek láthatók. A frissítéshez jelentkezz be újra.</string>

@@ -151,6 +151,28 @@ class MavRepository(
         fullSession
     }
 
+    suspend fun loginWithGoogle(code: String): MavSession = withContext(ioDispatcher) {
+        val uaid = sessionStore.getOrCreateUaid()
+        val baseSession = apiClient.loginWithGoogleCode(code, uaid)
+        val user = runCatching { apiClient.getUserData(baseSession) }.getOrNull()
+            ?.let { mergeUser(baseSession.user ?: cacheStore.getUser()?.takeIf { c -> c.email.equals(it.email, ignoreCase = true) }, it) }
+            ?: baseSession.user
+        val fullSession = baseSession.copy(user = user)
+        sessionStore.saveSession(fullSession)
+        if (user != null) cacheStore.saveUser(user)
+        _session.value = fullSession
+
+        // Pre-fetch and cache passengers right after login
+        runCatching {
+            val passengers = apiClient.getPassengers(fullSession)
+            if (passengers.isNotEmpty()) {
+                cacheStore.savePassengers(passengers)
+            }
+        }
+
+        fullSession
+    }
+
     suspend fun refreshUserData(): MavUser? = withContext(ioDispatcher) {
         val currentSession = _session.value ?: return@withContext null
         val fetched = runCatching { apiClient.getUserData(currentSession) }.getOrNull()
