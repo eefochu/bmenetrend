@@ -1455,6 +1455,13 @@ class MavApiClient(
                 .writeTimeout(15, TimeUnit.SECONDS)
                 .followRedirects(false)
                 .followSslRedirects(false)
+                .addInterceptor { chain ->
+                    try {
+                        chain.proceed(chain.request())
+                    } catch (e: IllegalStateException) {
+                        throw IOException(e.message ?: "Network state error", e)
+                    }
+                }
                 .build()
         }
 

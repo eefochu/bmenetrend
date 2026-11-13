@@ -46,24 +46,27 @@ internal object MetroNetworkOverlay {
     }
 
     fun install(style: Style, json: String, dark: Boolean) {
-        if (style.getSource(SOURCE) == null) {
-            style.addSource(GeoJsonSource(SOURCE,json))
-            fun add(layer: LineLayer) {
-                val anchor = lineAnchor(style.layers.map { it.id })
-                if (anchor == null) style.addLayer(layer) else style.addLayerBelow(layer,anchor)
+        if (!style.isFullyLoaded) return
+        runCatching {
+            if (style.getSource(SOURCE) == null) {
+                style.addSource(GeoJsonSource(SOURCE,json))
+                fun add(layer: LineLayer) {
+                    val anchor = lineAnchor(style.layers.map { it.id })
+                    if (anchor == null) style.addLayer(layer) else style.addLayerBelow(layer,anchor)
+                }
+                fun width(extra: Float) = Expression.interpolate(Expression.linear(), Expression.zoom(),
+                    Expression.stop(8.5,1.5f+extra),Expression.stop(10,3f+extra),
+                    Expression.stop(12,4f+extra),Expression.stop(16,5.5f+extra))
+                add(LineLayer("metro-overview-casing",SOURCE).withProperties(
+                    PropertyFactory.lineWidth(width(2.5f)),PropertyFactory.lineCap("round"),PropertyFactory.lineJoin("round"))
+                    .apply { minZoom=LINES_MIN_ZOOM })
+                add(LineLayer("metro-overview-lines",SOURCE).withProperties(
+                    PropertyFactory.lineColor(Expression.get("color")),PropertyFactory.lineWidth(width(0f)),
+                    PropertyFactory.lineCap("round"),PropertyFactory.lineJoin("round"))
+                    .apply { minZoom=LINES_MIN_ZOOM })
             }
-            fun width(extra: Float) = Expression.interpolate(Expression.linear(), Expression.zoom(),
-                Expression.stop(8.5,1.5f+extra),Expression.stop(10,3f+extra),
-                Expression.stop(12,4f+extra),Expression.stop(16,5.5f+extra))
-            add(LineLayer("metro-overview-casing",SOURCE).withProperties(
-                PropertyFactory.lineWidth(width(2.5f)),PropertyFactory.lineCap("round"),PropertyFactory.lineJoin("round"))
-                .apply { minZoom=LINES_MIN_ZOOM })
-            add(LineLayer("metro-overview-lines",SOURCE).withProperties(
-                PropertyFactory.lineColor(Expression.get("color")),PropertyFactory.lineWidth(width(0f)),
-                PropertyFactory.lineCap("round"),PropertyFactory.lineJoin("round"))
-                .apply { minZoom=LINES_MIN_ZOOM })
+            style.getLayerAs<LineLayer>("metro-overview-casing")?.setProperties(
+                PropertyFactory.lineColor(if(dark) "#111D2C" else "#FFFFFF"))
         }
-        style.getLayerAs<LineLayer>("metro-overview-casing")?.setProperties(
-            PropertyFactory.lineColor(if(dark) "#111D2C" else "#FFFFFF"))
     }
 }
