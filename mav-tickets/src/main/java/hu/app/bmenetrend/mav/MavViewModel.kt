@@ -48,6 +48,8 @@ data class TicketBarcodeData(
     val passengerName: String? = null,
     val birthDate: Long? = null,
     val passengerPhotoBase64: String? = null,
+    val passHolderNumber: String? = null,
+    val idCardNumber: String? = null,
     val bitmap: Bitmap? = null,
     val loading: Boolean = false,
     val error: String? = null,
@@ -264,6 +266,26 @@ class MavViewModel(
         passengerName: String?,
         birthDate: Long?
     ) {
+        showBarcode(
+            receiptId = receiptId,
+            ticketNumber = ticketNumber,
+            title = title,
+            isPass = isPass,
+            passengerName = passengerName,
+            birthDate = birthDate,
+            passHolderId = null
+        )
+    }
+
+    fun showBarcode(
+        receiptId: String,
+        ticketNumber: String?,
+        title: String,
+        isPass: Boolean,
+        passengerName: String?,
+        birthDate: Long?,
+        passHolderId: String?
+    ) {
         val passengers = repository.getPassengers()
         val matched = passengers.firstOrNull { p ->
             (receiptId.isNotBlank() && (p.id == receiptId || (p.businessId.isNotBlank() && p.businessId == receiptId))) ||
@@ -275,18 +297,73 @@ class MavViewModel(
             ))
         } ?: passengers.firstOrNull { !it.photoBase64.isNullOrBlank() } ?: passengers.firstOrNull()
 
-        val finalName = passengerName?.ifBlank { null } ?: matched?.name?.ifBlank { null }
-        val finalBirthDate = if (birthDate != null && birthDate > 0L) birthDate else matched?.birthDate
-        val passHolderPhoto = if (isPass) {
-            repository.getCachedPassHolder(receiptId)?.photoBase64
-                ?: ticketNumber?.let { repository.getCachedPassHolder(it)?.photoBase64 }
-                ?: (if (receiptId.contains("#")) repository.getCachedPassHolder(receiptId.substringAfterLast("#"))?.photoBase64 else null)
-        } else null
+        // Check if this ticket/pass is associated with an electronic pass holder
+        val passHolderCandidateIds = listOfNotNull(
+            passHolderId?.takeIf { it.isNotBlank() },
+            receiptId.takeIf { it.isNotBlank() },
+            ticketNumber?.takeIf { it.isNotBlank() },
+            if (receiptId.contains("#")) receiptId.substringAfterLast("#").takeIf { it.isNotBlank() } else null,
+            if (receiptId.contains("#")) receiptId.substringBefore("#").takeIf { it.isNotBlank() } else null
+        ).distinct()
 
-        val passengerPhoto = matched?.photoBase64
-            ?: passHolderPhoto
-            ?: passengers.firstOrNull { !it.photoBase64.isNullOrBlank() }?.photoBase64
-            ?: repository.getCachedUser()?.photoBase64
+        var cachedPassHolder: MavPassHolder? = null
+        if (isPass || !passHolderId.isNullOrBlank()) {
+            for (cid in passHolderCandidateIds) {
+                val h = repository.getCachedPassHolder(cid)
+                if (h != null) {
+                    cachedPassHolder = h
+                    break
+                }
+            }
+        }
+
+        val finalName: String?
+        val finalBirthDate: Long?
+        val finalPhoto: String?
+        val finalPassHolderNumber: String?
+        val finalIdCardNumber: String?
+
+        if (cachedPassHolder != null) {
+            finalName = cachedPassHolder.name ?: passengerName?.ifBlank { null } ?: matched?.name?.ifBlank { null }
+            finalBirthDate = cachedPassHolder.birthDate ?: (if (birthDate != null && birthDate > 0L) birthDate else matched?.birthDate)
+            finalPhoto = cachedPassHolder.photoBase64
+                ?: matched?.photoBase64
+                ?: repository.getCachedUser()?.photoBase64
+            finalPassHolderNumber = cachedPassHolder.id.ifBlank { passHolderId }
+            finalIdCardNumber = cachedPassHolder.idCardNumber
+        } else {
+            finalName = passengerName?.ifBlank { null } ?: matched?.name?.ifBlank { null }
+            finalBirthDate = if (birthDate != null && birthDate > 0L) birthDate else matched?.birthDate
+            val passHolderPhoto = if (isPass) {
+                repository.getCachedPassHolder(receiptId)?.photoBase64
+                    ?: ticketNumber?.let { repository.getCachedPassHolder(it)?.photoBase64 }
+                    ?: (if (receiptId.contains("#")) repository.getCachedPassHolder(receiptId.substringAfterLast("#"))?.photoBase64 else null)
+            } else null
+            finalPhoto = matched?.photoBase64
+                ?: passHolderPhoto
+                ?: passengers.firstOrNull { !it.photoBase64.isNullOrBlank() }?.photoBase64
+                ?: repository.getCachedUser()?.photoBase64
+            finalPassHolderNumber = passHolderId
+            finalIdCardNumber = null
+        }
+
+        val candidates = buildList {
+            add(receiptId)
+            if (!ticketNumber.isNullOrBlank() && ticketNumber != receiptId) add(ticketNumber)
+            if (receiptId.contains("#")) {
+                for (p in receiptId.split("#")) {
+                    val trimmed = p.trim()
+                    if (trimmed.isNotEmpty() && trimmed.all { it.isDigit() } && trimmed !in this) {
+                        add(trimmed)
+                    }
+                }
+            }
+        }.distinct()
+
+        val cachedTicketImage = candidates.firstNotNullOfOrNull { cid ->
+            repository.getCachedTicketImage(cid)
+        }
+        val cachedBitmap = cachedTicketImage?.toBitmap()
 
         _barcodeData.value = TicketBarcodeData(
             receiptId = receiptId,
@@ -295,64 +372,61 @@ class MavViewModel(
             isPass = isPass,
             passengerName = finalName,
             birthDate = finalBirthDate,
-            passengerPhotoBase64 = passengerPhoto,
-            loading = true
+            passengerPhotoBase64 = finalPhoto,
+            passHolderNumber = finalPassHolderNumber,
+            idCardNumber = finalIdCardNumber,
+            bitmap = cachedBitmap,
+            loading = cachedBitmap == null
         )
         viewModelScope.launch {
             try {
-                // If passenger photo is not in cache yet, try loading pass holder if it is a pass
-                if (isPass && _barcodeData.value?.passengerPhotoBase64.isNullOrBlank()) {
-                    val holder = runCatching { repository.getPassHolder(receiptId) }.getOrNull()
-                        ?: ticketNumber?.let { runCatching { repository.getPassHolder(it) }.getOrNull() }
-                        ?: (if (receiptId.contains("#")) runCatching { repository.getPassHolder(receiptId.substringAfterLast("#")) }.getOrNull() else null)
-                    if (holder?.photoBase64 != null) {
+                // If this is a pass or has passholder ID, ensure pass holder details are loaded
+                if (isPass || !passHolderId.isNullOrBlank()) {
+                    val holder = passHolderCandidateIds.firstNotNullOfOrNull { cid ->
+                        runCatching { repository.getPassHolder(cid) }.getOrNull()
+                    }
+                    if (holder != null) {
                         _barcodeData.value = _barcodeData.value?.copy(
-                            passengerPhotoBase64 = holder.photoBase64,
-                            passengerName = _barcodeData.value?.passengerName ?: holder.name,
-                            birthDate = _barcodeData.value?.birthDate ?: holder.birthDate
+                            passengerPhotoBase64 = holder.photoBase64 ?: _barcodeData.value?.passengerPhotoBase64,
+                            passengerName = holder.name ?: _barcodeData.value?.passengerName,
+                            birthDate = holder.birthDate ?: _barcodeData.value?.birthDate,
+                            passHolderNumber = holder.id.ifBlank { _barcodeData.value?.passHolderNumber },
+                            idCardNumber = holder.idCardNumber ?: _barcodeData.value?.idCardNumber
                         )
                     }
                 }
 
-                val candidates = buildList {
-                    add(receiptId)
-                    if (!ticketNumber.isNullOrBlank()) add(ticketNumber)
-                    if (receiptId.contains("#")) {
-                        add(receiptId.substringAfterLast("#"))
-                        add(receiptId.substringBefore("#"))
-                    }
-                }.filter { it.isNotBlank() }.distinct()
-
-                var ticketImage: MavTicketImage? = null
+                var ticketImage: MavTicketImage? = cachedTicketImage
                 var throttled = false
-                // MÁV refuses to hand out the barcode for ~30 s after a fresh email/password login
-                // ("próbálja meg ismét fél perc múlva"). Retry automatically instead of failing.
-                for (attempt in 0 until TICKET_IMAGE_MAX_ATTEMPTS) {
-                    throttled = false
-                    for (id in candidates) {
-                        ticketImage = try {
-                            repository.getTicketImage(id)
-                        } catch (e: MavTicketImageThrottledException) {
-                            throttled = true
-                            null
+                if (ticketImage == null) {
+                    for (attempt in 0 until TICKET_IMAGE_MAX_ATTEMPTS) {
+                        throttled = false
+                        for (id in candidates) {
+                            ticketImage = try {
+                                repository.getTicketImage(id)
+                            } catch (e: MavTicketImageThrottledException) {
+                                throttled = true
+                                null
+                            }
+                            if (ticketImage != null) break
                         }
-                        if (ticketImage != null) break
-                    }
-                    if (ticketImage != null || !throttled) break
-                    if (attempt < TICKET_IMAGE_MAX_ATTEMPTS - 1) {
-                        _barcodeData.value = _barcodeData.value?.copy(
-                            notice = getApplication<Application>().getString(hu.app.bmenetrend.mav.R.string.mav_barcode_wait_notice)
-                        )
-                        delay(TICKET_IMAGE_RETRY_DELAY_MS)
+                        if (ticketImage != null || !throttled) break
+                        if (attempt < TICKET_IMAGE_MAX_ATTEMPTS - 1) {
+                            _barcodeData.value = _barcodeData.value?.copy(
+                                notice = getApplication<Application>().getString(hu.app.bmenetrend.mav.R.string.mav_barcode_wait_notice)
+                            )
+                            delay(TICKET_IMAGE_RETRY_DELAY_MS)
+                        }
                     }
                 }
 
-                val bitmap = ticketImage?.toBitmap()
+                val bitmap = ticketImage?.toBitmap() ?: _barcodeData.value?.bitmap
                 if (bitmap != null) {
                     _barcodeData.value = _barcodeData.value?.copy(
                         bitmap = bitmap,
                         loading = false,
-                        notice = null
+                        notice = null,
+                        error = null
                     )
                 } else if (throttled) {
                     _barcodeData.value = _barcodeData.value?.copy(
@@ -373,17 +447,23 @@ class MavViewModel(
                     )
                 }
             } catch (e: Exception) {
-                _barcodeData.value = _barcodeData.value?.copy(
-                    loading = false,
-                    error = e.message ?: "Hiba a jegykép betöltésekor"
-                )
+                if (_barcodeData.value?.bitmap == null) {
+                    _barcodeData.value = _barcodeData.value?.copy(
+                        loading = false,
+                        error = e.message ?: "Hiba a jegykép betöltésekor"
+                    )
+                } else {
+                    _barcodeData.value = _barcodeData.value?.copy(
+                        loading = false
+                    )
+                }
             }
         }
     }
 
     private companion object {
         const val TICKET_IMAGE_MAX_ATTEMPTS = 5
-        const val TICKET_IMAGE_RETRY_DELAY_MS = 10_000L
+        const val TICKET_IMAGE_RETRY_DELAY_MS = 6_000L
     }
 
     fun dismissBarcode() {

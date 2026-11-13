@@ -245,4 +245,24 @@ class MavCacheStoreTest {
         assertNull(cacheStore.getTicketImage("rec_1"))
         assertNull(cacheStore.getUser())
     }
+    @Test
+    fun testLookupByAnyNumericTokenInCompositeId() {
+        val compositeId = "ODAUTI#CSCSAZON#1779935735#0#1023744049"
+        val ticketNumber = "5594003G000448895"
+        val image = MavTicketImage(
+            receiptId = compositeId,
+            ticketNumber = ticketNumber,
+            kind = "AZTEC",
+            imageBase64 = "sample_aztec_barcode_base64"
+        )
+
+        cacheStore.saveTicketImage(compositeId, image)
+
+        // Middle numeric ID (bizonylatTechnikaiAzonosito) lookup
+        assertEquals(image.imageBase64, cacheStore.getTicketImage("1779935735")?.imageBase64)
+        // Trailing numeric ID lookup
+        assertEquals(image.imageBase64, cacheStore.getTicketImage("1023744049")?.imageBase64)
+        // Full composite ID lookup
+        assertEquals(image.imageBase64, cacheStore.getTicketImage(compositeId)?.imageBase64)
+    }
 }

@@ -86,7 +86,8 @@ data class MavTicketReceipt(
     val birthDate: Long? = null,
     val ticketNumber: String? = null,
     val receiptId: String,
-    val items: List<MavTicketItem> = emptyList()
+    val items: List<MavTicketItem> = emptyList(),
+    val passHolderId: String? = null
 )
 
 @Immutable
@@ -125,7 +126,16 @@ data class MavPassHolder(
     val birthDate: Long? = null,
     val version: Int = 0,
     val idCardNumber: String? = null
-)
+) {
+    fun toPhotoBitmap(): Bitmap? {
+        val raw = photoBase64 ?: return null
+        return runCatching {
+            val clean = if (raw.contains(",")) raw.substringAfter(",") else raw
+            val bytes = Base64.decode(clean, Base64.DEFAULT)
+            BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+        }.getOrNull()
+    }
+}
 
 @Immutable
 data class MavTicketImage(

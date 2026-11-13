@@ -141,9 +141,21 @@ class MavCacheStore(
             }
             if (receiptId.contains("#")) {
                 imagesObj.put(receiptId.substringAfterLast("#"), itemObj)
+                for (p in receiptId.split("#")) {
+                    val trimmed = p.trim()
+                    if (trimmed.isNotEmpty() && trimmed.all { it.isDigit() }) {
+                        imagesObj.put(trimmed, itemObj)
+                    }
+                }
             }
             if (image.receiptId.contains("#")) {
                 imagesObj.put(image.receiptId.substringAfterLast("#"), itemObj)
+                for (p in image.receiptId.split("#")) {
+                    val trimmed = p.trim()
+                    if (trimmed.isNotEmpty() && trimmed.all { it.isDigit() }) {
+                        imagesObj.put(trimmed, itemObj)
+                    }
+                }
             }
             writeRoot(root)
         }
@@ -159,6 +171,18 @@ class MavCacheStore(
             var itemObj = imagesObj.optJSONObject(receiptId)
             if (itemObj == null && receiptId.contains("#")) {
                 itemObj = imagesObj.optJSONObject(receiptId.substringAfterLast("#"))
+                if (itemObj == null) {
+                    for (p in receiptId.split("#")) {
+                        val trimmed = p.trim()
+                        if (trimmed.isNotEmpty() && trimmed.all { it.isDigit() }) {
+                            val cand = imagesObj.optJSONObject(trimmed)
+                            if (cand != null) {
+                                itemObj = cand
+                                break
+                            }
+                        }
+                    }
+                }
             }
             if (itemObj == null) {
                 val keys = imagesObj.keys()
@@ -409,6 +433,7 @@ class MavCacheStore(
             put("birthDate", receipt.birthDate ?: 0L)
             put("ticketNumber", receipt.ticketNumber.orEmpty())
             put("receiptId", receipt.receiptId)
+            put("passHolderId", receipt.passHolderId.orEmpty())
             val itemsArr = JSONArray()
             for (item in receipt.items) {
                 itemsArr.put(itemToJson(item))
@@ -423,6 +448,7 @@ class MavCacheStore(
         val passengerName = obj.optString("passengerName", "").ifBlank { null }
         val birthDate = obj.optLong("birthDate", 0L).let { if (it > 0) it else null }
         val ticketNumber = obj.optString("ticketNumber", "").ifBlank { null }
+        val passHolderId = obj.optString("passHolderId", "").ifBlank { null }
 
         val itemsArr = obj.optJSONArray("items") ?: JSONArray()
         val items = mutableListOf<MavTicketItem>()
@@ -436,7 +462,8 @@ class MavCacheStore(
             birthDate = birthDate,
             ticketNumber = ticketNumber,
             receiptId = receiptId,
-            items = items
+            items = items,
+            passHolderId = passHolderId
         )
     }
 

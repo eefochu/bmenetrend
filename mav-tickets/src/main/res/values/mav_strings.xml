@@ -46,4 +46,6 @@
     <string name="mav_retry">Újrapróbálás</string>
     <string name="mav_barcode_wait_notice">A MÁV szerver friss bejelentkezés után kb. fél percig nem adja ki a jegyképet. Automatikusan újrapróbáljuk…</string>
     <string name="mav_barcode_throttled">A MÁV szerver még nem adta ki a jegyképet. Friss bejelentkezés után ez kb. fél percig is eltarthat, kérjük próbáld újra kicsit később.</string>
+    <string name="mav_id_number">Igazolvány szám: %1$s</string>
+    <string name="mav_electronic_passholder_number">Utasigazolvány száma: %1$s</string>
 </resources>
