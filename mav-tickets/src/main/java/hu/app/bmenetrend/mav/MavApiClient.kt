@@ -1,6 +1,5 @@
 package hu.app.bmenetrend.mav
 
-import android.util.Base64
 import kotlinx.coroutines.suspendCancellableCoroutine
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
@@ -48,7 +47,7 @@ class MavApiClient(
         val clean = token.trim()
         if (clean.isEmpty()) return ""
         return if (clean.startsWith("<")) {
-            Base64.encodeToString(clean.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+            java.util.Base64.getEncoder().encodeToString(clean.toByteArray(Charsets.UTF_8))
         } else {
             clean.replace("\r", "").replace("\n", "")
         }
@@ -64,7 +63,7 @@ class MavApiClient(
                 java.util.Base64.getDecoder().decode(cleanBase64)
             } catch (e: Throwable) {
                 try {
-                    android.util.Base64.decode(cleanBase64, android.util.Base64.DEFAULT)
+                    java.util.Base64.getMimeDecoder().decode(cleanBase64)
                 } catch (e2: Throwable) {
                     null
                 }
@@ -381,7 +380,7 @@ class MavApiClient(
             val saml = runCatching {
                 val raw = session.token.trim()
                 if (raw.startsWith("PHNhbWwx") || (!raw.startsWith("<") && raw.length > 50)) {
-                    String(Base64.decode(raw, Base64.DEFAULT), Charsets.UTF_8)
+                    String(java.util.Base64.getMimeDecoder().decode(raw), Charsets.UTF_8)
                 } else {
                     raw
                 }
