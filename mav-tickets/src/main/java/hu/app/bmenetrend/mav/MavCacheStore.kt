@@ -409,6 +409,7 @@ class MavCacheStore(
             put("birthDate", receipt.birthDate ?: 0L)
             put("ticketNumber", receipt.ticketNumber.orEmpty())
             put("receiptId", receipt.receiptId)
+            put("passHolderId", receipt.passHolderId.orEmpty())
             val itemsArr = JSONArray()
             for (item in receipt.items) {
                 itemsArr.put(itemToJson(item))
@@ -423,6 +424,7 @@ class MavCacheStore(
         val passengerName = obj.optString("passengerName", "").ifBlank { null }
         val birthDate = obj.optLong("birthDate", 0L).let { if (it > 0) it else null }
         val ticketNumber = obj.optString("ticketNumber", "").ifBlank { null }
+        val passHolderId = obj.optString("passHolderId", "").ifBlank { null }
 
         val itemsArr = obj.optJSONArray("items") ?: JSONArray()
         val items = mutableListOf<MavTicketItem>()
@@ -436,7 +438,8 @@ class MavCacheStore(
             birthDate = birthDate,
             ticketNumber = ticketNumber,
             receiptId = receiptId,
-            items = items
+            items = items,
+            passHolderId = passHolderId
         )
     }
 

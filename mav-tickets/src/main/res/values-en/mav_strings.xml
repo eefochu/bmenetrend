@@ -6,20 +6,20 @@
     <string name="mav_email_label">Email address</string>
     <string name="mav_password_label">Password</string>
     <string name="mav_login_btn">Log in</string>
-    <string name="mav_login_google_btn">Continue with Google</string>
+    <string name="mav_login_google_btn">Sign in with Google</string>
     <string name="mav_login_or">or</string>
-    <string name="mav_google_login_dialog_title">Google Sign In</string>
+    <string name="mav_google_login_dialog_title">Google Sign-in</string>
     <string name="mav_offline_badge">Offline mode</string>
-    <string name="mav_session_expired">Your MÁV session has expired. Log out and back in to refresh tickets.</string>
-    <string name="mav_session_expired_notice">MÁV session expired. Showing saved tickets; log in again to sync.</string>
-    <string name="mav_offline_notice">You are offline. Showing cached tickets and barcodes.</string>
+    <string name="mav_session_expired">MÁV session expired. Log out and back in to refresh tickets.</string>
+    <string name="mav_session_expired_notice">MÁV session expired, cached tickets are shown. Log in again to refresh.</string>
+    <string name="mav_offline_notice">You are offline. Synchronized tickets and barcodes remain available.</string>
     <string name="mav_sync_time">Synced: %1$s</string>
-    <string name="mav_logging_in">Logging in…</string>
+    <string name="mav_logging_in">Signing in…</string>
     <string name="mav_logout_btn">Log out</string>
-    <string name="mav_logout_confirm_title">Log out of MÁV+ account</string>
-    <string name="mav_logout_confirm_msg">Are you sure you want to log out? You will need to log in again to view your tickets.</string>
+    <string name="mav_logout_confirm_title">Log out from MÁV+ account</string>
+    <string name="mav_logout_confirm_msg">Are you sure you want to log out? You will need to log in again to view tickets.</string>
     <string name="mav_cancel">Cancel</string>
-    <string name="mav_active_tab">Valid</string>
+    <string name="mav_active_tab">Active</string>
     <string name="mav_past_tab">Past</string>
     <string name="mav_empty_active">No active or valid tickets / passes.</string>
     <string name="mav_empty_past">No past tickets in this account.</string>
@@ -46,4 +46,6 @@
     <string name="mav_retry">Retry</string>
     <string name="mav_barcode_wait_notice">MÁV doesn\'t release the ticket image for about half a minute after a fresh login. Retrying automatically…</string>
     <string name="mav_barcode_throttled">MÁV hasn\'t released the ticket image yet. After a fresh login this can take about half a minute, please try again shortly.</string>
+    <string name="mav_id_number">ID number: %1$s</string>
+    <string name="mav_electronic_passholder_number">Electronic passholder number: %1$s</string>
 </resources>

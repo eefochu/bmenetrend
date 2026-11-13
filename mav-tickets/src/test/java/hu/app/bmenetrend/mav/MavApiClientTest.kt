@@ -53,6 +53,7 @@ class MavApiClientTest {
         assertEquals("test@example.com", session.email)
         assertEquals("mock_saml_token_xyz", session.token)
         assertEquals("uaid_123456789012345678901234", session.uaid)
+        assertNull(session.vimToken)
     }
 
     @Test
@@ -614,5 +615,58 @@ class MavApiClientTest {
         val image = api.getTicketImage(session, "1023744049")
 
         assertNull("PDF certificates should be rejected", image)
+    }
+    @Test
+    fun getAllPassHoldersExtractsPassHolderWithPhotoAndIdCardNumber() = runBlocking {
+        val hptJson = """
+            {
+                "hptData": [
+                    {
+                        "id": "7270001",
+                        "dataType": "BERLETTOK",
+                        "nevesitesUzletiAzonosito": "1023744049",
+                        "name": "Kókai Balázs",
+                        "bornDate": "2011-07-14T00:00:00+02:00",
+                        "profilePicture": {
+                            "binarisAllomany": "passholder_selfie_b64"
+                        },
+                        "namedAdditionalsForId": [
+                            {
+                                "code": "IGAZOLVANY_SZAM",
+                                "userValue": "1258875960"
+                            }
+                        ]
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        val vimJson = """
+            {
+                "BerletTokok": []
+            }
+        """.trimIndent()
+
+        val client = createMockClient { req ->
+            if (req.url.encodedPath.contains("GetUserHPTDatas")) {
+                jsonResponse(req, hptJson)
+            } else if (req.url.encodedPath.contains("BerletTokLekeres")) {
+                jsonResponse(req, vimJson)
+            } else {
+                jsonResponse(req, "{}", 404)
+            }
+        }
+
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
+        val session = MavSession("test@example.com", "token_123", "uaid_123")
+        val passHolders = api.getAllPassHolders(session)
+
+        assertEquals(1, passHolders.size)
+        val passHolder = passHolders.first()
+        assertEquals("1023744049", passHolder.id)
+        assertEquals("Kókai Balázs", passHolder.name)
+        assertEquals(1310594400000L, passHolder.birthDate)
+        assertEquals("passholder_selfie_b64", passHolder.photoBase64)
+        assertEquals("1258875960", passHolder.idCardNumber)
     }
 }

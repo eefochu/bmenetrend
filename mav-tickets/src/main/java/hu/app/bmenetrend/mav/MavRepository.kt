@@ -329,7 +329,14 @@ class MavRepository(
             _session.value = updatedSession
         }
 
-        // 2. Refresh passengers
+        // 2. Refresh passengers and passholders
+        runCatching {
+            val passHolders = apiClient.getAllPassHolders(currentSession)
+            for (holder in passHolders) {
+                if (holder.id.isNotBlank()) cacheStore.savePassHolder(holder.id, holder)
+                holder.hptId?.let { if (it.isNotBlank()) cacheStore.savePassHolder(it, holder) }
+            }
+        }
         runCatching {
             val passengers = apiClient.getPassengers(currentSession)
             if (passengers.isNotEmpty()) {
@@ -364,20 +371,36 @@ class MavRepository(
 
         // 6. Pre-fetch ticket images and pass holders for active tickets
         for (order in active) {
-            order.passHolder?.id?.let { phId ->
-                if (phId.isNotBlank()) {
-                    runCatching {
-                        val holder = apiClient.getPassHolder(currentSession, phId)
-                        if (holder != null) {
-                            cacheStore.savePassHolder(phId, holder)
-                            if (order.orderId.isNotBlank()) {
-                                cacheStore.savePassHolder(order.orderId, holder)
-                            }
+            val orderHolderId = order.passHolder?.id
+            if (!orderHolderId.isNullOrBlank()) {
+                runCatching {
+                    val holder = getCachedPassHolder(orderHolderId)
+                        ?: apiClient.getPassHolder(currentSession, orderHolderId)
+                    if (holder != null) {
+                        cacheStore.savePassHolder(orderHolderId, holder)
+                        if (order.orderId.isNotBlank()) {
+                            cacheStore.savePassHolder(order.orderId, holder)
+                        }
+                        for (r in order.receipts) {
+                            if (r.receiptId.isNotBlank()) cacheStore.savePassHolder(r.receiptId, holder)
+                            if (!r.ticketNumber.isNullOrBlank()) cacheStore.savePassHolder(r.ticketNumber, holder)
                         }
                     }
                 }
             }
             for (receipt in order.receipts) {
+                receipt.passHolderId?.let { phId ->
+                    if (phId.isNotBlank() && phId != orderHolderId) {
+                        runCatching {
+                            val holder = getCachedPassHolder(phId)
+                                ?: apiClient.getPassHolder(currentSession, phId)
+                            if (holder != null) {
+                                cacheStore.savePassHolder(phId, holder)
+                                if (receipt.receiptId.isNotBlank()) cacheStore.savePassHolder(receipt.receiptId, holder)
+                            }
+                        }
+                    }
+                }
                 val receiptId = receipt.receiptId
                 if (receiptId.isNotBlank()) {
                     runCatching {
@@ -448,7 +471,7 @@ class MavRepository(
         if (cached != null) return@withContext cached
 
         val currentSession = _session.value ?: return@withContext null
-        if (currentSession.token.isBlank()) return@withContext null
+        if (currentSession.token.isBlank() && currentSession.vimToken.isNullOrBlank()) return@withContext null
         val fetched = runCatching { apiClient.getPassHolder(currentSession, nevesitesAzonosito) }.getOrNull()
         if (fetched != null) {
             cacheStore.savePassHolder(nevesitesAzonosito, fetched)

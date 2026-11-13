@@ -40,8 +40,47 @@ class MavApiClient(
         val bornDate: String,
         val photoBase64: String?,
         val isDefault: Boolean,
-        val businessId: String = ""
+        val businessId: String = "",
+        val idCardNumber: String? = null
     )
+
+    private fun extractIdCardNumber(item: JSONObject): String? {
+        val additionals = item.optJSONArray("namedAdditionalsForId")
+            ?: item.optJSONArray("namedAdditionals")
+        if (additionals != null) {
+            for (j in 0 until additionals.length()) {
+                val addObj = additionals.optJSONObject(j) ?: continue
+                val code = addObj.optString("code", "")
+                val name = addObj.optString("name", "")
+                val userVal = addObj.optString("userValue", "").ifBlank {
+                    addObj.optString("value", "")
+                }.trim()
+                if (userVal.isNotEmpty()) {
+                    if (code.contains("IGAZOLVANY", ignoreCase = true) ||
+                        code.contains("OKMANY", ignoreCase = true) ||
+                        name.contains("Ig.", ignoreCase = true) ||
+                        name.contains("igazolvány", ignoreCase = true) ||
+                        name.contains("okmány", ignoreCase = true)
+                    ) {
+                        return userVal
+                    }
+                }
+            }
+            for (j in 0 until additionals.length()) {
+                val addObj = additionals.optJSONObject(j) ?: continue
+                val userVal = addObj.optString("userValue", "").ifBlank {
+                    addObj.optString("value", "")
+                }.trim()
+                if (userVal.isNotEmpty()) return userVal
+            }
+        }
+        val direct = item.optString("idCardNumber", "").ifBlank {
+            item.optString("okmanySzam", "").ifBlank {
+                item.optString("idCard", "")
+            }
+        }.trim()
+        return direct.ifBlank { null }
+    }
 
     private fun getSafeTokenHeader(token: String): String {
         val clean = token.trim()
@@ -156,7 +195,20 @@ class MavApiClient(
         val ikUserData = ikResult?.optJSONObject("userData")
         val ikToken = ikUserData?.optString("userTokenXml", "").orEmpty().trim()
 
-        // 2. Also authenticate to VIM Bejelentkezes to obtain vimToken for GetJegykep
+        // If modern IK login succeeded, return immediately.
+        // Calling VIM Bejelentkezes immediately after GetUserToken triggers MÁV's WCF anti-hammering
+        // throttle ("próbálja meg ismét fél perc múlva") for ~30 seconds on that account.
+        if (ikToken.isNotBlank()) {
+            return MavSession(
+                email = trimmedEmail,
+                token = ikToken,
+                vimToken = null,
+                uaid = uaid,
+                expiresAt = System.currentTimeMillis() / 1000L + 86400 * 30L
+            )
+        }
+
+        // 2. Fallback: Authenticate to VIM Bejelentkezes if GetUserToken was not available
         var vimToken: String? = null
         var vimExpiresAt = 0L
         var vimException: Throwable? = null
@@ -191,16 +243,6 @@ class MavApiClient(
             }
         } catch (t: Throwable) {
             vimException = t
-        }
-
-        if (ikToken.isNotBlank()) {
-            return MavSession(
-                email = trimmedEmail,
-                token = ikToken,
-                vimToken = vimToken,
-                uaid = uaid,
-                expiresAt = if (vimExpiresAt > 0L) vimExpiresAt else System.currentTimeMillis() / 1000L + 86400 * 30L
-            )
         }
 
         if (!vimToken.isNullOrBlank()) {
@@ -354,7 +396,7 @@ class MavApiClient(
                 val requestJson = JSONObject().apply {
                     put("FelhasznaloAzonosito", session.email)
                     put("Nyelv", "HU")
-                    put("Token", getRawSamlToken(session.vimToken ?: session.token))
+                    put("Token", getRawSamlToken(session.token.ifBlank { session.vimToken.orEmpty() }))
                     put("UAID", session.uaid)
                 }
                 val response = postJson("GetFelhasznaloAdat", requestJson)
@@ -510,6 +552,7 @@ class MavApiClient(
                         val photo = picObj?.optString("binarisAllomany", "")?.ifBlank { null }
                             ?: picObj?.optString("image", "")?.ifBlank { null }
                             ?: item.optString("binarisAllomany", "").ifBlank { null }
+                        val idCard = extractIdCardNumber(item)
                         list.add(
                             RawHptItem(
                                 id = item.optString("id", item.optString("bussinessId", "")),
@@ -519,7 +562,8 @@ class MavApiClient(
                                 bornDate = item.optString("bornDate", ""),
                                 photoBase64 = photo,
                                 isDefault = item.optBoolean("isDefault", false),
-                                businessId = item.optString("nevesitesUzletiAzonosito", item.optString("bussinessId", ""))
+                                businessId = item.optString("nevesitesUzletiAzonosito", item.optString("bussinessId", "")),
+                                idCardNumber = idCard
                             )
                         )
                     }
@@ -535,6 +579,7 @@ class MavApiClient(
                         val picObj = item.optJSONObject("image") ?: item.optJSONObject("picture")
                         val photo = picObj?.optString("binarisAllomany", "")?.ifBlank { null }
                             ?: picObj?.optString("image", "")?.ifBlank { null }
+                        val idCard = extractIdCardNumber(item)
                         list.add(
                             RawHptItem(
                                 id = item.optString("bussinessId", item.optString("id", "")),
@@ -544,7 +589,8 @@ class MavApiClient(
                                 bornDate = item.optString("bornDate", ""),
                                 photoBase64 = photo,
                                 isDefault = item.optBoolean("isDefault", false),
-                                businessId = item.optString("nevesitesUzletiAzonosito", item.optString("bussinessId", ""))
+                                businessId = item.optString("nevesitesUzletiAzonosito", item.optString("bussinessId", "")),
+                                idCardNumber = idCard
                             )
                         )
                     }
@@ -642,21 +688,52 @@ class MavApiClient(
     }
 
     suspend fun getAllPassHolders(session: MavSession): List<MavPassHolder> {
+        val list = mutableListOf<MavPassHolder>()
+        val seenIds = mutableSetOf<String>()
+
+        // 1. First, check HPT datas from IK_API_PROD / Profile
+        val hptItems = runCatching { fetchHptDatas(session) }.getOrNull().orEmpty()
+        for (item in hptItems) {
+            val isPassHolder = item.dataType.equals("BERLETTOK", ignoreCase = true) ||
+                (item.businessId.isNotBlank() && item.businessId != item.id)
+            if (isPassHolder) {
+                val passHolderId = item.businessId.ifBlank { item.id }.trim()
+                if (passHolderId.isNotBlank() && passHolderId !in seenIds) {
+                    val bDate = parseDateToTimestamp(item.bornDate)
+                    val holder = MavPassHolder(
+                        id = passHolderId,
+                        hptId = item.id.ifBlank { null },
+                        photoBase64 = item.photoBase64,
+                        status = "Érvényes",
+                        validTo = 0L,
+                        name = item.name.ifBlank { item.alias }.ifBlank { null },
+                        birthDate = bDate,
+                        version = 0,
+                        idCardNumber = item.idCardNumber
+                    )
+                    list.add(holder)
+                    seenIds.add(passHolderId)
+                    if (item.id.isNotBlank()) seenIds.add(item.id)
+                }
+            }
+        }
+
+        // 2. Fetch pass holders from VIM API (BerletTokLekeres)
+        val tokenToUse = getRawSamlToken(session.token.ifBlank { session.vimToken.orEmpty() })
         val requestJson = JSONObject().apply {
             put("FelhasznaloAzonosito", session.email)
             put("NevesitesAzonosito", "")
             put("Nyelv", "HU")
-            put("Token", getRawSamlToken(session.vimToken ?: session.token))
+            put("Token", tokenToUse)
             put("UAID", session.uaid)
         }
-        val response = runCatching { postJson("BerletTokLekeres", requestJson) }.getOrNull() ?: return emptyList()
-        val array = response.optJSONArray("BerletTokok") ?: JSONArray()
-        val list = mutableListOf<MavPassHolder>()
+        val response = runCatching { postJson("BerletTokLekeres", requestJson) }.getOrNull()
+        val array = response?.optJSONArray("BerletTokok") ?: JSONArray()
 
         for (i in 0 until array.length()) {
             val obj = array.optJSONObject(i) ?: continue
             val hptAdat = obj.optJSONObject("HPTAdat") ?: obj.optJSONObject("HptAdat")
-            val nevesites = obj.optString("NevesitesAzonosito", "")
+            val nevesites = obj.optString("NevesitesAzonosito", "").trim()
             val hptId = obj.optString("BerletMegnevezes",
                 obj.optString("Megnevezes",
                     obj.optString("HptNev",
@@ -676,19 +753,36 @@ class MavApiClient(
             val idCard = (obj.optString("OkmanySzam", "").ifBlank { null })
                 ?: hptAdat?.optString("OkmanySzam", "")?.ifBlank { null }
 
-            list.add(
-                MavPassHolder(
-                    id = nevesites,
-                    hptId = hptId,
-                    photoBase64 = photo,
-                    status = status,
-                    validTo = validTo,
-                    name = name,
-                    birthDate = if (birthDate > 0) birthDate else null,
-                    version = version,
-                    idCardNumber = idCard
+            val existingIdx = list.indexOfFirst {
+                it.id == nevesites || (hptId != null && it.hptId == hptId) || (nevesites.isNotBlank() && it.hptId == nevesites)
+            }
+            if (existingIdx >= 0) {
+                val ex = list[existingIdx]
+                list[existingIdx] = ex.copy(
+                    photoBase64 = ex.photoBase64 ?: photo,
+                    status = ex.status ?: status,
+                    validTo = if (ex.validTo > 0L) ex.validTo else validTo,
+                    name = ex.name ?: name,
+                    birthDate = ex.birthDate ?: (if (birthDate > 0) birthDate else null),
+                    version = if (ex.version > 0) ex.version else version,
+                    idCardNumber = ex.idCardNumber ?: idCard
                 )
-            )
+            } else if (nevesites.isNotBlank() && nevesites !in seenIds) {
+                list.add(
+                    MavPassHolder(
+                        id = nevesites,
+                        hptId = hptId,
+                        photoBase64 = photo,
+                        status = status,
+                        validTo = validTo,
+                        name = name,
+                        birthDate = if (birthDate > 0) birthDate else null,
+                        version = version,
+                        idCardNumber = idCard
+                    )
+                )
+                seenIds.add(nevesites)
+            }
         }
         return list
     }
@@ -757,7 +851,8 @@ class MavApiClient(
                         val receipt = MavTicketReceipt(
                             ticketNumber = passHolderId ?: id,
                             receiptId = id,
-                            items = listOf(item)
+                            items = listOf(item),
+                            passHolderId = passHolderId
                         )
                         orders.add(
                             MavOrder(
@@ -780,7 +875,7 @@ class MavApiClient(
             val requestJson = JSONObject().apply {
                 put("FelhasznaloAzonosito", session.email)
                 put("Ervenyes", validOnly)
-                put("Token", getRawSamlToken(session.vimToken ?: session.token))
+                put("Token", getRawSamlToken(session.token.ifBlank { session.vimToken.orEmpty() }))
                 put("Nyelv", "HU")
                 put("UAID", session.uaid)
             }
@@ -901,7 +996,8 @@ class MavApiClient(
                             birthDate = if (birthDate > 0) birthDate else null,
                             ticketNumber = ticketNumber.ifBlank { null },
                             receiptId = receiptId,
-                            items = items
+                            items = items,
+                            passHolderId = resolvedPassHolder?.id
                         )
                     )
                 }
@@ -977,7 +1073,8 @@ class MavApiClient(
                             passengerName = passengerName,
                             birthDate = birthDate,
                             ticketNumber = ticketNumber,
-                            items = mergedItems
+                            items = mergedItems,
+                            passHolderId = exR.passHolderId ?: vimR?.passHolderId ?: mergedPassHolder?.id
                         )
                     }
 
@@ -1026,7 +1123,8 @@ class MavApiClient(
                     birthDate = holder.birthDate,
                     ticketNumber = holder.id,
                     receiptId = holder.id,
-                    items = listOf(passItem)
+                    items = listOf(passItem),
+                    passHolderId = holder.id
                 )
                 orders.add(
                     0,
@@ -1237,10 +1335,19 @@ class MavApiClient(
     }
 
     suspend fun getPassHolder(session: MavSession, nevesitesAzonosito: String): MavPassHolder? {
+        val all = runCatching { getAllPassHolders(session) }.getOrNull().orEmpty()
+        val found = all.firstOrNull {
+            it.id == nevesitesAzonosito ||
+            it.hptId == nevesitesAzonosito ||
+            (nevesitesAzonosito.isNotBlank() && (it.id.contains(nevesitesAzonosito) || nevesitesAzonosito.contains(it.id)))
+        }
+        if (found != null) return found
+
+        val tokenToUse = getRawSamlToken(session.token.ifBlank { session.vimToken.orEmpty() })
         val requestJson = JSONObject().apply {
             put("FelhasznaloAzonosito", session.email)
             put("NevesitesAzonosito", nevesitesAzonosito)
-            put("Token", getRawSamlToken(session.vimToken ?: session.token))
+            put("Token", tokenToUse)
             put("Nyelv", "HU")
             put("UAID", session.uaid)
         }

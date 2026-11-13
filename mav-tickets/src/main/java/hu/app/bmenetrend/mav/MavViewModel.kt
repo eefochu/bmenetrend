@@ -48,6 +48,8 @@ data class TicketBarcodeData(
     val passengerName: String? = null,
     val birthDate: Long? = null,
     val passengerPhotoBase64: String? = null,
+    val passHolderNumber: String? = null,
+    val idCardNumber: String? = null,
     val bitmap: Bitmap? = null,
     val loading: Boolean = false,
     val error: String? = null,
@@ -264,6 +266,26 @@ class MavViewModel(
         passengerName: String?,
         birthDate: Long?
     ) {
+        showBarcode(
+            receiptId = receiptId,
+            ticketNumber = ticketNumber,
+            title = title,
+            isPass = isPass,
+            passengerName = passengerName,
+            birthDate = birthDate,
+            passHolderId = null
+        )
+    }
+
+    fun showBarcode(
+        receiptId: String,
+        ticketNumber: String?,
+        title: String,
+        isPass: Boolean,
+        passengerName: String?,
+        birthDate: Long?,
+        passHolderId: String?
+    ) {
         val passengers = repository.getPassengers()
         val matched = passengers.firstOrNull { p ->
             (receiptId.isNotBlank() && (p.id == receiptId || (p.businessId.isNotBlank() && p.businessId == receiptId))) ||
@@ -275,18 +297,55 @@ class MavViewModel(
             ))
         } ?: passengers.firstOrNull { !it.photoBase64.isNullOrBlank() } ?: passengers.firstOrNull()
 
-        val finalName = passengerName?.ifBlank { null } ?: matched?.name?.ifBlank { null }
-        val finalBirthDate = if (birthDate != null && birthDate > 0L) birthDate else matched?.birthDate
-        val passHolderPhoto = if (isPass) {
-            repository.getCachedPassHolder(receiptId)?.photoBase64
-                ?: ticketNumber?.let { repository.getCachedPassHolder(it)?.photoBase64 }
-                ?: (if (receiptId.contains("#")) repository.getCachedPassHolder(receiptId.substringAfterLast("#"))?.photoBase64 else null)
-        } else null
+        // Check if this ticket/pass is associated with an electronic pass holder
+        val passHolderCandidateIds = listOfNotNull(
+            passHolderId?.takeIf { it.isNotBlank() },
+            receiptId.takeIf { it.isNotBlank() },
+            ticketNumber?.takeIf { it.isNotBlank() },
+            if (receiptId.contains("#")) receiptId.substringAfterLast("#").takeIf { it.isNotBlank() } else null,
+            if (receiptId.contains("#")) receiptId.substringBefore("#").takeIf { it.isNotBlank() } else null
+        ).distinct()
 
-        val passengerPhoto = matched?.photoBase64
-            ?: passHolderPhoto
-            ?: passengers.firstOrNull { !it.photoBase64.isNullOrBlank() }?.photoBase64
-            ?: repository.getCachedUser()?.photoBase64
+        var cachedPassHolder: MavPassHolder? = null
+        if (isPass || !passHolderId.isNullOrBlank()) {
+            for (cid in passHolderCandidateIds) {
+                val h = repository.getCachedPassHolder(cid)
+                if (h != null) {
+                    cachedPassHolder = h
+                    break
+                }
+            }
+        }
+
+        val finalName: String?
+        val finalBirthDate: Long?
+        val finalPhoto: String?
+        val finalPassHolderNumber: String?
+        val finalIdCardNumber: String?
+
+        if (cachedPassHolder != null) {
+            finalName = cachedPassHolder.name ?: passengerName?.ifBlank { null } ?: matched?.name?.ifBlank { null }
+            finalBirthDate = cachedPassHolder.birthDate ?: (if (birthDate != null && birthDate > 0L) birthDate else matched?.birthDate)
+            finalPhoto = cachedPassHolder.photoBase64
+                ?: matched?.photoBase64
+                ?: repository.getCachedUser()?.photoBase64
+            finalPassHolderNumber = cachedPassHolder.id.ifBlank { passHolderId }
+            finalIdCardNumber = cachedPassHolder.idCardNumber
+        } else {
+            finalName = passengerName?.ifBlank { null } ?: matched?.name?.ifBlank { null }
+            finalBirthDate = if (birthDate != null && birthDate > 0L) birthDate else matched?.birthDate
+            val passHolderPhoto = if (isPass) {
+                repository.getCachedPassHolder(receiptId)?.photoBase64
+                    ?: ticketNumber?.let { repository.getCachedPassHolder(it)?.photoBase64 }
+                    ?: (if (receiptId.contains("#")) repository.getCachedPassHolder(receiptId.substringAfterLast("#"))?.photoBase64 else null)
+            } else null
+            finalPhoto = matched?.photoBase64
+                ?: passHolderPhoto
+                ?: passengers.firstOrNull { !it.photoBase64.isNullOrBlank() }?.photoBase64
+                ?: repository.getCachedUser()?.photoBase64
+            finalPassHolderNumber = passHolderId
+            finalIdCardNumber = null
+        }
 
         _barcodeData.value = TicketBarcodeData(
             receiptId = receiptId,
@@ -295,21 +354,25 @@ class MavViewModel(
             isPass = isPass,
             passengerName = finalName,
             birthDate = finalBirthDate,
-            passengerPhotoBase64 = passengerPhoto,
+            passengerPhotoBase64 = finalPhoto,
+            passHolderNumber = finalPassHolderNumber,
+            idCardNumber = finalIdCardNumber,
             loading = true
         )
         viewModelScope.launch {
             try {
-                // If passenger photo is not in cache yet, try loading pass holder if it is a pass
-                if (isPass && _barcodeData.value?.passengerPhotoBase64.isNullOrBlank()) {
-                    val holder = runCatching { repository.getPassHolder(receiptId) }.getOrNull()
-                        ?: ticketNumber?.let { runCatching { repository.getPassHolder(it) }.getOrNull() }
-                        ?: (if (receiptId.contains("#")) runCatching { repository.getPassHolder(receiptId.substringAfterLast("#")) }.getOrNull() else null)
-                    if (holder?.photoBase64 != null) {
+                // If this is a pass or has passholder ID, ensure pass holder details are loaded
+                if (isPass || !passHolderId.isNullOrBlank()) {
+                    val holder = passHolderCandidateIds.firstNotNullOfOrNull { cid ->
+                        runCatching { repository.getPassHolder(cid) }.getOrNull()
+                    }
+                    if (holder != null) {
                         _barcodeData.value = _barcodeData.value?.copy(
-                            passengerPhotoBase64 = holder.photoBase64,
-                            passengerName = _barcodeData.value?.passengerName ?: holder.name,
-                            birthDate = _barcodeData.value?.birthDate ?: holder.birthDate
+                            passengerPhotoBase64 = holder.photoBase64 ?: _barcodeData.value?.passengerPhotoBase64,
+                            passengerName = holder.name ?: _barcodeData.value?.passengerName,
+                            birthDate = holder.birthDate ?: _barcodeData.value?.birthDate,
+                            passHolderNumber = holder.id.ifBlank { _barcodeData.value?.passHolderNumber },
+                            idCardNumber = holder.idCardNumber ?: _barcodeData.value?.idCardNumber
                         )
                     }
                 }

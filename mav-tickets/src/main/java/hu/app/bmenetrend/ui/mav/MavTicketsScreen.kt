@@ -940,7 +940,7 @@ fun MavGoogleLoginDialog(
 private fun OrderTicketCard(
     order: MavOrder,
     isActiveTab: Boolean,
-    onShowBarcode: (receiptId: String, ticketNumber: String?, title: String, isPass: Boolean, passenger: String?, birthDate: Long?) -> Unit
+    onShowBarcode: (receiptId: String, ticketNumber: String?, title: String, isPass: Boolean, passenger: String?, birthDate: Long?, passHolderId: String?) -> Unit
 ) {
     val isPassOrder = order.deliveryMode == "E-Bérlet" || order.allItems.any { it.isPass } || order.passHolder != null
 
@@ -1002,6 +1002,7 @@ private fun OrderTicketCard(
 
             order.receipts.forEach { receipt ->
                 val isPass = isPassOrder || receipt.items.any { it.isPass }
+                val passHolderId = receipt.passHolderId ?: order.passHolder?.id
                 ReceiptItemView(
                     receipt = receipt,
                     isActiveTab = isActiveTab,
@@ -1013,7 +1014,8 @@ private fun OrderTicketCard(
                             title,
                             passFlag,
                             receipt.passengerName,
-                            receipt.birthDate
+                            receipt.birthDate,
+                            passHolderId
                         )
                     }
                 )
@@ -1248,7 +1250,7 @@ fun MavTicketDetailView(
 
             Spacer(Modifier.height(8.dp))
 
-            // 2. Passenger card: square selfie on the left, name & birth date on the right
+            // 2. Passenger / Electronic passholder info card
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1256,69 +1258,110 @@ fun MavTicketDetailView(
                 shape = cardShape,
                 color = cardColor
             ) {
-                Row(
+                val isElectronicPassHolder = !data.passHolderNumber.isNullOrBlank()
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 13.dp, vertical = 13.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(18.dp)
+                        .padding(horizontal = 14.dp, vertical = 14.dp)
                 ) {
-                    val passengerPhotoBitmap = remember(data.passengerPhotoBase64) { data.toPassengerPhotoBitmap() }
-                    val photoShape = RoundedCornerShape(10.dp)
-                    Box(
-                        modifier = Modifier
-                            .size(54.dp)
-                            .clip(photoShape)
-                            .background(Color(0xFF2C2D32)),
-                        contentAlignment = Alignment.Center
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        if (passengerPhotoBitmap != null) {
-                            Image(
-                                bitmap = passengerPhotoBitmap.asImageBitmap(),
-                                contentDescription = data.passengerName ?: "Utas fénykép",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
+                        val passengerPhotoBitmap = remember(data.passengerPhotoBase64) { data.toPassengerPhotoBitmap() }
+                        val photoShape = RoundedCornerShape(10.dp)
+                        val photoModifier = if (isElectronicPassHolder) {
+                            Modifier.size(width = 58.dp, height = 72.dp)
                         } else {
-                            Icon(
-                                imageVector = Icons.Rounded.Person,
-                                contentDescription = data.passengerName ?: "Utas fénykép",
-                                tint = Color(0xFF8E8E93),
-                                modifier = Modifier.size(30.dp)
+                            Modifier.size(54.dp)
+                        }
+                        Box(
+                            modifier = photoModifier
+                                .clip(photoShape)
+                                .background(Color(0xFF2C2D32)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (passengerPhotoBitmap != null) {
+                                Image(
+                                    bitmap = passengerPhotoBitmap.asImageBitmap(),
+                                    contentDescription = data.passengerName ?: "Utas fénykép",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Rounded.Person,
+                                    contentDescription = data.passengerName ?: "Utas fénykép",
+                                    tint = Color(0xFF8E8E93),
+                                    modifier = Modifier.size(30.dp)
+                                )
+                            }
+                        }
+
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            val baseName = data.passengerName?.ifBlank { null }
+                                ?: data.title
+                            val displayName = if (isElectronicPassHolder) {
+                                "$baseName (${data.passHolderNumber})"
+                            } else {
+                                baseName
+                            }
+                            Text(
+                                text = displayName,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
+
+                            val birthDateStr = remember(data.birthDate) {
+                                val b = data.birthDate ?: 0L
+                                if (b > 0L) {
+                                    DateTimeFormatter.ofPattern("yyyy.MM.dd.", Locale.getDefault())
+                                        .withZone(ZoneId.of("Europe/Budapest"))
+                                        .format(Instant.ofEpochMilli(b))
+                                } else {
+                                    null
+                                }
+                            }
+                            if (!birthDateStr.isNullOrBlank()) {
+                                Text(
+                                    text = birthDateStr,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color.White
+                                )
+                            }
+
+                            if (isElectronicPassHolder && !data.idCardNumber.isNullOrBlank()) {
+                                Text(
+                                    text = stringResource(R.string.mav_id_number, data.idCardNumber),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color.White
+                                )
+                            }
                         }
                     }
 
-                    Column(modifier = Modifier.weight(1f)) {
-                        val passengerName = data.passengerName?.ifBlank { null }
-                            ?: data.title
-                        Text(
-                            text = passengerName,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Medium,
-                            color = Color.White,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                    if (isElectronicPassHolder) {
+                        Spacer(Modifier.height(14.dp))
+                        HorizontalDivider(
+                            color = Color(0xFF2E3036),
+                            thickness = 1.dp
                         )
-
-                        val birthDateStr = remember(data.birthDate) {
-                            val b = data.birthDate ?: 0L
-                            if (b > 0L) {
-                                DateTimeFormatter.ofPattern("yyyy.MM.dd.", Locale.getDefault())
-                                    .withZone(ZoneId.of("Europe/Budapest"))
-                                    .format(Instant.ofEpochMilli(b))
-                            } else {
-                                null
-                            }
-                        }
-                        if (!birthDateStr.isNullOrBlank()) {
-                            Text(
-                                text = birthDateStr,
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Medium,
-                                color = Color.White
-                            )
-                        }
+                        Spacer(Modifier.height(14.dp))
+                        Text(
+                            text = stringResource(R.string.mav_electronic_passholder_number, data.passHolderNumber!!),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Normal,
+                            color = Color(0xFFD1D1D6)
+                        )
                     }
                 }
             }
