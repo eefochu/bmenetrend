@@ -141,9 +141,21 @@ class MavCacheStore(
             }
             if (receiptId.contains("#")) {
                 imagesObj.put(receiptId.substringAfterLast("#"), itemObj)
+                for (p in receiptId.split("#")) {
+                    val trimmed = p.trim()
+                    if (trimmed.isNotEmpty() && trimmed.all { it.isDigit() }) {
+                        imagesObj.put(trimmed, itemObj)
+                    }
+                }
             }
             if (image.receiptId.contains("#")) {
                 imagesObj.put(image.receiptId.substringAfterLast("#"), itemObj)
+                for (p in image.receiptId.split("#")) {
+                    val trimmed = p.trim()
+                    if (trimmed.isNotEmpty() && trimmed.all { it.isDigit() }) {
+                        imagesObj.put(trimmed, itemObj)
+                    }
+                }
             }
             writeRoot(root)
         }
@@ -159,6 +171,18 @@ class MavCacheStore(
             var itemObj = imagesObj.optJSONObject(receiptId)
             if (itemObj == null && receiptId.contains("#")) {
                 itemObj = imagesObj.optJSONObject(receiptId.substringAfterLast("#"))
+                if (itemObj == null) {
+                    for (p in receiptId.split("#")) {
+                        val trimmed = p.trim()
+                        if (trimmed.isNotEmpty() && trimmed.all { it.isDigit() }) {
+                            val cand = imagesObj.optJSONObject(trimmed)
+                            if (cand != null) {
+                                itemObj = cand
+                                break
+                            }
+                        }
+                    }
+                }
             }
             if (itemObj == null) {
                 val keys = imagesObj.keys()

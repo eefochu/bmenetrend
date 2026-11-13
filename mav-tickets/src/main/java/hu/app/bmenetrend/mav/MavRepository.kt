@@ -313,6 +313,10 @@ class MavRepository(
         return cacheStore.getPassHolder(id)
     }
 
+    fun getCachedTicketImage(receiptId: String): MavTicketImage? {
+        return cacheStore.getTicketImage(receiptId)
+    }
+
     fun getLastSyncTime(): Long {
         return cacheStore.getLastSyncTime()
     }
@@ -360,11 +364,17 @@ class MavRepository(
             !pastOrder.isValidNow
         }
 
-        // 5. Cache orders to disk. A completely empty answer while we have tickets cached is far
-        // more likely a server/session problem than every ticket vanishing, so don't persist it.
-        val hadCachedOrders = previousCache != null &&
-            (previousCache.first.isNotEmpty() || previousCache.second.isNotEmpty())
-        if (active.isEmpty() && past.isEmpty() && hadCachedOrders) {
+        // 5. Cache orders to disk.
+        // Safety guard: NEVER overwrite non-empty cached active orders with an empty list
+        // when network is unstable, mobile data bandwidth is exhausted, or server returned nothing!
+        val hadCachedActive = previousCache != null && previousCache.first.isNotEmpty()
+        val hadCachedPast = previousCache != null && previousCache.second.isNotEmpty()
+
+        if (active.isEmpty() && hadCachedActive) {
+            throw MavApiException("A MÁV szerver nem adott vissza aktív jegyeket, a mentett adatok maradnak.")
+        }
+
+        if (active.isEmpty() && past.isEmpty() && (hadCachedActive || hadCachedPast)) {
             throw MavApiException("A MÁV szerver nem adott vissza jegyeket, a mentett adatok maradnak.")
         }
         cacheStore.saveOrders(active, past)
@@ -430,6 +440,10 @@ class MavRepository(
         try {
             val orders = apiClient.getOrders(currentSession, validOnly)
             val existing = cacheStore.getOrders()
+            val hadCachedActive = existing != null && existing.first.isNotEmpty()
+            if (validOnly && orders.isEmpty() && hadCachedActive) {
+                return@withContext existing!!.first
+            }
             val activeOrders = if (validOnly) orders else (existing?.first ?: emptyList())
             val pastOrders = if (!validOnly) {
                 val activeOrderIds = activeOrders.map { it.orderId }.toSet()
@@ -438,7 +452,9 @@ class MavRepository(
             } else {
                 existing?.second ?: emptyList()
             }
-            cacheStore.saveOrders(activeOrders, pastOrders)
+            if (activeOrders.isNotEmpty() || !hadCachedActive) {
+                cacheStore.saveOrders(activeOrders, pastOrders)
+            }
             if (validOnly) activeOrders else pastOrders
         } catch (e: Exception) {
             val cached = cacheStore.getOrders()

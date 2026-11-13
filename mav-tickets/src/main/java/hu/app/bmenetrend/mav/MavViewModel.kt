@@ -347,6 +347,24 @@ class MavViewModel(
             finalIdCardNumber = null
         }
 
+        val candidates = buildList {
+            add(receiptId)
+            if (!ticketNumber.isNullOrBlank() && ticketNumber != receiptId) add(ticketNumber)
+            if (receiptId.contains("#")) {
+                for (p in receiptId.split("#")) {
+                    val trimmed = p.trim()
+                    if (trimmed.isNotEmpty() && trimmed.all { it.isDigit() } && trimmed !in this) {
+                        add(trimmed)
+                    }
+                }
+            }
+        }.distinct()
+
+        val cachedTicketImage = candidates.firstNotNullOfOrNull { cid ->
+            repository.getCachedTicketImage(cid)
+        }
+        val cachedBitmap = cachedTicketImage?.toBitmap()
+
         _barcodeData.value = TicketBarcodeData(
             receiptId = receiptId,
             ticketNumber = ticketNumber,
@@ -357,7 +375,8 @@ class MavViewModel(
             passengerPhotoBase64 = finalPhoto,
             passHolderNumber = finalPassHolderNumber,
             idCardNumber = finalIdCardNumber,
-            loading = true
+            bitmap = cachedBitmap,
+            loading = cachedBitmap == null
         )
         viewModelScope.launch {
             try {
@@ -377,49 +396,37 @@ class MavViewModel(
                     }
                 }
 
-                val candidates = buildList {
-                    add(receiptId)
-                    if (!ticketNumber.isNullOrBlank() && ticketNumber != receiptId) add(ticketNumber)
-                    if (receiptId.contains("#")) {
-                        for (p in receiptId.split("#")) {
-                            val trimmed = p.trim()
-                            if (trimmed.isNotEmpty() && trimmed.all { it.isDigit() } && trimmed !in this) {
-                                add(trimmed)
-                            }
-                        }
-                    }
-                }.distinct()
-
-                var ticketImage: MavTicketImage? = null
+                var ticketImage: MavTicketImage? = cachedTicketImage
                 var throttled = false
-                // MÁV refuses to hand out the barcode for ~30 s after a fresh email/password login
-                // ("próbálja meg ismét fél perc múlva"). Retry automatically instead of failing.
-                for (attempt in 0 until TICKET_IMAGE_MAX_ATTEMPTS) {
-                    throttled = false
-                    for (id in candidates) {
-                        ticketImage = try {
-                            repository.getTicketImage(id)
-                        } catch (e: MavTicketImageThrottledException) {
-                            throttled = true
-                            null
+                if (ticketImage == null) {
+                    for (attempt in 0 until TICKET_IMAGE_MAX_ATTEMPTS) {
+                        throttled = false
+                        for (id in candidates) {
+                            ticketImage = try {
+                                repository.getTicketImage(id)
+                            } catch (e: MavTicketImageThrottledException) {
+                                throttled = true
+                                null
+                            }
+                            if (ticketImage != null) break
                         }
-                        if (ticketImage != null) break
-                    }
-                    if (ticketImage != null || !throttled) break
-                    if (attempt < TICKET_IMAGE_MAX_ATTEMPTS - 1) {
-                        _barcodeData.value = _barcodeData.value?.copy(
-                            notice = getApplication<Application>().getString(hu.app.bmenetrend.mav.R.string.mav_barcode_wait_notice)
-                        )
-                        delay(TICKET_IMAGE_RETRY_DELAY_MS)
+                        if (ticketImage != null || !throttled) break
+                        if (attempt < TICKET_IMAGE_MAX_ATTEMPTS - 1) {
+                            _barcodeData.value = _barcodeData.value?.copy(
+                                notice = getApplication<Application>().getString(hu.app.bmenetrend.mav.R.string.mav_barcode_wait_notice)
+                            )
+                            delay(TICKET_IMAGE_RETRY_DELAY_MS)
+                        }
                     }
                 }
 
-                val bitmap = ticketImage?.toBitmap()
+                val bitmap = ticketImage?.toBitmap() ?: _barcodeData.value?.bitmap
                 if (bitmap != null) {
                     _barcodeData.value = _barcodeData.value?.copy(
                         bitmap = bitmap,
                         loading = false,
-                        notice = null
+                        notice = null,
+                        error = null
                     )
                 } else if (throttled) {
                     _barcodeData.value = _barcodeData.value?.copy(
@@ -440,10 +447,16 @@ class MavViewModel(
                     )
                 }
             } catch (e: Exception) {
-                _barcodeData.value = _barcodeData.value?.copy(
-                    loading = false,
-                    error = e.message ?: "Hiba a jegykép betöltésekor"
-                )
+                if (_barcodeData.value?.bitmap == null) {
+                    _barcodeData.value = _barcodeData.value?.copy(
+                        loading = false,
+                        error = e.message ?: "Hiba a jegykép betöltésekor"
+                    )
+                } else {
+                    _barcodeData.value = _barcodeData.value?.copy(
+                        loading = false
+                    )
+                }
             }
         }
     }

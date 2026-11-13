@@ -423,7 +423,7 @@ private fun MavHeader(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onRefresh, enabled = !isRefreshing) {
                     if (isRefreshing) {
-                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        CircularWavyProgressIndicator(modifier = Modifier.size(20.dp))
                     } else {
                         Icon(Icons.Rounded.Refresh, contentDescription = stringResource(R.string.mav_refresh))
                     }
@@ -749,11 +749,10 @@ fun MavGoogleLoginDialog(
                             modifier = Modifier.weight(1f)
                         )
                         if (isLoading) {
-                            CircularProgressIndicator(
+                            CircularWavyProgressIndicator(
                                 modifier = Modifier
                                     .padding(end = 12.dp)
-                                    .size(20.dp),
-                                strokeWidth = 2.dp
+                                    .size(20.dp)
                             )
                         }
                     }
