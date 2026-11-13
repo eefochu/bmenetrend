@@ -402,8 +402,8 @@ class MavRepository(
                     }
                 }
                 val receiptId = receipt.receiptId
-                if (receiptId.isNotBlank()) {
-                    runCatching {
+                if (receiptId.isNotBlank() && cacheStore.getTicketImage(receiptId) == null) {
+                    try {
                         val img = apiClient.getTicketImage(currentSession, receiptId)
                         if (img != null) {
                             cacheStore.saveTicketImage(receiptId, img)
@@ -414,6 +414,9 @@ class MavRepository(
                                 if (tNum.isNotBlank()) cacheStore.saveTicketImage(tNum, img)
                             }
                         }
+                    } catch (e: MavTicketImageThrottledException) {
+                        break
+                    } catch (_: Throwable) {
                     }
                 }
             }

@@ -379,12 +379,16 @@ class MavViewModel(
 
                 val candidates = buildList {
                     add(receiptId)
-                    if (!ticketNumber.isNullOrBlank()) add(ticketNumber)
+                    if (!ticketNumber.isNullOrBlank() && ticketNumber != receiptId) add(ticketNumber)
                     if (receiptId.contains("#")) {
-                        add(receiptId.substringAfterLast("#"))
-                        add(receiptId.substringBefore("#"))
+                        for (p in receiptId.split("#")) {
+                            val trimmed = p.trim()
+                            if (trimmed.isNotEmpty() && trimmed.all { it.isDigit() } && trimmed !in this) {
+                                add(trimmed)
+                            }
+                        }
                     }
-                }.filter { it.isNotBlank() }.distinct()
+                }.distinct()
 
                 var ticketImage: MavTicketImage? = null
                 var throttled = false
@@ -446,7 +450,7 @@ class MavViewModel(
 
     private companion object {
         const val TICKET_IMAGE_MAX_ATTEMPTS = 5
-        const val TICKET_IMAGE_RETRY_DELAY_MS = 10_000L
+        const val TICKET_IMAGE_RETRY_DELAY_MS = 6_000L
     }
 
     fun dismissBarcode() {

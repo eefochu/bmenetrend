@@ -174,6 +174,8 @@ class MavApiClient(
         // 1. First, try https://jegy-a.mav.hu/IK_API_PROD/api/ProfileApi/GetUserToken
         val ikResult = runCatching {
             val reqBody = JSONObject().apply {
+                put("UserEmail", trimmedEmail)
+                put("Password", password)
                 put("userEmail", trimmedEmail)
                 put("password", password)
             }.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
@@ -193,7 +195,8 @@ class MavApiClient(
         }.getOrNull()
 
         val ikUserData = ikResult?.optJSONObject("userData")
-        val ikToken = ikUserData?.optString("userTokenXml", "").orEmpty().trim()
+        val ikToken = (ikUserData?.optString("userTokenXml", "")?.ifBlank { null }
+            ?: ikResult?.optString("userTokenXml", "")).orEmpty().trim()
 
         // If modern IK login succeeded, return immediately.
         // Calling VIM Bejelentkezes immediately after GetUserToken triggers MÁV's WCF anti-hammering
@@ -694,8 +697,7 @@ class MavApiClient(
         // 1. First, check HPT datas from IK_API_PROD / Profile
         val hptItems = runCatching { fetchHptDatas(session) }.getOrNull().orEmpty()
         for (item in hptItems) {
-            val isPassHolder = item.dataType.equals("BERLETTOK", ignoreCase = true) ||
-                (item.businessId.isNotBlank() && item.businessId != item.id)
+            val isPassHolder = item.dataType.equals("BERLETTOK", ignoreCase = true)
             if (isPassHolder) {
                 val passHolderId = item.businessId.ifBlank { item.id }.trim()
                 if (passHolderId.isNotBlank() && passHolderId !in seenIds) {
@@ -1098,48 +1100,6 @@ class MavApiClient(
                 ?: MavApiException("A MÁV szerver nem érhető el")
         }
 
-        // 3. Check BerletTokok to make sure any standalone passes are listed!
-        val passHolders = runCatching { getAllPassHolders(session) }.getOrNull().orEmpty()
-        val existingReceiptIds = orders.flatMap { it.receipts }.map { it.receiptId }.toSet()
-        val existingPassIds = orders.mapNotNull { it.passHolder?.id }.toSet()
-        val nowMs = System.currentTimeMillis()
-
-        for (holder in passHolders) {
-            val isCurrent = holder.validTo == 0L || holder.validTo >= nowMs
-            if (validOnly != isCurrent) continue
-            if (holder.id.isNotBlank() && holder.id !in existingPassIds && holder.id !in existingReceiptIds && holder.id !in seenOrderIds) {
-                val passItem = MavTicketItem(
-                    id = holder.id,
-                    name = holder.hptId ?: "MÁV Bérlet",
-                    discount = holder.idCardNumber?.let { "Okmány: $it" },
-                    validFrom = 0L,
-                    validTo = holder.validTo,
-                    price = 0,
-                    isPass = true,
-                    status = holder.status ?: "Érvényes"
-                )
-                val receipt = MavTicketReceipt(
-                    passengerName = holder.name,
-                    birthDate = holder.birthDate,
-                    ticketNumber = holder.id,
-                    receiptId = holder.id,
-                    items = listOf(passItem),
-                    passHolderId = holder.id
-                )
-                orders.add(
-                    0,
-                    MavOrder(
-                        orderId = holder.id,
-                        purchaseDate = 0L,
-                        deliveryMode = "E-Bérlet",
-                        passHolder = MavPassHolderSummary(holder.hptId, holder.id, holder.version),
-                        receipts = listOf(receipt)
-                    )
-                )
-                seenOrderIds.add(holder.id)
-            }
-        }
-
         return orders
     }
 
@@ -1165,10 +1125,12 @@ class MavApiClient(
         val candidateIds = mutableListOf<String>()
         candidateIds.add(receiptId)
         if (receiptId.contains("#")) {
-            val after = receiptId.substringAfterLast("#").trim()
-            val before = receiptId.substringBefore("#").trim()
-            if (after.isNotEmpty() && after !in candidateIds) candidateIds.add(after)
-            if (before.isNotEmpty() && before !in candidateIds) candidateIds.add(before)
+            for (p in receiptId.split("#")) {
+                val trimmed = p.trim()
+                if (trimmed.isNotEmpty() && trimmed.all { it.isDigit() } && trimmed !in candidateIds) {
+                    candidateIds.add(trimmed)
+                }
+            }
         }
 
         // 1. If we have a token for IK_API_PROD, check GetPreviousPurchaseDetails

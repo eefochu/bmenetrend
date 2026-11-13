@@ -39,8 +39,12 @@ class MavApiClientTest {
             }
         """.trimIndent()
 
+        var capturedGetUserTokenBody = ""
         val client = createMockClient { req ->
             if (req.url.encodedPath.contains("GetUserToken")) {
+                val buf = okio.Buffer()
+                req.body?.writeTo(buf)
+                capturedGetUserTokenBody = buf.readUtf8()
                 jsonResponse(req, mockJson)
             } else {
                 jsonResponse(req, "{}", 404)
@@ -54,6 +58,8 @@ class MavApiClientTest {
         assertEquals("mock_saml_token_xyz", session.token)
         assertEquals("uaid_123456789012345678901234", session.uaid)
         assertNull(session.vimToken)
+        assertTrue(capturedGetUserTokenBody.contains("UserEmail"))
+        assertTrue(capturedGetUserTokenBody.contains("Password"))
     }
 
     @Test
@@ -668,5 +674,47 @@ class MavApiClientTest {
         assertEquals(1310594400000L, passHolder.birthDate)
         assertEquals("passholder_selfie_b64", passHolder.photoBase64)
         assertEquals("1258875960", passHolder.idCardNumber)
+    }
+    @Test
+    fun getOrdersDoesNotIncludeStandalonePassHoldersAsOrders() = runBlocking {
+        val hptJson = """
+            {
+                "hptData": [
+                    {
+                        "id": "7270388",
+                        "dataType": "IK_PROFIL",
+                        "name": "Profile Picture Passenger",
+                        "nevesitesUzletiAzonosito": "1023745155"
+                    },
+                    {
+                        "id": "7265084",
+                        "dataType": "MENTETT_UTAS",
+                        "name": "Kókai Balázs",
+                        "nevesitesUzletiAzonosito": "1023738018"
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        val client = createMockClient { req ->
+            if (req.url.encodedPath.contains("GetPreviousPurchases")) {
+                jsonResponse(req, """{"previousPurchases":[]}""")
+            } else if (req.url.encodedPath.contains("MegrendelesKereses")) {
+                jsonResponse(req, """{"Megrendelesek":[]}""")
+            } else if (req.url.encodedPath.contains("GetUserHPTDatas")) {
+                jsonResponse(req, hptJson)
+            } else if (req.url.encodedPath.contains("BerletTokLekeres")) {
+                jsonResponse(req, """{"BerletTokok":[]}""")
+            } else {
+                jsonResponse(req, "{}", 404)
+            }
+        }
+
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
+        val session = MavSession("test@example.com", "tok", "uaid")
+        val orders = api.getOrders(session, validOnly = true)
+
+        // Pass holders must not be synthesized as fake ticket orders!
+        assertTrue("Orders list must be empty when no actual tickets are returned", orders.isEmpty())
     }
 }
