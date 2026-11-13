@@ -7,6 +7,7 @@ import android.util.Base64
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -49,7 +50,9 @@ data class TicketBarcodeData(
     val passengerPhotoBase64: String? = null,
     val bitmap: Bitmap? = null,
     val loading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    /** Extra explanation shown under the loading indicator (e.g. while waiting for MÁV to allow the download). */
+    val notice: String? = null
 ) {
     fun toPassengerPhotoBitmap(): Bitmap? {
         val raw = passengerPhotoBase64 ?: return null
@@ -117,6 +120,24 @@ class MavViewModel(
         }
     }
 
+    fun loginWithGoogle(code: String) {
+        if (code.isBlank()) return
+        viewModelScope.launch {
+            _loginState.value = LoginUiState.Loading
+            try {
+                repository.loginWithGoogle(code.trim())
+                _loginState.value = LoginUiState.Idle
+                loadTickets()
+            } catch (e: Exception) {
+                _loginState.value = LoginUiState.Error(e.message ?: "Google bejelentkezési hiba történt")
+            }
+        }
+    }
+
+    fun setLoginError(message: String) {
+        _loginState.value = LoginUiState.Error(message)
+    }
+
     fun onWebLoginSuccess(session: MavSession) {
         viewModelScope.launch {
             _loginState.value = LoginUiState.Idle
@@ -130,8 +151,9 @@ class MavViewModel(
 
     fun logout() {
         viewModelScope.launch {
+            loadTicketsJob?.cancel()
             repository.logout()
-            _ticketsState.value = TicketsUiState.Success(emptyList<MavOrder>(), emptyList<MavOrder>())
+            _ticketsState.value = TicketsUiState.Loading
             _barcodeData.value = null
         }
     }
@@ -139,9 +161,14 @@ class MavViewModel(
     fun loadTickets(forceRefresh: Boolean = false) {
         loadTicketsJob?.cancel()
         loadTicketsJob = viewModelScope.launch {
-            if (forceRefresh) {
+            val current = _ticketsState.value
+            val hasVisibleTickets = current is TicketsUiState.Success &&
+                (current.activeOrders.isNotEmpty() || current.pastOrders.isNotEmpty())
+            if (forceRefresh && hasVisibleTickets) {
                 _isRefreshing.value = true
-            } else if (_ticketsState.value !is TicketsUiState.Success) {
+            } else if (!hasVisibleTickets) {
+                // Also covers the state left behind by logout (an empty Success): without this the
+                // next login showed "no tickets" with no loading indicator until the sync finished.
                 _ticketsState.value = TicketsUiState.Loading
             }
 
@@ -287,23 +314,56 @@ class MavViewModel(
                     }
                 }
 
-                var ticketImage = repository.getTicketImage(receiptId)
-                if (ticketImage == null && !ticketNumber.isNullOrBlank()) {
-                    ticketImage = repository.getTicketImage(ticketNumber)
+                val candidates = buildList {
+                    add(receiptId)
+                    if (!ticketNumber.isNullOrBlank()) add(ticketNumber)
+                    if (receiptId.contains("#")) {
+                        add(receiptId.substringAfterLast("#"))
+                        add(receiptId.substringBefore("#"))
+                    }
+                }.filter { it.isNotBlank() }.distinct()
+
+                var ticketImage: MavTicketImage? = null
+                var throttled = false
+                // MÁV refuses to hand out the barcode for ~30 s after a fresh email/password login
+                // ("próbálja meg ismét fél perc múlva"). Retry automatically instead of failing.
+                for (attempt in 0 until TICKET_IMAGE_MAX_ATTEMPTS) {
+                    throttled = false
+                    for (id in candidates) {
+                        ticketImage = try {
+                            repository.getTicketImage(id)
+                        } catch (e: MavTicketImageThrottledException) {
+                            throttled = true
+                            null
+                        }
+                        if (ticketImage != null) break
+                    }
+                    if (ticketImage != null || !throttled) break
+                    if (attempt < TICKET_IMAGE_MAX_ATTEMPTS - 1) {
+                        _barcodeData.value = _barcodeData.value?.copy(
+                            notice = getApplication<Application>().getString(hu.app.bmenetrend.mav.R.string.mav_barcode_wait_notice)
+                        )
+                        delay(TICKET_IMAGE_RETRY_DELAY_MS)
+                    }
                 }
-                if (ticketImage == null && receiptId.contains("#")) {
-                    ticketImage = repository.getTicketImage(receiptId.substringAfterLast("#"))
-                }
+
                 val bitmap = ticketImage?.toBitmap()
                 if (bitmap != null) {
                     _barcodeData.value = _barcodeData.value?.copy(
                         bitmap = bitmap,
-                        loading = false
+                        loading = false,
+                        notice = null
+                    )
+                } else if (throttled) {
+                    _barcodeData.value = _barcodeData.value?.copy(
+                        loading = false,
+                        notice = null,
+                        error = getApplication<Application>().getString(hu.app.bmenetrend.mav.R.string.mav_barcode_throttled)
                     )
                 } else {
                     val session = repository.session.value
-                    val errorMsg = if (session != null && session.vimToken.isNullOrBlank()) {
-                        "A jegykép betöltéséhez kérjük jelentkezzen ki és be újra a frissítés után."
+                    val errorMsg = if (session != null && session.vimToken.isNullOrBlank() && session.token.isBlank()) {
+                        "A jegykép betöltéséhez kérjük jelentkezzen be újra."
                     } else {
                         "A jegykép / vonalkód nem érhető el"
                     }
@@ -319,6 +379,11 @@ class MavViewModel(
                 )
             }
         }
+    }
+
+    private companion object {
+        const val TICKET_IMAGE_MAX_ATTEMPTS = 5
+        const val TICKET_IMAGE_RETRY_DELAY_MS = 10_000L
     }
 
     fun dismissBarcode() {

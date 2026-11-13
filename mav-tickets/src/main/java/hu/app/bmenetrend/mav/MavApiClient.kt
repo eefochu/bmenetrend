@@ -12,14 +12,22 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-class MavApiException(val errorMessage: String, val statusCode: Int = 0) : IOException(errorMessage) {
+open class MavApiException(val errorMessage: String, val statusCode: Int = 0) : IOException(errorMessage) {
     /** True when the server rejected our stored token (session expired / invalid). */
     val isAuthError: Boolean get() = statusCode == 401 || statusCode == 403
 }
+
+/**
+ * VIM refused to hand out the ticket image yet ("Kérjük, próbálja meg ismét fél perc múlva.").
+ * This happens for roughly half a minute after a fresh email/password login: the brand-new VIM
+ * token is not accepted by GetJegykep until MÁV's backend has propagated it.
+ */
+class MavTicketImageThrottledException(message: String) : MavApiException(message, 429)
 
 class MavApiClient(
     private val client: OkHttpClient = defaultClient(),
@@ -46,6 +54,49 @@ class MavApiClient(
         }
     }
 
+    internal fun getRawSamlToken(token: String): String {
+        val clean = token.trim()
+        if (clean.isEmpty()) return ""
+        if (clean.startsWith("<")) return clean
+        val cleanBase64 = clean.replace("\r", "").replace("\n", "")
+        return try {
+            val bytes = try {
+                java.util.Base64.getDecoder().decode(cleanBase64)
+            } catch (e: Throwable) {
+                try {
+                    android.util.Base64.decode(cleanBase64, android.util.Base64.DEFAULT)
+                } catch (e2: Throwable) {
+                    null
+                }
+            }
+            if (bytes != null) {
+                val decoded = String(bytes, Charsets.UTF_8).trim()
+                if (decoded.startsWith("<")) decoded else clean
+            } else {
+                clean
+            }
+        } catch (t: Throwable) {
+            clean
+        }
+    }
+
+    private fun parseJsonBody(bodyString: String): JSONObject {
+        val trimmed = bodyString.trim()
+        if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+            return JSONObject(trimmed)
+        }
+        if (trimmed.startsWith(""") && trimmed.endsWith(""") && trimmed.length >= 2) {
+            val unquoted = runCatching {
+                org.json.JSONTokener(trimmed).nextValue() as? String
+            }.getOrNull() ?: trimmed.substring(1, trimmed.length - 1)
+            val inner = unquoted.trim()
+            if (inner.startsWith("{") || inner.startsWith("[")) {
+                return JSONObject(inner)
+            }
+        }
+        return JSONObject()
+    }
+
     private suspend fun executeJsonRequest(req: Request): JSONObject {
         return suspendCancellableCoroutine { continuation ->
             val call = client.newCall(req)
@@ -58,15 +109,19 @@ class MavApiClient(
                 override fun onResponse(call: Call, response: Response) {
                     try {
                         val bodyString = response.use { it.body?.string().orEmpty().trim() }
+                        val parsedJson = runCatching { parseJsonBody(bodyString) }.getOrDefault(JSONObject())
                         if (!response.isSuccessful) {
-                            throw MavApiException("MÁV API hiba: HTTP ${response.code}", response.code)
+                            val serverMsg = parsedJson.optString(
+                                "errorMessage",
+                                parsedJson.optString("message", parsedJson.optString("error", ""))
+                            ).ifBlank {
+                                if (bodyString.isNotBlank() && !bodyString.startsWith("<")) {
+                                    bodyString.trim('"')
+                                } else null
+                            }
+                            throw MavApiException(serverMsg ?: "MÁV API hiba: HTTP ${response.code}", response.code)
                         }
-                        val json = if (bodyString.startsWith("{") || bodyString.startsWith("[")) {
-                            JSONObject(bodyString)
-                        } else {
-                            JSONObject()
-                        }
-                        if (continuation.isActive) continuation.resume(json)
+                        if (continuation.isActive) continuation.resume(parsedJson)
                     } catch (e: Exception) {
                         if (continuation.isActive) continuation.resumeWithException(e)
                     }
@@ -92,7 +147,7 @@ class MavApiClient(
                 .addHeader("Origin", "https://jegy.mav.hu")
                 .addHeader("Referer", "https://jegy.mav.hu/")
                 .addHeader("Language", "hu")
-                .addHeader("User-Agent", "MAVApp/2.6.15-prod (hu.mav.emmapp; build: 950; Android 14)")
+                .addHeader("User-Agent", MAV_APP_USER_AGENT)
                 .post(reqBody)
                 .build()
 
@@ -166,6 +221,88 @@ class MavApiClient(
         throw MavApiException("Bejelentkezés sikertelen. Kérjük ellenőrizze az adatokat!")
     }
 
+    suspend fun loginWithGoogleCode(code: String, uaid: String): MavSession {
+        val cleanCode = code.trim()
+
+        val reqBodyJson = JSONObject().apply {
+            put("provider", "GOOGLE")
+            put("socialLoginOneTimeCode", cleanCode)
+            put("allowConnectoToJeUser", true)
+            put("allowCreateJeUser", false)
+            put("allowNonValidatedConnectoToJeUser", true)
+            put("firstName", JSONObject.NULL)
+            put("lastName", JSONObject.NULL)
+            put("socialClientId", GOOGLE_CLIENT_ID)
+        }
+        val requestBody = reqBodyJson.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
+
+        val request = Request.Builder()
+            .url("https://jegy-a.mav.hu/IK_API_PROD/api/SocialLoginApi/SocialLogin")
+            .addHeader("Accept", "application/json")
+            .addHeader("Content-Type", "application/json; charset=utf-8")
+            .addHeader("Origin", "https://jegy.mav.hu")
+            .addHeader("Referer", "https://jegy.mav.hu/")
+            .addHeader("Language", "hu")
+            .addHeader("User-Agent", MAV_APP_USER_AGENT)
+            .post(requestBody)
+            .build()
+
+        val responseJson = try {
+            executeJsonRequest(request)
+        } catch (e: MavApiException) {
+            val msg = when {
+                e.statusCode == 401 || e.statusCode == 403 || e.statusCode == 500 || e.errorMessage.contains("OSB", ignoreCase = true) ->
+                    "Érvénytelen vagy lejárt Google azonosító. Kérjük próbálja újra!"
+                e.errorMessage.isNotBlank() && !e.errorMessage.startsWith("MÁV API hiba") ->
+                    e.errorMessage
+                else -> "A Google azonosítás sikertelen. Kérjük próbálja újra!"
+            }
+            throw MavApiException(msg, e.statusCode)
+        }
+
+        val token = responseJson.optString(
+            "userTokenXml",
+            responseJson.optString("refreshToken", responseJson.optString("token", responseJson.optString("jwtToken", "")))
+        ).trim()
+
+        if (token.isEmpty()) {
+            val errorMsg = responseJson.optString(
+                "errorMessage",
+                responseJson.optString("message", responseJson.optString("error", "A Google bejelentkezés sikertelen"))
+            )
+            throw MavApiException(errorMsg)
+        }
+
+        val email = responseJson.optString(
+            "email",
+            responseJson.optString("loginEmail", responseJson.optString("userEmail", ""))
+        ).trim()
+        val firstName = responseJson.optString("firstName", responseJson.optString("keresztNev", "")).trim()
+        val lastName = responseJson.optString("lastName", responseJson.optString("vezetekNev", "")).trim()
+        val regId = responseJson.optString(
+            "registrationId",
+            responseJson.optString("regisztraciosAzonosito", responseJson.optString("userGuid", ""))
+        ).trim()
+
+        val initialUser = if (email.isNotEmpty() || firstName.isNotEmpty() || lastName.isNotEmpty()) {
+            MavUser(
+                email = email,
+                firstName = firstName,
+                lastName = lastName,
+                regId = regId
+            )
+        } else null
+
+        return MavSession(
+            email = email,
+            token = token,
+            vimToken = null,
+            uaid = uaid,
+            expiresAt = System.currentTimeMillis() / 1000L + 86400 * 30L,
+            user = initialUser
+        )
+    }
+
     suspend fun getUserData(session: MavSession): MavUser {
         val safeToken = getSafeTokenHeader(session.token)
         var email = session.email
@@ -191,7 +328,8 @@ class MavApiClient(
                     .addHeader("Referer", "https://jegy.mav.hu/")
                     .addHeader("Language", "hu")
                     .addHeader("UserTokenXml", safeToken)
-                    .addHeader("User-Agent", "MAVApp/2.6.15-prod (hu.mav.emmapp; build: 950; Android 14)")
+                    .addHeader("Authorization", "Bearer $safeToken")
+                    .addHeader("User-Agent", MAV_APP_USER_AGENT)
                     .post(reqBody)
                     .build()
 
@@ -217,7 +355,7 @@ class MavApiClient(
                 val requestJson = JSONObject().apply {
                     put("FelhasznaloAzonosito", session.email)
                     put("Nyelv", "HU")
-                    put("Token", session.token)
+                    put("Token", getRawSamlToken(session.vimToken ?: session.token))
                     put("UAID", session.uaid)
                 }
                 val response = postJson("GetFelhasznaloAdat", requestJson)
@@ -355,8 +493,8 @@ class MavApiClient(
                                 addHeader("Authorization", "Bearer $safeToken")
                             }
                         }
-                        .addHeader("je-api-key", "232AC6FE-46BE-479B-894D-BFC96E548945")
-                        .addHeader("User-Agent", "MAVApp/2.6.15-prod (hu.mav.emmapp; build: 950; Android 14)")
+                        .addHeader("je-api-key", MAV_JE_API_KEY)
+                        .addHeader("User-Agent", MAV_APP_USER_AGENT)
                         .post(reqBody)
                         .build()
 
@@ -509,7 +647,7 @@ class MavApiClient(
             put("FelhasznaloAzonosito", session.email)
             put("NevesitesAzonosito", "")
             put("Nyelv", "HU")
-            put("Token", session.vimToken ?: session.token)
+            put("Token", getRawSamlToken(session.vimToken ?: session.token))
             put("UAID", session.uaid)
         }
         val response = runCatching { postJson("BerletTokLekeres", requestJson) }.getOrNull() ?: return emptyList()
@@ -581,7 +719,8 @@ class MavApiClient(
                     .addHeader("Referer", "https://jegy.mav.hu/")
                     .addHeader("Language", "hu")
                     .addHeader("UserTokenXml", safeToken)
-                    .addHeader("User-Agent", "MAVApp/2.6.15-prod (hu.mav.emmapp; build: 950; Android 14)")
+                    .addHeader("Authorization", "Bearer $safeToken")
+                    .addHeader("User-Agent", MAV_APP_USER_AGENT)
                     .post(reqBody)
                     .build()
 
@@ -642,12 +781,13 @@ class MavApiClient(
             val requestJson = JSONObject().apply {
                 put("FelhasznaloAzonosito", session.email)
                 put("Ervenyes", validOnly)
-                put("Token", session.vimToken ?: session.token)
+                put("Token", getRawSamlToken(session.vimToken ?: session.token))
                 put("Nyelv", "HU")
                 put("UAID", session.uaid)
             }
             val response = postJson("MegrendelesKereses", requestJson)
             anyBackendReached = true
+
             val ordersArray = response.optJSONArray("MegrendelesLista")
                 ?: response.optJSONArray("Megrendelesek")
                 ?: JSONArray()
@@ -907,61 +1047,146 @@ class MavApiClient(
     }
 
     suspend fun getTicketImage(session: MavSession, receiptId: String): MavTicketImage? {
+        val attempt = JegykepAttempt()
+        val image = getTicketImageInternal(session, receiptId, attempt)
+        if (image == null && attempt.throttleMessage != null) {
+            throw MavTicketImageThrottledException(attempt.throttleMessage!!)
+        }
+        return image
+    }
+
+    private class JegykepAttempt {
+        var throttleMessage: String? = null
+    }
+
+    private suspend fun getTicketImageInternal(
+        session: MavSession,
+        receiptId: String,
+        attempt: JegykepAttempt
+    ): MavTicketImage? {
         val safeToken = getSafeTokenHeader(session.token)
-
-        // 1. If this is an IK_API_PROD purchase (e.g. contains #CSCSAZON# or ODAUTI)
-        if (receiptId.contains("#") && safeToken.isNotBlank()) {
-            val result = runCatching {
-                val detBody = JSONObject().apply {
-                    put("userEmail", session.email)
-                    put("id", receiptId)
-                }.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
-
-                val detReq = Request.Builder()
-                    .url("https://jegy-a.mav.hu/IK_API_PROD/api/ProfileApi/GetPreviousPurchaseDetails")
-                    .addHeader("Accept", "application/json")
-                    .addHeader("UserSessionId", session.uaid.ifBlank { java.util.UUID.randomUUID().toString() })
-                    .addHeader("Content-Type", "application/json; charset=utf-8")
-                    .addHeader("Origin", "https://jegy.mav.hu")
-                    .addHeader("Referer", "https://jegy.mav.hu/")
-                    .addHeader("Language", "hu")
-                    .addHeader("UserTokenXml", safeToken)
-                    .addHeader("User-Agent", "MAVApp/2.6.15-prod (hu.mav.emmapp; build: 950; Android 14)")
-                    .post(detBody)
-                    .build()
-
-                val detRes = executeJsonRequest(detReq)
-                val prevDetails = detRes.optJSONObject("previousPurchaseDetails") ?: detRes
-                val ticketDatas = prevDetails.optJSONArray("ticketDatas")
-                if (ticketDatas != null && ticketDatas.length() > 0) {
-                    val td = ticketDatas.getJSONObject(0)
-                    val bizTechId = td.optString("bizonylatTechnikaiAzonosito", "").trim()
-                    val jegySorszam = td.optString("jegySorszam", "").trim().ifBlank { null }
-                    if (bizTechId.isNotBlank()) {
-                        val vimImg = fetchVimTicketImage(session, bizTechId, jegySorszam, receiptId)
-                        if (vimImg != null) return@runCatching vimImg
-                    }
-                }
-
-                null
-            }.getOrNull()
-            if (result != null) return result
+        val candidateIds = mutableListOf<String>()
+        candidateIds.add(receiptId)
+        if (receiptId.contains("#")) {
+            val after = receiptId.substringAfterLast("#").trim()
+            val before = receiptId.substringBefore("#").trim()
+            if (after.isNotEmpty() && after !in candidateIds) candidateIds.add(after)
+            if (before.isNotEmpty() && before !in candidateIds) candidateIds.add(before)
         }
 
-        // 2. Direct / Fallback to VIM GetJegykep
-        return fetchVimTicketImage(session, receiptId, null, receiptId)
+        // 1. If we have a token for IK_API_PROD, check GetPreviousPurchaseDetails
+        // to resolve bizonylatTechnikaiAzonosito and jegySorszam from ticketDatas
+        if (safeToken.isNotBlank()) {
+            for (cid in candidateIds) {
+                val detRes = runCatching { fetchPreviousPurchaseDetails(session, safeToken, cid) }.getOrNull()
+                if (detRes != null) {
+                    val prevDetails = detRes.optJSONObject("previousPurchaseDetails") ?: detRes
+                    val ticketDatas = prevDetails.optJSONArray("ticketDatas")
+                        ?: prevDetails.optJSONArray("tickets")
+                        ?: detRes.optJSONArray("ticketDatas")
+
+                    if (ticketDatas != null && ticketDatas.length() > 0) {
+                        for (i in 0 until ticketDatas.length()) {
+                            val td = ticketDatas.optJSONObject(i) ?: continue
+                            val bizTechId = td.optString("bizonylatTechnikaiAzonosito", "").trim()
+                            val jegySorszam = td.optString("jegySorszam", "").trim().ifBlank { null }
+                            if (bizTechId.isNotBlank()) {
+                                val vimImg = fetchVimTicketImage(session, bizTechId, jegySorszam, receiptId, attempt)
+                                if (vimImg != null) return vimImg
+                            }
+                            if (jegySorszam != null) {
+                                val vimImg = fetchVimTicketImage(session, jegySorszam, jegySorszam, receiptId, attempt)
+                                if (vimImg != null) return vimImg
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. Direct VIM GetJegykep lookup with each candidate ID
+        // (works directly when receiptId is already a BizonylatAzonosito or JegySorszam)
+        for (cid in candidateIds) {
+            val directImg = fetchVimTicketImage(session, cid, null, receiptId, attempt)
+            if (directImg != null) return directImg
+        }
+
+        return null
+    }
+
+    private suspend fun fetchPreviousPurchaseDetails(
+        session: MavSession,
+        safeToken: String,
+        purchaseId: String
+    ): JSONObject? {
+        val baseBuilder = Request.Builder()
+            .url("https://jegy-a.mav.hu/IK_API_PROD/api/ProfileApi/GetPreviousPurchaseDetails")
+            .addHeader("Accept", "application/json")
+            .addHeader("UserSessionId", session.uaid.ifBlank { UUID.randomUUID().toString() })
+            .addHeader("Content-Type", "application/json; charset=utf-8")
+            .addHeader("Origin", "https://jegy.mav.hu")
+            .addHeader("Referer", "https://jegy.mav.hu/")
+            .addHeader("Language", "hu")
+            .addHeader("UserTokenXml", safeToken)
+            .addHeader("Authorization", "Bearer $safeToken")
+            .addHeader("User-Agent", MAV_APP_USER_AGENT)
+
+        val flatBody = JSONObject().apply {
+            put("userEmail", session.email)
+            put("id", purchaseId)
+        }.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
+
+        var res = runCatching { executeJsonRequest(baseBuilder.post(flatBody).build()) }.getOrNull()
+
+        if (res == null || (res.optJSONObject("previousPurchaseDetails") == null && res.opt("financialDatas") == null)) {
+            val wrappedBody = JSONObject().apply {
+                val reqModel = JSONObject().apply {
+                    put("userEmail", session.email)
+                    put("id", purchaseId)
+                }
+                put("requestModel", reqModel)
+            }.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
+
+            val wrappedRes = runCatching { executeJsonRequest(baseBuilder.post(wrappedBody).build()) }.getOrNull()
+            if (wrappedRes != null) res = wrappedRes
+        }
+
+        return res
     }
 
     private suspend fun fetchVimTicketImage(
         session: MavSession,
         bizonylatId: String,
         ticketNumber: String?,
-        originalReceiptId: String
+        originalReceiptId: String,
+        attempt: JegykepAttempt
     ): MavTicketImage? {
-        val tokenToUse = session.vimToken ?: session.token
+        // Prefer the IK SAML token: GetJegykep accepts it immediately after login, whereas a freshly
+        // issued VIM (Bejelentkezes) token is rejected with "próbálja meg ismét fél perc múlva" for
+        // about half a minute. Fall back to the VIM token if the IK token is not accepted.
+        val tokens = listOf(session.token, session.vimToken.orEmpty())
+            .map { getRawSamlToken(it) }
+            .filter { it.isNotBlank() }
+            .distinct()
+        for (rawToken in tokens) {
+            val image = fetchVimTicketImageWithToken(session, rawToken, bizonylatId, ticketNumber, originalReceiptId, attempt)
+            if (image != null) return image
+        }
+        return null
+    }
+
+    private suspend fun fetchVimTicketImageWithToken(
+        session: MavSession,
+        rawToken: String,
+        bizonylatId: String,
+        ticketNumber: String?,
+        originalReceiptId: String,
+        attempt: JegykepAttempt
+    ): MavTicketImage? {
+        val emailToUse = session.email.ifBlank { session.user?.email.orEmpty() }
         return runCatching {
             val requestJson = JSONObject().apply {
-                put("FelhasznaloAzonosito", session.email)
+                put("FelhasznaloAzonosito", emailToUse)
                 val array = JSONArray()
                 val numericId = bizonylatId.toLongOrNull()
                 if (numericId != null) {
@@ -970,11 +1195,22 @@ class MavApiClient(
                     array.put(bizonylatId)
                 }
                 put("BizonylatAzonosito", array)
-                put("Token", tokenToUse)
+                put("Token", rawToken)
                 put("Nyelv", "HU")
                 put("UAID", session.uaid)
             }
-            val response = postJson("GetJegykep", requestJson)
+            val response = try {
+                postJson("GetJegykep", requestJson)
+            } catch (e: MavApiException) {
+                if (isRetryLaterMessage(e.errorMessage)) attempt.throttleMessage = e.errorMessage
+                throw e
+            }
+            response.optJSONArray("Uzenetek")?.let { msgs ->
+                for (m in 0 until msgs.length()) {
+                    val text = msgs.optJSONObject(m)?.optString("Szoveg", "").orEmpty()
+                    if (isRetryLaterMessage(text)) attempt.throttleMessage = text
+                }
+            }
             val images = response.optJSONArray("JegykepAdatok")
                 ?: response.optJSONArray("JegykepLista")
                 ?: response.optJSONArray("Bizonylatok")
@@ -1005,7 +1241,7 @@ class MavApiClient(
         val requestJson = JSONObject().apply {
             put("FelhasznaloAzonosito", session.email)
             put("NevesitesAzonosito", nevesitesAzonosito)
-            put("Token", session.vimToken ?: session.token)
+            put("Token", getRawSamlToken(session.vimToken ?: session.token))
             put("Nyelv", "HU")
             put("UAID", session.uaid)
         }
@@ -1093,6 +1329,24 @@ class MavApiClient(
     }
 
     companion object {
+        internal fun isRetryLaterMessage(text: String?): Boolean {
+            if (text.isNullOrBlank()) return false
+            return text.contains("próbálja meg ismét", ignoreCase = true) ||
+                text.contains("probalja meg ismet", ignoreCase = true) ||
+                text.contains("perc múlva", ignoreCase = true) ||
+                text.contains("perc mulva", ignoreCase = true)
+        }
+
+        const val GOOGLE_CLIENT_ID = "989905229285-hqta0tjm61slvfn3mkic8qvgjob0mvqj.apps.googleusercontent.com"
+        const val GOOGLE_REDIRECT_URI = "https://jegy.mav.hu/"
+        const val GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth?scope=email%20profile&redirect_uri=https%3A%2F%2Fjegy.mav.hu%2F&client_id=989905229285-hqta0tjm61slvfn3mkic8qvgjob0mvqj.apps.googleusercontent.com&response_type=code"
+        const val MAV_JE_API_KEY = "232AC6FE-46BE-479B-894D-BFC96E548945"
+        const val MAV_JE_PARTNER_NAME = "App2025"
+        const val MAV_APP_USER_AGENT = "MAVApp/2.6.15-prod (hu.mav.emmapp; build: 950; Android 14)"
+        const val PAPI_PROD_URL = "https://mvapi.mav.hu/IN/PROD/"
+        const val DEFAULT_USER_PROFILE_PATH = "UserProfile/4_13_0_52/"
+        const val CHROME_MOBILE_USER_AGENT = "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+
         /**
          * VIM answers rejected requests (e.g. an expired token) with HTTP 200 and a body that only
          * holds an error message: {"Uzenetek":[{"Tipus":"R","Szoveg":"Hibas input: Nem megfelelo SAML token!"}]}.

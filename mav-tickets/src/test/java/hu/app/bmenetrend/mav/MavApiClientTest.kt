@@ -111,6 +111,68 @@ class MavApiClientTest {
     }
 
     @Test
+    fun loginWithGoogleCodeSuccessReturnsSessionWithJwtAndUser() = runBlocking {
+        val mockJson = """
+            {
+                "userTokenXml": "mock_jwt_refresh_token_123",
+                "loginEmail": "googleuser@gmail.com",
+                "firstName": "Béla",
+                "lastName": "Kovács",
+                "registrationId": "999888"
+            }
+        """.trimIndent()
+
+        var capturedOrigin: String? = null
+        var capturedReferer: String? = null
+
+        val client = createMockClient { req ->
+            assertTrue(req.url.encodedPath.contains("SocialLogin"))
+            capturedOrigin = req.header("Origin")
+            capturedReferer = req.header("Referer")
+            jsonResponse(req, mockJson)
+        }
+
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
+        val session = api.loginWithGoogleCode("mock_auth_code_xyz", "uaid_test_google")
+
+        assertEquals("mock_jwt_refresh_token_123", session.token)
+        assertEquals("googleuser@gmail.com", session.email)
+        assertEquals("uaid_test_google", session.uaid)
+        assertNotNull(session.user)
+        assertEquals("Béla", session.user?.firstName)
+        assertEquals("Kovács", session.user?.lastName)
+        assertEquals("Kovács Béla", session.user?.fullName)
+        assertEquals("999888", session.user?.regId)
+
+        assertEquals("https://jegy.mav.hu", capturedOrigin)
+        assertEquals("https://jegy.mav.hu/", capturedReferer)
+    }
+
+    @Test
+    fun loginWithGoogleCodeFailureThrowsMavApiException() = runBlocking {
+        val mockErrorJson = """
+            {
+                "errorCode": 401,
+                "errorMessage": "Invalid User Key",
+                "errorDetails": null
+            }
+        """.trimIndent()
+
+        val client = createMockClient { req ->
+            assertTrue(req.url.encodedPath.contains("SocialLogin"))
+            jsonResponse(req, mockErrorJson, 401)
+        }
+
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
+        try {
+            api.loginWithGoogleCode("invalid_code", "uaid_123")
+            fail("Expected MavApiException")
+        } catch (e: MavApiException) {
+            assertTrue(e.errorMessage.contains("Google"))
+        }
+    }
+
+    @Test
     fun htmlResponseThrowsMavApiExceptionRatherThanJsonException() = runBlocking {
         val mockHtml = "<html><body><b>A kért oldal nem jeleníthető meg, mert nem felel meg a hozzáférési szabályzat követelményeinek</b></body></html>"
 
@@ -437,5 +499,120 @@ class MavApiClientTest {
         assertEquals("5594003G000448895", image?.ticketNumber)
         assertEquals("Orszag-varmegye berlet MAVapp", image?.kind)
         assertTrue(image?.imageBase64?.isNotEmpty() == true)
+    }
+    @Test
+    fun getRawSamlTokenDecodesBase64ToXml() {
+        val api = MavApiClient(client = OkHttpClient(), baseUrl = "https://mock.mav.hu/rest")
+        val rawXml = "<saml:Assertion>AlreadyRaw</saml:Assertion>"
+        assertEquals(rawXml, api.getRawSamlToken(rawXml))
+
+        val b64Xml = "PHNhbWw6QXNzZXJ0aW9uPkJhc2U2NDwvc2FtbDpBc3NlcnRpb24+"
+        assertEquals("<saml:Assertion>Base64</saml:Assertion>", api.getRawSamlToken(b64Xml))
+
+        assertEquals("regular_token", api.getRawSamlToken("regular_token"))
+    }
+
+    @Test
+    fun getTicketImageWithGoogleOAuthTokenDecodesSamlAndFetchesAztecBarcodeFromGetJegykep() = runBlocking {
+        val detailsJson = """
+            {
+                "previousPurchaseDetails": {
+                    "ticketDatas": [
+                        {
+                            "bizonylatTechnikaiAzonosito": "1779935735",
+                            "jegySorszam": "5594003G000448895"
+                        }
+                    ]
+                }
+            }
+        """.trimIndent()
+
+        val vimJson = """
+            {
+                "Bizonylatok": [
+                    {
+                        "BizonylatTechnikaiAzonosito": "1779935735",
+                        "BizonylatFajta": "Orszag-varmegye berlet MAVapp",
+                        "Jegysorszam": "5594003G000448895",
+                        "Jegykep": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        var jegykepReqBody = ""
+        val client = createMockClient { req ->
+            if (req.url.encodedPath.contains("GetPreviousPurchaseDetails")) {
+                jsonResponse(req, detailsJson)
+            } else if (req.url.encodedPath.contains("GetJegykep")) {
+                val buf = okio.Buffer()
+                req.body?.writeTo(buf)
+                jegykepReqBody = buf.readUtf8()
+                jsonResponse(req, vimJson)
+            } else {
+                jsonResponse(req, "{}", 404)
+            }
+        }
+
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
+        // Base64 of <saml:Assertion>GoogleSAML</saml:Assertion>
+        val b64Saml = "PHNhbWw6QXNzZXJ0aW9uPkdvb2dsZVNBTUw8L3NhbWw6QXNzZXJ0aW9uPg=="
+        val session = MavSession("googleuser@gmail.com", b64Saml, "uaid_abc", vimToken = null)
+        val image = api.getTicketImage(session, "1023744049")
+
+        assertNotNull(image)
+        assertEquals("1023744049", image?.receiptId)
+        assertEquals("5594003G000448895", image?.ticketNumber)
+        assertEquals("Orszag-varmegye berlet MAVapp", image?.kind)
+        assertTrue(image?.imageBase64?.isNotEmpty() == true)
+
+        // Verify GetJegykep received raw unencoded SAML XML and numeric bizonylatId
+        assertTrue(jegykepReqBody.contains("<saml:Assertion>GoogleSAML"))
+        assertTrue(jegykepReqBody.contains("1779935735"))
+        assertTrue(jegykepReqBody.contains("googleuser@gmail.com"))
+    }
+    @Test
+    fun getTicketImageRejectsPdfAndCertificate() = runBlocking {
+        val detailsJson = """
+            {
+                "previousPurchaseDetails": {
+                    "ticketDatas": [
+                        {
+                            "bizonylatTechnikaiAzonosito": "1779935735",
+                            "jegySorszam": "5594003G000448895"
+                        }
+                    ]
+                }
+            }
+        """.trimIndent()
+
+        val vimPdfJson = """
+            {
+                "Bizonylatok": [
+                    {
+                        "BizonylatTechnikaiAzonosito": "1779935735",
+                        "BizonylatFajta": "Certificate",
+                        "Jegysorszam": "5594003G000448895",
+                        "Jegykep": "JVBERi0xLjQKJeLjz9MKN..."
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        val client = createMockClient { req ->
+            if (req.url.encodedPath.contains("GetPreviousPurchaseDetails")) {
+                jsonResponse(req, detailsJson)
+            } else if (req.url.encodedPath.contains("GetJegykep")) {
+                jsonResponse(req, vimPdfJson)
+            } else {
+                jsonResponse(req, "{}", 404)
+            }
+        }
+
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
+        val session = MavSession("test@example.com", "<saml:Assertion>XML</saml:Assertion>", "uaid")
+        val image = api.getTicketImage(session, "1023744049")
+
+        assertNull("PDF certificates should be rejected", image)
     }
 }

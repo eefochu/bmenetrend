@@ -6,6 +6,9 @@
     <string name="mav_email_label">Email cím</string>
     <string name="mav_password_label">Jelszó</string>
     <string name="mav_login_btn">Bejelentkezés</string>
+    <string name="mav_login_google_btn">Bejelentkezés Google-fiókkal</string>
+    <string name="mav_login_or">vagy</string>
+    <string name="mav_google_login_dialog_title">Google Bejelentkezés</string>
     <string name="mav_offline_badge">Offline mód</string>
     <string name="mav_session_expired">A MÁV bejelentkezés lejárt. Jelentkezz ki, majd be újra a jegyek frissítéséhez.</string>
     <string name="mav_session_expired_notice">A MÁV bejelentkezés lejárt, a mentett jegyek láthatók. A frissítéshez jelentkezz be újra.</string>
@@ -41,4 +44,6 @@
     <string name="mav_expired_status">Lejárt</string>
     <string name="mav_loading_data">Az adatok betöltése folyamatban</string>
     <string name="mav_retry">Újrapróbálás</string>
+    <string name="mav_barcode_wait_notice">A MÁV szerver friss bejelentkezés után kb. fél percig nem adja ki a jegyképet. Automatikusan újrapróbáljuk…</string>
+    <string name="mav_barcode_throttled">A MÁV szerver még nem adta ki a jegyképet. Friss bejelentkezés után ez kb. fél percig is eltarthat, kérjük próbáld újra kicsit később.</string>
 </resources>

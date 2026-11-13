@@ -1,26 +1,47 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+
 package hu.app.bmenetrend.ui.mav
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.pm.ActivityInfo
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.graphics.drawable.AnimatedImageDrawable
+import android.net.Uri
 import android.os.Build
+import android.view.ViewGroup
+import android.view.WindowManager
+import android.webkit.WebResourceRequest
+import android.webkit.WebView
+import android.os.Message
+import android.webkit.CookieManager
+import android.webkit.JavascriptInterface
+import android.webkit.WebChromeClient
+import android.widget.FrameLayout
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import android.webkit.WebViewClient
 import android.widget.ImageView
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.automirrored.rounded.ReceiptLong
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,6 +53,8 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -45,6 +68,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import hu.app.bmenetrend.mav.R
 import hu.app.bmenetrend.mav.*
 import java.time.Instant
@@ -74,7 +98,9 @@ fun MavTicketsScreen(
             MavLoginView(
                 loginState = loginState,
                 onLogin = viewModel::login,
-                onClearError = viewModel::clearLoginError
+                onGoogleLogin = viewModel::loginWithGoogle,
+                onClearError = viewModel::clearLoginError,
+                onError = viewModel::setLoginError
             )
         } else {
             Column(
@@ -114,28 +140,51 @@ fun MavTicketsScreen(
                                 modifier = Modifier.size(16.dp)
                             )
                             Text(
-                                stringResource(
-                                    if (sessionExpired) R.string.mav_session_expired_notice
-                                    else R.string.mav_offline_notice
-                                ),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                modifier = Modifier.weight(1f)
+                                stringResource(R.string.mav_offline_notice),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer
                             )
-                            if (lastSyncTime > 0L) {
-                                val syncDateStr = remember(lastSyncTime) {
-                                    DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault())
-                                        .withZone(ZoneId.systemDefault())
-                                        .format(Instant.ofEpochMilli(lastSyncTime))
-                                }
-                                Text(
-                                    stringResource(R.string.mav_sync_time, syncDateStr),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
-                                )
-                            }
                         }
                     }
+                } else if (sessionExpired) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                Icons.Rounded.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                stringResource(R.string.mav_session_expired_notice),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
+                }
+
+                if (lastSyncTime > 0L) {
+                    val syncFormatted = remember(lastSyncTime) {
+                        DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm", Locale.getDefault())
+                            .withZone(ZoneId.systemDefault())
+                            .format(Instant.ofEpochMilli(lastSyncTime))
+                    }
+                    Text(
+                        stringResource(R.string.mav_sync_time, syncFormatted),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                    )
                 }
 
                 TabRow(
@@ -147,146 +196,99 @@ fun MavTicketsScreen(
                     Tab(
                         selected = selectedTab == MavTab.ACTIVE,
                         onClick = { viewModel.setTab(MavTab.ACTIVE) },
-                        text = {
-                            Text(
-                                stringResource(R.string.mav_active_tab),
-                                fontWeight = if (selectedTab == MavTab.ACTIVE) FontWeight.Bold else FontWeight.Normal
-                            )
-                        },
-                        icon = { Icon(Icons.Rounded.ConfirmationNumber, contentDescription = null, modifier = Modifier.size(20.dp)) }
+                        text = { Text(stringResource(R.string.mav_active_tab)) }
                     )
                     Tab(
                         selected = selectedTab == MavTab.PAST,
                         onClick = { viewModel.setTab(MavTab.PAST) },
-                        text = {
-                            Text(
-                                stringResource(R.string.mav_past_tab),
-                                fontWeight = if (selectedTab == MavTab.PAST) FontWeight.Bold else FontWeight.Normal
-                            )
-                        },
-                        icon = { Icon(Icons.Rounded.History, contentDescription = null, modifier = Modifier.size(20.dp)) }
+                        text = { Text(stringResource(R.string.mav_past_tab)) }
                     )
                 }
 
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                ) {
-                    when (val state = ticketsState) {
-                        is TicketsUiState.Loading -> {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
+                when (val state = ticketsState) {
+                    is TicketsUiState.Loading -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularWavyProgressIndicator(modifier = Modifier.size(56.dp))
+                        }
+                    }
+                    is TicketsUiState.Error -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(24.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                                ) {
-                                    CircularProgressIndicator()
-                                    Text(
-                                        stringResource(R.string.mav_loading_data),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                Icon(
+                                    Icons.Rounded.ErrorOutline,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(48.dp)
+                                )
+                                Text(
+                                    state.message,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.error,
+                                    textAlign = TextAlign.Center
+                                )
+                                Button(onClick = viewModel::refreshTickets) {
+                                    Text(stringResource(R.string.mav_refresh))
                                 }
                             }
                         }
-                        is TicketsUiState.Error -> {
+                    }
+                    is TicketsUiState.Success -> {
+                        val currentOrders = when (selectedTab) {
+                            MavTab.ACTIVE -> state.activeOrders
+                            MavTab.PAST -> state.pastOrders
+                        }
+
+                        if (currentOrders.isEmpty()) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .padding(24.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Card(
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.errorContainer
-                                    ),
-                                    shape = RoundedCornerShape(16.dp)
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Column(
-                                        modifier = Modifier.padding(20.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Rounded.ErrorOutline,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onErrorContainer,
-                                            modifier = Modifier.size(36.dp)
-                                        )
-                                        Text(
-                                            state.message,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onErrorContainer,
-                                            textAlign = TextAlign.Center
-                                        )
-                                        Button(
-                                            onClick = viewModel::refreshTickets,
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = MaterialTheme.colorScheme.error
-                                            )
-                                        ) {
-                                            Text(stringResource(R.string.mav_retry))
-                                        }
-                                    }
+                                    Icon(
+                                        Icons.Rounded.ConfirmationNumber,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.outline,
+                                        modifier = Modifier.size(48.dp)
+                                    )
+                                    Text(
+                                        when (selectedTab) {
+                                            MavTab.ACTIVE -> stringResource(R.string.mav_empty_active)
+                                            MavTab.PAST -> stringResource(R.string.mav_empty_past)
+                                        },
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        textAlign = TextAlign.Center
+                                    )
                                 }
                             }
-                        }
-                        is TicketsUiState.Success -> {
-                            val orders = if (selectedTab == MavTab.ACTIVE) state.activeOrders else state.pastOrders
-                            if (orders.isEmpty()) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(24.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                                    ) {
-                                        Icon(
-                                            if (selectedTab == MavTab.ACTIVE) Icons.Rounded.ConfirmationNumber else Icons.Rounded.History,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                            modifier = Modifier.size(48.dp)
-                                        )
-                                        Text(
-                                            if (selectedTab == MavTab.ACTIVE) {
-                                                stringResource(R.string.mav_empty_active)
-                                            } else {
-                                                stringResource(R.string.mav_empty_past)
-                                            },
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            textAlign = TextAlign.Center
-                                        )
-                                    }
-                                }
-                            } else {
-                                LazyColumn(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentPadding = PaddingValues(16.dp),
-                                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    items(orders, key = { it.orderId }) { order ->
-                                        OrderTicketCard(
-                                            order = order,
-                                            isActiveTab = selectedTab == MavTab.ACTIVE,
-                                            onShowBarcode = { receiptId, ticketNumber, title, isPass, passengerName, birthDate ->
-                                                viewModel.showBarcode(
-                                                    receiptId = receiptId,
-                                                    ticketNumber = ticketNumber,
-                                                    title = title,
-                                                    isPass = isPass,
-                                                    passengerName = passengerName,
-                                                    birthDate = birthDate
-                                                )
-                                            }
-                                        )
-                                    }
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                items(currentOrders, key = { it.orderId.ifBlank { it.hashCode().toString() } }) { order ->
+                                    OrderTicketCard(
+                                        order = order,
+                                        isActiveTab = selectedTab == MavTab.ACTIVE,
+                                        onShowBarcode = viewModel::showBarcode
+                                    )
                                 }
                             }
                         }
@@ -306,10 +308,9 @@ fun MavTicketsScreen(
                     onClick = {
                         showLogoutConfirm = false
                         viewModel.logout()
-                    },
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    }
                 ) {
-                    Text(stringResource(R.string.mav_logout_btn))
+                    Text(stringResource(R.string.mav_logout_btn), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
@@ -443,11 +444,14 @@ private fun MavHeader(
 private fun MavLoginView(
     loginState: LoginUiState,
     onLogin: (String, String) -> Unit,
-    onClearError: () -> Unit
+    onGoogleLogin: (String) -> Unit,
+    onClearError: () -> Unit,
+    onError: (String) -> Unit
 ) {
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
+    var showGoogleLoginDialog by rememberSaveable { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
 
     Box(
@@ -559,20 +563,24 @@ private fun MavLoginView(
 
                 Button(
                     onClick = {
-                        focusManager.clearFocus()
-                        onLogin(email, password)
+                        // Repeated taps while signing in are ignored.
+                        if (loginState !is LoginUiState.Loading) {
+                            focusManager.clearFocus()
+                            onLogin(email, password)
+                        }
                     },
-                    enabled = loginState !is LoginUiState.Loading && email.isNotBlank() && password.isNotBlank(),
+                    // Stay visually enabled while loading so the indicator sits on the primary color.
+                    enabled = loginState is LoginUiState.Loading || (email.isNotBlank() && password.isNotBlank()),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     if (loginState is LoginUiState.Loading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
+                        CircularWavyProgressIndicator(
+                            modifier = Modifier.size(30.dp),
                             color = MaterialTheme.colorScheme.onPrimary,
-                            strokeWidth = 2.dp
+                            trackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.3f)
                         )
                     } else {
                         Text(
@@ -583,12 +591,346 @@ private fun MavLoginView(
                     }
                 }
 
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    HorizontalDivider(
+                        modifier = Modifier.weight(1f),
+                        color = MaterialTheme.colorScheme.outlineVariant
+                    )
+                    Text(
+                        text = stringResource(R.string.mav_login_or),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 12.dp)
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.weight(1f),
+                        color = MaterialTheme.colorScheme.outlineVariant
+                    )
+                }
+
+                OutlinedButton(
+                    onClick = {
+                        focusManager.clearFocus()
+                        onClearError()
+                        showGoogleLoginDialog = true
+                    },
+                    enabled = loginState !is LoginUiState.Loading,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_google_logo),
+                            contentDescription = null,
+                            tint = Color.Unspecified,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            stringResource(R.string.mav_login_google_btn),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+
                 Text(
                     stringResource(R.string.mav_privacy_note),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     textAlign = TextAlign.Center
                 )
+            }
+        }
+    }
+
+    if (showGoogleLoginDialog) {
+        MavGoogleLoginDialog(
+            onDismissRequest = { showGoogleLoginDialog = false },
+            onCodeReceived = { code ->
+                showGoogleLoginDialog = false
+                onGoogleLogin(code)
+            },
+            onError = { errMsg ->
+                showGoogleLoginDialog = false
+                onError(errMsg)
+            }
+        )
+    }
+}
+
+class GoogleAuthBridge(
+    private val onCode: (String) -> Unit,
+    private val onError: (String) -> Unit
+) {
+    @JavascriptInterface
+    fun onCodeReceived(code: String) {
+        if (code.isNotBlank()) {
+            onCode(code)
+        }
+    }
+
+    @JavascriptInterface
+    fun onError(error: String) {
+        onError(error)
+    }
+}
+
+@Composable
+fun MavGoogleLoginDialog(
+    onDismissRequest: () -> Unit,
+    onCodeReceived: (String) -> Unit,
+    onError: (String) -> Unit
+) {
+    val coroutineScope = rememberCoroutineScope()
+    var isLoading by remember { mutableStateOf(true) }
+    var popupWebViewRef by remember { mutableStateOf<WebView?>(null) }
+    var containerRef by remember { mutableStateOf<FrameLayout?>(null) }
+    var handled by remember { mutableStateOf(false) }
+
+    Dialog(
+        onDismissRequest = onDismissRequest,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        BackHandler {
+            if (popupWebViewRef?.canGoBack() == true) {
+                popupWebViewRef?.goBack()
+            } else if (popupWebViewRef != null) {
+                containerRef?.removeView(popupWebViewRef)
+                popupWebViewRef?.destroy()
+                popupWebViewRef = null
+                isLoading = false
+            } else {
+                onDismissRequest()
+            }
+        }
+
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding(),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = onDismissRequest) {
+                            Icon(
+                                Icons.AutoMirrored.Rounded.ArrowBack,
+                                contentDescription = stringResource(R.string.mav_cancel)
+                            )
+                        }
+                        Text(
+                            text = stringResource(R.string.mav_google_login_dialog_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.weight(1f)
+                        )
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier
+                                    .padding(end = 12.dp)
+                                    .size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                        }
+                    }
+                }
+
+                Box(modifier = Modifier.fillMaxSize()) {
+                    AndroidView(
+                        factory = { context ->
+                            val container = FrameLayout(context).apply {
+                                layoutParams = ViewGroup.LayoutParams(
+                                    ViewGroup.LayoutParams.MATCH_PARENT,
+                                    ViewGroup.LayoutParams.MATCH_PARENT
+                                )
+                            }
+                            containerRef = container
+
+                            val bridge = GoogleAuthBridge(
+                                onCode = { code ->
+                                    coroutineScope.launch(Dispatchers.Main) {
+                                        if (!handled) {
+                                            handled = true
+                                            onCodeReceived(code)
+                                        }
+                                    }
+                                },
+                                onError = { err ->
+                                    coroutineScope.launch(Dispatchers.Main) {
+                                        if (!handled) {
+                                            handled = true
+                                            onError(err)
+                                        }
+                                    }
+                                }
+                            )
+
+                            val parentWebView = WebView(context).apply {
+                                layoutParams = FrameLayout.LayoutParams(
+                                    FrameLayout.LayoutParams.MATCH_PARENT,
+                                    FrameLayout.LayoutParams.MATCH_PARENT
+                                )
+                                settings.javaScriptEnabled = true
+                                settings.domStorageEnabled = true
+                                settings.setSupportMultipleWindows(true)
+                                settings.javaScriptCanOpenWindowsAutomatically = true
+                                settings.userAgentString = MavApiClient.CHROME_MOBILE_USER_AGENT
+
+                                CookieManager.getInstance().setAcceptCookie(true)
+                                CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
+
+                                addJavascriptInterface(bridge, "AndroidBridge")
+
+                                webViewClient = object : WebViewClient() {
+                                    override fun onPageFinished(view: WebView?, url: String?) {
+                                        super.onPageFinished(view, url)
+                                    }
+                                }
+
+                                webChromeClient = object : WebChromeClient() {
+                                    override fun onCreateWindow(
+                                        view: WebView?,
+                                        isDialog: Boolean,
+                                        isUserGesture: Boolean,
+                                        resultMsg: Message?
+                                    ): Boolean {
+                                        val popup = WebView(context).apply {
+                                            layoutParams = FrameLayout.LayoutParams(
+                                                FrameLayout.LayoutParams.MATCH_PARENT,
+                                                FrameLayout.LayoutParams.MATCH_PARENT
+                                            )
+                                            settings.javaScriptEnabled = true
+                                            settings.domStorageEnabled = true
+                                            settings.userAgentString = MavApiClient.CHROME_MOBILE_USER_AGENT
+                                            CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
+
+                                            webViewClient = object : WebViewClient() {
+                                                override fun onPageStarted(v: WebView?, url: String?, favicon: Bitmap?) {
+                                                    super.onPageStarted(v, url, favicon)
+                                                    isLoading = true
+                                                    if (url != null && (url.contains("code=") || url.contains("error=")) &&
+                                                        (url.contains("jegy.mav.hu") || url.contains("mvapi.mav.hu"))
+                                                    ) {
+                                                        val uri = Uri.parse(url)
+                                                        val code = uri.getQueryParameter("code")
+                                                        val error = uri.getQueryParameter("error")
+                                                        if (!code.isNullOrBlank() && !handled) {
+                                                            handled = true
+                                                            v?.stopLoading()
+                                                            coroutineScope.launch(Dispatchers.Main) {
+                                                                onCodeReceived(code)
+                                                            }
+                                                        } else if (!error.isNullOrBlank() && !handled) {
+                                                            handled = true
+                                                            v?.stopLoading()
+                                                            coroutineScope.launch(Dispatchers.Main) {
+                                                                onError(uri.getQueryParameter("error_description") ?: error)
+                                                            }
+                                                        }
+                                                    }
+                                                }
+
+                                                override fun onPageFinished(v: WebView?, url: String?) {
+                                                    super.onPageFinished(v, url)
+                                                    isLoading = false
+                                                }
+                                            }
+
+                                            webChromeClient = object : WebChromeClient() {
+                                                override fun onCloseWindow(window: WebView?) {
+                                                    container.removeView(window)
+                                                    window?.destroy()
+                                                    popupWebViewRef = null
+                                                    isLoading = false
+                                                }
+                                            }
+                                        }
+
+                                        popupWebViewRef = popup
+                                        container.addView(popup)
+
+                                        val transport = resultMsg?.obj as? WebView.WebViewTransport
+                                        transport?.webView = popup
+                                        resultMsg?.sendToTarget()
+                                        return true
+                                    }
+                                }
+
+                                val gisHtml = """
+                                    <!DOCTYPE html>
+                                    <html>
+                                    <head>
+                                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                        <script src="https://accounts.google.com/gsi/client"></script>
+                                    </head>
+                                    <body style="margin:0; background:#f9f9f9; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; font-family:sans-serif;">
+                                        <div style="text-align:center; padding:24px;">
+                                            <p style="font-size:16px; color:#555; font-weight:500;">Kapcsolódás a Google-fiókhoz...</p>
+                                        </div>
+                                        <script>
+                                            function triggerGoogleAuth() {
+                                                try {
+                                                    const client = google.accounts.oauth2.initCodeClient({
+                                                        client_id: '989905229285-hqta0tjm61slvfn3mkic8qvgjob0mvqj.apps.googleusercontent.com',
+                                                        scope: 'email profile',
+                                                        ux_mode: 'popup',
+                                                        callback: function(response) {
+                                                            if (response && response.code) {
+                                                                AndroidBridge.onCodeReceived(response.code);
+                                                            } else if (response && response.error) {
+                                                                AndroidBridge.onError(response.error_description || response.error);
+                                                            }
+                                                        },
+                                                        error_callback: function(err) {
+                                                            AndroidBridge.onError((err && err.message) ? err.message : 'Google azonosítási hiba');
+                                                        }
+                                                    });
+                                                    client.requestCode();
+                                                } catch(e) {
+                                                    AndroidBridge.onError(e.message || 'Hiba a Google azonosítás indításakor');
+                                                }
+                                            }
+                                            window.onload = function() {
+                                                setTimeout(triggerGoogleAuth, 300);
+                                            };
+                                        </script>
+                                    </body>
+                                    </html>
+                                """.trimIndent()
+
+                                loadDataWithBaseURL("https://jegy.mav.hu/", gisHtml, "text/html", "UTF-8", null)
+                            }
+
+                            container.addView(parentWebView)
+                            container
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
         }
     }
@@ -846,119 +1188,117 @@ fun MavTicketDetailView(
 ) {
     BackHandler(onBack = onDismiss)
     var showInfoDialog by remember { mutableStateOf(false) }
+    TicketDisplayWindowEffect()
 
-    Box(
+    val screenBackground = Color(0xFF0B0B0D)
+    val cardColor = Color(0xFF22242A)
+    val cardShape = RoundedCornerShape(22.dp)
+
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF101012))
+            .background(screenBackground)
+            .statusBarsPadding()
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
+                .weight(1f)
+                .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .padding(bottom = 120.dp)
+                .padding(bottom = 24.dp)
         ) {
-            // 1. Top bar: Back arrow, Title, Info button (i)
+            // 1. Top bar: thin back arrow, title, outlined info button
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 6.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .padding(start = 12.dp, end = 12.dp, top = 20.dp, bottom = 20.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    IconButton(onClick = onDismiss) {
-                        Icon(
-                            Icons.AutoMirrored.Rounded.ArrowBack,
-                            contentDescription = stringResource(R.string.mav_cancel),
-                            tint = Color.White
-                        )
-                    }
-
-                    Text(
-                        text = if (data.isPass) {
-                            stringResource(R.string.mav_pass_info_title)
-                        } else {
-                            stringResource(R.string.mav_ticket_info_title)
-                        },
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
+                IconButton(onClick = onDismiss) {
+                    Icon(
+                        Icons.AutoMirrored.Outlined.ArrowBack,
+                        contentDescription = stringResource(R.string.mav_cancel),
+                        tint = Color.White,
+                        modifier = Modifier.size(26.dp)
                     )
                 }
-
+                Spacer(Modifier.width(16.dp))
+                Text(
+                    text = if (data.isPass) {
+                        stringResource(R.string.mav_pass_info_title)
+                    } else {
+                        stringResource(R.string.mav_ticket_info_title)
+                    },
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
                 IconButton(onClick = { showInfoDialog = true }) {
                     Icon(
-                        Icons.Rounded.Info,
+                        Icons.Outlined.Info,
                         contentDescription = "Információ",
-                        tint = Color(0xFFC0C0C4),
-                        modifier = Modifier.size(26.dp)
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }
 
             Spacer(Modifier.height(8.dp))
 
-            // 2. Passenger Card (Rounded dark card, selfie on left, name & birthdate on right)
+            // 2. Passenger card: square selfie on the left, name & birth date on the right
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(18.dp),
-                color = Color(0xFF1E1F24)
+                    .padding(horizontal = 26.dp),
+                shape = cardShape,
+                color = cardColor
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .padding(horizontal = 13.dp, vertical = 13.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    horizontalArrangement = Arrangement.spacedBy(18.dp)
                 ) {
                     val passengerPhotoBitmap = remember(data.passengerPhotoBase64) { data.toPassengerPhotoBitmap() }
-                    Surface(
-                        modifier = Modifier.size(width = 56.dp, height = 66.dp),
-                        shape = RoundedCornerShape(14.dp),
-                        color = Color(0xFF2C2D32)
+                    val photoShape = RoundedCornerShape(10.dp)
+                    Box(
+                        modifier = Modifier
+                            .size(54.dp)
+                            .clip(photoShape)
+                            .background(Color(0xFF2C2D32)),
+                        contentAlignment = Alignment.Center
                     ) {
                         if (passengerPhotoBitmap != null) {
                             Image(
                                 bitmap = passengerPhotoBitmap.asImageBitmap(),
                                 contentDescription = data.passengerName ?: "Utas fénykép",
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(RoundedCornerShape(14.dp)),
+                                modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop
                             )
                         } else {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Person,
-                                    contentDescription = data.passengerName ?: "Utas fénykép",
-                                    tint = Color(0xFF8E8E93),
-                                    modifier = Modifier.size(32.dp)
-                                )
-                            }
+                            Icon(
+                                imageVector = Icons.Rounded.Person,
+                                contentDescription = data.passengerName ?: "Utas fénykép",
+                                tint = Color(0xFF8E8E93),
+                                modifier = Modifier.size(30.dp)
+                            )
                         }
                     }
 
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.weight(1f)
-                    ) {
+                    Column(modifier = Modifier.weight(1f)) {
                         val passengerName = data.passengerName?.ifBlank { null }
                             ?: data.title
                         Text(
                             text = passengerName,
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            fontWeight = FontWeight.Medium,
+                            color = Color.White,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
 
                         val birthDateStr = remember(data.birthDate) {
@@ -974,29 +1314,30 @@ fun MavTicketDetailView(
                         if (!birthDateStr.isNullOrBlank()) {
                             Text(
                                 text = birthDateStr,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color(0xFF9E9EA6)
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium,
+                                color = Color.White
                             )
                         }
                     }
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(28.dp))
 
-            // 3. Middle Ticket / Pass Card
+            // 3. Ticket card: dark rounded frame with the ticket image on a plain white inset
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(16.dp),
-                color = Color.White,
-                shadowElevation = 4.dp
+                    .padding(horizontal = 26.dp),
+                shape = cardShape,
+                color = cardColor
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(8.dp),
+                        .padding(horizontal = 9.dp, vertical = 9.dp)
+                        .background(Color.White),
                     contentAlignment = Alignment.Center
                 ) {
                     when {
@@ -1006,12 +1347,20 @@ fun MavTicketDetailView(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
-                                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                                CircularWavyProgressIndicator(modifier = Modifier.size(56.dp))
                                 Text(
                                     stringResource(R.string.mav_loading_data),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = Color.DarkGray
                                 )
+                                if (!data.notice.isNullOrBlank()) {
+                                    Text(
+                                        data.notice,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color.Gray,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
                             }
                         }
                         data.error != null -> {
@@ -1038,9 +1387,7 @@ fun MavTicketDetailView(
                             Image(
                                 bitmap = data.bitmap.asImageBitmap(),
                                 contentDescription = data.title,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(12.dp)),
+                                modifier = Modifier.fillMaxWidth(),
                                 contentScale = ContentScale.FillWidth
                             )
                         }
@@ -1049,19 +1396,66 @@ fun MavTicketDetailView(
             }
         }
 
-        // 4. Moving train GIF at the bottom
+        // 4. Moving train GIF, sitting directly above the system navigation bar
         AnimatedTrainGif(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(560f / 112f)
-                .align(Alignment.BottomCenter)
         )
+        // The host (MainNavigation) consumes the navigation-bar inset for its bottom tab bar, so
+        // windowInsetsBottomHeight() would resolve to 0 here. Read the raw inset instead so the
+        // system navigation bar gets its own strip below the GIF, like in the official app.
+        val density = LocalDensity.current
+        val navBarHeight = with(density) { WindowInsets.navigationBars.getBottom(density).toDp() }
+        Spacer(
+            Modifier
+                .fillMaxWidth()
+                .height(navBarHeight)
+                .background(screenBackground)
+        )
+    }
 
-        // 5. Info Dialog (Screenshot 2)
-        if (showInfoDialog) {
-            MavValidTicketInfoDialog(onDismiss = { showInfoDialog = false })
+    // 5. Info dialog
+    if (showInfoDialog) {
+        MavValidTicketInfoDialog(onDismiss = { showInfoDialog = false })
+    }
+}
+
+/**
+ * While a ticket is on screen: maximum brightness (so scanners can read the barcode) and portrait
+ * orientation, like the official MÁV app. The previous values are restored when the view closes.
+ */
+@Composable
+private fun TicketDisplayWindowEffect() {
+    val context = LocalContext.current
+    DisposableEffect(context) {
+        val activity = context.findActivity()
+        if (activity == null) {
+            onDispose { }
+        } else {
+            val window = activity.window
+            val previousBrightness = window.attributes.screenBrightness
+            val previousOrientation = activity.requestedOrientation
+
+            window.attributes = window.attributes.apply {
+                screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_FULL
+            }
+            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+
+            onDispose {
+                window.attributes = window.attributes.apply {
+                    screenBrightness = previousBrightness
+                }
+                activity.requestedOrientation = previousOrientation
+            }
         }
     }
+}
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }
 
 @Composable
