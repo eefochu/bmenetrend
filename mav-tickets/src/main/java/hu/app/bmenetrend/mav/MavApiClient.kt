@@ -17,10 +17,17 @@ import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-class MavApiException(val errorMessage: String, val statusCode: Int = 0) : IOException(errorMessage) {
+open class MavApiException(val errorMessage: String, val statusCode: Int = 0) : IOException(errorMessage) {
     /** True when the server rejected our stored token (session expired / invalid). */
     val isAuthError: Boolean get() = statusCode == 401 || statusCode == 403
 }
+
+/**
+ * VIM refused to hand out the ticket image yet ("Kérjük, próbálja meg ismét fél perc múlva.").
+ * This happens for roughly half a minute after a fresh email/password login: the brand-new VIM
+ * token is not accepted by GetJegykep until MÁV's backend has propagated it.
+ */
+class MavTicketImageThrottledException(message: String) : MavApiException(message, 429)
 
 class MavApiClient(
     private val client: OkHttpClient = defaultClient(),
@@ -1040,6 +1047,23 @@ class MavApiClient(
     }
 
     suspend fun getTicketImage(session: MavSession, receiptId: String): MavTicketImage? {
+        val attempt = JegykepAttempt()
+        val image = getTicketImageInternal(session, receiptId, attempt)
+        if (image == null && attempt.throttleMessage != null) {
+            throw MavTicketImageThrottledException(attempt.throttleMessage!!)
+        }
+        return image
+    }
+
+    private class JegykepAttempt {
+        var throttleMessage: String? = null
+    }
+
+    private suspend fun getTicketImageInternal(
+        session: MavSession,
+        receiptId: String,
+        attempt: JegykepAttempt
+    ): MavTicketImage? {
         val safeToken = getSafeTokenHeader(session.token)
         val candidateIds = mutableListOf<String>()
         candidateIds.add(receiptId)
@@ -1067,11 +1091,11 @@ class MavApiClient(
                             val bizTechId = td.optString("bizonylatTechnikaiAzonosito", "").trim()
                             val jegySorszam = td.optString("jegySorszam", "").trim().ifBlank { null }
                             if (bizTechId.isNotBlank()) {
-                                val vimImg = fetchVimTicketImage(session, bizTechId, jegySorszam, receiptId)
+                                val vimImg = fetchVimTicketImage(session, bizTechId, jegySorszam, receiptId, attempt)
                                 if (vimImg != null) return vimImg
                             }
                             if (jegySorszam != null) {
-                                val vimImg = fetchVimTicketImage(session, jegySorszam, jegySorszam, receiptId)
+                                val vimImg = fetchVimTicketImage(session, jegySorszam, jegySorszam, receiptId, attempt)
                                 if (vimImg != null) return vimImg
                             }
                         }
@@ -1083,7 +1107,7 @@ class MavApiClient(
         // 2. Direct VIM GetJegykep lookup with each candidate ID
         // (works directly when receiptId is already a BizonylatAzonosito or JegySorszam)
         for (cid in candidateIds) {
-            val directImg = fetchVimTicketImage(session, cid, null, receiptId)
+            val directImg = fetchVimTicketImage(session, cid, null, receiptId, attempt)
             if (directImg != null) return directImg
         }
 
@@ -1134,10 +1158,31 @@ class MavApiClient(
         session: MavSession,
         bizonylatId: String,
         ticketNumber: String?,
-        originalReceiptId: String
+        originalReceiptId: String,
+        attempt: JegykepAttempt
     ): MavTicketImage? {
-        val rawToken = getRawSamlToken(session.vimToken ?: session.token)
-        if (rawToken.isBlank()) return null
+        // Prefer the IK SAML token: GetJegykep accepts it immediately after login, whereas a freshly
+        // issued VIM (Bejelentkezes) token is rejected with "próbálja meg ismét fél perc múlva" for
+        // about half a minute. Fall back to the VIM token if the IK token is not accepted.
+        val tokens = listOf(session.token, session.vimToken.orEmpty())
+            .map { getRawSamlToken(it) }
+            .filter { it.isNotBlank() }
+            .distinct()
+        for (rawToken in tokens) {
+            val image = fetchVimTicketImageWithToken(session, rawToken, bizonylatId, ticketNumber, originalReceiptId, attempt)
+            if (image != null) return image
+        }
+        return null
+    }
+
+    private suspend fun fetchVimTicketImageWithToken(
+        session: MavSession,
+        rawToken: String,
+        bizonylatId: String,
+        ticketNumber: String?,
+        originalReceiptId: String,
+        attempt: JegykepAttempt
+    ): MavTicketImage? {
         val emailToUse = session.email.ifBlank { session.user?.email.orEmpty() }
         return runCatching {
             val requestJson = JSONObject().apply {
@@ -1154,7 +1199,18 @@ class MavApiClient(
                 put("Nyelv", "HU")
                 put("UAID", session.uaid)
             }
-            val response = postJson("GetJegykep", requestJson)
+            val response = try {
+                postJson("GetJegykep", requestJson)
+            } catch (e: MavApiException) {
+                if (isRetryLaterMessage(e.errorMessage)) attempt.throttleMessage = e.errorMessage
+                throw e
+            }
+            response.optJSONArray("Uzenetek")?.let { msgs ->
+                for (m in 0 until msgs.length()) {
+                    val text = msgs.optJSONObject(m)?.optString("Szoveg", "").orEmpty()
+                    if (isRetryLaterMessage(text)) attempt.throttleMessage = text
+                }
+            }
             val images = response.optJSONArray("JegykepAdatok")
                 ?: response.optJSONArray("JegykepLista")
                 ?: response.optJSONArray("Bizonylatok")
@@ -1273,6 +1329,14 @@ class MavApiClient(
     }
 
     companion object {
+        internal fun isRetryLaterMessage(text: String?): Boolean {
+            if (text.isNullOrBlank()) return false
+            return text.contains("próbálja meg ismét", ignoreCase = true) ||
+                text.contains("probalja meg ismet", ignoreCase = true) ||
+                text.contains("perc múlva", ignoreCase = true) ||
+                text.contains("perc mulva", ignoreCase = true)
+        }
+
         const val GOOGLE_CLIENT_ID = "989905229285-hqta0tjm61slvfn3mkic8qvgjob0mvqj.apps.googleusercontent.com"
         const val GOOGLE_REDIRECT_URI = "https://jegy.mav.hu/"
         const val GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth?scope=email%20profile&redirect_uri=https%3A%2F%2Fjegy.mav.hu%2F&client_id=989905229285-hqta0tjm61slvfn3mkic8qvgjob0mvqj.apps.googleusercontent.com&response_type=code"

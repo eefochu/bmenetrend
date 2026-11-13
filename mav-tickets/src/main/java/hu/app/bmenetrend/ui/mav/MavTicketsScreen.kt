@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+
 package hu.app.bmenetrend.ui.mav
 
 import android.app.Activity
@@ -209,7 +211,7 @@ fun MavTicketsScreen(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
-                            CircularProgressIndicator()
+                            CircularWavyProgressIndicator(modifier = Modifier.size(56.dp))
                         }
                     }
                     is TicketsUiState.Error -> {
@@ -561,20 +563,24 @@ private fun MavLoginView(
 
                 Button(
                     onClick = {
-                        focusManager.clearFocus()
-                        onLogin(email, password)
+                        // Repeated taps while signing in are ignored.
+                        if (loginState !is LoginUiState.Loading) {
+                            focusManager.clearFocus()
+                            onLogin(email, password)
+                        }
                     },
-                    enabled = loginState !is LoginUiState.Loading && email.isNotBlank() && password.isNotBlank(),
+                    // Stay visually enabled while loading so the indicator sits on the primary color.
+                    enabled = loginState is LoginUiState.Loading || (email.isNotBlank() && password.isNotBlank()),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     if (loginState is LoginUiState.Loading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
+                        CircularWavyProgressIndicator(
+                            modifier = Modifier.size(30.dp),
                             color = MaterialTheme.colorScheme.onPrimary,
-                            strokeWidth = 2.dp
+                            trackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.3f)
                         )
                     } else {
                         Text(
@@ -1341,12 +1347,20 @@ fun MavTicketDetailView(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
-                                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                                CircularWavyProgressIndicator(modifier = Modifier.size(56.dp))
                                 Text(
                                     stringResource(R.string.mav_loading_data),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = Color.DarkGray
                                 )
+                                if (!data.notice.isNullOrBlank()) {
+                                    Text(
+                                        data.notice,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color.Gray,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
                             }
                         }
                         data.error != null -> {

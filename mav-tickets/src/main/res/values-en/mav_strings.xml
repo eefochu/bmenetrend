@@ -44,4 +44,6 @@
     <string name="mav_expired_status">Expired</string>
     <string name="mav_loading_data">Loading data</string>
     <string name="mav_retry">Retry</string>
+    <string name="mav_barcode_wait_notice">MÁV doesn\'t release the ticket image for about half a minute after a fresh login. Retrying automatically…</string>
+    <string name="mav_barcode_throttled">MÁV hasn\'t released the ticket image yet. After a fresh login this can take about half a minute, please try again shortly.</string>
 </resources>

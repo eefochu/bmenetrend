@@ -430,7 +430,13 @@ class MavRepository(
 
         val currentSession = _session.value ?: return@withContext null
         if (currentSession.token.isBlank()) return@withContext null
-        val fetched = runCatching { apiClient.getTicketImage(currentSession, receiptId) }.getOrNull()
+        val fetched = try {
+            apiClient.getTicketImage(currentSession, receiptId)
+        } catch (e: MavTicketImageThrottledException) {
+            throw e // let the caller retry after MÁV's "try again in half a minute"
+        } catch (e: Exception) {
+            null
+        }
         if (fetched != null) {
             cacheStore.saveTicketImage(receiptId, fetched)
         }
