@@ -397,7 +397,7 @@ class MavViewModel(
                                 throttled = true
                                 null
                             }
-                            if (ticketImage != null) break
+                            if (ticketImage != null || throttled) break
                         }
                         if (ticketImage != null || !throttled) break
                         if (attempt < TICKET_IMAGE_MAX_ATTEMPTS - 1) {
@@ -451,8 +451,8 @@ class MavViewModel(
     }
 
     private companion object {
-        const val TICKET_IMAGE_MAX_ATTEMPTS = 5
-        const val TICKET_IMAGE_RETRY_DELAY_MS = 6_000L
+        const val TICKET_IMAGE_MAX_ATTEMPTS = 3
+        const val TICKET_IMAGE_RETRY_DELAY_MS = 32_000L
     }
 
     fun dismissBarcode() {

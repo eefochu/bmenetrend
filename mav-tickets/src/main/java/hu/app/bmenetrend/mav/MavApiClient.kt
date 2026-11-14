@@ -733,8 +733,8 @@ class MavApiClient(
                 }.getOrNull()
 
                 // Check hptData array (IK_API_PROD)
-                val hptArray = result?.optJSONArray("hptData")
-                if (hptArray != null && hptArray.length() > 0) {
+                val hptArray = result?.optJSONArray("hptData") ?: result?.optJSONArray("HptData")
+                if (hptArray != null) {
                     val list = mutableListOf<RawHptItem>()
                     for (i in 0 until hptArray.length()) {
                         val item = hptArray.optJSONObject(i) ?: continue
@@ -757,12 +757,12 @@ class MavApiClient(
                             )
                         )
                     }
-                    if (list.isNotEmpty()) return list
+                    return list
                 }
 
                 // Check storedPassengers array (PAPI GetStoredPassenger)
                 val storedArray = result?.optJSONArray("storedPassengers")
-                if (storedArray != null && storedArray.length() > 0) {
+                if (storedArray != null) {
                     val list = mutableListOf<RawHptItem>()
                     for (i in 0 until storedArray.length()) {
                         val item = storedArray.optJSONObject(i) ?: continue
@@ -784,7 +784,7 @@ class MavApiClient(
                             )
                         )
                     }
-                    if (list.isNotEmpty()) return list
+                    return list
                 }
             }
         }
@@ -880,9 +880,14 @@ class MavApiClient(
     suspend fun getAllPassHolders(session: MavSession): List<MavPassHolder> {
         val list = mutableListOf<MavPassHolder>()
         val seenIds = mutableSetOf<String>()
+        var ikSucceeded = false
 
         // 1. First, check HPT datas from IK_API_PROD / Profile
-        val hptItems = runCatching { fetchHptDatas(session) }.getOrNull().orEmpty()
+        val hptResult = runCatching { fetchHptDatas(session) }
+        val hptItems = hptResult.getOrNull().orEmpty()
+        if (hptResult.isSuccess) {
+            ikSucceeded = true
+        }
         for (item in hptItems) {
             val isPassHolder = item.dataType.equals("BERLETTOK", ignoreCase = true)
             if (isPassHolder) {
@@ -907,10 +912,11 @@ class MavApiClient(
             }
         }
 
-        // 2. Fetch pass holders from VIM API (BerletTokLekeres) only if IK returned nothing
+        // 2. Fetch pass holders from VIM API (BerletTokLekeres) only if IK was unreachable or for legacy VIM sessions
         val emailToUse = session.email.ifBlank { session.user?.email.orEmpty() }
         val tokenToUse = getRawSamlToken(session.token.ifBlank { session.vimToken.orEmpty() })
-        val array = if (list.isEmpty() && tokenToUse.isNotBlank() && emailToUse.isNotBlank()) {
+        val shouldQueryVim = !ikSucceeded || (list.isEmpty() && session.vimToken != null && session.token.isBlank())
+        val array = if (shouldQueryVim && tokenToUse.isNotBlank() && emailToUse.isNotBlank()) {
             val requestJson = JSONObject().apply {
                 put("FelhasznaloAzonosito", emailToUse)
                 put("NevesitesAzonosito", "")
