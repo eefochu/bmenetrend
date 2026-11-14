@@ -265,4 +265,18 @@ class MavCacheStoreTest {
         // Full composite ID lookup
         assertEquals(image.imageBase64, cacheStore.getTicketImage(compositeId)?.imageBase64)
     }
+
+    @Test
+    fun exactPassHolderLookupDoesNotMatchUnrelatedIds() {
+        // Email account (live data): BERLETTOK passholder 1023744049 with HPT id 7269605.
+        val holder = MavPassHolder(id = "1023744049", hptId = "7269605", name = "Kókai Balázs", idCardNumber = "1258875960")
+        cacheStore.savePassHolder(holder.id, holder)
+
+        assertEquals("1023744049", cacheStore.getPassHolder("1023744049", exact = true)?.id)
+        assertEquals("1023744049", cacheStore.getPassHolder("7269605", exact = true)?.id)
+        // A saved passenger's id or a composite purchase id must not be treated as this passholder.
+        assertNull(cacheStore.getPassHolder("1023604393", exact = true))
+        assertNull(cacheStore.getPassHolder("ODAUTI_AJANLAT#CSCSAZON#CSAZON#1023744049X", exact = true))
+        assertNull(cacheStore.getPassHolder("102374404", exact = true))
+    }
 }

@@ -328,8 +328,9 @@ class MavRepository(
         return cacheStore.getPassengers()
     }
 
+    /** The electronic passholder (BERLETTOK) with exactly this id, if the account has one. */
     fun getCachedPassHolder(id: String): MavPassHolder? {
-        return cacheStore.getPassHolder(id)
+        return cacheStore.getPassHolder(id, exact = true)
     }
 
     fun getCachedTicketImage(receiptId: String): MavTicketImage? {
@@ -509,16 +510,22 @@ class MavRepository(
         deferred.await()
     }
 
+    /**
+     * The electronic passholder (BERLETTOK) with exactly this id, fetching the account's passholders
+     * when the cache doesn't have it yet (e.g. a pass opened right after login, before the sync
+     * reached them). Returns null when the id isn't a passholder, e.g. a saved passenger's id.
+     */
     suspend fun getPassHolder(nevesitesAzonosito: String): MavPassHolder? = withContext(ioDispatcher) {
-        val cached = cacheStore.getPassHolder(nevesitesAzonosito)
+        val cached = cacheStore.getPassHolder(nevesitesAzonosito, exact = true)
         if (cached != null) return@withContext cached
 
         val currentSession = _session.value ?: return@withContext null
         if (currentSession.token.isBlank() && currentSession.vimToken.isNullOrBlank()) return@withContext null
-        val fetched = runCatching { apiClient.getPassHolder(currentSession, nevesitesAzonosito) }.getOrNull()
-        if (fetched != null) {
-            cacheStore.savePassHolder(nevesitesAzonosito, fetched)
+        val holders = runCatching { apiClient.getAllPassHolders(currentSession) }.getOrNull().orEmpty()
+        for (holder in holders) {
+            if (holder.id.isNotBlank()) cacheStore.savePassHolder(holder.id, holder)
+            holder.hptId?.let { if (it.isNotBlank()) cacheStore.savePassHolder(it, holder) }
         }
-        fetched
+        holders.firstOrNull { it.id == nevesitesAzonosito || it.hptId == nevesitesAzonosito }
     }
 }

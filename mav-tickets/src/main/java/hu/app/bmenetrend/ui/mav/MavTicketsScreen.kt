@@ -1001,9 +1001,7 @@ private fun OrderTicketCard(
 
             order.receipts.forEach { receipt ->
                 val isPass = isPassOrder || receipt.items.any { it.isPass }
-                val passHolderId = (receipt.passHolderId ?: order.passHolder?.id)?.takeIf {
-                    it.isNotBlank() && it != order.orderId && it != order.displayOrderId && it != receipt.receiptId && it != receipt.ticketNumber
-                }
+                val passHolderId = (receipt.passHolderId ?: order.passHolder?.id)?.takeIf { it.isNotBlank() }
                 ReceiptItemView(
                     receipt = receipt,
                     isActiveTab = isActiveTab,
@@ -1259,9 +1257,9 @@ fun MavTicketDetailView(
                 shape = cardShape,
                 color = cardColor
             ) {
-                val isElectronicPassHolder = !data.passHolderNumber.isNullOrBlank() &&
-                    data.passHolderNumber != data.receiptId &&
-                    data.passHolderNumber != data.ticketNumber
+                // Only set by the ViewModel when the id matches a real BERLETTOK passholder record; the
+                // number itself often equals the order/ticket number, so it can't be compared against them.
+                val isElectronicPassHolder = !data.passHolderNumber.isNullOrBlank()
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()

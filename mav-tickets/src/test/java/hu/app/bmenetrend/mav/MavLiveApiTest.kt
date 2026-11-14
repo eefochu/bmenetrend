@@ -85,6 +85,12 @@ class MavLiveApiTest {
         val receipt = active.flatMap { it.receipts }.firstOrNull()
         assertNotNull("account has no active ticket/pass to test with", receipt)
 
+        val passHolderId = receipt!!.passHolderId
+        val berlettok = api.getAllPassHolders(session)
+        val match = berlettok.firstOrNull { it.id == passHolderId || it.hptId == passHolderId }
+        log("passHolderId=$passHolderId BERLETTOK ids=${berlettok.map { it.id }} -> electronic passholder shown=${match != null}" +
+            (match?.let { " (name=${it.name != null} photo=${!it.photoBase64.isNullOrBlank()} idCard=${it.idCardNumber})" } ?: ""))
+
         log("=== ticket image ===")
         val t0 = System.currentTimeMillis()
         val image = runCatching { api.getTicketImage(session, receipt!!.receiptId) }

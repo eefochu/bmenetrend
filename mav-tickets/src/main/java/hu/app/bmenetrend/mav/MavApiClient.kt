@@ -1061,7 +1061,10 @@ class MavApiClient(
                             }
                             else -> id
                         }
-                        val passHolderId = if (rawPassHolderId != null && rawPassHolderId != cleanOrderId && rawPassHolderId != id) rawPassHolderId else null
+                        // MÁV reuses the electronic passholder number as the trailing segment of the purchase
+                        // id, so it legitimately equals cleanOrderId. Whether it is a real passholder (BERLETTOK)
+                        // or e.g. a saved passenger is decided against the HPT records when it is displayed.
+                        val passHolderId = rawPassHolderId?.takeIf { it != id }
                         val status = p.optString("status", "Ervenyes")
 
                         val isCurrent = validTo == 0L || validTo >= nowMs
@@ -1138,7 +1141,7 @@ class MavApiClient(
                     val nevesites = it.optString("NevesitesAzonosito", "").trim()
                     val version = it.optInt("VerzioSzam", it.optInt("Verzio", 0))
                     val validId = nevesites.ifBlank { hptId }
-                    if (validId.isNotBlank() && validId != orderId) {
+                    if (validId.isNotBlank()) {
                         MavPassHolderSummary(hptId = hptId, id = validId, version = version)
                     } else null
                 }
@@ -1169,7 +1172,7 @@ class MavApiClient(
                         val nevesites = passHolderObj.optString("NevesitesAzonosito", "").trim()
                         val version = passHolderObj.optInt("VerzioSzam", passHolderObj.optInt("Verzio", 0))
                         val validId = nevesites.ifBlank { hptId }
-                        if (validId.isNotBlank() && validId != orderId && validId != receiptId) {
+                        if (validId.isNotBlank()) {
                             resolvedPassHolder = MavPassHolderSummary(hptId = hptId, id = validId, version = version)
                         }
                     }
@@ -1225,7 +1228,7 @@ class MavApiClient(
                         )
                     }
 
-                    val receiptPassHolderId = resolvedPassHolder?.id?.takeIf { it != orderId && it != receiptId }
+                    val receiptPassHolderId = resolvedPassHolder?.id?.takeIf { it.isNotBlank() }
                     receipts.add(
                         MavTicketReceipt(
                             passengerName = passengerName,
@@ -1312,7 +1315,7 @@ class MavApiClient(
                         }
 
                         val resolvedMergedPassHolderId = (exR.passHolderId ?: vimR?.passHolderId ?: mergedPassHolder?.id)
-                            ?.takeIf { it != ex.orderId && it != orderId && it != exR.receiptId }
+                            ?.takeIf { it.isNotBlank() }
                         exR.copy(
                             passengerName = passengerName,
                             birthDate = birthDate,

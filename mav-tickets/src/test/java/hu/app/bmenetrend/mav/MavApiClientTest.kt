@@ -866,8 +866,10 @@ class MavApiClientTest {
         assertEquals("1023744049", order.orderId)
         assertEquals("1023744049", order.displayOrderId)
         assertEquals("ODAUTI_AJANLAT#CSCSAZON#CSAZON#1023744049", order.receipts.first().receiptId)
-        assertNull("passHolder should be null when passHolderId equals purchase id", order.passHolder)
-        assertNull("receipt passHolderId should be null when passHolderId equals purchase id", order.receipts.first().passHolderId)
+        // Live MÁV data: the electronic passholder number (BERLETTOK nevesitesUzletiAzonosito) is reused
+        // as the trailing segment of the purchase id, so it must be kept even though it equals the order id.
+        assertEquals("1023744049", order.passHolder?.id)
+        assertEquals("1023744049", order.receipts.first().passHolderId)
     }
 
     @Test

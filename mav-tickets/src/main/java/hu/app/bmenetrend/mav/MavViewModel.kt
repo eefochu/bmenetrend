@@ -286,9 +286,7 @@ class MavViewModel(
         birthDate: Long?,
         passHolderId: String?
     ) {
-        val cleanPassHolderId = passHolderId?.trim()?.takeIf {
-            it.isNotBlank() && it != receiptId && it != ticketNumber
-        }
+        val cleanPassHolderId = passHolderId?.trim()?.takeIf { it.isNotBlank() }
 
         val passengers = repository.getPassengers()
         val matched = passengers.firstOrNull { p ->

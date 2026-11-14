@@ -254,7 +254,11 @@ class MavCacheStore(
         }
     }
 
-    fun getPassHolder(id: String): MavPassHolder? {
+    /**
+     * @param exact only match a holder stored under exactly this id. Use it to decide whether an id
+     * belongs to an electronic passholder at all: the fuzzy fallback would also match unrelated ids.
+     */
+    fun getPassHolder(id: String, exact: Boolean = false): MavPassHolder? {
         if (id.isBlank()) return null
         synchronized(lock) {
             if (!cacheFile.exists()) return null
@@ -262,6 +266,7 @@ class MavCacheStore(
             val holdersObj = root.optJSONObject("passHolders") ?: return null
 
             var obj = holdersObj.optJSONObject(id)
+            if (obj == null && exact) return null
             if (obj == null && id.contains("#")) {
                 obj = holdersObj.optJSONObject(id.substringAfterLast("#"))
             }
