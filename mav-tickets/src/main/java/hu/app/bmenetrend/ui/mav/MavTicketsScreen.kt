@@ -973,10 +973,10 @@ private fun OrderTicketCard(
                         modifier = Modifier.size(20.dp)
                     )
                     Text(
-                        if (isPassOrder && order.orderId.startsWith("HPT")) {
-                            "Bérlet azonosító: ${order.orderId}"
+                        if (isPassOrder && order.displayOrderId.startsWith("HPT")) {
+                            "Bérlet azonosító: ${order.displayOrderId}"
                         } else {
-                            stringResource(R.string.mav_order_id, order.orderId)
+                            stringResource(R.string.mav_order_id, order.displayOrderId)
                         },
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
@@ -1002,7 +1002,7 @@ private fun OrderTicketCard(
             order.receipts.forEach { receipt ->
                 val isPass = isPassOrder || receipt.items.any { it.isPass }
                 val passHolderId = (receipt.passHolderId ?: order.passHolder?.id)?.takeIf {
-                    it.isNotBlank() && it != order.orderId && it != receipt.receiptId && it != receipt.ticketNumber
+                    it.isNotBlank() && it != order.orderId && it != order.displayOrderId && it != receipt.receiptId && it != receipt.ticketNumber
                 }
                 ReceiptItemView(
                     receipt = receipt,

@@ -986,8 +986,28 @@ class MavApiClient(
                         val validTo = parseTimestamp(p.opt("validTo"))
                         val priceObj = p.optJSONObject("price")
                         val price = priceObj?.optInt("amount", 0) ?: 0
+                        val purchaseId = p.optString("purchaseId", "").ifBlank {
+                            p.optString("orderId", "").ifBlank {
+                                p.optString("orderNumber", "").ifBlank {
+                                    p.optString("megrendelesAzonosito", "").ifBlank {
+                                        null
+                                    }
+                                }
+                            }
+                        }
                         val rawPassHolderId = p.opt("passHolderId")?.toString()?.trim()?.ifBlank { null }
-                        val passHolderId = if (rawPassHolderId != null && rawPassHolderId != id) rawPassHolderId else null
+                        val cleanOrderId = when {
+                            !purchaseId.isNullOrBlank() -> purchaseId
+                            !rawPassHolderId.isNullOrBlank() && !rawPassHolderId.contains("#") -> rawPassHolderId
+                            id.contains("#") -> {
+                                val parts = id.split("#").map { it.trim() }.filter { it.isNotEmpty() }
+                                parts.lastOrNull { it.all { ch -> ch.isDigit() } }
+                                    ?: parts.lastOrNull { it.isNotEmpty() }
+                                    ?: id
+                            }
+                            else -> id
+                        }
+                        val passHolderId = if (rawPassHolderId != null && rawPassHolderId != cleanOrderId && rawPassHolderId != id) rawPassHolderId else null
                         val status = p.optString("status", "Ervenyes")
 
                         val isCurrent = validTo == 0L || validTo >= nowMs
@@ -1004,20 +1024,21 @@ class MavApiClient(
                             status = status
                         )
                         val receipt = MavTicketReceipt(
-                            ticketNumber = passHolderId ?: id,
+                            ticketNumber = passHolderId ?: cleanOrderId,
                             receiptId = id,
                             items = listOf(item),
                             passHolderId = passHolderId
                         )
                         orders.add(
                             MavOrder(
-                                orderId = id,
+                                orderId = cleanOrderId,
                                 purchaseDate = validFrom,
                                 deliveryMode = if (isSeason) "E-Bérlet" else "E-Jegy",
                                 passHolder = passHolderId?.let { MavPassHolderSummary(it, it, 0) },
                                 receipts = listOf(receipt)
                             )
                         )
+                        seenOrderIds.add(cleanOrderId)
                         seenOrderIds.add(id)
                         if (passHolderId != null) seenOrderIds.add(passHolderId)
                     }
@@ -1189,7 +1210,13 @@ class MavApiClient(
 
                 if (matchingIdx != -1) {
                     val ex = orders[matchingIdx]
-                    val mergedOrderId = if (ex.orderId.isNotBlank() && !ex.orderId.contains("#")) ex.orderId else orderId
+                    val mergedOrderId = if (ex.orderId.isNotBlank() && !ex.orderId.contains("#")) {
+                        ex.orderId
+                    } else if (orderId.isNotBlank() && !orderId.contains("#")) {
+                        orderId
+                    } else {
+                        ex.displayOrderId
+                    }
                     val mergedPurchaseDate = if (purchaseDate > 0) purchaseDate else ex.purchaseDate
                     val mergedPassHolder = ex.passHolder ?: resolvedPassHolder
                     val mergedDeliveryMode = ex.deliveryMode ?: deliveryMode.ifBlank { null }

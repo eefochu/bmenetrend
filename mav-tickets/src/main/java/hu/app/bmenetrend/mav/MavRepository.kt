@@ -257,7 +257,13 @@ class MavRepository(
             }
             if (matchingIdx != -1) {
                 val ex = result[matchingIdx]
-                val mergedOrderId = if (ex.orderId.isNotBlank() && !ex.orderId.contains("#")) ex.orderId else order.orderId
+                val mergedOrderId = if (ex.orderId.isNotBlank() && !ex.orderId.contains("#")) {
+                    ex.orderId
+                } else if (order.orderId.isNotBlank() && !order.orderId.contains("#")) {
+                    order.orderId
+                } else {
+                    ex.displayOrderId
+                }
                 val mergedPurchaseDate = if (order.purchaseDate > 0) order.purchaseDate else ex.purchaseDate
                 val mergedPassHolder = ex.passHolder ?: order.passHolder
                 val mergedDeliveryMode = ex.deliveryMode ?: order.deliveryMode
