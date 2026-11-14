@@ -186,6 +186,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private var favoriteEmmaStops: List<TransitStop>? = null
     private var favoriteSelectionIds = emptySet<String>()
     private var favoriteJob: Job? = null
+    private var favoriteRetryJob: Job? = null
+    private var favoriteRetryAttempts = 0
     private var favoriteGeneration = 0
     private var favoriteKey = emptyList<String>()
     private var favoriteLoading = false
@@ -234,6 +236,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             NetworkAccessPolicy.internetAvailable.collect { available ->
                 mutableState.update { it.copy(internetAvailable = available) }
+                if (available && favoriteFailures.isNotEmpty()) ensureFavoriteRequest(retryFailed = true)
             }
         }
         // The first live refresh needs the ViaBusz road geometry; parse it before that, off the main thread.
@@ -295,7 +298,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 if (mapVisible || favoritesVisible) refreshData()
                 delay(if (liveError || live?.vehicleDataAvailable == false) 30_000 else 15_000)
             }
-        } finally { nearbyActive = false; boardJob?.cancel(); nearbyJob?.cancel(); favoriteJob?.cancel(); mapSettledJob?.cancel(); nearbyLoading = false; favoriteLoading = false }
+        } finally { nearbyActive = false; boardJob?.cancel(); nearbyJob?.cancel(); favoriteJob?.cancel(); favoriteRetryJob?.cancel(); favoriteRetryJob = null; mapSettledJob?.cancel(); nearbyLoading = false; favoriteLoading = false }
     }
 
     fun setMapVisible(visible: Boolean) {
@@ -329,7 +332,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     fun setFavoritesVisible(visible: Boolean) {
         favoritesVisible = visible
         if (visible) { recalculate(); ensureFavoriteRequest() }
-        else { favoriteGeneration++; favoriteJob?.cancel(); favoriteLoading = false }
+        else { favoriteGeneration++; favoriteJob?.cancel(); favoriteRetryJob?.cancel(); favoriteRetryJob = null; favoriteRetryAttempts = 0; favoriteLoading = false }
     }
 
     fun setVisibleFavorites(ids: Set<String>) {
@@ -394,7 +397,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         saved.toList() + bkkBoards.mapNotNull { (id, board) -> board?.takeIf { id !in retry }?.let { id to it } } + fetched.awaitAll().flatten() + fallback.awaitAll().flatten()
     }
 
-    private fun ensureFavoriteRequest(force: Boolean = false) {
+    private fun ensureFavoriteRequest(force: Boolean = false, retryFailed: Boolean = false) {
         if (NetworkAccessPolicy.offline.value) { recalculateOffline(); return }
         if (!favoritesVisible || !nearbyActive) return
         val current = state.value
@@ -402,12 +405,18 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             all.filter { it.stop.id in visibleFavorites }.ifEmpty { all.take(3) }.take(8)
         }
         val key = stations.map { it.stop.id }.sorted()+LocalDate.now(budapest).toString()
-        if (!force && key == favoriteKey && favoriteJob?.isCancelled != true) return
+        if (!force && key == favoriteKey && favoriteJob?.isActive == true) return
+        if (!force && !retryFailed && key == favoriteKey && favoriteJob?.isCancelled != true &&
+            (favoriteFailures.isEmpty() || favoriteRetryJob?.isActive == true)) return
+        if (force || key != favoriteKey) favoriteRetryAttempts = 0
+        favoriteRetryJob?.cancel()
+        favoriteRetryJob = null
         favoriteKey = key
         val generation = ++favoriteGeneration
         favoriteJob?.cancel()
         favoriteLoading = stations.isNotEmpty()
-        favoriteFailures = emptySet()
+        val visibleIds = stations.mapTo(HashSet()) { it.stop.id }
+        favoriteFailures = favoriteFailures.intersect(visibleIds)
         recalculate()
         favoriteJob = viewModelScope.launch {
             val semaphore = kotlinx.coroutines.sync.Semaphore(3)
@@ -415,21 +424,39 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 coroutineScope {
                     // BKK platforms: serving lines from the Worker's batched boards (six stops per
                     // request). Any stop BKK could not answer uses EMMA's daily-cached lines.
-                    val bkk = stations.map { it.stop }.filter { BkkWorkerParser.workerStopId(it) != null }.let { stops ->
+                    for (station in stations) {
+                        val id = station.stop.id
+                        if (id.startsWith("emma:") && id !in favoriteLines) {
+                            val saved = stopsRepository.cachedServingLines(id)
+                            if (saved != null && generation == favoriteGeneration) {
+                                favoriteLines[id] = saved
+                                while (favoriteLines.size > 64) favoriteLines.remove(favoriteLines.keys.first())
+                                mergeStopRoutes(saved.catalogue.routes)
+                                recalculate()
+                            }
+                        }
+                    }
+                    val pending = stations.filter { station ->
+                        val saved = favoriteLines[station.stop.id]
+                        force || station.stop.id in favoriteFailures || saved == null || saved.stale ||
+                            Duration.between(saved.fetchedAt, Instant.now()).seconds !in 0..86_399
+                    }
+                    val bkk = pending.map { it.stop }.filter { BkkWorkerParser.workerStopId(it) != null }.let { stops ->
                         if (stops.isEmpty()) emptyMap() else try { bkkRepository.servingLines(stops) }
                         catch (cancelled: CancellationException) { throw cancelled }
                         catch (error: Exception) { if (BuildConfig.DEBUG) android.util.Log.w("BkkWorker", "Favourite lines failed", error); emptyMap() }
                     }
-                    stations.map { station -> async {
+                    pending.map { station -> async {
                         val id=station.stop.id
                         if(id.startsWith("emma:")) {
                             semaphore.acquire()
                             try {
-                                val result=bkk[id] ?: stopsRepository.servingLines(id,force).copy(source=DataSource.EMMA)
+                                val result=bkk[id]?.takeIf { it.catalogue.routes.isNotEmpty() }
+                                    ?: stopsRepository.servingLines(id,force || retryFailed).copy(source=DataSource.EMMA)
                                 if(generation==favoriteGeneration) {
                                     favoriteLines[id]=result
                                     while(favoriteLines.size>64) favoriteLines.remove(favoriteLines.keys.first())
-                                    if(result.stale) favoriteFailures+=id
+                                    favoriteFailures = if (result.stale) favoriteFailures + id else favoriteFailures - id
                                     mergeStopRoutes(result.catalogue.routes)
                                     recalculate()
                                 }
@@ -440,7 +467,20 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                     } }.awaitAll()
                 }
             } finally {
-                if (generation == favoriteGeneration) { favoriteLoading = false; recalculate() }
+                if (generation == favoriteGeneration) {
+                    favoriteLoading = false
+                    recalculate()
+                    if (favoriteFailures.isEmpty()) favoriteRetryAttempts = 0
+                    else if (favoritesVisible && nearbyActive && !NetworkAccessPolicy.offline.value) {
+                        val wait = minOf(120_000L, 15_000L shl favoriteRetryAttempts.coerceAtMost(3))
+                        favoriteRetryAttempts++
+                        favoriteRetryJob = viewModelScope.launch {
+                            delay(wait)
+                            if (generation == favoriteGeneration && favoritesVisible && nearbyActive)
+                                ensureFavoriteRequest(retryFailed = true)
+                        }
+                    }
+                }
             }
         }
     }
@@ -1092,7 +1132,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         mapStopsGeneration++; mapStopsJob?.cancel(); loadedMapBounds = null; loadedMapBoundsList.clear()
         stopDirectionsJob?.cancel(); stopDirectionsGeneration++
         placeSearchGeneration++; lineGeneration++; journeyGeneration++; nearbyGeneration++; favoriteGeneration++
-        placeSearchJob?.cancel(); lineJob?.cancel(); journeyJob?.cancel(); nearbyJob?.cancel(); favoriteJob?.cancel(); boardJob?.cancel()
+        placeSearchJob?.cancel(); lineJob?.cancel(); journeyJob?.cancel(); nearbyJob?.cancel(); favoriteJob?.cancel(); favoriteRetryJob?.cancel(); favoriteRetryJob = null; boardJob?.cancel()
         ota.cancel()
         board = null; boardKey = null; recentBoards.clear(); nearbyBoards.clear(); favoriteLines.clear()
         boardLoading = false; nearbyLoading = false; favoriteLoading = false
