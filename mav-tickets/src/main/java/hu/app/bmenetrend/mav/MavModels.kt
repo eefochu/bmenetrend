@@ -98,6 +98,15 @@ data class MavOrder(
     val passHolder: MavPassHolderSummary? = null,
     val receipts: List<MavTicketReceipt> = emptyList()
 ) {
+    val displayOrderId: String
+        get() {
+            if (!orderId.contains("#")) return orderId
+            val parts = orderId.split("#").map { it.trim() }.filter { it.isNotEmpty() }
+            return parts.lastOrNull { it.all { ch -> ch.isDigit() } }
+                ?: parts.lastOrNull { it.isNotEmpty() }
+                ?: orderId
+        }
+
     val allItems: List<MavTicketItem> get() = receipts.flatMap { it.items }
     val isValidNow: Boolean
         get() {

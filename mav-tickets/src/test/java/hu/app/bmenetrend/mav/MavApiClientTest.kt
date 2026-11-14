@@ -4,6 +4,7 @@ import kotlinx.coroutines.runBlocking
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody.Companion.toResponseBody
+import okio.Buffer
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -716,5 +717,303 @@ class MavApiClientTest {
 
         // Pass holders must not be synthesized as fake ticket orders!
         assertTrue("Orders list must be empty when no actual tickets are returned", orders.isEmpty())
+    }
+    @Test
+    fun loginWithGoogleCodeExtractsUserTokenXmlAndUserFromUserData() = runBlocking {
+        val mockJson = """
+            {
+                "token": "bearer_jwt_token_456",
+                "refreshToken": "refresh_token_789",
+                "userData": {
+                    "userTokenXml": "<EncryptedData>saml_token_content</EncryptedData>",
+                    "userEmail": "googleuser@example.com",
+                    "keresztNev": "István",
+                    "vezetekNev": "Nagy",
+                    "regisztraciosAzonosito": "123456"
+                }
+            }
+        """.trimIndent()
+
+        val client = createMockClient { req ->
+            assertTrue(req.url.encodedPath.contains("SocialLogin"))
+            jsonResponse(req, mockJson)
+        }
+
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
+        val session = api.loginWithGoogleCode("mock_code", "mock_uaid")
+
+        assertEquals("<EncryptedData>saml_token_content</EncryptedData>", session.token)
+        assertEquals("googleuser@example.com", session.email)
+        assertNotNull(session.user)
+        assertEquals("István", session.user?.firstName)
+        assertEquals("Nagy", session.user?.lastName)
+        assertEquals("123456", session.user?.regId)
+    }
+
+    @Test
+    fun isSamlTokenDetectsXmlAndBase64XmlCorrectly() {
+        val api = MavApiClient()
+        assertTrue(api.isSamlToken("<EncryptedData>xyz</EncryptedData>"))
+        val b64Xml = java.util.Base64.getEncoder().encodeToString("<saml:Assertion>test</saml:Assertion>".toByteArray())
+        assertTrue(api.isSamlToken(b64Xml))
+        assertFalse(api.isSamlToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.t-IDcSemACt8x4iTMCda8Yhe3iZaWbvV5XKSTbuAn0M"))
+        assertFalse(api.isSamlToken(""))
+    }
+
+    @Test
+    fun fetchUserTokenXmlExtractsTokenFromGetUserPersonalDatas() = runBlocking {
+        val mockJson = """
+            {
+                "userData": {
+                    "userTokenXml": "<EncryptedData>resolved_saml_token</EncryptedData>",
+                    "userEmail": "googleuser@example.com"
+                }
+            }
+        """.trimIndent()
+
+        var capturedBody = ""
+        var capturedAuth = ""
+        val client = createMockClient { req ->
+            assertTrue(req.url.encodedPath.contains("GetUserPersonalDatas"))
+            capturedAuth = req.header("Authorization") ?: ""
+            val buf = okio.Buffer()
+            req.body?.writeTo(buf)
+            capturedBody = buf.readUtf8()
+            jsonResponse(req, mockJson)
+        }
+
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
+        val session = MavSession(email = "googleuser@example.com", token = "jwt_token_123", uaid = "mock_uaid")
+        val resolvedToken = api.fetchUserTokenXml(session)
+
+        assertEquals("<EncryptedData>resolved_saml_token</EncryptedData>", resolvedToken)
+        assertTrue(capturedAuth.contains("Bearer jwt_token_123"))
+        assertTrue(capturedBody.contains("UserEmail"))
+        assertTrue(capturedBody.contains("googleuser@example.com"))
+    }
+
+    @Test
+    fun getOrdersWhenNoElectronicPassHolderAssignedLeavesPassHolderNull() = runBlocking {
+        val mockPurchases = """
+            {
+                "previousPurchases": [
+                    {
+                        "id": "1023738018",
+                        "name": "Országbérlet",
+                        "validFrom": "1726000000",
+                        "validTo": "2000000000",
+                        "seasonTicket": true,
+                        "passHolderId": "1023738018"
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        val client = createMockClient { req ->
+            if (req.url.encodedPath.contains("GetPreviousPurchases")) {
+                jsonResponse(req, mockPurchases)
+            } else if (req.url.encodedPath.contains("BerletTokLekeres")) {
+                jsonResponse(req, """{"BerletTokok":[]}""")
+            } else {
+                jsonResponse(req, """{"Megrendelesek":[]}""")
+            }
+        }
+
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
+        val session = MavSession("test@example.com", "tok", "uaid")
+        val orders = api.getOrders(session, validOnly = true)
+
+        assertEquals(1, orders.size)
+        val order = orders.first()
+        assertEquals("1023738018", order.orderId)
+        assertNull("passHolder should be null when passHolderId equals purchase id", order.passHolder)
+        assertNull("receipt passHolderId should be null when passHolderId equals purchase id", order.receipts.first().passHolderId)
+    }
+
+    @Test
+    fun getOrdersExtractsCleanOrderIdFromCompositePurchaseId() = runBlocking {
+        val mockPurchases = """
+            {
+                "previousPurchases": [
+                    {
+                        "id": "ODAUTI_AJANLAT#CSCSAZON#CSAZON#1023744049",
+                        "name": "Kedvezményes megyebérlet",
+                        "validFrom": "1726000000",
+                        "validTo": "2000000000",
+                        "seasonTicket": true,
+                        "passHolderId": "1023744049"
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        val client = createMockClient { req ->
+            if (req.url.encodedPath.contains("GetPreviousPurchases")) {
+                jsonResponse(req, mockPurchases)
+            } else if (req.url.encodedPath.contains("BerletTokLekeres")) {
+                jsonResponse(req, """{"BerletTokok":[]}""")
+            } else {
+                jsonResponse(req, """{"Megrendelesek":[]}""")
+            }
+        }
+
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
+        val session = MavSession("test@example.com", "tok", "uaid")
+        val orders = api.getOrders(session, validOnly = true)
+
+        assertEquals(1, orders.size)
+        val order = orders.first()
+        assertEquals("1023744049", order.orderId)
+        assertEquals("1023744049", order.displayOrderId)
+        assertEquals("ODAUTI_AJANLAT#CSCSAZON#CSAZON#1023744049", order.receipts.first().receiptId)
+        // Live MÁV data: the electronic passholder number (BERLETTOK nevesitesUzletiAzonosito) is reused
+        // as the trailing segment of the purchase id, so it must be kept even though it equals the order id.
+        assertEquals("1023744049", order.passHolder?.id)
+        assertEquals("1023744049", order.receipts.first().passHolderId)
+    }
+
+    @Test
+    fun getTicketImageWithJwtTokenDoesNotSendUserTokenXmlAndFetchesSuccessfully() = runBlocking {
+        val detailsJson = """
+            {
+                "previousPurchaseDetails": {
+                    "ticketDatas": [
+                        {
+                            "bizonylatTechnikaiAzonosito": "1779935735",
+                            "jegySorszam": "5594003G000448895"
+                        }
+                    ]
+                }
+            }
+        """.trimIndent()
+
+        val vimJson = """
+            {
+                "Bizonylatok": [
+                    {
+                        "BizonylatTechnikaiAzonosito": "1779935735",
+                        "BizonylatFajta": "Orszag-varmegye berlet MAVapp",
+                        "Jegysorszam": "5594003G000448895",
+                        "Jegykep": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        var userTokenXmlHeader: String? = "SENTINEL"
+        var authHeader: String? = null
+        val client = createMockClient { req ->
+            if (req.url.encodedPath.contains("GetPreviousPurchaseDetails")) {
+                userTokenXmlHeader = req.header("UserTokenXml")
+                authHeader = req.header("Authorization")
+                jsonResponse(req, detailsJson)
+            } else if (req.url.encodedPath.contains("GetJegykep")) {
+                jsonResponse(req, vimJson)
+            } else {
+                jsonResponse(req, "{}", 404)
+            }
+        }
+
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
+        val jwtToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.t-IDcSemACt8x4iTMC6Y53vOiZGuyTX7qDH_3BGSmwD"
+        val session = MavSession("jwtuser@gmail.com", jwtToken, "uaid_jwt", vimToken = "vim_saml_token")
+        val image = api.getTicketImage(session, "ODAUTI_AJANLAT#CSCSAZON#CSAZON#1023744049")
+
+        assertNotNull(image)
+        assertNull(userTokenXmlHeader)
+        assertEquals("Bearer $jwtToken", authHeader)
+        assertEquals("ODAUTI_AJANLAT#CSCSAZON#CSAZON#1023744049", image?.receiptId)
+        assertEquals("5594003G000448895", image?.ticketNumber)
+    }
+
+    // --- Behaviour observed on the live MÁV API (2026-11-14) ---------------------------------
+
+    private val compositeId = "ODAUTI_AJANLAT#CSCSAZON#d9a74e13-0625-22c7-b43a-837465e94758_1793977592000#0#1023744049"
+    private val pngBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+    private val samlSession = MavSession("test@example.com", "<saml:Assertion>tok</saml:Assertion>", "uaid")
+
+    /** GetPreviousPurchaseDetails only accepts the full composite id, like the real server. */
+    private fun realisticDetails(req: Request, sentIds: MutableList<String>): Response {
+        val body = Buffer().also { req.body!!.writeTo(it) }.readUtf8()
+        val id = org.json.JSONObject(body).optString("id")
+        sentIds += id
+        return if (id == compositeId) {
+            jsonResponse(req, """{"previousPurchaseDetails":{"ticketDatas":[{"bizonylatTechnikaiAzonosito":"1779935735","jegySorszam":"5594003G000448895"}]}}""")
+        } else {
+            jsonResponse(req, """{"message":"Érvénytelen bemenet {VasarlasAzonosito::$id}"}""", 500)
+        }
+    }
+
+    private fun jegykepBody(req: Request): String = Buffer().also { req.body!!.writeTo(it) }.readUtf8()
+
+    @Test
+    fun getTicketImageResolvesDetailsWithFullCompositeId() = runBlocking {
+        val sentDetailIds = mutableListOf<String>()
+        val jegykepIds = mutableListOf<String>()
+        val client = createMockClient { req ->
+            when {
+                req.url.encodedPath.contains("GetPreviousPurchaseDetails") -> realisticDetails(req, sentDetailIds)
+                req.url.encodedPath.contains("GetJegykep") -> {
+                    val ids = org.json.JSONObject(jegykepBody(req)).getJSONArray("BizonylatAzonosito").toString()
+                    jegykepIds += ids
+                    if (ids == "[1779935735]") jsonResponse(req, """{"Bizonylatok":[{"Jegysorszam":"5594003G000448895","Jegykep":"$pngBase64"}]}""")
+                    else jsonResponse(req, """{"Uzenetek":[{"ID":"-2790","Tipus":"H","Szoveg":"Nem regisztrált bizonylat"}]}""")
+                }
+                else -> jsonResponse(req, "{}", 404)
+            }
+        }
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest", jegykepPrepareRetryDelaysMs = emptyList())
+
+        val image = api.getTicketImage(samlSession, compositeId)
+
+        assertNotNull(image)
+        assertEquals(compositeId, sentDetailIds.first())
+        assertEquals(listOf("[1779935735]"), jegykepIds)
+    }
+
+    @Test
+    fun getTicketImageRetriesQuicklyWhileMavPreparesTheImage() = runBlocking {
+        var jegykepCalls = 0
+        val client = createMockClient { req ->
+            when {
+                req.url.encodedPath.contains("GetPreviousPurchaseDetails") -> realisticDetails(req, mutableListOf())
+                req.url.encodedPath.contains("GetJegykep") -> {
+                    jegykepCalls++
+                    if (jegykepCalls < 3) jsonResponse(req, """{"Uzenetek":[{"ID":"0","Tipus":"M","Szoveg":"Kérjük, próbálja meg ismét fél perc múlva."}]}""")
+                    else jsonResponse(req, """{"Bizonylatok":[{"Jegysorszam":"5594003G000448895","Jegykep":"$pngBase64"}]}""")
+                }
+                else -> jsonResponse(req, "{}", 404)
+            }
+        }
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest", jegykepPrepareRetryDelaysMs = listOf(0L, 0L, 0L))
+
+        val image = api.getTicketImage(samlSession, compositeId)
+
+        assertNotNull(image)
+        assertEquals(3, jegykepCalls)
+    }
+
+    @Test
+    fun getTicketImageThrowsThrottledWhenMavKeepsPreparing() = runBlocking {
+        var jegykepCalls = 0
+        val client = createMockClient { req ->
+            when {
+                req.url.encodedPath.contains("GetPreviousPurchaseDetails") -> realisticDetails(req, mutableListOf())
+                req.url.encodedPath.contains("GetJegykep") -> {
+                    jegykepCalls++
+                    jsonResponse(req, """{"Uzenetek":[{"ID":"0","Tipus":"M","Szoveg":"Kérjük, próbálja meg ismét fél perc múlva."}]}""")
+                }
+                else -> jsonResponse(req, "{}", 404)
+            }
+        }
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest", jegykepPrepareRetryDelaysMs = listOf(0L, 0L))
+
+        try {
+            api.getTicketImage(samlSession, compositeId)
+            fail("expected MavTicketImageThrottledException")
+        } catch (e: MavTicketImageThrottledException) {
+            // 1 initial call + 2 retries on the resolved document; no further calls with unrelated ids
+            assertEquals(3, jegykepCalls)
+        }
     }
 }

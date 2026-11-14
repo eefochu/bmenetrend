@@ -973,10 +973,10 @@ private fun OrderTicketCard(
                         modifier = Modifier.size(20.dp)
                     )
                     Text(
-                        if (isPassOrder && order.orderId.startsWith("HPT")) {
-                            "Bérlet azonosító: ${order.orderId}"
+                        if (isPassOrder && order.displayOrderId.startsWith("HPT")) {
+                            "Bérlet azonosító: ${order.displayOrderId}"
                         } else {
-                            stringResource(R.string.mav_order_id, order.orderId)
+                            stringResource(R.string.mav_order_id, order.displayOrderId)
                         },
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
@@ -1001,7 +1001,7 @@ private fun OrderTicketCard(
 
             order.receipts.forEach { receipt ->
                 val isPass = isPassOrder || receipt.items.any { it.isPass }
-                val passHolderId = receipt.passHolderId ?: order.passHolder?.id
+                val passHolderId = (receipt.passHolderId ?: order.passHolder?.id)?.takeIf { it.isNotBlank() }
                 ReceiptItemView(
                     receipt = receipt,
                     isActiveTab = isActiveTab,
@@ -1257,6 +1257,8 @@ fun MavTicketDetailView(
                 shape = cardShape,
                 color = cardColor
             ) {
+                // Only set by the ViewModel when the id matches a real BERLETTOK passholder record; the
+                // number itself often equals the order/ticket number, so it can't be compared against them.
                 val isElectronicPassHolder = !data.passHolderNumber.isNullOrBlank()
                 Column(
                     modifier = Modifier

@@ -286,6 +286,8 @@ class MavViewModel(
         birthDate: Long?,
         passHolderId: String?
     ) {
+        val cleanPassHolderId = passHolderId?.trim()?.takeIf { it.isNotBlank() }
+
         val passengers = repository.getPassengers()
         val matched = passengers.firstOrNull { p ->
             (receiptId.isNotBlank() && (p.id == receiptId || (p.businessId.isNotBlank() && p.businessId == receiptId))) ||
@@ -297,24 +299,11 @@ class MavViewModel(
             ))
         } ?: passengers.firstOrNull { !it.photoBase64.isNullOrBlank() } ?: passengers.firstOrNull()
 
-        // Check if this ticket/pass is associated with an electronic pass holder
-        val passHolderCandidateIds = listOfNotNull(
-            passHolderId?.takeIf { it.isNotBlank() },
-            receiptId.takeIf { it.isNotBlank() },
-            ticketNumber?.takeIf { it.isNotBlank() },
-            if (receiptId.contains("#")) receiptId.substringAfterLast("#").takeIf { it.isNotBlank() } else null,
-            if (receiptId.contains("#")) receiptId.substringBefore("#").takeIf { it.isNotBlank() } else null
-        ).distinct()
-
-        var cachedPassHolder: MavPassHolder? = null
-        if (isPass || !passHolderId.isNullOrBlank()) {
-            for (cid in passHolderCandidateIds) {
-                val h = repository.getCachedPassHolder(cid)
-                if (h != null) {
-                    cachedPassHolder = h
-                    break
-                }
-            }
+        // Only search for pass holder if an actual passHolderId was assigned to this ticket/pass
+        val cachedPassHolder: MavPassHolder? = if (cleanPassHolderId != null) {
+            repository.getCachedPassHolder(cleanPassHolderId)
+        } else {
+            null
         }
 
         val finalName: String?
@@ -329,26 +318,27 @@ class MavViewModel(
             finalPhoto = cachedPassHolder.photoBase64
                 ?: matched?.photoBase64
                 ?: repository.getCachedUser()?.photoBase64
-            finalPassHolderNumber = cachedPassHolder.id.ifBlank { passHolderId }
+            finalPassHolderNumber = cachedPassHolder.id.ifBlank { cleanPassHolderId }
             finalIdCardNumber = cachedPassHolder.idCardNumber
         } else {
             finalName = passengerName?.ifBlank { null } ?: matched?.name?.ifBlank { null }
             finalBirthDate = if (birthDate != null && birthDate > 0L) birthDate else matched?.birthDate
-            val passHolderPhoto = if (isPass) {
-                repository.getCachedPassHolder(receiptId)?.photoBase64
-                    ?: ticketNumber?.let { repository.getCachedPassHolder(it)?.photoBase64 }
-                    ?: (if (receiptId.contains("#")) repository.getCachedPassHolder(receiptId.substringAfterLast("#"))?.photoBase64 else null)
-            } else null
             finalPhoto = matched?.photoBase64
-                ?: passHolderPhoto
                 ?: passengers.firstOrNull { !it.photoBase64.isNullOrBlank() }?.photoBase64
                 ?: repository.getCachedUser()?.photoBase64
-            finalPassHolderNumber = passHolderId
+            finalPassHolderNumber = null
             finalIdCardNumber = null
         }
 
         val candidates = buildList {
+            // Full receipt id first: it is the only form MÁV's GetPreviousPurchaseDetails accepts.
             add(receiptId)
+            val cleanTrailing = if (receiptId.contains("#")) {
+                receiptId.split("#").map { it.trim() }.lastOrNull { it.isNotEmpty() && it.all { ch -> ch.isDigit() } }
+            } else null
+            if (!cleanTrailing.isNullOrBlank()) {
+                add(cleanTrailing)
+            }
             if (!ticketNumber.isNullOrBlank() && ticketNumber != receiptId) add(ticketNumber)
             if (receiptId.contains("#")) {
                 for (p in receiptId.split("#")) {
@@ -380,17 +370,15 @@ class MavViewModel(
         )
         viewModelScope.launch {
             try {
-                // If this is a pass or has passholder ID, ensure pass holder details are loaded
-                if (isPass || !passHolderId.isNullOrBlank()) {
-                    val holder = passHolderCandidateIds.firstNotNullOfOrNull { cid ->
-                        runCatching { repository.getPassHolder(cid) }.getOrNull()
-                    }
+                // If this ticket/pass has an assigned electronic passholder, ensure details are loaded
+                if (cleanPassHolderId != null) {
+                    val holder = runCatching { repository.getPassHolder(cleanPassHolderId) }.getOrNull()
                     if (holder != null) {
                         _barcodeData.value = _barcodeData.value?.copy(
                             passengerPhotoBase64 = holder.photoBase64 ?: _barcodeData.value?.passengerPhotoBase64,
                             passengerName = holder.name ?: _barcodeData.value?.passengerName,
                             birthDate = holder.birthDate ?: _barcodeData.value?.birthDate,
-                            passHolderNumber = holder.id.ifBlank { _barcodeData.value?.passHolderNumber },
+                            passHolderNumber = holder.id.ifBlank { cleanPassHolderId },
                             idCardNumber = holder.idCardNumber ?: _barcodeData.value?.idCardNumber
                         )
                     }
@@ -398,6 +386,16 @@ class MavViewModel(
 
                 var ticketImage: MavTicketImage? = cachedTicketImage
                 var throttled = false
+                // MavApiClient already retries MÁV's "image not prepared yet" notice for ~30 s; tell
+                // the user what is going on if the barcode isn't there after a few seconds.
+                val slowNoticeJob = if (ticketImage == null) launch {
+                    delay(TICKET_IMAGE_SLOW_NOTICE_MS)
+                    if (_barcodeData.value?.loading == true && _barcodeData.value?.receiptId == receiptId) {
+                        _barcodeData.value = _barcodeData.value?.copy(
+                            notice = getApplication<Application>().getString(hu.app.bmenetrend.mav.R.string.mav_barcode_wait_notice)
+                        )
+                    }
+                } else null
                 if (ticketImage == null) {
                     for (attempt in 0 until TICKET_IMAGE_MAX_ATTEMPTS) {
                         throttled = false
@@ -408,7 +406,7 @@ class MavViewModel(
                                 throttled = true
                                 null
                             }
-                            if (ticketImage != null) break
+                            if (ticketImage != null || throttled) break
                         }
                         if (ticketImage != null || !throttled) break
                         if (attempt < TICKET_IMAGE_MAX_ATTEMPTS - 1) {
@@ -420,6 +418,7 @@ class MavViewModel(
                     }
                 }
 
+                slowNoticeJob?.cancel()
                 val bitmap = ticketImage?.toBitmap() ?: _barcodeData.value?.bitmap
                 if (bitmap != null) {
                     _barcodeData.value = _barcodeData.value?.copy(
@@ -462,8 +461,9 @@ class MavViewModel(
     }
 
     private companion object {
-        const val TICKET_IMAGE_MAX_ATTEMPTS = 5
-        const val TICKET_IMAGE_RETRY_DELAY_MS = 6_000L
+        const val TICKET_IMAGE_MAX_ATTEMPTS = 2
+        const val TICKET_IMAGE_RETRY_DELAY_MS = 5_000L
+        const val TICKET_IMAGE_SLOW_NOTICE_MS = 3_000L
     }
 
     fun dismissBarcode() {
