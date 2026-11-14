@@ -717,4 +717,77 @@ class MavApiClientTest {
         // Pass holders must not be synthesized as fake ticket orders!
         assertTrue("Orders list must be empty when no actual tickets are returned", orders.isEmpty())
     }
+    @Test
+    fun loginWithGoogleCodeExtractsUserTokenXmlAndUserFromUserData() = runBlocking {
+        val mockJson = """
+            {
+                "token": "bearer_jwt_token_456",
+                "refreshToken": "refresh_token_789",
+                "userData": {
+                    "userTokenXml": "<EncryptedData>saml_token_content</EncryptedData>",
+                    "userEmail": "googleuser@example.com",
+                    "keresztNev": "István",
+                    "vezetekNev": "Nagy",
+                    "regisztraciosAzonosito": "123456"
+                }
+            }
+        """.trimIndent()
+
+        val client = createMockClient { req ->
+            assertTrue(req.url.encodedPath.contains("SocialLogin"))
+            jsonResponse(req, mockJson)
+        }
+
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
+        val session = api.loginWithGoogleCode("mock_code", "mock_uaid")
+
+        assertEquals("<EncryptedData>saml_token_content</EncryptedData>", session.token)
+        assertEquals("googleuser@example.com", session.email)
+        assertNotNull(session.user)
+        assertEquals("István", session.user?.firstName)
+        assertEquals("Nagy", session.user?.lastName)
+        assertEquals("123456", session.user?.regId)
+    }
+
+    @Test
+    fun isSamlTokenDetectsXmlAndBase64XmlCorrectly() {
+        val api = MavApiClient()
+        assertTrue(api.isSamlToken("<EncryptedData>xyz</EncryptedData>"))
+        val b64Xml = java.util.Base64.getEncoder().encodeToString("<saml:Assertion>test</saml:Assertion>".toByteArray())
+        assertTrue(api.isSamlToken(b64Xml))
+        assertFalse(api.isSamlToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.t-IDcSemACt8x4iTMCda8Yhe3iZaWbvV5XKSTbuAn0M"))
+        assertFalse(api.isSamlToken(""))
+    }
+
+    @Test
+    fun fetchUserTokenXmlExtractsTokenFromGetUserPersonalDatas() = runBlocking {
+        val mockJson = """
+            {
+                "userData": {
+                    "userTokenXml": "<EncryptedData>resolved_saml_token</EncryptedData>",
+                    "userEmail": "googleuser@example.com"
+                }
+            }
+        """.trimIndent()
+
+        var capturedBody = ""
+        var capturedAuth = ""
+        val client = createMockClient { req ->
+            assertTrue(req.url.encodedPath.contains("GetUserPersonalDatas"))
+            capturedAuth = req.header("Authorization") ?: ""
+            val buf = okio.Buffer()
+            req.body?.writeTo(buf)
+            capturedBody = buf.readUtf8()
+            jsonResponse(req, mockJson)
+        }
+
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
+        val session = MavSession(email = "googleuser@example.com", token = "jwt_token_123", uaid = "mock_uaid")
+        val resolvedToken = api.fetchUserTokenXml(session)
+
+        assertEquals("<EncryptedData>resolved_saml_token</EncryptedData>", resolvedToken)
+        assertTrue(capturedAuth.contains("Bearer jwt_token_123"))
+        assertTrue(capturedBody.contains("UserEmail"))
+        assertTrue(capturedBody.contains("googleuser@example.com"))
+    }
 }

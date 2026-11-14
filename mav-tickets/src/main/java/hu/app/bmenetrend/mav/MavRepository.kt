@@ -135,7 +135,11 @@ class MavRepository(
         val baseSession = apiClient.login(email.trim(), password, uaid)
         val user = runCatching { apiClient.getUserData(baseSession) }.getOrNull()
             ?.let { mergeUser(cacheStore.getUser()?.takeIf { c -> c.email.equals(it.email, ignoreCase = true) }, it) }
-        val fullSession = baseSession.copy(user = user)
+        val resolvedEmail = baseSession.email.ifBlank { user?.email.orEmpty() }.ifBlank { email.trim() }
+        val fullSession = baseSession.copy(
+            email = resolvedEmail,
+            user = user
+        )
         sessionStore.saveSession(fullSession)
         if (user != null) cacheStore.saveUser(user)
         _session.value = fullSession
@@ -154,10 +158,24 @@ class MavRepository(
     suspend fun loginWithGoogle(code: String): MavSession = withContext(ioDispatcher) {
         val uaid = sessionStore.getOrCreateUaid()
         val baseSession = apiClient.loginWithGoogleCode(code, uaid)
+        var currentToken = baseSession.token
         val user = runCatching { apiClient.getUserData(baseSession) }.getOrNull()
             ?.let { mergeUser(baseSession.user ?: cacheStore.getUser()?.takeIf { c -> c.email.equals(it.email, ignoreCase = true) }, it) }
             ?: baseSession.user
-        val fullSession = baseSession.copy(user = user)
+        val resolvedEmail = baseSession.email.ifBlank { user?.email.orEmpty() }
+
+        if (!apiClient.isSamlToken(currentToken)) {
+            val extraToken = runCatching { apiClient.fetchUserTokenXml(baseSession) }.getOrNull()
+            if (!extraToken.isNullOrBlank()) {
+                currentToken = extraToken
+            }
+        }
+
+        val fullSession = baseSession.copy(
+            email = resolvedEmail,
+            token = currentToken,
+            user = user
+        )
         sessionStore.saveSession(fullSession)
         if (user != null) cacheStore.saveUser(user)
         _session.value = fullSession
