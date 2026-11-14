@@ -868,4 +868,58 @@ class MavApiClientTest {
         assertNull("passHolder should be null when passHolderId equals purchase id", order.passHolder)
         assertNull("receipt passHolderId should be null when passHolderId equals purchase id", order.receipts.first().passHolderId)
     }
+
+    @Test
+    fun getTicketImageWithJwtTokenDoesNotSendUserTokenXmlAndFetchesSuccessfully() = runBlocking {
+        val detailsJson = """
+            {
+                "previousPurchaseDetails": {
+                    "ticketDatas": [
+                        {
+                            "bizonylatTechnikaiAzonosito": "1779935735",
+                            "jegySorszam": "5594003G000448895"
+                        }
+                    ]
+                }
+            }
+        """.trimIndent()
+
+        val vimJson = """
+            {
+                "Bizonylatok": [
+                    {
+                        "BizonylatTechnikaiAzonosito": "1779935735",
+                        "BizonylatFajta": "Orszag-varmegye berlet MAVapp",
+                        "Jegysorszam": "5594003G000448895",
+                        "Jegykep": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        var userTokenXmlHeader: String? = "SENTINEL"
+        var authHeader: String? = null
+        val client = createMockClient { req ->
+            if (req.url.encodedPath.contains("GetPreviousPurchaseDetails")) {
+                userTokenXmlHeader = req.header("UserTokenXml")
+                authHeader = req.header("Authorization")
+                jsonResponse(req, detailsJson)
+            } else if (req.url.encodedPath.contains("GetJegykep")) {
+                jsonResponse(req, vimJson)
+            } else {
+                jsonResponse(req, "{}", 404)
+            }
+        }
+
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
+        val jwtToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.t-IDcSemACt8x4iTMC6Y53vOiZGuyTX7qDH_3BGSmwD"
+        val session = MavSession("jwtuser@gmail.com", jwtToken, "uaid_jwt", vimToken = "vim_saml_token")
+        val image = api.getTicketImage(session, "ODAUTI_AJANLAT#CSCSAZON#CSAZON#1023744049")
+
+        assertNotNull(image)
+        assertNull(userTokenXmlHeader)
+        assertEquals("Bearer $jwtToken", authHeader)
+        assertEquals("ODAUTI_AJANLAT#CSCSAZON#CSAZON#1023744049", image?.receiptId)
+        assertEquals("5594003G000448895", image?.ticketNumber)
+    }
 }

@@ -333,6 +333,12 @@ class MavViewModel(
         }
 
         val candidates = buildList {
+            val cleanTrailing = if (receiptId.contains("#")) {
+                receiptId.split("#").map { it.trim() }.lastOrNull { it.isNotEmpty() && it.all { ch -> ch.isDigit() } }
+            } else null
+            if (!cleanTrailing.isNullOrBlank()) {
+                add(cleanTrailing)
+            }
             add(receiptId)
             if (!ticketNumber.isNullOrBlank() && ticketNumber != receiptId) add(ticketNumber)
             if (receiptId.contains("#")) {

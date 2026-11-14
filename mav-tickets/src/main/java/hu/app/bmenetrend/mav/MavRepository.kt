@@ -165,7 +165,8 @@ class MavRepository(
         val resolvedEmail = baseSession.email.ifBlank { user?.email.orEmpty() }
 
         if (!apiClient.isSamlToken(currentToken)) {
-            val extraToken = runCatching { apiClient.fetchUserTokenXml(baseSession) }.getOrNull()
+            val sessionWithEmail = baseSession.copy(email = resolvedEmail)
+            val extraToken = runCatching { apiClient.fetchUserTokenXml(sessionWithEmail) }.getOrNull()
             if (!extraToken.isNullOrBlank()) {
                 currentToken = extraToken
             }
@@ -429,7 +430,13 @@ class MavRepository(
                     }
                 }
                 val receiptId = receipt.receiptId
-                if (receiptId.isNotBlank() && cacheStore.getTicketImage(receiptId) == null) {
+                val cleanOrderId = order.displayOrderId
+                val isCached = (receiptId.isNotBlank() && cacheStore.getTicketImage(receiptId) != null) ||
+                    (cleanOrderId.isNotBlank() && cacheStore.getTicketImage(cleanOrderId) != null) ||
+                    (order.orderId.isNotBlank() && cacheStore.getTicketImage(order.orderId) != null) ||
+                    (!receipt.ticketNumber.isNullOrBlank() && cacheStore.getTicketImage(receipt.ticketNumber) != null)
+
+                if (!isCached && receiptId.isNotBlank()) {
                     try {
                         val img = apiClient.getTicketImage(currentSession, receiptId)
                         if (img != null) {
@@ -437,7 +444,13 @@ class MavRepository(
                             if (order.orderId.isNotBlank()) {
                                 cacheStore.saveTicketImage(order.orderId, img)
                             }
+                            if (cleanOrderId.isNotBlank()) {
+                                cacheStore.saveTicketImage(cleanOrderId, img)
+                            }
                             receipt.ticketNumber?.let { tNum ->
+                                if (tNum.isNotBlank()) cacheStore.saveTicketImage(tNum, img)
+                            }
+                            img.ticketNumber?.let { tNum ->
                                 if (tNum.isNotBlank()) cacheStore.saveTicketImage(tNum, img)
                             }
                         }
