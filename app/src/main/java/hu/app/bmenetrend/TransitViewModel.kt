@@ -186,6 +186,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private var favoriteEmmaStops: List<TransitStop>? = null
     private var favoriteSelectionIds = emptySet<String>()
     private var favoriteJob: Job? = null
+    private var favoriteRetryJob: Job? = null
+    private var favoriteRetryAttempts = 0
     private var favoriteGeneration = 0
     private var favoriteKey = emptyList<String>()
     private var favoriteLoading = false
@@ -234,6 +236,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             NetworkAccessPolicy.internetAvailable.collect { available ->
                 mutableState.update { it.copy(internetAvailable = available) }
+                if (available && favoriteFailures.isNotEmpty()) ensureFavoriteRequest(retryFailed = true)
             }
         }
         // The first live refresh needs the ViaBusz road geometry; parse it before that, off the main thread.
@@ -295,7 +298,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 if (mapVisible || favoritesVisible) refreshData()
                 delay(if (liveError || live?.vehicleDataAvailable == false) 30_000 else 15_000)
             }
-        } finally { nearbyActive = false; boardJob?.cancel(); nearbyJob?.cancel(); favoriteJob?.cancel(); mapSettledJob?.cancel(); nearbyLoading = false; favoriteLoading = false }
+        } finally { nearbyActive = false; boardJob?.cancel(); nearbyJob?.cancel(); favoriteJob?.cancel(); favoriteRetryJob?.cancel(); favoriteRetryJob = null; mapSettledJob?.cancel(); nearbyLoading = false; favoriteLoading = false }
     }
 
     fun setMapVisible(visible: Boolean) {
@@ -329,7 +332,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     fun setFavoritesVisible(visible: Boolean) {
         favoritesVisible = visible
         if (visible) { recalculate(); ensureFavoriteRequest() }
-        else { favoriteGeneration++; favoriteJob?.cancel(); favoriteLoading = false }
+        else { favoriteGeneration++; favoriteJob?.cancel(); favoriteRetryJob?.cancel(); favoriteRetryJob = null; favoriteRetryAttempts = 0; favoriteLoading = false }
     }
 
     fun setVisibleFavorites(ids: Set<String>) {
@@ -365,7 +368,9 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         val missing = stops.filter { it.id in ids && it.id !in saved }.distinctBy { it.id }
         // BKK platforms go to the Worker first, six per request; other platforms go to EMMA at the
         // same time, so a slow EMMA batch never holds back a BKK board or the other way around.
-        val bkkTargets = missing.filter { BkkWorkerParser.workerStopId(it) != null }
+        // FUTÁR serves at most two hours, and knows rural Volán stops (Kecskéd, Császár…) without
+        // their timetables, so longer Volán windows go straight to EMMA.
+        val bkkTargets = missing.filter { BkkWorkerParser.workerStopId(it) != null && !(it.providerId == "volan" && window > BKK_MAX_WINDOW_MINUTES) }
         val bkkIds = bkkTargets.mapTo(HashSet()) { it.id }
         suspend fun emma(batch: List<String>): List<Pair<String, EmmaStopsParser.Board?>> {
             semaphore.acquire()
@@ -383,13 +388,16 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         }
         val fetched = missing.map { it.id }.filterNot { it in bkkIds }.chunked(6).map { batch -> async { emma(batch) } }
         val bkkBoards = bkk.await()
-        // Only platforms BKK could not answer (failed stop, failed batch, budget) fall back to EMMA;
-        // a legitimately empty BKK board is a BKK answer.
-        val fallback = bkkTargets.map { it.id }.filter { bkkBoards[it] == null }.chunked(6).map { batch -> async { emma(batch) } }
-        saved.toList() + bkkBoards.mapNotNull { (id, board) -> board?.let { id to it } } + fetched.awaitAll().flatten() + fallback.awaitAll().flatten()
+        // Platforms BKK could not answer (failed stop, failed batch, budget) fall back to EMMA. An empty
+        // BKK board is final for BKK's own stops, but not for Volán: outside Budapest FUTÁR returns
+        // the stop with no departures even when buses run.
+        val retry = bkkTargets.filter { stop -> bkkBoards[stop.id].let { it == null || stop.providerId == "volan" && it.departures.isEmpty() } }
+            .mapTo(HashSet()) { it.id }
+        val fallback = retry.toList().chunked(6).map { batch -> async { emma(batch) } }
+        saved.toList() + bkkBoards.mapNotNull { (id, board) -> board?.takeIf { id !in retry }?.let { id to it } } + fetched.awaitAll().flatten() + fallback.awaitAll().flatten()
     }
 
-    private fun ensureFavoriteRequest(force: Boolean = false) {
+    private fun ensureFavoriteRequest(force: Boolean = false, retryFailed: Boolean = false) {
         if (NetworkAccessPolicy.offline.value) { recalculateOffline(); return }
         if (!favoritesVisible || !nearbyActive) return
         val current = state.value
@@ -397,12 +405,18 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
             all.filter { it.stop.id in visibleFavorites }.ifEmpty { all.take(3) }.take(8)
         }
         val key = stations.map { it.stop.id }.sorted()+LocalDate.now(budapest).toString()
-        if (!force && key == favoriteKey && favoriteJob?.isCancelled != true) return
+        if (!force && key == favoriteKey && favoriteJob?.isActive == true) return
+        if (!force && !retryFailed && key == favoriteKey && favoriteJob?.isCancelled != true &&
+            (favoriteFailures.isEmpty() || favoriteRetryJob?.isActive == true)) return
+        if (force || key != favoriteKey) favoriteRetryAttempts = 0
+        favoriteRetryJob?.cancel()
+        favoriteRetryJob = null
         favoriteKey = key
         val generation = ++favoriteGeneration
         favoriteJob?.cancel()
         favoriteLoading = stations.isNotEmpty()
-        favoriteFailures = emptySet()
+        val visibleIds = stations.mapTo(HashSet()) { it.stop.id }
+        favoriteFailures = favoriteFailures.intersect(visibleIds)
         recalculate()
         favoriteJob = viewModelScope.launch {
             val semaphore = kotlinx.coroutines.sync.Semaphore(3)
@@ -410,21 +424,39 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 coroutineScope {
                     // BKK platforms: serving lines from the Worker's batched boards (six stops per
                     // request). Any stop BKK could not answer uses EMMA's daily-cached lines.
-                    val bkk = stations.map { it.stop }.filter { BkkWorkerParser.workerStopId(it) != null }.let { stops ->
+                    for (station in stations) {
+                        val id = station.stop.id
+                        if (id.startsWith("emma:") && id !in favoriteLines) {
+                            val saved = stopsRepository.cachedServingLines(id)
+                            if (saved != null && generation == favoriteGeneration) {
+                                favoriteLines[id] = saved
+                                while (favoriteLines.size > 64) favoriteLines.remove(favoriteLines.keys.first())
+                                mergeStopRoutes(saved.catalogue.routes)
+                                recalculate()
+                            }
+                        }
+                    }
+                    val pending = stations.filter { station ->
+                        val saved = favoriteLines[station.stop.id]
+                        force || station.stop.id in favoriteFailures || saved == null || saved.stale ||
+                            Duration.between(saved.fetchedAt, Instant.now()).seconds !in 0..86_399
+                    }
+                    val bkk = pending.map { it.stop }.filter { BkkWorkerParser.workerStopId(it) != null }.let { stops ->
                         if (stops.isEmpty()) emptyMap() else try { bkkRepository.servingLines(stops) }
                         catch (cancelled: CancellationException) { throw cancelled }
                         catch (error: Exception) { if (BuildConfig.DEBUG) android.util.Log.w("BkkWorker", "Favourite lines failed", error); emptyMap() }
                     }
-                    stations.map { station -> async {
+                    pending.map { station -> async {
                         val id=station.stop.id
                         if(id.startsWith("emma:")) {
                             semaphore.acquire()
                             try {
-                                val result=bkk[id] ?: stopsRepository.servingLines(id,force).copy(source=DataSource.EMMA)
+                                val result=bkk[id]?.takeIf { it.catalogue.routes.isNotEmpty() }
+                                    ?: stopsRepository.servingLines(id,force || retryFailed).copy(source=DataSource.EMMA)
                                 if(generation==favoriteGeneration) {
                                     favoriteLines[id]=result
                                     while(favoriteLines.size>64) favoriteLines.remove(favoriteLines.keys.first())
-                                    if(result.stale) favoriteFailures+=id
+                                    favoriteFailures = if (result.stale) favoriteFailures + id else favoriteFailures - id
                                     mergeStopRoutes(result.catalogue.routes)
                                     recalculate()
                                 }
@@ -435,7 +467,20 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                     } }.awaitAll()
                 }
             } finally {
-                if (generation == favoriteGeneration) { favoriteLoading = false; recalculate() }
+                if (generation == favoriteGeneration) {
+                    favoriteLoading = false
+                    recalculate()
+                    if (favoriteFailures.isEmpty()) favoriteRetryAttempts = 0
+                    else if (favoritesVisible && nearbyActive && !NetworkAccessPolicy.offline.value) {
+                        val wait = minOf(120_000L, 15_000L shl favoriteRetryAttempts.coerceAtMost(3))
+                        favoriteRetryAttempts++
+                        favoriteRetryJob = viewModelScope.launch {
+                            delay(wait)
+                            if (generation == favoriteGeneration && favoritesVisible && nearbyActive)
+                                ensureFavoriteRequest(retryFailed = true)
+                        }
+                    }
+                }
             }
         }
     }
@@ -1087,7 +1132,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         mapStopsGeneration++; mapStopsJob?.cancel(); loadedMapBounds = null; loadedMapBoundsList.clear()
         stopDirectionsJob?.cancel(); stopDirectionsGeneration++
         placeSearchGeneration++; lineGeneration++; journeyGeneration++; nearbyGeneration++; favoriteGeneration++
-        placeSearchJob?.cancel(); lineJob?.cancel(); journeyJob?.cancel(); nearbyJob?.cancel(); favoriteJob?.cancel(); boardJob?.cancel()
+        placeSearchJob?.cancel(); lineJob?.cancel(); journeyJob?.cancel(); nearbyJob?.cancel(); favoriteJob?.cancel(); favoriteRetryJob?.cancel(); favoriteRetryJob = null; boardJob?.cancel()
         ota.cancel()
         board = null; boardKey = null; recentBoards.clear(); nearbyBoards.clear(); favoriteLines.clear()
         boardLoading = false; nearbyLoading = false; favoriteLoading = false
@@ -1514,7 +1559,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 val fromBkk = if (BkkWorkerParser.workerRouteId(id) == null) null else try { bkkRepository.routeDetails(id, today) }
                     catch (cancelled: CancellationException) { throw cancelled }
                     catch (error: Exception) { if (BuildConfig.DEBUG) android.util.Log.w("BkkWorker", "Line details failed", error); null }
-                val details = fromBkk?.let { bkk ->
+                val emmaRail = if (fromBkk != null && id.startsWith("mav:BKK:")) emmaRailLine(id, fromBkk, today) else null
+                val details = emmaRail ?: fromBkk?.let { bkk ->
                     // Catalogue names for stops the app already knows, as for BKK trip details.
                     val known = state.value.stopsById
                     bkk.copy(patterns = bkk.patterns.map { pattern -> pattern.copy(stops = pattern.stops.map { stop ->
@@ -1542,6 +1588,29 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 if (lineGeneration == generation) mutableState.update { it.copy(loadingLineId = null) }
             }
         }
+    }
+
+    /**
+     * FUTÁR publishes some railway lines with only part of their variants: G10 has a single
+     * Hegyeshalom → Budapest-Déli variant, so outbound trains matched no line direction. EMMA has
+     * every variant; prefer it whenever it knows termini that BKK's details are missing.
+     */
+    private suspend fun emmaRailLine(id: String, bkk: LineDetails, today: LocalDate): LineDetails? {
+        val number = bkk.route.number
+        val emmaId = (lineCatalogue + stopRoutes).firstOrNull {
+            it.providerId == "mav" && it.id.startsWith("mav:1:") && it.number.equals(number, ignoreCase = true)
+        }?.id ?: return null
+        return try {
+            val text = journeyClient.execute(EmmaRouteParser.QUERY, org.json.JSONObject().put("id", emmaId.removePrefix("mav:"))
+                .put("date", today.format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE)))
+            val emma = withContext(Dispatchers.Default) { EmmaRouteParser.parse(text, emmaId) }
+            // This line's departures come from BKK and carry no EMMA pattern codes, so the variants
+            // match them by terminus (BoardingSelection) instead of by codes they can never have.
+            emma.copy(route = emma.route.copy(id = id), patterns = emma.patterns.map { pattern ->
+                pattern.copy(codes = emptySet(), stops = pattern.stops.map { it.copy(routeIds = (it.routeIds - emmaId + id).distinct()) })
+            }).takeIf { (it.patterns.mapTo(HashSet()) { p -> p.stops.last().id } - bkk.patterns.mapTo(HashSet()) { p -> p.stops.last().id }).isNotEmpty() }
+        } catch (cancelled: CancellationException) { throw cancelled
+        } catch (error: Exception) { if (BuildConfig.DEBUG) android.util.Log.w("Emma", "Rail line details failed", error); null }
     }
 
     fun selectBoardingStop(routeId: String, directionId: String, stopId: String) {
@@ -1837,6 +1906,9 @@ private const val BKK_VEHICLE_POLL_MS = 10_000L
 private const val NEARBY_MIN_ZOOM = 11.0
 
 /** Returns [previous] when content-equal, so identity-keyed UI and map work is skipped. */
+/** FUTÁR's arrivals endpoint answers at most this far ahead (see BkkWorkerRepository). */
+private const val BKK_MAX_WINDOW_MINUTES = 120
+
 internal fun <T> List<T>.sameOr(previous: List<T>): List<T> = if (this == previous) previous else this
 
 internal fun nearestStop(network: TransitNetwork, location: GeoPoint): String? = nearestStop(network.stops, location)

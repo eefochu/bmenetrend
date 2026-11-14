@@ -44,7 +44,8 @@ data class BoardingSelection(
             // source direction instead of hiding every departure of the selected line.
             pattern != null -> when {
                 departure.patternCode != null && pattern.codes.isNotEmpty() -> departure.patternCode in pattern.codes
-                pattern.directionId != null -> departure.sourceDirectionId == pattern.directionId
+                // EMMA reports -1 for railway lines without GTFS directions (G10): no direction to compare.
+                pattern.directionId != null && pattern.directionId != NO_DIRECTION -> departure.sourceDirectionId == pattern.directionId
                 // BKK metro variants report no GTFS direction ("[multidirection]"); their headsign is the terminus.
                 else -> pattern.codes.isEmpty() && departure.destination.trim().equals(pattern.headsign.trim(), ignoreCase = true)
             }
@@ -53,6 +54,9 @@ data class BoardingSelection(
         }
     }
 }
+
+/** OTP's directionId for trips without a GTFS direction (all MÁV G10 variants). */
+internal const val NO_DIRECTION = "-1"
 
 object EmmaRouteParser {
     const val CATALOGUE_QUERY = "{ routes { gtfsId shortName longName mode color } }"

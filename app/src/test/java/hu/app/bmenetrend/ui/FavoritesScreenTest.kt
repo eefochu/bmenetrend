@@ -133,6 +133,59 @@ class FavoritesScreenTest {
         assertTrue("A compact card with rail and bus badges should be at most 190dp, got $height",height<=190f)
     }
 
+    @Test fun feedSourceBadgesAreNotDisplayed() {
+        val station = nearbyStation.copy(sources = setOf(DataSource.BKK, DataSource.EMMA))
+        compose.setContent {
+            ViaBuszTheme { FavoritesScreen(uiState.copy(favoriteStations = listOf(station)), {}, {}, {}, {}) }
+        }
+        compose.onAllNodesWithText("BKK", substring = true).assertCountEquals(0)
+        compose.onAllNodesWithText("EMMA", substring = true).assertCountEquals(0)
+        compose.onNodeWithTag("favorite:${stationStop.id}").assertIsDisplayed()
+    }
+
+    @Test fun pullingDownRefreshesFavoritesAndKeepsRefreshButtonAvailable() {
+        var requests = 0
+        compose.setContent {
+            ViaBuszTheme { FavoritesScreen(uiState, {}, {}, { requests++ }, {}) }
+        }
+        compose.onNodeWithTag("favorites-pull-refresh").performTouchInput {
+            swipeDown(startY = 10f, endY = height * .85f, durationMillis = 500)
+        }
+        compose.runOnIdle { assertEquals(1, requests) }
+        compose.onNodeWithContentDescription(app.getString(R.string.favorites_refresh_lines)).performClick()
+        compose.runOnIdle { assertEquals(2, requests) }
+    }
+
+    @Test fun refreshUsesTheExpressiveShapeIndicatorWithoutAFavoriteCount() {
+        compose.setContent {
+            ViaBuszTheme { FavoritesScreen(uiState.copy(favoritesLoading = true), {}, {}, {}, {}) }
+        }
+        compose.onNodeWithTag("favorites-refresh-shapes").assertIsDisplayed()
+        compose.onAllNodesWithText(uiState.favorites.size.toString(), substring = false).assertCountEquals(0)
+    }
+
+    @Test fun pullingDownWhileRefreshIsRunningDoesNotStartAnotherRequest() {
+        var requests = 0
+        compose.setContent {
+            ViaBuszTheme { FavoritesScreen(uiState.copy(favoritesLoading = true), {}, {}, { requests++ }, {}) }
+        }
+        compose.onNodeWithTag("favorites-pull-refresh").performTouchInput {
+            swipeDown(startY = 10f, endY = height * .85f, durationMillis = 500)
+        }
+        compose.runOnIdle { assertEquals(0, requests) }
+    }
+
+    @Test fun emptyFavoritesCanAlsoBePulledToRefresh() {
+        var requests = 0
+        compose.setContent {
+            ViaBuszTheme { FavoritesScreen(UiState(), {}, {}, { requests++ }, {}) }
+        }
+        compose.onNodeWithTag("favorites-pull-refresh").performTouchInput {
+            swipeDown(startY = 10f, endY = height * .85f, durationMillis = 500)
+        }
+        compose.runOnIdle { assertEquals(1, requests) }
+    }
+
     @Test
     fun railLineColorMatchesSpecification() {
         assertEquals(Color(0xFF008001), railLineColor("IR"))
@@ -143,8 +196,8 @@ class FavoritesScreenTest {
         assertEquals(Color(0xFF00AFEF), railLineColor("S30"))
         assertEquals(Color(0xFFFECD28), railLineColor("Z30"))
         assertEquals(Color(0xFF171B20), railLineTextColor("Z30"))
-        assertEquals(Color(0xFF171B20), railLineTextColor("S10"))
-        assertEquals(Color(0xFF171B20), railLineTextColor("G10"))
+        assertEquals(Color.White, railLineTextColor("S10"))
+        assertEquals(Color.White, railLineTextColor("G10"))
         assertEquals(Color(0xFF2E5EA7), railLineColor("IC"))
         assertEquals(Color(0xFF2E5EA7), railLineColor("rjx"))
         assertEquals(Color(0xFF2E5EA7), railLineColor("Gy"))

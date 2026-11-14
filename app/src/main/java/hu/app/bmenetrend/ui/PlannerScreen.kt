@@ -709,7 +709,6 @@ private fun PlannerSearchResult(endpoint: PlannerEndpoint, location: GeoPoint?, 
         badge = {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 platform?.let { PlatformBadge(it) }
-                SourceTag(setOfNotNull(endpoint.source))
             }
         },
         supporting = {

@@ -23,7 +23,8 @@ internal fun departureDirection(departure: Departure, route: TransitRoute?, deta
             stop.parentStationId?.let { id(it)==id(departure.stopId) }==true
     } }
     departure.sourceDirectionId?.let { direction ->
-        if (candidates.any { it.directionId!=null }) candidates=candidates.filter { it.directionId==direction }
+        // EMMA's -1 (G10) is no direction; comparing it with BKK's 0/1 would discard every variant.
+        if (candidates.any { it.directionId!=null && it.directionId!=NO_DIRECTION }) candidates=candidates.filter { it.directionId==direction }
     }
     val clean = DestinationFormatter.clean(departure.destination, departure.routeNumber)
     val destinationMatches=candidates.filter { sameName(it.headsign,departure.destination) ||
@@ -33,6 +34,8 @@ internal fun departureDirection(departure: Departure, route: TransitRoute?, deta
     if (destinationMatches.isNotEmpty()) candidates=destinationMatches
     else if (departure.destination.isNotBlank() && candidates.any { it.headsign.isNotBlank() }) return null
     candidates.singleOrNull()?.let { return it.id }
+    // Stop-skipping variants of one direction and terminus (G10's two Győr runs) are one line direction.
+    candidates.groupBy { it.familyKey }.values.singleOrNull()?.let { return it.first().id }
     if (patterns.isNotEmpty()) return null
     route?.directions?.firstOrNull { it.id==departure.directionId || it.id==departure.sourceDirectionId }?.let { return it.id }
     val local=route?.directions.orEmpty().filter { departure.stopId in it.stopIds }

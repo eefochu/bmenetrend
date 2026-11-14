@@ -43,7 +43,6 @@ fun EmmaLineBrowser(
             Row(Modifier.padding(horizontal=20.dp,vertical=12.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(12.dp)) {
                 LineBadge(route)
                 Text(serviceTypeLabel(route.providerId,route.transportMode),style=MaterialTheme.typography.titleSmall)
-                SourceTag(setOfNotNull(details?.source))
             }
         }
         if(pattern!=null) item(key="pattern-header",contentType="pattern-header") {

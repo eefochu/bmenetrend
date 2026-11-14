@@ -62,8 +62,8 @@ internal object TransitDesign {
 
 /** Grouped ("boxed") lists: the app's 20dp corners at a group's ends, tight corners and a hairline gap inside it. */
 internal object Segments {
-    val outer = 20.dp
-    val inner = 6.dp
+    val outer = 28.dp
+    val inner = 8.dp
     val gap = 3.dp
 }
 
@@ -167,14 +167,15 @@ internal fun CookieIconButton(
     containerColor: Color = MaterialTheme.colorScheme.secondaryContainer,
     contentColor: Color = MaterialTheme.colorScheme.onSecondaryContainer,
     shadowElevation: androidx.compose.ui.unit.Dp = 0.dp,
+    cookieShape: androidx.graphics.shapes.RoundedPolygon = MaterialShapes.Cookie9Sided,
     content: @Composable () -> Unit,
 ) {
     val interaction = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val progress by androidx.compose.animation.core.animateFloatAsState(if (pressed) 1f else 0f,
         MaterialTheme.motionScheme.fastSpatialSpec(), label = "cookie morph")
-    val morph = remember { androidx.graphics.shapes.Morph(MaterialShapes.Cookie9Sided, MaterialShapes.Circle) }
-    val shape = remember(progress) { MorphShape(morph, progress) }
+    val morph = remember(cookieShape) { androidx.graphics.shapes.Morph(cookieShape, MaterialShapes.Circle) }
+    val shape = remember(morph, progress) { MorphShape(morph, progress) }
     Surface(onClick = onClick, modifier = modifier.size(size), enabled = enabled, shape = shape,
         color = if (enabled) containerColor else containerColor.copy(alpha = .38f),
         contentColor = if (enabled) contentColor else contentColor.copy(alpha = .38f),
@@ -249,7 +250,7 @@ internal fun TransitPageHeader(title: String, onBack: () -> Unit, actions: @Comp
 internal fun TransitPageIntro(title: String, subtitle: String?, actions: @Composable RowScope.() -> Unit = {}) {
     Column(verticalArrangement=Arrangement.spacedBy(12.dp)) {
         Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(14.dp)) {
-            Text(title,Modifier.weight(1f),style=MaterialTheme.typography.headlineMedium)
+            Text(title,Modifier.weight(1f),style=MaterialTheme.typography.headlineLargeEmphasized)
             actions()
         }
         if(subtitle!=null) Text(subtitle,style=MaterialTheme.typography.bodyLarge,color=MaterialTheme.colorScheme.onSurfaceVariant)
@@ -364,7 +365,7 @@ internal fun DepartureBoardRow(
             if(live && !departure.isCancelled) Icon(Icons.Rounded.Sensors,null,Modifier.size(13.dp),tint=MaterialTheme.colorScheme.primary)
             Text(if(departure.isCancelled) stringResource(R.string.board_cancelled)
                 else if(minutes<60) "$minutes′" else rememberBoardClock.format(shown),
-                style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Bold,fontFamily=OpenSans,maxLines=1,
+                style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Bold,fontFamily=GoogleSans,maxLines=1,
                 color=if(departure.isCancelled || departure.delayMinutes>0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface)
         }
     }
@@ -387,7 +388,7 @@ internal fun DepartureBoardRow(
                 text = cleanDest.ifBlank { stringResource(R.string.emma_vehicle_no_direction) },
                 style = MaterialTheme.typography.bodyLarge.copy(
                     fontWeight = FontWeight.Bold,
-                    fontFamily = OpenSans,
+                    fontFamily = GoogleSans,
                 ),
                 maxLines = if (large) 3 else 2,
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
@@ -446,8 +447,7 @@ internal fun DepartureWindowSelector(selected: Int, onSelect: (Int) -> Unit, mod
     }
 
 /**
- * The stop board's one hero: the very next departure, large. Its colour carries the state (live,
- * scheduled, late, cancelled) and the countdown is the biggest figure in the sheet.
+ * The next departure keeps the accent colour; status text and icons describe live, delayed or cancelled service.
  */
 @Composable
 internal fun NextDepartureHero(
@@ -456,11 +456,6 @@ internal fun NextDepartureHero(
 ) {
     val live = departure.kind == hu.app.bmenetrend.data.ArrivalKind.LIVE
     val scheme = MaterialTheme.colorScheme
-    // Red only for cancellations; a late vehicle still runs, so it gets the calmer tertiary role plus its delay.
-    val container = when { departure.isCancelled -> scheme.errorContainer; departure.delayMinutes > 0 -> scheme.tertiaryContainer
-        live -> scheme.primaryContainer; else -> scheme.secondaryContainer }
-    val content = when { departure.isCancelled -> scheme.onErrorContainer; departure.delayMinutes > 0 -> scheme.onTertiaryContainer
-        live -> scheme.onPrimaryContainer; else -> scheme.onSecondaryContainer }
     val shown = if (departure.isCancelled) departure.scheduledAt ?: departure.expectedAt else departure.expectedAt
     val destination = remember(departure.destination, departure.routeNumber) {
         DestinationFormatter.clean(departure.destination, departure.routeNumber).ifBlank { departure.destination }
@@ -468,7 +463,7 @@ internal fun NextDepartureHero(
     val status = listOf(stringResource(if (live) R.string.ui_live_arrival else R.string.ui_scheduled), rememberBoardClock.format(shown))
         .joinToString(" · ")
     Surface(onClick = onClick, enabled = !departure.isCancelled, modifier = modifier.fillMaxWidth(),
-        shape = TransitDesign.panelShape, color = container, contentColor = content) {
+        shape = TransitDesign.panelShape, color = scheme.primaryContainer, contentColor = scheme.onPrimaryContainer) {
         Row(Modifier.padding(start = 18.dp, end = 16.dp, top = 16.dp, bottom = 16.dp), verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {

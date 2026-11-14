@@ -78,15 +78,26 @@ class EmmaStopsRepository(context: Context, private val graphql: EmmaGraphqlClie
     private val linesMutexes = Array(64) { Mutex() }
     private val linesDirectory=File(context.filesDir,"emma-station-lines-v1")
 
-    /** Static serving routes have a daily cache and never depend on the selected departure window. */
-    suspend fun servingLines(stopId: String,force: Boolean=false): Lines = linesMutexes[(stopId.hashCode() and Int.MAX_VALUE) % linesMutexes.size].withLock {
-        val now=Instant.now()
+    suspend fun cachedServingLines(stopId: String): Lines? = linesMutexes[(stopId.hashCode() and Int.MAX_VALUE) % linesMutexes.size].withLock {
+        readSavedLines(stopId)?.let { it.copy(stale = Duration.between(it.fetchedAt, Instant.now()).seconds !in 0..86_399) }
+    }
+
+    private suspend fun readSavedLines(stopId: String): Lines? {
         val key=java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(stopId.toByteArray(Charsets.UTF_8))
         val cache=File(linesDirectory,"$key.json")
         val saved=synchronized(lineMemory) { lineMemory[stopId] } ?: withContext(Dispatchers.IO) {
             runCatching { if(cache.isFile) Lines(EmmaStopsParser.servingLines(cache.readText(),stopId),Instant.ofEpochMilli(cache.lastModified())) else null }.getOrNull()
         }
         if (saved != null) synchronized(lineMemory) { lineMemory[stopId] = saved }
+        return saved
+    }
+
+    /** Static serving routes have a daily cache and never depend on the selected departure window. */
+    suspend fun servingLines(stopId: String,force: Boolean=false): Lines = linesMutexes[(stopId.hashCode() and Int.MAX_VALUE) % linesMutexes.size].withLock {
+        val now=Instant.now()
+        val saved = readSavedLines(stopId)
+        val key=java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(stopId.toByteArray(Charsets.UTF_8))
+        val cache=File(linesDirectory,"$key.json")
         if(!force && saved!=null && Duration.between(saved.fetchedAt,now).seconds in 0..86_399) return@withLock saved
         try {
             val text=graphql.execute(EmmaStopsParser.LINES_QUERY,org.json.JSONObject().put("id",EmmaStopsParser.sourceId(stopId)))

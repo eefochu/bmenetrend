@@ -63,8 +63,6 @@ internal fun ItineraryCard(trip: TripItinerary, recommended: Boolean, now: Insta
                     Text(stringResource(R.string.planner_summary,
                         if (trip.transfers == 0) stringResource(R.string.planner_direct) else pluralStringResource(R.plurals.planner_transfers, trip.transfers, trip.transfers),
                         trip.travelLegs().filter { it.walking }.sumOf { legMinutes(it.start, it.end) }), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    // Which planner produced this journey (BKK API, or the EMMA fallback) and how old a reused answer is.
-                    SourceTag(trip.sources, fetchedAt = trip.fetchedAt, now = now)
                 }
                 Text(stringResource(R.string.ui_minutes_short, clockMinutes(minOf(ready, trip.start), trip.end)),
                     style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
