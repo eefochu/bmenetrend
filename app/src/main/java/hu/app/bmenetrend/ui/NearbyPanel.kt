@@ -98,7 +98,6 @@ internal fun NearbyPanel(
                             DistancePill(stringResource(R.string.nearby_distance, station.distanceMeters.roundToInt()))
                             Icon(Icons.Rounded.ChevronRight, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        SourceTag(station.sources, Modifier.padding(top = 4.dp))
                         if (station.departures.isEmpty() && !station.loading) Text(
                             stringResource(if (station.unavailable) R.string.nearby_unavailable else R.string.nearby_no_departures),
                             Modifier.padding(top = 4.dp), style = MaterialTheme.typography.bodySmall,

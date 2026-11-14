@@ -365,7 +365,9 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         val missing = stops.filter { it.id in ids && it.id !in saved }.distinctBy { it.id }
         // BKK platforms go to the Worker first, six per request; other platforms go to EMMA at the
         // same time, so a slow EMMA batch never holds back a BKK board or the other way around.
-        val bkkTargets = missing.filter { BkkWorkerParser.workerStopId(it) != null }
+        // FUTÁR serves at most two hours, and knows rural Volán stops (Kecskéd, Császár…) without
+        // their timetables, so longer Volán windows go straight to EMMA.
+        val bkkTargets = missing.filter { BkkWorkerParser.workerStopId(it) != null && !(it.providerId == "volan" && window > BKK_MAX_WINDOW_MINUTES) }
         val bkkIds = bkkTargets.mapTo(HashSet()) { it.id }
         suspend fun emma(batch: List<String>): List<Pair<String, EmmaStopsParser.Board?>> {
             semaphore.acquire()
@@ -383,10 +385,13 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         }
         val fetched = missing.map { it.id }.filterNot { it in bkkIds }.chunked(6).map { batch -> async { emma(batch) } }
         val bkkBoards = bkk.await()
-        // Only platforms BKK could not answer (failed stop, failed batch, budget) fall back to EMMA;
-        // a legitimately empty BKK board is a BKK answer.
-        val fallback = bkkTargets.map { it.id }.filter { bkkBoards[it] == null }.chunked(6).map { batch -> async { emma(batch) } }
-        saved.toList() + bkkBoards.mapNotNull { (id, board) -> board?.let { id to it } } + fetched.awaitAll().flatten() + fallback.awaitAll().flatten()
+        // Platforms BKK could not answer (failed stop, failed batch, budget) fall back to EMMA. An empty
+        // BKK board is final for BKK's own stops, but not for Volán: outside Budapest FUTÁR returns
+        // the stop with no departures even when buses run.
+        val retry = bkkTargets.filter { stop -> bkkBoards[stop.id].let { it == null || stop.providerId == "volan" && it.departures.isEmpty() } }
+            .mapTo(HashSet()) { it.id }
+        val fallback = retry.toList().chunked(6).map { batch -> async { emma(batch) } }
+        saved.toList() + bkkBoards.mapNotNull { (id, board) -> board?.takeIf { id !in retry }?.let { id to it } } + fetched.awaitAll().flatten() + fallback.awaitAll().flatten()
     }
 
     private fun ensureFavoriteRequest(force: Boolean = false) {
@@ -1514,7 +1519,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 val fromBkk = if (BkkWorkerParser.workerRouteId(id) == null) null else try { bkkRepository.routeDetails(id, today) }
                     catch (cancelled: CancellationException) { throw cancelled }
                     catch (error: Exception) { if (BuildConfig.DEBUG) android.util.Log.w("BkkWorker", "Line details failed", error); null }
-                val details = fromBkk?.let { bkk ->
+                val emmaRail = if (fromBkk != null && id.startsWith("mav:BKK:")) emmaRailLine(id, fromBkk, today) else null
+                val details = emmaRail ?: fromBkk?.let { bkk ->
                     // Catalogue names for stops the app already knows, as for BKK trip details.
                     val known = state.value.stopsById
                     bkk.copy(patterns = bkk.patterns.map { pattern -> pattern.copy(stops = pattern.stops.map { stop ->
@@ -1542,6 +1548,29 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 if (lineGeneration == generation) mutableState.update { it.copy(loadingLineId = null) }
             }
         }
+    }
+
+    /**
+     * FUTÁR publishes some railway lines with only part of their variants: G10 has a single
+     * Hegyeshalom → Budapest-Déli variant, so outbound trains matched no line direction. EMMA has
+     * every variant; prefer it whenever it knows termini that BKK's details are missing.
+     */
+    private suspend fun emmaRailLine(id: String, bkk: LineDetails, today: LocalDate): LineDetails? {
+        val number = bkk.route.number
+        val emmaId = (lineCatalogue + stopRoutes).firstOrNull {
+            it.providerId == "mav" && it.id.startsWith("mav:1:") && it.number.equals(number, ignoreCase = true)
+        }?.id ?: return null
+        return try {
+            val text = journeyClient.execute(EmmaRouteParser.QUERY, org.json.JSONObject().put("id", emmaId.removePrefix("mav:"))
+                .put("date", today.format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE)))
+            val emma = withContext(Dispatchers.Default) { EmmaRouteParser.parse(text, emmaId) }
+            // This line's departures come from BKK and carry no EMMA pattern codes, so the variants
+            // match them by terminus (BoardingSelection) instead of by codes they can never have.
+            emma.copy(route = emma.route.copy(id = id), patterns = emma.patterns.map { pattern ->
+                pattern.copy(codes = emptySet(), stops = pattern.stops.map { it.copy(routeIds = (it.routeIds - emmaId + id).distinct()) })
+            }).takeIf { (it.patterns.mapTo(HashSet()) { p -> p.stops.last().id } - bkk.patterns.mapTo(HashSet()) { p -> p.stops.last().id }).isNotEmpty() }
+        } catch (cancelled: CancellationException) { throw cancelled
+        } catch (error: Exception) { if (BuildConfig.DEBUG) android.util.Log.w("Emma", "Rail line details failed", error); null }
     }
 
     fun selectBoardingStop(routeId: String, directionId: String, stopId: String) {
@@ -1837,6 +1866,9 @@ private const val BKK_VEHICLE_POLL_MS = 10_000L
 private const val NEARBY_MIN_ZOOM = 11.0
 
 /** Returns [previous] when content-equal, so identity-keyed UI and map work is skipped. */
+/** FUTÁR's arrivals endpoint answers at most this far ahead (see BkkWorkerRepository). */
+private const val BKK_MAX_WINDOW_MINUTES = 120
+
 internal fun <T> List<T>.sameOr(previous: List<T>): List<T> = if (this == previous) previous else this
 
 internal fun nearestStop(network: TransitNetwork, location: GeoPoint): String? = nearestStop(network.stops, location)

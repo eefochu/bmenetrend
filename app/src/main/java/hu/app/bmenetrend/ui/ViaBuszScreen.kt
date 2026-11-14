@@ -639,7 +639,7 @@ private fun FloatingSearchBlob(
         tonalElevation = 0.dp,
     ) {
         Row(
-            modifier = Modifier.padding(start = 16.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
+            modifier = Modifier.padding(start = 16.dp, end = 6.dp, top = 2.dp, bottom = 2.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
@@ -650,8 +650,10 @@ private fun FloatingSearchBlob(
             )
             Text(stringResource(R.string.ui_search_short), Modifier.weight(1f).padding(horizontal = 12.dp),
                 style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            CookieIconButton(onClick = onSettings) {
-                Icon(Icons.Rounded.Settings, stringResource(R.string.volan_settings))
+            Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                CookieIconButton(onClick = onSettings, size = 40.dp, cookieShape = MaterialShapes.Cookie4Sided) {
+                    Icon(Icons.Rounded.Settings, stringResource(R.string.volan_settings), Modifier.size(22.dp))
+                }
             }
         }
     }
@@ -899,9 +901,6 @@ private fun StopPanel(
             }
             item(contentType = "footer") {
                 Column(Modifier.padding(horizontal = 22.dp, vertical = 15.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    // Feeds behind the displayed rows: BKK API, the per-platform EMMA fallback, or both.
-                    val boardSources = remember(state.departures) { state.departures.mapNotNullTo(LinkedHashSet()) { it.source } }
-                    if (!state.isOfflineTimetableActive) SourceTag(boardSources)
                     Text(
                         if (timetableOnly) stringResource(R.string.ui_homm_schedule_only)
                         else (if (stop?.id?.startsWith("emma:") == true) state.boardUpdatedAt else state.lastUpdated)?.let { stringResource(R.string.ui_last_updated, clockFormat.format(it)) }
@@ -984,8 +983,7 @@ private fun stopLabel(stop: TransitStop): String? = stop.platformCode?.let { str
 
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
-internal fun StopSearchRow(stop: TransitStop, state: UiState, favorite: Boolean, onStop: (String) -> Unit, index: Int = 0, count: Int = 1,
-                           sources: Set<hu.app.bmenetrend.data.DataSource> = emptySet()) {
+internal fun StopSearchRow(stop: TransitStop, state: UiState, favorite: Boolean, onStop: (String) -> Unit, index: Int = 0, count: Int = 1) {
     // The search index already consolidates platforms and records multi-stop membership.
     val isMulti = stop.isMultiStop
     val resolvedPlatform = stop.platformCode ?: hu.app.bmenetrend.data.BkkPlatformIndex.resolve(stop.id, null)
@@ -1002,7 +1000,6 @@ internal fun StopSearchRow(stop: TransitStop, state: UiState, favorite: Boolean,
         badge = {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 resolvedPlatform?.let { PlatformBadge(it) }
-                SourceTag(sources)
                 if (favorite) Icon(Icons.Rounded.Favorite, stringResource(R.string.favorites_nav), Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                 else if (stop.id in state.downloadedStationIds) Icon(Icons.Rounded.CloudDone,
                     stringResource(R.string.ui_downloaded_timetables), Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)

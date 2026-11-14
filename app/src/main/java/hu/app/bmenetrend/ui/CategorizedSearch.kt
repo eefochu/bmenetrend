@@ -184,8 +184,7 @@ internal fun CategorizedSearch(
                 state.stopStatus?.let { status -> item(contentType = "status") { Text(status, Modifier.padding(horizontal = 22.dp, vertical = 8.dp), style = MaterialTheme.typography.bodyMedium) } }
                 val shownStops = otherStops.take(limit)
                 itemsIndexed(shownStops, key = { _, it -> "station-${it.id}" }, contentType = { _, _ -> "station" }) { index, stop ->
-                    StopSearchRow(stop, state, stop.id in state.favorites, onStop, index, shownStops.size,
-                        sources = remoteStations?.sources?.get(stop.id).orEmpty())
+                    StopSearchRow(stop, state, stop.id in state.favorites, onStop, index, shownStops.size)
                 }
                 if (category == SearchCategory.STATIONS && !stopsLoading && state.stopIndexLoaded && matchingStops.isEmpty() && recommendation == null) item(contentType = "empty") { SearchEmpty() }
             }
@@ -238,7 +237,6 @@ internal fun CategorizedSearch(
                     SearchResultCard(vehicle.serviceName ?: vehicle.registration ?: vehicle.id.substringAfterLast(":"),
                         listOfNotNull(vehicle.destination, stringResource(R.string.search_live_vehicle)).joinToString(" · "),
                         { onVehicle(vehicle.id) }, leading = { VehicleServiceBadge(vehicle) },
-                        badge = { VehicleSourceTag(vehicle) },
                         index = if (joined) shownRoutes.size + index else index, count = if (joined) lineGroup else shownVehicles.size)
                 }
                 if (category == SearchCategory.VEHICLES && !routesLoading && !vehiclesLoading && !state.lineCatalogueLoading && matchingRoutes.isEmpty() && matchingVehicles.isEmpty()) item(contentType = "empty") { SearchEmpty() }

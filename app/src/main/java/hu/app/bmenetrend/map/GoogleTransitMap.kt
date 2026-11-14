@@ -8,6 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -28,6 +29,7 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.MapColorScheme
+import com.google.android.gms.maps.model.MapStyleOptions
 import hu.app.bmenetrend.R
 import hu.app.bmenetrend.TransitDiagnostics
 import hu.app.bmenetrend.data.*
@@ -260,12 +262,15 @@ internal fun GoogleTransitMap(
             region = VehicleSceneWindow.next(null, area)
         }
     }
-    LaunchedEffect(map, dark) {
-        map?.setMapColorScheme(if (dark) MapColorScheme.DARK else MapColorScheme.LIGHT)
+    LaunchedEffect(map, dark, satellite) {
+        map?.apply {
+            setMapColorScheme(if (dark) MapColorScheme.DARK else MapColorScheme.LIGHT)
+            mapType = if (satellite) GoogleMap.MAP_TYPE_HYBRID else GoogleMap.MAP_TYPE_NORMAL
+            // Style only Google's background station labels, not our selectable stop overlays.
+            setMapStyle(if (satellite) null else MapStyleOptions(GoogleBasemapStyle.json(dark)))
+        }
     }
-    LaunchedEffect(map, satellite) {
-        map?.mapType = if (satellite) GoogleMap.MAP_TYPE_HYBRID else GoogleMap.MAP_TYPE_NORMAL
-    }
+    val unavailableMessage by rememberUpdatedState(stringResource(R.string.engine_google_unavailable))
     // Keyed on the view, not the map: a map that never even arrives (getMapAsync stuck) also falls back.
     LaunchedEffect(view) {
         run {
@@ -273,7 +278,7 @@ internal fun GoogleTransitMap(
             if (!loaded) {
                 // Never drew (software-GPU emulators): show the built-in map instead of a blank one.
                 GoogleMapHealth.markFailed()
-                currentError(context.getString(R.string.engine_google_unavailable))
+                currentError(unavailableMessage)
             }
         }
     }

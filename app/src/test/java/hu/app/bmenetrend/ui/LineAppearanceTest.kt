@@ -28,11 +28,18 @@ class LineAppearanceTest {
         assertEquals(Color(0xFF008D5E), lineColor("bkk", "SUBWAY", "008D5E"))
         assertEquals(Color(0xFF0066AA), lineColor("bkk", "SUBWAY", "invalid"))
     }
-    @Test fun smallTrainLabelsHaveReadableContrastWithoutChangingServiceColours() {
-        listOf("IR","G10","S10","Z30","Gy","IC","EC").forEach { number ->
+    @Test fun automaticTrainLabelsHaveReadableContrastWithoutChangingServiceColours() {
+        listOf("IR","Z30","Gy","IC","EC").forEach { number ->
             val bg=railLineColor(number).luminance();val fg=railLineTextColor(number).luminance()
             assertTrue(number,(maxOf(bg,fg)+.05f)/(minOf(bg,fg)+.05f)>=4.5f)
         }
+    }
+    @Test fun requestedWhiteTrainLabelsAndGoogleSansAreUsedThroughoutTheInterface() {
+        listOf("S10", "S30", "G10", "g43").forEach { assertEquals(Color.White, railLineTextColor(it)) }
+        assertEquals(GoogleSans, TransitTypography.headlineLarge.fontFamily)
+        assertEquals(GoogleSans, TransitTypography.titleMedium.fontFamily)
+        assertEquals(GoogleSans, TransitTypography.bodyMedium.fontFamily)
+        assertNotEquals(GoogleSans, OpenSans)
     }
 
 }

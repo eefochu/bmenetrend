@@ -1,4 +1,4 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
 package hu.app.bmenetrend.ui
 
 import androidx.compose.foundation.BorderStroke
@@ -12,13 +12,17 @@ import androidx.compose.material.icons.rounded.*
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.background
 import androidx.compose.ui.draw.clip
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
@@ -148,6 +152,7 @@ fun FavoritesScreen(
     onBrowse: () -> Unit = {}
 ) {
     val listState = rememberLazyListState()
+    val pullState = rememberPullToRefreshState()
     val visibleAction by rememberUpdatedState(onVisible)
     LaunchedEffect(listState) {
         snapshotFlow { listState.layoutInfo.visibleItemsInfo.mapNotNull { (it.key as? String)?.takeIf { key -> key.startsWith("favorite:") }?.removePrefix("favorite:") }.toSet() }
@@ -157,37 +162,49 @@ fun FavoritesScreen(
         Box(Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
             TransitPageIntro(stringResource(R.string.favorites_title), null) {
                 if (state.favorites.isNotEmpty()) CookieIconButton(onClick = onRefresh, enabled = !state.favoritesLoading, size = 52.dp) {
-                    if (state.favoritesLoading) TransitLoading(size = 32.dp, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                    else Icon(Icons.Rounded.Refresh, stringResource(R.string.favorites_refresh_lines))
+                    Icon(Icons.Rounded.Refresh, stringResource(R.string.favorites_refresh_lines))
                 }
             }
         }
-        TransitRefreshBar(state.favoritesLoading, Modifier.padding(horizontal = 20.dp))
-        LazyColumn(Modifier.weight(1f), state = listState, contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp)) {
-            if (state.offlineMode && state.favorites.any { it !in state.stopsById }) item(key = "offline_missing", contentType = "notice") {
-                Text(stringResource(R.string.offline_missing_favorites), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            if (state.favoriteStations.isEmpty()) item(key = "empty", contentType = "notice") {
-                Surface(Modifier.animateItem(), shape = TransitDesign.panelShape, color = MaterialTheme.colorScheme.surfaceContainer) {
-                    Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        ShapeIconTile(Icons.Rounded.Favorite, shape = MaterialShapes.Cookie12Sided)
-                        Text(stringResource(R.string.design_favorites_intro), style = MaterialTheme.typography.titleLarge,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                        Text(stringResource(if (state.favorites.isEmpty()) R.string.favorites_empty else if (state.favoritesLoading) R.string.favorites_loading else R.string.favorites_index_unavailable),
-                            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        PullToRefreshBox(isRefreshing = state.favoritesLoading,
+            onRefresh = { if (!state.favoritesLoading) onRefresh() },
+            state = pullState,
+            modifier = Modifier.weight(1f).testTag("favorites-pull-refresh"),
+            indicator = {
+                val label = stringResource(R.string.favorites_loading)
+                PullToRefreshDefaults.LoadingIndicator(
+                    state = pullState,
+                    isRefreshing = state.favoritesLoading,
+                    modifier = Modifier.align(Alignment.TopCenter).testTag("favorites-refresh-shapes")
+                        .semantics { contentDescription = label },
+                )
+            }) {
+            LazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp)) {
+                if (state.offlineMode && state.favorites.any { it !in state.stopsById }) item(key = "offline_missing", contentType = "notice") {
+                    Text(stringResource(R.string.offline_missing_favorites), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                if (state.favoriteStations.isEmpty()) item(key = "empty", contentType = "notice") {
+                    Surface(Modifier.animateItem(), shape = TransitDesign.panelShape, color = MaterialTheme.colorScheme.surfaceContainer) {
+                        Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            ShapeIconTile(Icons.Rounded.Favorite, shape = MaterialShapes.Cookie12Sided)
+                            Text(stringResource(R.string.design_favorites_intro), style = MaterialTheme.typography.titleLarge,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                            Text(stringResource(if (state.favorites.isEmpty()) R.string.favorites_empty else if (state.favoritesLoading) R.string.favorites_loading else R.string.favorites_index_unavailable),
+                                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center)
 
+                        }
                     }
                 }
-            }
-            val stations = state.favoriteStations
-            itemsIndexed(stations, key = { _, it -> "favorite:${it.stop.id}" }, contentType = { _, _ -> "station" }) { index, station ->
-                FavoriteStationCard(station, state, index, stations.size, onStop, onRemove,
-                    // Springy placement: removing or reordering a favourite slides the others into place.
-                    Modifier.animateItem(fadeInSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
-                        placementSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
-                        fadeOutSpec = MaterialTheme.motionScheme.fastEffectsSpec()))
+                val stations = state.favoriteStations
+                itemsIndexed(stations, key = { _, it -> "favorite:${it.stop.id}" }, contentType = { _, _ -> "station" }) { index, station ->
+                    FavoriteStationCard(station, state, index, stations.size, onStop, onRemove,
+                        // Springy placement: removing or reordering a favourite slides the others into place.
+                        Modifier.animateItem(fadeInSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
+                            placementSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
+                            fadeOutSpec = MaterialTheme.motionScheme.fastEffectsSpec()))
+                }
             }
         }
         Surface(color = MaterialTheme.colorScheme.background) {
@@ -236,7 +253,7 @@ private fun FavoriteStationCard(station: NearbyStation, state: UiState, index: I
                         color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 Box {
-                    IconButton(onClick = { menuExpanded = true }, modifier = Modifier.size(40.dp)) {
+                    IconButton(onClick = { menuExpanded = true }, modifier = Modifier.size(48.dp)) {
                         Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.search_show_more),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
@@ -273,7 +290,6 @@ private fun FavoriteStationCard(station: NearbyStation, state: UiState, index: I
                 }
                 if (station.unavailable && badges.isNotEmpty()) Text(stringResource(R.string.favorites_lines_stale),
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                if (badges.isNotEmpty()) SourceTag(station.sources)
                 station.departures.filter { !it.isCancelled && it.expectedAt >= state.now }.minByOrNull { it.expectedAt }?.let { next ->
                     val wait = kotlin.math.ceil(java.time.Duration.between(state.now, next.expectedAt).seconds / 60.0).toInt().coerceAtLeast(0)
                     val nextRoute = state.findRoute(next.routeId)

@@ -53,7 +53,11 @@ fun badgeTextColor(background: Color): Color {
     val ink=Color(0xFF171B20)
     return if((light+.05f)/(ink.luminance()+.05f)>=4.5f) ink else Color.Black
 }
-fun railLineTextColor(number: String): Color = badgeTextColor(railLineColor(number))
+fun railLineTextColor(number: String): Color {
+    val clean = number.trim().uppercase(java.util.Locale.ROOT)
+    return if (clean.matches(railS) || clean.matches(railG) || clean == "G") Color.White
+        else badgeTextColor(railLineColor(number))
+}
 
 fun lineColor(provider: String, mode: String?, source: String? = null, number: String? = null): Color {
     if (number != null && (provider in setOf("mav", "gysev") || mode in setOf("RAIL", "TRAMTRAIN"))) {
@@ -105,26 +109,18 @@ fun LineBadge(number: String, provider: String, mode: String? = null, sourceColo
         if (showIcon) Image(rememberTransitIcon(VehicleMarkerStyle.forTransport(provider, mode).drawableRes, 28.dp),
             stringResource(when (mode) { "TRAM" -> R.string.emma_mode_tram; "TROLLEYBUS" -> R.string.emma_mode_trolley;
                 "SUBWAY" -> R.string.emma_mode_metro; "RAIL", "SUBURBAN_RAILWAY", "TRAMTRAIN" -> R.string.emma_mode_train; else -> R.string.emma_mode_bus }), Modifier.size(28.dp))
-        Surface(shape = RoundedCornerShape(4.dp), color = color) {
+        Surface(shape = RoundedCornerShape(percent = 18), color = color) {
             Box(
                 (if (uniform != null) Modifier.size(uniform).padding(horizontal = 5.dp)
                 else Modifier.heightIn(min = 28.dp).widthIn(min = 44.dp).padding(horizontal = 8.dp, vertical = 2.dp)),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    text = number,
-                    color = textColor,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = (-0.3).sp,
-                        lineHeight = 18.sp,
-                    ),
-                    fontFamily = OpenSans,
-                    maxLines = 1,
-                    // Fixed-size badges shrink long labels ("S968", "922B") instead of growing wider than the rest.
-                    autoSize = if (uniform != null) androidx.compose.foundation.text.TextAutoSize.StepBased(9.sp, 15.sp, 0.5.sp) else null,
+                val labelStyle = MaterialTheme.typography.titleMedium.copy(
+                    fontSize = 17.sp, fontWeight = FontWeight.Bold,
+                    letterSpacing = (-0.3).sp, lineHeight = 20.sp,
                 )
+                val autoSize = if (uniform != null) androidx.compose.foundation.text.TextAutoSize.StepBased(9.sp, 17.sp, 0.5.sp) else null
+                Text(number, color = textColor, style = labelStyle, fontFamily = OpenSans, maxLines = 1, autoSize = autoSize)
             }
         }
     }

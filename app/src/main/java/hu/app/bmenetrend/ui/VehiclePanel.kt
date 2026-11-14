@@ -72,7 +72,6 @@ fun VehiclePanel(state: UiState, onClose: () -> Unit, onRefresh: () -> Unit, onS
                 Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(6.dp)) {
                     // Operator (above) and data feed (tag) are different things: BKK's API also reports trains.
                     Text("${serviceTypeLabel(vehicle.providerId,vehicle.transportMode)} · $provider",Modifier.weight(1f,fill=false),style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
-                    VehicleSourceTag(vehicle)
                 }
                 journey?.stops?.firstOrNull()?.name?.let { origin ->
                     if(origin!=destination) Text(stringResource(R.string.line_from,origin),style=MaterialTheme.typography.bodySmall,
@@ -123,7 +122,6 @@ fun VehiclePanel(state: UiState, onClose: () -> Unit, onRefresh: () -> Unit, onS
                     Row(Modifier.padding(start = 22.dp, end = 22.dp, top = 20.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(pluralStringResource(R.plurals.emma_journey_stops, journey!!.stops.size, journey.stops.size), style = MaterialTheme.typography.titleSmall)
-                        SourceTag(setOfNotNull(journey.source))
                     }
                 }
                 itemsIndexed(journey!!.stops, key = { index, stop -> "$index-${stop.id}" }, contentType = { _, _ -> "journey_stop" }) { index, stop ->

@@ -26,19 +26,19 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
+val GoogleSans = FontFamily(
+    Font(R.font.google_sans_regular, FontWeight.Normal),
+    Font(R.font.google_sans_medium, FontWeight.Medium),
+    Font(R.font.google_sans_semibold, FontWeight.SemiBold),
+    Font(R.font.google_sans_bold, FontWeight.Bold),
+)
+
 val OpenSans = FontFamily(
     Font(R.font.open_sans_regular, FontWeight.Normal),
     Font(R.font.open_sans_semibold, FontWeight.SemiBold),
     Font(R.font.open_sans_bold, FontWeight.Bold),
 )
-
-/** Google Sans Flex (Latin cut, static weights) for interface text: body, labels, buttons, menus. Titles and badges stay Open Sans. */
-val UiSans = FontFamily(
-    Font(R.font.google_sans_flex_regular, FontWeight.Normal),
-    Font(R.font.google_sans_flex_medium, FontWeight.Medium),
-    Font(R.font.google_sans_flex_semibold, FontWeight.SemiBold),
-    Font(R.font.google_sans_flex_bold, FontWeight.Bold),
-)
+val UiSans = GoogleSans
 
 // Fallback palette for devices without Android dynamic colour support.
 private val LightColors = lightColorScheme(
@@ -76,7 +76,7 @@ internal val TransitShapes=Shapes(
     extraSmall=RoundedCornerShape(8.dp),small=RoundedCornerShape(12.dp),medium=RoundedCornerShape(16.dp),
     large=RoundedCornerShape(24.dp),extraLarge=RoundedCornerShape(28.dp),
 )
-private fun type(size: Int,line: Int,weight: FontWeight=FontWeight.Normal,tracking: Float=0f,family: FontFamily=OpenSans)=TextStyle(
+private fun type(size: Int,line: Int,weight: FontWeight=FontWeight.Normal,tracking: Float=0f,family: FontFamily=GoogleSans)=TextStyle(
     fontFamily=family,fontWeight=weight,fontSize=size.sp,lineHeight=line.sp,letterSpacing=tracking.sp,
     fontFeatureSettings="tnum",
 )
