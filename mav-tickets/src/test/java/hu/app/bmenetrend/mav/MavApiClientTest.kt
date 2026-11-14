@@ -790,4 +790,42 @@ class MavApiClientTest {
         assertTrue(capturedBody.contains("UserEmail"))
         assertTrue(capturedBody.contains("googleuser@example.com"))
     }
+
+    @Test
+    fun getOrdersWhenNoElectronicPassHolderAssignedLeavesPassHolderNull() = runBlocking {
+        val mockPurchases = """
+            {
+                "previousPurchases": [
+                    {
+                        "id": "1023738018",
+                        "name": "Országbérlet",
+                        "validFrom": "1726000000",
+                        "validTo": "2000000000",
+                        "seasonTicket": true,
+                        "passHolderId": "1023738018"
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        val client = createMockClient { req ->
+            if (req.url.encodedPath.contains("GetPreviousPurchases")) {
+                jsonResponse(req, mockPurchases)
+            } else if (req.url.encodedPath.contains("BerletTokLekeres")) {
+                jsonResponse(req, """{"BerletTokok":[]}""")
+            } else {
+                jsonResponse(req, """{"Megrendelesek":[]}""")
+            }
+        }
+
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest")
+        val session = MavSession("test@example.com", "tok", "uaid")
+        val orders = api.getOrders(session, validOnly = true)
+
+        assertEquals(1, orders.size)
+        val order = orders.first()
+        assertEquals("1023738018", order.orderId)
+        assertNull("passHolder should be null when passHolderId equals purchase id", order.passHolder)
+        assertNull("receipt passHolderId should be null when passHolderId equals purchase id", order.receipts.first().passHolderId)
+    }
 }

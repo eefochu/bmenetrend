@@ -399,33 +399,26 @@ class MavRepository(
 
         // 6. Pre-fetch ticket images and pass holders for active tickets
         for (order in active) {
-            val orderHolderId = order.passHolder?.id
+            val orderHolderId = order.passHolder?.id?.takeIf { it.isNotBlank() && it != order.orderId }
             if (!orderHolderId.isNullOrBlank()) {
                 runCatching {
                     val holder = getCachedPassHolder(orderHolderId)
                         ?: apiClient.getPassHolder(currentSession, orderHolderId)
                     if (holder != null) {
                         cacheStore.savePassHolder(orderHolderId, holder)
-                        if (order.orderId.isNotBlank()) {
-                            cacheStore.savePassHolder(order.orderId, holder)
-                        }
-                        for (r in order.receipts) {
-                            if (r.receiptId.isNotBlank()) cacheStore.savePassHolder(r.receiptId, holder)
-                            if (!r.ticketNumber.isNullOrBlank()) cacheStore.savePassHolder(r.ticketNumber, holder)
-                        }
                     }
                 }
             }
             for (receipt in order.receipts) {
-                receipt.passHolderId?.let { phId ->
-                    if (phId.isNotBlank() && phId != orderHolderId) {
-                        runCatching {
-                            val holder = getCachedPassHolder(phId)
-                                ?: apiClient.getPassHolder(currentSession, phId)
-                            if (holder != null) {
-                                cacheStore.savePassHolder(phId, holder)
-                                if (receipt.receiptId.isNotBlank()) cacheStore.savePassHolder(receipt.receiptId, holder)
-                            }
+                val receiptHolderId = receipt.passHolderId?.takeIf {
+                    it.isNotBlank() && it != order.orderId && it != receipt.receiptId && it != receipt.ticketNumber
+                }
+                if (!receiptHolderId.isNullOrBlank() && receiptHolderId != orderHolderId) {
+                    runCatching {
+                        val holder = getCachedPassHolder(receiptHolderId)
+                            ?: apiClient.getPassHolder(currentSession, receiptHolderId)
+                        if (holder != null) {
+                            cacheStore.savePassHolder(receiptHolderId, holder)
                         }
                     }
                 }

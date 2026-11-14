@@ -286,6 +286,10 @@ class MavViewModel(
         birthDate: Long?,
         passHolderId: String?
     ) {
+        val cleanPassHolderId = passHolderId?.trim()?.takeIf {
+            it.isNotBlank() && it != receiptId && it != ticketNumber
+        }
+
         val passengers = repository.getPassengers()
         val matched = passengers.firstOrNull { p ->
             (receiptId.isNotBlank() && (p.id == receiptId || (p.businessId.isNotBlank() && p.businessId == receiptId))) ||
@@ -297,24 +301,11 @@ class MavViewModel(
             ))
         } ?: passengers.firstOrNull { !it.photoBase64.isNullOrBlank() } ?: passengers.firstOrNull()
 
-        // Check if this ticket/pass is associated with an electronic pass holder
-        val passHolderCandidateIds = listOfNotNull(
-            passHolderId?.takeIf { it.isNotBlank() },
-            receiptId.takeIf { it.isNotBlank() },
-            ticketNumber?.takeIf { it.isNotBlank() },
-            if (receiptId.contains("#")) receiptId.substringAfterLast("#").takeIf { it.isNotBlank() } else null,
-            if (receiptId.contains("#")) receiptId.substringBefore("#").takeIf { it.isNotBlank() } else null
-        ).distinct()
-
-        var cachedPassHolder: MavPassHolder? = null
-        if (isPass || !passHolderId.isNullOrBlank()) {
-            for (cid in passHolderCandidateIds) {
-                val h = repository.getCachedPassHolder(cid)
-                if (h != null) {
-                    cachedPassHolder = h
-                    break
-                }
-            }
+        // Only search for pass holder if an actual passHolderId was assigned to this ticket/pass
+        val cachedPassHolder: MavPassHolder? = if (cleanPassHolderId != null) {
+            repository.getCachedPassHolder(cleanPassHolderId)
+        } else {
+            null
         }
 
         val finalName: String?
@@ -329,21 +320,15 @@ class MavViewModel(
             finalPhoto = cachedPassHolder.photoBase64
                 ?: matched?.photoBase64
                 ?: repository.getCachedUser()?.photoBase64
-            finalPassHolderNumber = cachedPassHolder.id.ifBlank { passHolderId }
+            finalPassHolderNumber = cachedPassHolder.id.ifBlank { cleanPassHolderId }
             finalIdCardNumber = cachedPassHolder.idCardNumber
         } else {
             finalName = passengerName?.ifBlank { null } ?: matched?.name?.ifBlank { null }
             finalBirthDate = if (birthDate != null && birthDate > 0L) birthDate else matched?.birthDate
-            val passHolderPhoto = if (isPass) {
-                repository.getCachedPassHolder(receiptId)?.photoBase64
-                    ?: ticketNumber?.let { repository.getCachedPassHolder(it)?.photoBase64 }
-                    ?: (if (receiptId.contains("#")) repository.getCachedPassHolder(receiptId.substringAfterLast("#"))?.photoBase64 else null)
-            } else null
             finalPhoto = matched?.photoBase64
-                ?: passHolderPhoto
                 ?: passengers.firstOrNull { !it.photoBase64.isNullOrBlank() }?.photoBase64
                 ?: repository.getCachedUser()?.photoBase64
-            finalPassHolderNumber = passHolderId
+            finalPassHolderNumber = null
             finalIdCardNumber = null
         }
 
@@ -380,17 +365,15 @@ class MavViewModel(
         )
         viewModelScope.launch {
             try {
-                // If this is a pass or has passholder ID, ensure pass holder details are loaded
-                if (isPass || !passHolderId.isNullOrBlank()) {
-                    val holder = passHolderCandidateIds.firstNotNullOfOrNull { cid ->
-                        runCatching { repository.getPassHolder(cid) }.getOrNull()
-                    }
+                // If this ticket/pass has an assigned electronic passholder, ensure details are loaded
+                if (cleanPassHolderId != null) {
+                    val holder = runCatching { repository.getPassHolder(cleanPassHolderId) }.getOrNull()
                     if (holder != null) {
                         _barcodeData.value = _barcodeData.value?.copy(
                             passengerPhotoBase64 = holder.photoBase64 ?: _barcodeData.value?.passengerPhotoBase64,
                             passengerName = holder.name ?: _barcodeData.value?.passengerName,
                             birthDate = holder.birthDate ?: _barcodeData.value?.birthDate,
-                            passHolderNumber = holder.id.ifBlank { _barcodeData.value?.passHolderNumber },
+                            passHolderNumber = holder.id.ifBlank { cleanPassHolderId },
                             idCardNumber = holder.idCardNumber ?: _barcodeData.value?.idCardNumber
                         )
                     }

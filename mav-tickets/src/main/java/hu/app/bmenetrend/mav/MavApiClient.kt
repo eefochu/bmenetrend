@@ -986,7 +986,8 @@ class MavApiClient(
                         val validTo = parseTimestamp(p.opt("validTo"))
                         val priceObj = p.optJSONObject("price")
                         val price = priceObj?.optInt("amount", 0) ?: 0
-                        val passHolderId = p.opt("passHolderId")?.toString()?.ifBlank { null }
+                        val rawPassHolderId = p.opt("passHolderId")?.toString()?.trim()?.ifBlank { null }
+                        val passHolderId = if (rawPassHolderId != null && rawPassHolderId != id) rawPassHolderId else null
                         val status = p.optString("status", "Ervenyes")
 
                         val isCurrent = validTo == 0L || validTo >= nowMs
@@ -1010,7 +1011,7 @@ class MavApiClient(
                         )
                         orders.add(
                             MavOrder(
-                                orderId = passHolderId ?: id,
+                                orderId = id,
                                 purchaseDate = validFrom,
                                 deliveryMode = if (isSeason) "E-Bérlet" else "E-Jegy",
                                 passHolder = passHolderId?.let { MavPassHolderSummary(it, it, 0) },
@@ -1057,11 +1058,13 @@ class MavApiClient(
                 )
 
                 val orderLevelPassHolder = (orderObj.optJSONObject("VasaroltBerletTok") ?: orderObj.optJSONObject("BerletTok"))?.let {
-                    MavPassHolderSummary(
-                        hptId = it.optString("HPTAzonosito", it.optString("HptId", "")),
-                        id = it.optString("NevesitesAzonosito", ""),
-                        version = it.optInt("VerzioSzam", it.optInt("Verzio", 0))
-                    )
+                    val hptId = it.optString("HPTAzonosito", it.optString("HptId", "")).trim()
+                    val nevesites = it.optString("NevesitesAzonosito", "").trim()
+                    val version = it.optInt("VerzioSzam", it.optInt("Verzio", 0))
+                    val validId = nevesites.ifBlank { hptId }
+                    if (validId.isNotBlank() && validId != orderId) {
+                        MavPassHolderSummary(hptId = hptId, id = validId, version = version)
+                    } else null
                 }
                 var resolvedPassHolder = orderLevelPassHolder
 
@@ -1086,11 +1089,13 @@ class MavApiClient(
                     val passHolderObj = receiptObj.optJSONObject("BerletTok")
                         ?: orderObj.optJSONObject("VasaroltBerletTok")
                     if (resolvedPassHolder == null && passHolderObj != null) {
-                        resolvedPassHolder = MavPassHolderSummary(
-                            hptId = passHolderObj.optString("HPTAzonosito", passHolderObj.optString("HptId", "")),
-                            id = passHolderObj.optString("NevesitesAzonosito", ""),
-                            version = passHolderObj.optInt("VerzioSzam", passHolderObj.optInt("Verzio", 0))
-                        )
+                        val hptId = passHolderObj.optString("HPTAzonosito", passHolderObj.optString("HptId", "")).trim()
+                        val nevesites = passHolderObj.optString("NevesitesAzonosito", "").trim()
+                        val version = passHolderObj.optInt("VerzioSzam", passHolderObj.optInt("Verzio", 0))
+                        val validId = nevesites.ifBlank { hptId }
+                        if (validId.isNotBlank() && validId != orderId && validId != receiptId) {
+                            resolvedPassHolder = MavPassHolderSummary(hptId = hptId, id = validId, version = version)
+                        }
                     }
 
                     val ticketsArray = receiptObj.optJSONArray("Jegyek")
@@ -1144,6 +1149,7 @@ class MavApiClient(
                         )
                     }
 
+                    val receiptPassHolderId = resolvedPassHolder?.id?.takeIf { it != orderId && it != receiptId }
                     receipts.add(
                         MavTicketReceipt(
                             passengerName = passengerName,
@@ -1151,7 +1157,7 @@ class MavApiClient(
                             ticketNumber = ticketNumber.ifBlank { null },
                             receiptId = receiptId,
                             items = items,
-                            passHolderId = resolvedPassHolder?.id
+                            passHolderId = receiptPassHolderId
                         )
                     )
                 }
@@ -1223,12 +1229,14 @@ class MavApiClient(
                             )
                         }
 
+                        val resolvedMergedPassHolderId = (exR.passHolderId ?: vimR?.passHolderId ?: mergedPassHolder?.id)
+                            ?.takeIf { it != ex.orderId && it != orderId && it != exR.receiptId }
                         exR.copy(
                             passengerName = passengerName,
                             birthDate = birthDate,
                             ticketNumber = ticketNumber,
                             items = mergedItems,
-                            passHolderId = exR.passHolderId ?: vimR?.passHolderId ?: mergedPassHolder?.id
+                            passHolderId = resolvedMergedPassHolderId
                         )
                     }
 

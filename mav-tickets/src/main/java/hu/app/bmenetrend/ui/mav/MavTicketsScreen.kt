@@ -1001,7 +1001,9 @@ private fun OrderTicketCard(
 
             order.receipts.forEach { receipt ->
                 val isPass = isPassOrder || receipt.items.any { it.isPass }
-                val passHolderId = receipt.passHolderId ?: order.passHolder?.id
+                val passHolderId = (receipt.passHolderId ?: order.passHolder?.id)?.takeIf {
+                    it.isNotBlank() && it != order.orderId && it != receipt.receiptId && it != receipt.ticketNumber
+                }
                 ReceiptItemView(
                     receipt = receipt,
                     isActiveTab = isActiveTab,
@@ -1257,7 +1259,9 @@ fun MavTicketDetailView(
                 shape = cardShape,
                 color = cardColor
             ) {
-                val isElectronicPassHolder = !data.passHolderNumber.isNullOrBlank()
+                val isElectronicPassHolder = !data.passHolderNumber.isNullOrBlank() &&
+                    data.passHolderNumber != data.receiptId &&
+                    data.passHolderNumber != data.ticketNumber
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
