@@ -9,7 +9,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.async
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.SupervisorJob
 import java.util.concurrent.ConcurrentHashMap
 import java.io.File
 import java.util.UUID
@@ -110,6 +113,9 @@ class MavRepository(
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {
     private val inFlightTicketFetches = ConcurrentHashMap<String, Deferred<MavTicketImage?>>()
+    // Shared barcode fetches must outlive whichever caller started them: the login sync and the
+    // ticket view can await the same request, and cancelling one must not fail the other.
+    private val ticketFetchScope = CoroutineScope(SupervisorJob() + ioDispatcher)
     constructor(
         context: Context,
         apiClient: MavApiClient = MavApiClient(),
@@ -363,7 +369,8 @@ class MavRepository(
 
                 if (!isCached && receiptId.isNotBlank()) {
                     try {
-                        val img = apiClient.getTicketImage(currentSession, receiptId)
+                        // Shares the in-flight request with a barcode the user opens meanwhile.
+                        val img = getTicketImage(receiptId)
                         if (img != null) {
                             cacheStore.saveTicketImage(receiptId, img)
                             if (order.orderId.isNotBlank()) {
@@ -477,7 +484,7 @@ class MavRepository(
             return@withContext existing.await()
         }
 
-        val deferred = async(ioDispatcher) {
+        val deferred = ticketFetchScope.async(start = CoroutineStart.LAZY) {
             try {
                 val fetched = apiClient.getTicketImage(currentSession, receiptId)
                 if (fetched != null) {

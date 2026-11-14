@@ -1,5 +1,6 @@
 package hu.app.bmenetrend.mav
 
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
@@ -30,7 +31,8 @@ class MavTicketImageThrottledException(message: String) : MavApiException(messag
 
 class MavApiClient(
     private val client: OkHttpClient = defaultClient(),
-    private val baseUrl: String = DEFAULT_BASE_URL
+    private val baseUrl: String = DEFAULT_BASE_URL,
+    private val jegykepPrepareRetryDelaysMs: List<Long> = DEFAULT_JEGYKEP_PREPARE_RETRY_DELAYS_MS
 ) {
     data class RawHptItem(
         val id: String,
@@ -1393,9 +1395,13 @@ class MavApiClient(
         }
 
         // 1. If we have a token for IK_API_PROD, check GetPreviousPurchaseDetails
-        // to resolve bizonylatTechnikaiAzonosito and jegySorszam from ticketDatas
+        // to resolve bizonylatTechnikaiAzonosito and jegySorszam from ticketDatas.
+        // MÁV only accepts the full composite purchase id here
+        // ("ODAUTI_AJANLAT#CSCSAZON#…#0#1023744049"); its parts are rejected with HTTP 500
+        // "Érvénytelen bemenet {VasarlasAzonosito::…}", so ask with the full id first.
+        val detailIds = (listOf(receiptId.trim()) + candidateIds).filter { it.isNotBlank() }.distinct()
         if (safeToken.isNotBlank()) {
-            for (cid in candidateIds) {
+            for (cid in detailIds) {
                 val detRes = runCatching { fetchPreviousPurchaseDetails(session, safeToken, cid) }.getOrNull()
                 if (detRes != null) {
                     val prevDetails = detRes.optJSONObject("previousPurchaseDetails") ?: detRes
@@ -1411,12 +1417,15 @@ class MavApiClient(
                             if (bizTechId.isNotBlank() && isValidVimIdCandidate(bizTechId)) {
                                 val vimImg = fetchVimTicketImage(session, bizTechId, jegySorszam, receiptId, attempt)
                                 if (vimImg != null) return vimImg
+                                if (attempt.throttleMessage != null) return null
                             }
                             if (jegySorszam != null && isValidVimIdCandidate(jegySorszam)) {
                                 val vimImg = fetchVimTicketImage(session, jegySorszam, jegySorszam, receiptId, attempt)
                                 if (vimImg != null) return vimImg
+                                if (attempt.throttleMessage != null) return null
                             }
                         }
+                        break // this id resolved the purchase; the remaining ids are only its parts
                     }
                 }
             }
@@ -1428,6 +1437,7 @@ class MavApiClient(
             if (isValidVimIdCandidate(cid)) {
                 val directImg = fetchVimTicketImage(session, cid, null, receiptId, attempt)
                 if (directImg != null) return directImg
+                if (attempt.throttleMessage != null) return null
             }
         }
 
@@ -1440,8 +1450,7 @@ class MavApiClient(
         purchaseId: String
     ): JSONObject? {
         val emailToUse = session.email.ifBlank { session.user?.email.orEmpty() }
-        val cleanPurchaseId = extractCleanOrderId(purchaseId).ifBlank { purchaseId }
-        val idToUse = if (cleanPurchaseId.all { it.isDigit() }) cleanPurchaseId else purchaseId
+        val idToUse = purchaseId.trim()
 
         val baseBuilder = Request.Builder()
             .url("https://jegy-a.mav.hu/IK_API_PROD/api/ProfileApi/GetPreviousPurchaseDetails")
@@ -1465,23 +1474,8 @@ class MavApiClient(
             put("id", idToUse)
         }.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
 
-        var res = runCatching { executeJsonRequest(baseBuilder.post(flatBody).build()) }.getOrNull()
-
-        if (res == null || (res.optJSONObject("previousPurchaseDetails") == null && res.opt("financialDatas") == null && res.opt("ticketDatas") == null)) {
-            val wrappedBody = JSONObject().apply {
-                val reqModel = JSONObject().apply {
-                    put("userEmail", emailToUse)
-                    put("UserEmail", emailToUse)
-                    put("id", idToUse)
-                }
-                put("requestModel", reqModel)
-            }.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
-
-            val wrappedRes = runCatching { executeJsonRequest(baseBuilder.post(wrappedBody).build()) }.getOrNull()
-            if (wrappedRes != null) res = wrappedRes
-        }
-
-        return res
+        // A {"requestModel": {...}} wrapper is always rejected by MÁV (HTTP 400), so only the flat body is sent.
+        return runCatching { executeJsonRequest(baseBuilder.post(flatBody).build()) }.getOrNull()
     }
 
     private suspend fun fetchVimTicketImage(
@@ -1499,8 +1493,24 @@ class MavApiClient(
             .filter { it.isNotBlank() }
             .distinct()
         for (rawToken in tokens) {
-            val image = fetchVimTicketImageWithToken(session, rawToken, bizonylatId, ticketNumber, originalReceiptId, attempt)
-            if (image != null) return image
+            val earlierThrottle = attempt.throttleMessage
+            var retryIndex = 0
+            while (true) {
+                attempt.throttleMessage = null
+                val image = fetchVimTicketImageWithToken(session, rawToken, bizonylatId, ticketNumber, originalReceiptId, attempt)
+                if (image != null) {
+                    attempt.throttleMessage = null
+                    return image
+                }
+                // MÁV answers the first request for a ticket image that isn't prepared yet with a
+                // notice "Kérjük, próbálja meg ismét fél perc múlva." (Tipus "M"), but the image is
+                // usually ready within a second or two. Retry the same document quickly instead of
+                // waiting the literal half minute.
+                if (attempt.throttleMessage == null || retryIndex >= jegykepPrepareRetryDelaysMs.size) break
+                delay(jegykepPrepareRetryDelaysMs[retryIndex++])
+            }
+            if (attempt.throttleMessage != null) return null
+            attempt.throttleMessage = earlierThrottle
         }
         return null
     }
@@ -1669,6 +1679,10 @@ class MavApiClient(
     }
 
     companion object {
+        /** About 30 s in total, front-loaded because the image is normally ready within 1–2 s. */
+        val DEFAULT_JEGYKEP_PREPARE_RETRY_DELAYS_MS: List<Long> =
+            listOf(1_000L, 1_000L, 1_500L, 2_000L, 3_000L, 4_000L, 5_000L, 6_000L, 7_000L)
+
         internal fun isRetryLaterMessage(text: String?): Boolean {
             if (text.isNullOrBlank()) return false
             return text.contains("próbálja meg ismét", ignoreCase = true) ||

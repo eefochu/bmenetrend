@@ -333,13 +333,14 @@ class MavViewModel(
         }
 
         val candidates = buildList {
+            // Full receipt id first: it is the only form MÁV's GetPreviousPurchaseDetails accepts.
+            add(receiptId)
             val cleanTrailing = if (receiptId.contains("#")) {
                 receiptId.split("#").map { it.trim() }.lastOrNull { it.isNotEmpty() && it.all { ch -> ch.isDigit() } }
             } else null
             if (!cleanTrailing.isNullOrBlank()) {
                 add(cleanTrailing)
             }
-            add(receiptId)
             if (!ticketNumber.isNullOrBlank() && ticketNumber != receiptId) add(ticketNumber)
             if (receiptId.contains("#")) {
                 for (p in receiptId.split("#")) {
@@ -387,6 +388,16 @@ class MavViewModel(
 
                 var ticketImage: MavTicketImage? = cachedTicketImage
                 var throttled = false
+                // MavApiClient already retries MÁV's "image not prepared yet" notice for ~30 s; tell
+                // the user what is going on if the barcode isn't there after a few seconds.
+                val slowNoticeJob = if (ticketImage == null) launch {
+                    delay(TICKET_IMAGE_SLOW_NOTICE_MS)
+                    if (_barcodeData.value?.loading == true && _barcodeData.value?.receiptId == receiptId) {
+                        _barcodeData.value = _barcodeData.value?.copy(
+                            notice = getApplication<Application>().getString(hu.app.bmenetrend.mav.R.string.mav_barcode_wait_notice)
+                        )
+                    }
+                } else null
                 if (ticketImage == null) {
                     for (attempt in 0 until TICKET_IMAGE_MAX_ATTEMPTS) {
                         throttled = false
@@ -409,6 +420,7 @@ class MavViewModel(
                     }
                 }
 
+                slowNoticeJob?.cancel()
                 val bitmap = ticketImage?.toBitmap() ?: _barcodeData.value?.bitmap
                 if (bitmap != null) {
                     _barcodeData.value = _barcodeData.value?.copy(
@@ -451,8 +463,9 @@ class MavViewModel(
     }
 
     private companion object {
-        const val TICKET_IMAGE_MAX_ATTEMPTS = 3
-        const val TICKET_IMAGE_RETRY_DELAY_MS = 32_000L
+        const val TICKET_IMAGE_MAX_ATTEMPTS = 2
+        const val TICKET_IMAGE_RETRY_DELAY_MS = 5_000L
+        const val TICKET_IMAGE_SLOW_NOTICE_MS = 3_000L
     }
 
     fun dismissBarcode() {

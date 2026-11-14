@@ -8,6 +8,35 @@
 
 ---
 
+## 0. RESOLVED (2026-11-14): cause and fix of the barcode delay
+
+Verified against the live MÁV API with both test accounts (email/password and Google OAuth), and on device by the user.
+Sections 4–5 below are the earlier hypotheses; several turned out to be wrong.
+
+**Cause 1: the barcode could not be resolved at all (regression from `5cbd80a`).**
+`ProfileApi/GetPreviousPurchaseDetails` only accepts the *full* composite purchase id
+(`ODAUTI_AJANLAT#CSCSAZON#…#0#1023744049`). Any part of it (`1023744049`, the GUID, `0`) is rejected with
+HTTP 500 `Érvénytelen bemenet {VasarlasAzonosito::…}`, and the `{"requestModel": {...}}` body is always HTTP 400.
+`5cbd80a` started sending only the parts, so `bizonylatTechnikaiAzonosito` was never found and `GetJegykep`
+was tried with ids it rejects (`Nem regisztrált bizonylat` / `OSB-382505`).
+
+**Cause 2: the 30–60 s wait.** The first `GetJegykep` for a ticket image MÁV hasn't prepared yet returns the
+*notice* `[0/M] Kérjük, próbálja meg ismét fél perc múlva.`, but the image is ready ~1–2 s later
+(observed: refusal, then success 2.3 s later). The app waited 32 s per attempt because of the literal text.
+
+**Facts that disprove earlier hypotheses:**
+- Google `SocialLogin` returns a SAML `userTokenXml` (top level) next to `refreshToken`, not only a JWT.
+- Wrong ids passed to `GetJegykep` do **not** trigger a lockout; they just fail validation.
+- No "registration" step is needed: with the right `bizonylatTechnikaiAzonosito`, `GetJegykep` works immediately after a fresh login.
+- Back-to-back `GetJegykep` calls with the same token are fine.
+
+**Fix:** full id first for `GetPreviousPurchaseDetails`; on the `fél perc` notice retry the same document after
+1 s, 1 s, 1.5 s, 2 s, 3 s… (~30 s cap, `MavApiClient.DEFAULT_JEGYKEP_PREPARE_RETRY_DELAYS_MS`); the login prefetch
+and the ticket view share one in-flight request in a repository-owned scope.
+Live check: `MavLiveApiTest` (skipped unless `MAV_LIVE_EMAIL`/`MAV_LIVE_PASSWORD` or `MAV_LIVE_GOOGLE_SESSION` are set).
+
+---
+
 ## 1. Executive Summary & The Problem
 
 ### The User Issue

@@ -4,6 +4,7 @@ import kotlinx.coroutines.runBlocking
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody.Companion.toResponseBody
+import okio.Buffer
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -921,5 +922,96 @@ class MavApiClientTest {
         assertEquals("Bearer $jwtToken", authHeader)
         assertEquals("ODAUTI_AJANLAT#CSCSAZON#CSAZON#1023744049", image?.receiptId)
         assertEquals("5594003G000448895", image?.ticketNumber)
+    }
+
+    // --- Behaviour observed on the live MÁV API (2026-11-14) ---------------------------------
+
+    private val compositeId = "ODAUTI_AJANLAT#CSCSAZON#d9a74e13-0625-22c7-b43a-837465e94758_1793977592000#0#1023744049"
+    private val pngBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+    private val samlSession = MavSession("test@example.com", "<saml:Assertion>tok</saml:Assertion>", "uaid")
+
+    /** GetPreviousPurchaseDetails only accepts the full composite id, like the real server. */
+    private fun realisticDetails(req: Request, sentIds: MutableList<String>): Response {
+        val body = Buffer().also { req.body!!.writeTo(it) }.readUtf8()
+        val id = org.json.JSONObject(body).optString("id")
+        sentIds += id
+        return if (id == compositeId) {
+            jsonResponse(req, """{"previousPurchaseDetails":{"ticketDatas":[{"bizonylatTechnikaiAzonosito":"1779935735","jegySorszam":"5594003G000448895"}]}}""")
+        } else {
+            jsonResponse(req, """{"message":"Érvénytelen bemenet {VasarlasAzonosito::$id}"}""", 500)
+        }
+    }
+
+    private fun jegykepBody(req: Request): String = Buffer().also { req.body!!.writeTo(it) }.readUtf8()
+
+    @Test
+    fun getTicketImageResolvesDetailsWithFullCompositeId() = runBlocking {
+        val sentDetailIds = mutableListOf<String>()
+        val jegykepIds = mutableListOf<String>()
+        val client = createMockClient { req ->
+            when {
+                req.url.encodedPath.contains("GetPreviousPurchaseDetails") -> realisticDetails(req, sentDetailIds)
+                req.url.encodedPath.contains("GetJegykep") -> {
+                    val ids = org.json.JSONObject(jegykepBody(req)).getJSONArray("BizonylatAzonosito").toString()
+                    jegykepIds += ids
+                    if (ids == "[1779935735]") jsonResponse(req, """{"Bizonylatok":[{"Jegysorszam":"5594003G000448895","Jegykep":"$pngBase64"}]}""")
+                    else jsonResponse(req, """{"Uzenetek":[{"ID":"-2790","Tipus":"H","Szoveg":"Nem regisztrált bizonylat"}]}""")
+                }
+                else -> jsonResponse(req, "{}", 404)
+            }
+        }
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest", jegykepPrepareRetryDelaysMs = emptyList())
+
+        val image = api.getTicketImage(samlSession, compositeId)
+
+        assertNotNull(image)
+        assertEquals(compositeId, sentDetailIds.first())
+        assertEquals(listOf("[1779935735]"), jegykepIds)
+    }
+
+    @Test
+    fun getTicketImageRetriesQuicklyWhileMavPreparesTheImage() = runBlocking {
+        var jegykepCalls = 0
+        val client = createMockClient { req ->
+            when {
+                req.url.encodedPath.contains("GetPreviousPurchaseDetails") -> realisticDetails(req, mutableListOf())
+                req.url.encodedPath.contains("GetJegykep") -> {
+                    jegykepCalls++
+                    if (jegykepCalls < 3) jsonResponse(req, """{"Uzenetek":[{"ID":"0","Tipus":"M","Szoveg":"Kérjük, próbálja meg ismét fél perc múlva."}]}""")
+                    else jsonResponse(req, """{"Bizonylatok":[{"Jegysorszam":"5594003G000448895","Jegykep":"$pngBase64"}]}""")
+                }
+                else -> jsonResponse(req, "{}", 404)
+            }
+        }
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest", jegykepPrepareRetryDelaysMs = listOf(0L, 0L, 0L))
+
+        val image = api.getTicketImage(samlSession, compositeId)
+
+        assertNotNull(image)
+        assertEquals(3, jegykepCalls)
+    }
+
+    @Test
+    fun getTicketImageThrowsThrottledWhenMavKeepsPreparing() = runBlocking {
+        var jegykepCalls = 0
+        val client = createMockClient { req ->
+            when {
+                req.url.encodedPath.contains("GetPreviousPurchaseDetails") -> realisticDetails(req, mutableListOf())
+                req.url.encodedPath.contains("GetJegykep") -> {
+                    jegykepCalls++
+                    jsonResponse(req, """{"Uzenetek":[{"ID":"0","Tipus":"M","Szoveg":"Kérjük, próbálja meg ismét fél perc múlva."}]}""")
+                }
+                else -> jsonResponse(req, "{}", 404)
+            }
+        }
+        val api = MavApiClient(client = client, baseUrl = "https://mock.mav.hu/rest", jegykepPrepareRetryDelaysMs = listOf(0L, 0L))
+
+        try {
+            api.getTicketImage(samlSession, compositeId)
+            fail("expected MavTicketImageThrottledException")
+        } catch (e: MavTicketImageThrottledException) {
+            // 1 initial call + 2 retries on the resolved document; no further calls with unrelated ids
+            assertEquals(3, jegykepCalls)
+        }
     }
 }
