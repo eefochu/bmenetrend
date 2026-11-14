@@ -60,6 +60,12 @@ fun VehiclePanel(state: UiState, onClose: () -> Unit, onRefresh: () -> Unit, onS
         if (journey != null && progress?.nextIndex != null) listState.scrollToItem(progress.nextIndex.coerceAtLeast(0))
     }
     Column(modifier) {
+        state.findRoute(vehicle.routeId)?.let { route ->
+            DisruptionNotice(listOf(hu.app.bmenetrend.data.DisruptionScope.line(route, state.now).copy(
+                stops = journey?.stops.orEmpty().mapNotNullTo(hashSetOf()) { hu.app.bmenetrend.data.DisruptionScope.stop(it.id) },
+                trip = hu.app.bmenetrend.data.DisruptionScope.trip(vehicle.bkkTripId ?: vehicle.tripId),
+                direction = journey?.directionId?.toIntOrNull())), Modifier.padding(horizontal = 16.dp, vertical = 6.dp))
+        }
         Row(Modifier.fillMaxWidth().padding(start=8.dp,end=8.dp,top=4.dp),verticalAlignment=Alignment.CenterVertically) {
             IconButton(onClick=onClose) { Icon(Icons.AutoMirrored.Rounded.ArrowBack,stringResource(R.string.ui_back)) }
             Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(5.dp)) {

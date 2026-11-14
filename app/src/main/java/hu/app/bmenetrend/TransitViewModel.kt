@@ -247,6 +247,19 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     /** Owned by the activity's STARTED lifecycle; all polling stops in the background. */
     suspend fun observe() = coroutineScope {
         nearbyActive = true
+        launch {
+            while (isActive) {
+                if (!NetworkAccessPolicy.offline.value && NetworkAccessPolicy.internetAvailable.value) {
+                    try {
+                        val snapshot = bkkRepository.disruptions(state.value.disruptions)
+                        mutableState.update { it.copy(disruptions = snapshot) }
+                    } catch (cancelled: CancellationException) { throw cancelled }
+                    catch (_: Exception) { mutableState.update { it.copy(disruptions = it.disruptions.copy(
+                        alertsUnavailable = true, changesUnavailable = true, attempted = true)) } }
+                }
+                delay(60_000)
+            }
+        }
         if (favoritesVisible) ensureFavoriteRequest()
         launch {
             while (isActive) {

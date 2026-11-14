@@ -288,7 +288,7 @@ object BkkWorkerParser {
                 bikesAllowed = bikes?.let { if (it) "ALLOWED" else "NOT_ALLOWED" },
                 realtimeState = when { canceled -> "CANCELED"; realtime -> "UPDATED"; else -> "SCHEDULED" },
                 platformCode = BkkPlatformIndex.resolve(source, refStops?.optJSONObject(rawStop)?.text("platformCode")),
-                source = DataSource.BKK,
+                source = DataSource.BKK, serviceDate = row.text("serviceDate")?.takeIf { it.matches(Regex("[0-9]{8}")) },
             )
         }
         val limited = data.optBoolean("limitExceeded", false)
@@ -538,14 +538,15 @@ object BkkWorkerParser {
         val stops = row.optJSONArray("intermediateStops")
         return PlanLeg(mode, start, end, distance, point(row.getJSONObject("from")), point(row.getJSONObject("to")), route,
             row.text("headsign"), row.optBoolean("realTime"), row.optBoolean("interlineWithPreviousLeg"),
-            (0 until (stops?.length() ?: 0)).map { point(stops!!.getJSONObject(it)) }, source = DataSource.BKK)
+            (0 until (stops?.length() ?: 0)).map { point(stops!!.getJSONObject(it)) }, source = DataSource.BKK, tripId = appTripId(row.text("tripId")),
+            serviceDate = row.text("serviceDate")?.takeIf { it.matches(Regex("[0-9]{8}")) })
     }
 
     private fun point(row: JSONObject): PlanPoint {
         val point = GeoPoint(row.getDouble("lat"), row.getDouble("lon"))
         require(point.lat in 45.0..49.5 && point.lon in 15.5..23.5)
         val source = appStopId(row.text("stopId"))?.removePrefix("emma:")
-        return PlanPoint(row.text("name") ?: error("Unnamed point"), point, BkkPlatformIndex.resolve(source, row.text("platformCode")))
+        return PlanPoint(row.text("name") ?: error("Unnamed point"), point, BkkPlatformIndex.resolve(source, row.text("platformCode")), appStopId(row.text("stopId")))
     }
 
     // ---- helpers -------------------------------------------------------------------------

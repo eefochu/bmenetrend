@@ -1,0 +1,20 @@
+<resources>
+    <string name="disruptions_title">Service changes</string>
+    <string name="disruptions_details">Service change details</string>
+    <plurals name="disruptions_more">
+        <item quantity="one">%1$d more notice</item>
+        <item quantity="other">%1$d more notices</item>
+    </plurals>
+    <string name="disruptions_unavailable">Service changes cannot be checked right now</string>
+    <string name="disruptions_unavailable_detail">Current disruption information is unavailable. Previous notices may be out of date; check BKK’s latest information before travelling.</string>
+    <string name="disruptions_stale_short">Current updates are unavailable</string>
+    <string name="disruptions_official_details">Details on BKK’s website</string>
+    <string name="disruptions_updated">BKK service information: %1$s</string>
+    <string name="disruptions_cancelled">This service is cancelled</string>
+    <string name="disruptions_cancelled_detail">BKK’s latest trip update reports this departure as cancelled. Choose another departure or plan again.</string>
+    <string name="disruptions_skipped">This service skips an affected stop</string>
+    <string name="disruptions_skipped_detail">BKK’s latest trip update reports that this service skips at least one stop on your route. Check where you can board and get off, or plan again.</string>
+    <string name="disruptions_close">Close</string>
+    <string name="disruptions_cancelled_route">%1$s: this departure is cancelled</string>
+    <string name="disruptions_skipped_route">%1$s: skipped stop</string>
+</resources>

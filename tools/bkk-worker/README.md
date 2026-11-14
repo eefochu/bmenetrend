@@ -89,3 +89,35 @@ npx wrangler deploy --dry-run
 ```
 
 References: [BKK API schema](https://opendata.bkk.hu/docs/futar-openapi.yaml), [Worker secrets](https://developers.cloudflare.com/workers/configuration/secrets/), [rate limits and their locality](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/), [Cache API](https://developers.cloudflare.com/workers/runtime-apis/cache/).
+
+## Service disruptions (native app)
+
+`GET /api/service-disruptions.json` has no query parameters or client key. It reuses the existing
+`BKK_API_KEY` Worker secret to fetch BKK's `go.bkk.hu` **Alerts.pb** and **TripUpdates.pb** feeds.
+The bounded protobuf decoder skips unknown fields/extensions and rejects truncated, oversized,
+differential or malformed snapshots. Only alert translations, selectors, active periods and
+severity/effect, plus cancelled/deleted trips and skipped stop IDs, are returned. Ordinary trip
+predictions and vehicle/shape data are omitted; departure and routing endpoints keep their existing behaviour.
+
+Alert snapshots cache for 60 seconds and trip changes for 30 seconds at the Cloudflare location;
+concurrent requests share a fetch. Failed upstream attempts back off for 15 seconds. The last good
+snapshot can survive up to six hours in edge cache, explicitly marked `unavailable` after failure.
+Each feed retains its original source timestamp and succeeds/fails independently. The existing
+IP limiter and key redaction apply. This endpoint reports `X-Proxy-Cache: SHARED`.
+
+Android makes one shared request per minute while the activity is started, parses off the main
+thread, and stops polling in the background/offline. Relevant notices appear on favourites, stop
+boards, line/vehicle details and journey results/details. Matching uses actual BKK feed identities,
+AND within each selector and OR between selectors, and active periods overlapping the intended
+journey. It never guesses an identity from a displayed line number or another operator's IDs.
+
+Trip-specific warnings require the exact trip and explicit service date (and frequency start time
+when supplied); skipped-stop warnings also require an affected stop on that journey. A fresh full
+feed can repeat an older cancellation event. Trip changes older than three minutes, or unavailable
+trip feeds, cannot supply live cancellation/skip warnings. Alerts older than five minutes are marked
+stale; those older than six hours are hidden. Failed refreshes retain previous notices with an
+availability explanation in their details. When there is no relevant notice, feed unavailability does not create a banner. BKK's official HTTPS detail
+links are allowlisted and descriptions render as plain text, including translated Hungarian/English
+content. These are foreground in-app notices, not push notifications or a nationwide MÁV/Volán alert feed.
+
+Reference: [GTFS Realtime semantics](https://gtfs.org/documentation/realtime/reference/).

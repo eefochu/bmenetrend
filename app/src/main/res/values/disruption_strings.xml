@@ -1,0 +1,20 @@
+<resources>
+    <string name="disruptions_title">Forgalmi változások</string>
+    <string name="disruptions_details">Forgalmi változások részletei</string>
+    <plurals name="disruptions_more">
+        <item quantity="one">További %1$d tájékoztatás</item>
+        <item quantity="other">További %1$d tájékoztatás</item>
+    </plurals>
+    <string name="disruptions_unavailable">A forgalmi változások most nem ellenőrizhetők</string>
+    <string name="disruptions_unavailable_detail">A friss forgalmi tájékoztatás nem érhető el. A korábbi figyelmeztetések elavulhattak; indulás előtt ellenőrizd a BKK aktuális tájékoztatását.</string>
+    <string name="disruptions_stale_short">A friss adatok nem érhetők el</string>
+    <string name="disruptions_official_details">Részletek a BKK oldalán</string>
+    <string name="disruptions_updated">BKK forgalmi tájékoztatás: %1$s</string>
+    <string name="disruptions_cancelled">Ez a járat kimarad</string>
+    <string name="disruptions_cancelled_detail">A BKK friss menetmódosításai szerint az érintett indulás elmarad. Válassz másik indulást, vagy tervezz újra.</string>
+    <string name="disruptions_skipped">Ez a járat érintett megállót hagy ki</string>
+    <string name="disruptions_skipped_detail">A BKK friss menetmódosításai szerint ez a járat az útvonalad legalább egy megállójában nem áll meg. Ellenőrizd a fel- és leszállási lehetőségeket, vagy tervezz újra.</string>
+    <string name="disruptions_close">Bezárás</string>
+    <string name="disruptions_cancelled_route">%1$s: ez az indulás kimarad</string>
+    <string name="disruptions_skipped_route">%1$s: megállókimaradás</string>
+</resources>
