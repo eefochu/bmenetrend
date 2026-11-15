@@ -288,6 +288,7 @@ private fun FavoriteStationCard(station: NearbyStation, state: UiState, index: I
                     else -> Text(stringResource(if (station.unavailable) R.string.favorites_lines_unavailable else R.string.favorites_no_lines),
                         style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
+                StationDisruptionNotice(station.platforms + station.stop, state, station.departures)
                 if (station.unavailable && badges.isNotEmpty()) Text(stringResource(R.string.favorites_lines_stale),
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 station.departures.filter { !it.isCancelled && it.expectedAt >= state.now }.minByOrNull { it.expectedAt }?.let { next ->

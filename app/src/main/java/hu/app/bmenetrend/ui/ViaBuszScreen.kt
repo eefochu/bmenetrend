@@ -835,6 +835,10 @@ private fun StopPanel(
             modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(bottom = 24.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()),
         ) {
+            item(key = "service-disruptions", contentType = "notice") {
+                StationDisruptionNotice(platforms + listOfNotNull(stop), state, state.departures,
+                    Modifier.padding(horizontal = 18.dp, vertical = 6.dp))
+            }
             if (!state.error.isNullOrBlank()) {
                 item(contentType = "notice") { Notice(state.error, Icons.Rounded.WifiOff, isError = true) }
             }

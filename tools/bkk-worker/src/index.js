@@ -1,6 +1,8 @@
+import { disruptions } from './disruptions.js';
 import { supplement, emmaDetails, mergeVehicles } from './emma.js';
 const UPSTREAM = 'https://futar.bkk.hu/api/query/v1/ws/otp/api/where/';
 const ENDPOINTS = {
+  'service-disruptions': { fields: '', required: '', ttl: 0 },
   'vehicles-for-location': { fields: 'lat lon latSpan lonSpan radius', required: 'lat lon', ttl: 5 },
   'stops-for-location': { fields: 'lat lon latSpan lonSpan radius', required: 'lat lon', ttl: 300 },
   'stop-directions-for-location': { fields: 'lat lon latSpan lonSpan radius', required: 'lat lon', ttl: 3600 },
@@ -21,6 +23,7 @@ const RANGES = {
   radius: [1, 5000], minResult: [1, 20], minutesBefore: [0, 60], minutesAfter: [1, 120], limit: [1, 50], numItineraries: [1, 3]
 };
 function validateParams(url, endpoint) {
+  if (endpoint === 'service-disruptions' && url.searchParams.size) throw new Error('This endpoint takes no parameters');
   const spec = ENDPOINTS[endpoint], allowed = new Set((spec.fields + ' version includeReferences').split(' '));
   const params = new URLSearchParams();
   for (const [name, value] of url.searchParams) {
@@ -159,6 +162,8 @@ export default {
       const planner = endpoint === 'plan-trip' && await env.PLAN_LIMITER.limit({ key: ip });
       if (!general.success || (planner && !planner.success)) return respond(errorResponse(429, 'Too many requests. Try again shortly.', { 'Retry-After': '60' }));
     } catch { return respond(errorResponse(503, 'Request limiter is unavailable')); }
+
+    if (endpoint === 'service-disruptions') return respond(Response.json(sanitize(await disruptions(env, url.origin), env.BKK_API_KEY)), 'SHARED');
 
     const ttl = ENDPOINTS[endpoint].ttl;
     // No BKK key in this URL, cache entry or client response.

@@ -133,6 +133,8 @@ data class Departure(
     val platformCode: String? = null,
     /** Feed that served this row; null for local timetables and offline packs. */
     val source: DataSource? = null,
+    /** Explicit service date from the source, for daily GTFS trip identity. */
+    val serviceDate: String? = null,
 ) {
     val isCancelled: Boolean get() = realtimeState == "CANCELED"
     val delayMinutes: Long get() = scheduledAt?.let { java.time.Duration.between(it,expectedAt).toMinutes() } ?: 0L

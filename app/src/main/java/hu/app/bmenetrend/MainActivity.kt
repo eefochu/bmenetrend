@@ -153,7 +153,8 @@ class MainActivity : ComponentActivity() {
                 } }
                 val isViewingTicket = tickets?.isViewingTicket() == true
                 CompositionLocalProvider(hu.app.bmenetrend.ui.LocalMapAppearance provides
-                    hu.app.bmenetrend.ui.MapAppearance(state.mapStyle, state.offlineMode)) {
+                    hu.app.bmenetrend.ui.MapAppearance(state.mapStyle, state.offlineMode),
+                    hu.app.bmenetrend.ui.LocalDisruptions provides hu.app.bmenetrend.ui.DisruptionPresentation(state.disruptions, state.now, state.offlineMode)) {
                 MainNavigation(
                     tab,
                     { tab = it },

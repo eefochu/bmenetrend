@@ -40,7 +40,7 @@ data class PlannerEndpoint(
     }
 }
 @Immutable
-data class PlanPoint(val name: String, val position: GeoPoint, val platform: String? = null)
+data class PlanPoint(val name: String, val position: GeoPoint, val platform: String? = null, val stopId: String? = null)
 @Immutable
 data class PlanLeg(
     val mode: String, val start: Instant, val end: Instant, val distance: Double,
@@ -53,6 +53,10 @@ data class PlanLeg(
     /** Router provenance for this exact sequence; hybrid joins cannot inherit its slack policy. */
     val routerJourney: String? = null,
     val routerPrevious: String? = null,
+    val tripId: String? = null,
+    val serviceDate: String? = null,
+    val tripStartTime: String? = null,
+    val directionId: Int? = null,
 ) { val walking: Boolean get() = mode == "WALK" }
 @Immutable
 data class TripItinerary(
@@ -172,7 +176,7 @@ object TripPlanner {
                         leg.optJSONObject("trip")?.text("tripHeadsign"), leg.optBoolean("realTime"), leg.optBoolean("interlineWithPreviousLeg"),
                         (0 until (stops?.length() ?: 0)).map { point(stops!!.getJSONObject(it)) },
                         if (RailSupport.isTrain(mode)) RailSupport.serviceNumber(leg.optJSONObject("trip")?.text("tripShortName")) else null,
-                        source = DataSource.EMMA)
+                        source = DataSource.EMMA, tripId = leg.optJSONObject("trip")?.text("gtfsId"))
                 }
                 require(feasible(legs, ready))
                 val start = Instant.ofEpochMilli(row.getLong("startTime")); val end = Instant.ofEpochMilli(row.getLong("endTime"))
@@ -269,7 +273,7 @@ object TripPlanner {
         require(point.lat.isFinite() && point.lon.isFinite() && point.lat in -90.0..90.0 && point.lon in -180.0..180.0)
         val stopObj = row.optJSONObject("stop")
         val platform = BkkPlatformIndex.resolve(stopObj?.text("gtfsId"), stopObj?.text("platformCode"))
-        return PlanPoint(row.text("name") ?: error("Unnamed point"), point, platform)
+        return PlanPoint(row.text("name") ?: error("Unnamed point"), point, platform, stopObj?.text("gtfsId")?.let { "emma:$it" })
     }
     fun supported(p: GeoPoint) = p.lat.isFinite() && p.lon.isFinite() && p.lat in 45.7..48.6 && p.lon in 16.1..22.9
     private fun JSONObject.text(key: String) = optString(key).takeUnless { it.isBlank() || it == "null" }

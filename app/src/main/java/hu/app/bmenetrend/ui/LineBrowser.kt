@@ -45,6 +45,11 @@ fun EmmaLineBrowser(
                 Text(serviceTypeLabel(route.providerId,route.transportMode),style=MaterialTheme.typography.titleSmall)
             }
         }
+        item(key = "service-disruptions", contentType = "notice") {
+            DisruptionNotice(listOf(hu.app.bmenetrend.data.DisruptionScope.line(route, state.now).copy(stops =
+                details?.patterns.orEmpty().flatMap { it.stops }.flatMapTo(hashSetOf()) { stop ->
+                    (stop.sourceStopIds + stop.id).mapNotNull(hu.app.bmenetrend.data.DisruptionScope::stop) })), Modifier.padding(horizontal = 20.dp, vertical = 6.dp))
+        }
         if(pattern!=null) item(key="pattern-header",contentType="pattern-header") {
             RouteDirectionRow(route,pattern.headsign,pattern.stops.firstOrNull()?.name)
             val variants=details?.patterns?.filter { it.familyKey==pattern.familyKey }.orEmpty()

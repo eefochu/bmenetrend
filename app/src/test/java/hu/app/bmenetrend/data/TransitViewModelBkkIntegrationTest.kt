@@ -1133,8 +1133,10 @@ class TransitViewModelBkkIntegrationTest {
             assertTrue("HTTP request should be initiated", requestStarted.await(5, TimeUnit.SECONDS))
 
             // 2. User switches to offline mode while request is in-flight
-            viewModel.setOfflineMode(true)
-            ShadowLooper.idleMainLooper()
+            // Exercise cancellation directly: the public UI toggle deliberately refuses
+            // offline mode without an installed pack, which this network test does not create.
+            NetworkAccessPolicy.setOffline(app, true)
+            awaitUntil { viewModel.state.value.offlineMode }
 
             // 3. Complete HTTP response
             releaseRequest.countDown()

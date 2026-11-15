@@ -37,6 +37,7 @@ data class RemoteVehicleResults(val query: String = "", val vehicles: List<Vehic
 
 @Immutable
 data class UiState(
+    val disruptions: hu.app.bmenetrend.data.DisruptionSnapshot = hu.app.bmenetrend.data.DisruptionSnapshot(),
     val offlineMode: Boolean = hu.app.bmenetrend.offline.NetworkAccessPolicy.offline.value,
     val internetAvailable: Boolean = hu.app.bmenetrend.offline.NetworkAccessPolicy.internetAvailable.value,
     val offlinePack: hu.app.bmenetrend.offline.OfflinePackState = hu.app.bmenetrend.offline.OfflinePackState(),

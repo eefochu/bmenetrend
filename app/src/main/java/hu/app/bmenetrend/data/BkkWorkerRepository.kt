@@ -17,6 +17,11 @@ import kotlin.math.round
  * throws on failure so callers can fall back to direct EMMA for the same item.
  */
 class BkkWorkerRepository(private val client: BkkWorkerClient = BkkWorkerClient()) {
+    suspend fun disruptions(previous: DisruptionSnapshot): DisruptionSnapshot {
+        val text = client.get("service-disruptions", emptyMap())
+        return withContext(Dispatchers.Default) { ServiceDisruptionsParser.parse(text, previous) }
+    }
+
     data class VehicleSnapshot(val vehicles: List<WorkerVehicle>, val covered: MapBounds, val fetchedAt: Instant)
 
     /**

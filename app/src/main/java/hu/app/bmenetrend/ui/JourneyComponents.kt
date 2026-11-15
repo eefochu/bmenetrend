@@ -43,6 +43,7 @@ internal fun ItineraryCard(trip: TripItinerary, recommended: Boolean, now: Insta
         contentColor=if(recommended) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
         border=if(recommended) null else androidx.compose.foundation.BorderStroke(1.dp,MaterialTheme.colorScheme.outlineVariant.copy(alpha=.6f))) {
         Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            DisruptionNotice(remember(trip) { DisruptionScope.itinerary(trip) })
             JourneyBar(trip, ready)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp),
                 itemVerticalAlignment = Alignment.CenterVertically) {
@@ -144,6 +145,9 @@ internal fun JourneyDetail(plan: TripPlan, trip: TripItinerary, now: Instant, on
                         if (trip.start < now.minusSeconds(30)) Text(stringResource(R.string.planner_stale), color = MaterialTheme.colorScheme.error)
                     }
                 }
+            }
+            item(key = "service-disruptions", contentType = "notice") {
+                DisruptionNotice(remember(trip) { DisruptionScope.itinerary(trip) }, Modifier.padding(bottom = 12.dp))
             }
             val initialWait = Duration.between(plan.readyAt, trip.start).seconds
             if (initialWait >= 60 && clockMinutes(plan.readyAt, trip.start) > 0) item(key = "initial-wait", contentType = "wait") {
