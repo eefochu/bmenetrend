@@ -93,8 +93,9 @@ internal fun GoogleTransitMap(
     var savedLat by rememberSaveable { mutableDoubleStateOf(47.473) }
     var savedLon by rememberSaveable { mutableDoubleStateOf(18.825) }
     var savedZoom by rememberSaveable { mutableDoubleStateOf(13.2) }
-    // No map ID: standard Maps SDK map display stays on the unlimited no-charge SKU.
+    // No map ID: standard Maps SDK display retains its no-charge SKU.
     val view = remember { MapView(context, GoogleMapOptions()
+        .mapType(if (satellite) GoogleMap.MAP_TYPE_HYBRID else GoogleMap.MAP_TYPE_NORMAL)
         .camera(CameraPosition.fromLatLngZoom(LatLng(savedLat, savedLon), savedZoom.toFloat()))).apply { onCreate(null) } }
     var map by remember(view) { mutableStateOf<GoogleMap?>(null) }
     var renderer by remember(view) { mutableStateOf<GoogleMapRenderer?>(null) }
@@ -268,10 +269,9 @@ internal fun GoogleTransitMap(
     LaunchedEffect(map, dark, satellite) {
         map?.apply {
             setMapColorScheme(if (dark) MapColorScheme.DARK else MapColorScheme.LIGHT)
-            // Hybrid includes Google's unstyleable transit labels. Plain satellite keeps
-            // the imagery while our own selectable stops, vehicles and routes stay above it.
-            mapType = if (satellite) GoogleMap.MAP_TYPE_SATELLITE else GoogleMap.MAP_TYPE_NORMAL
-            // Style only Google's background station labels, not our selectable stop overlays.
+            // Hybrid restores road/place labels on satellite. Its built-in station labels
+            // cannot be selectively filtered by the SDK's local JSON styling.
+            mapType = if (satellite) GoogleMap.MAP_TYPE_HYBRID else GoogleMap.MAP_TYPE_NORMAL
             setMapStyle(if (satellite) null else MapStyleOptions(GoogleBasemapStyle.json(dark)))
         }
     }

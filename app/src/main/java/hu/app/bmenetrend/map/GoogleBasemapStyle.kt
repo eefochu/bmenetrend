@@ -14,7 +14,11 @@ internal object GoogleBasemapStyle {
             {"featureType":"road.highway","elementType":"labels.text.fill","stylers":[{"color":"#edcba4"}]},
             {"featureType":"road.highway","elementType":"labels.text.stroke","stylers":[{"color":"#29231d"}]},
             {"featureType":"transit.line","elementType":"geometry","stylers":[{"color":"#8d99a6"}]},
-            {"featureType":"landscape.natural.landcover","elementType":"geometry","stylers":[{"color":"#243e2e"}]},
+            {"featureType":"landscape","elementType":"geometry","stylers":[{"color":"#1f1f1f"}]},
+            {"featureType":"landscape.man_made","elementType":"geometry","stylers":[{"color":"#1f1f1f"}]},
+            {"featureType":"landscape.natural","elementType":"geometry","stylers":[{"color":"#1f1f1f"}]},
+            {"featureType":"landscape.natural.landcover","elementType":"geometry","stylers":[{"color":"#1f1f1f"}]},
+            {"featureType":"landscape.natural.terrain","elementType":"geometry","stylers":[{"color":"#1f1f1f"}]},
             {"featureType":"poi.park","elementType":"geometry","stylers":[{"color":"#284d36"}]},
             {"featureType":"water","elementType":"geometry","stylers":[{"color":"#163f56"}]},
         """.trimIndent() else ""
