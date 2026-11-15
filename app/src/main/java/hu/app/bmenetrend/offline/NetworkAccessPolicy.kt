@@ -181,7 +181,11 @@ object NetworkAccessPolicy {
     private val guard = Interceptor { chain ->
         requireOnline()
         val started = epoch
-        val response: Response = chain.proceed(chain.request())
+        val response: Response = try {
+            chain.proceed(chain.request())
+        } catch (e: IllegalStateException) {
+            throw IOException(e.message ?: "Network state error", e)
+        }
         if (mutable.value || started != epoch) {
             response.close()
             throw IOException("Network mode changed")
@@ -195,7 +199,15 @@ object NetworkAccessPolicy {
      */
     private val probeClient by lazy {
         OkHttpClient.Builder().followRedirects(false).followSslRedirects(false)
-            .connectTimeout(3, TimeUnit.SECONDS).readTimeout(3, TimeUnit.SECONDS).callTimeout(4, TimeUnit.SECONDS).build()
+            .connectTimeout(3, TimeUnit.SECONDS).readTimeout(3, TimeUnit.SECONDS).callTimeout(4, TimeUnit.SECONDS)
+            .addInterceptor { chain ->
+                try {
+                    chain.proceed(chain.request())
+                } catch (e: IllegalStateException) {
+                    throw IOException(e.message ?: "Network state error", e)
+                }
+            }
+            .build()
     }
 
     private suspend fun verifyInternet(network: Network): Boolean {

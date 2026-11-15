@@ -13,63 +13,75 @@ internal object StationMarkerLayers {
     private val allLayers = StationMarkers.ARROW_LAYERS + listOf(StationMarkers.RAIL_LAYER, StationMarkers.ROAD_LAYER, StationMarkers.SELECTED_LAYER)
 
     fun install(style: Style, json: String) {
-        style.addSource(GeoJsonSource(StationMarkers.SOURCE, json, GeoJsonOptions().withMaxZoom(StationMarkers.SOURCE_MAX_ZOOM)))
-        fun dots(id: String, rail: Boolean) = SymbolLayer(id, StationMarkers.SOURCE).withProperties(
-            PropertyFactory.iconImage(Expression.get("icon")), PropertyFactory.iconOffset(Expression.get("offset")),
-            PropertyFactory.iconAllowOverlap(true), PropertyFactory.iconIgnorePlacement(true),
-            PropertyFactory.iconRotationAlignment("map"), PropertyFactory.iconPitchAlignment("viewport"),
-            PropertyFactory.symbolZOrder("viewport-y"),
-        ).withFilter(Expression.eq(Expression.get("rail"), Expression.literal(rail)))
-        fun arrows(id: String, index: Int) = SymbolLayer(id, StationMarkers.SOURCE).withProperties(
-            PropertyFactory.iconRotate(Expression.get("a$index")), PropertyFactory.iconOffset(Expression.get("o$index")),
-            PropertyFactory.iconAllowOverlap(true), PropertyFactory.iconIgnorePlacement(true),
-            PropertyFactory.iconRotationAlignment("map"), PropertyFactory.iconPitchAlignment("viewport"),
-        ).withFilter(Expression.has("a$index"))
-        val selected = SymbolLayer(StationMarkers.SELECTED_LAYER, StationMarkers.SOURCE).withProperties(
-            PropertyFactory.iconOffset(Expression.get("offset")),
-            PropertyFactory.iconAllowOverlap(true), PropertyFactory.iconIgnorePlacement(true),
-            PropertyFactory.iconRotationAlignment("map"), PropertyFactory.iconPitchAlignment("viewport"),
-        ).withFilter(Expression.eq(Expression.get("id"), Expression.literal("")))
-        // Arrows sit under dots, as they did inside each baked sprite.
-        val below = style.getLayer(VehicleLayers.RAIL_DOTS)?.id ?: UserLocationLayer.below(style)
-            ?: MapLibreConstants.LAYER_ID_ANNOTATIONS.takeIf { style.getLayer(it) != null }
-        (StationMarkers.ARROW_LAYERS.mapIndexed { index, id -> arrows(id, index) } +
-            listOf(dots(StationMarkers.RAIL_LAYER, true), dots(StationMarkers.ROAD_LAYER, false), selected)).forEach { layer ->
-            if (below != null) style.addLayerBelow(layer, below) else style.addLayer(layer)
+        if (!style.isFullyLoaded) return
+        runCatching {
+            style.addSource(GeoJsonSource(StationMarkers.SOURCE, json, GeoJsonOptions().withMaxZoom(StationMarkers.SOURCE_MAX_ZOOM)))
+            fun dots(id: String, rail: Boolean) = SymbolLayer(id, StationMarkers.SOURCE).withProperties(
+                PropertyFactory.iconImage(Expression.get("icon")), PropertyFactory.iconOffset(Expression.get("offset")),
+                PropertyFactory.iconAllowOverlap(true), PropertyFactory.iconIgnorePlacement(true),
+                PropertyFactory.iconRotationAlignment("map"), PropertyFactory.iconPitchAlignment("viewport"),
+                PropertyFactory.symbolZOrder("viewport-y"),
+            ).withFilter(Expression.eq(Expression.get("rail"), Expression.literal(rail)))
+            fun arrows(id: String, index: Int) = SymbolLayer(id, StationMarkers.SOURCE).withProperties(
+                PropertyFactory.iconRotate(Expression.get("a$index")), PropertyFactory.iconOffset(Expression.get("o$index")),
+                PropertyFactory.iconAllowOverlap(true), PropertyFactory.iconIgnorePlacement(true),
+                PropertyFactory.iconRotationAlignment("map"), PropertyFactory.iconPitchAlignment("viewport"),
+            ).withFilter(Expression.has("a$index"))
+            val selected = SymbolLayer(StationMarkers.SELECTED_LAYER, StationMarkers.SOURCE).withProperties(
+                PropertyFactory.iconOffset(Expression.get("offset")),
+                PropertyFactory.iconAllowOverlap(true), PropertyFactory.iconIgnorePlacement(true),
+                PropertyFactory.iconRotationAlignment("map"), PropertyFactory.iconPitchAlignment("viewport"),
+            ).withFilter(Expression.eq(Expression.get("id"), Expression.literal("")))
+            // Arrows sit under dots, as they did inside each baked sprite.
+            val below = style.getLayer(VehicleLayers.RAIL_DOTS)?.id ?: UserLocationLayer.below(style)
+                ?: MapLibreConstants.LAYER_ID_ANNOTATIONS.takeIf { style.getLayer(it) != null }
+            (StationMarkers.ARROW_LAYERS.mapIndexed { index, id -> arrows(id, index) } +
+                listOf(dots(StationMarkers.RAIL_LAYER, true), dots(StationMarkers.ROAD_LAYER, false), selected)).forEach { layer ->
+                if (below != null) style.addLayerBelow(layer, below) else style.addLayer(layer)
+            }
         }
     }
 
     fun visible(style: Style, visible: Boolean) {
-        allLayers.forEach { id -> style.getLayer(id)?.setProperties(
-            PropertyFactory.visibility(if (visible) "visible" else "none")) }
+        if (!style.isFullyLoaded) return
+        runCatching {
+            allLayers.forEach { id -> style.getLayer(id)?.setProperties(
+                PropertyFactory.visibility(if (visible) "visible" else "none")) }
+        }
     }
 
     /** Size curve, arrow texture and zoom gates; GPU expressions, so camera changes never touch data. */
     fun configure(style: Style, focused: Boolean, arrowImage: String) {
-        val iconScale = if (focused) Expression.literal(16f / StopMarkerLayout.DIAMETER_DP.toFloat()) else Expression.interpolate(
-            Expression.linear(), Expression.zoom(), *StopMarkerLayout.sizeStops.map { (zoom, size) ->
-                Expression.stop(zoom, size / StopMarkerLayout.DIAMETER_DP)
-            }.toTypedArray())
-        allLayers.forEach { id -> style.getLayerAs<SymbolLayer>(id)?.setProperties(PropertyFactory.iconSize(iconScale)) }
-        val stopMinZoom = TransitMapVisibility.stopMinZoom(focused)
-        StationMarkers.ARROW_LAYERS.forEach { id ->
-            style.getLayerAs<SymbolLayer>(id)?.apply { setProperties(PropertyFactory.iconImage(arrowImage)); minZoom = stopMinZoom }
+        if (!style.isFullyLoaded) return
+        runCatching {
+            val iconScale = if (focused) Expression.literal(16f / StopMarkerLayout.DIAMETER_DP.toFloat()) else Expression.interpolate(
+                Expression.linear(), Expression.zoom(), *StopMarkerLayout.sizeStops.map { (zoom, size) ->
+                    Expression.stop(zoom, size / StopMarkerLayout.DIAMETER_DP)
+                }.toTypedArray())
+            allLayers.forEach { id -> style.getLayerAs<SymbolLayer>(id)?.setProperties(PropertyFactory.iconSize(iconScale)) }
+            val stopMinZoom = TransitMapVisibility.stopMinZoom(focused)
+            StationMarkers.ARROW_LAYERS.forEach { id ->
+                style.getLayerAs<SymbolLayer>(id)?.apply { setProperties(PropertyFactory.iconImage(arrowImage)); minZoom = stopMinZoom }
+            }
+            style.getLayer(StationMarkers.RAIL_LAYER)?.minZoom = TransitMapVisibility.railStopMinZoom(focused)
+            style.getLayer(StationMarkers.ROAD_LAYER)?.minZoom = stopMinZoom
         }
-        style.getLayer(StationMarkers.RAIL_LAYER)?.minZoom = TransitMapVisibility.railStopMinZoom(focused)
-        style.getLayer(StationMarkers.ROAD_LAYER)?.minZoom = stopMinZoom
     }
 
     /** The highlighted stop only swaps filters and one texture; it never touches marker data. */
     fun highlight(style: Style, markerId: String?, image: String, minZoom: Float) {
-        val selectedId = Expression.literal(markerId.orEmpty())
-        style.getLayerAs<SymbolLayer>(StationMarkers.SELECTED_LAYER)?.apply {
-            setProperties(PropertyFactory.iconImage(image))
-            setFilter(Expression.eq(Expression.get("id"), selectedId))
-            this.minZoom = minZoom
-        }
-        listOf(StationMarkers.RAIL_LAYER to true, StationMarkers.ROAD_LAYER to false).forEach { (id, rail) ->
-            style.getLayerAs<SymbolLayer>(id)?.setFilter(Expression.all(
-                Expression.eq(Expression.get("rail"), Expression.literal(rail)), Expression.neq(Expression.get("id"), selectedId)))
+        if (!style.isFullyLoaded) return
+        runCatching {
+            val selectedId = Expression.literal(markerId.orEmpty())
+            style.getLayerAs<SymbolLayer>(StationMarkers.SELECTED_LAYER)?.apply {
+                setProperties(PropertyFactory.iconImage(image))
+                setFilter(Expression.eq(Expression.get("id"), selectedId))
+                this.minZoom = minZoom
+            }
+            listOf(StationMarkers.RAIL_LAYER to true, StationMarkers.ROAD_LAYER to false).forEach { (id, rail) ->
+                style.getLayerAs<SymbolLayer>(id)?.setFilter(Expression.all(
+                    Expression.eq(Expression.get("rail"), Expression.literal(rail)), Expression.neq(Expression.get("id"), selectedId)))
+            }
         }
     }
 }

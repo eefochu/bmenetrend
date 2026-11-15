@@ -99,10 +99,24 @@ internal class UserLocationTracker(
         onLocation(GeoPoint(location.latitude, location.longitude))
     }
 
-    @Suppress("DEPRECATION")
-    private fun displayRotation(): Int = runCatching {
-        ContextCompat.getDisplayOrDefault(context).rotation
-    }.getOrDefault(Surface.ROTATION_0)
+    private var cachedRotation = Surface.ROTATION_0
+    private var lastRotationCheck = 0L
+
+    private fun displayRotation(): Int {
+        val now = SystemClock.uptimeMillis()
+        if (now - lastRotationCheck > 1000L) {
+            lastRotationCheck = now
+            cachedRotation = runCatching {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                    context.display?.rotation ?: Surface.ROTATION_0
+                } else {
+                    @Suppress("DEPRECATION")
+                    ContextCompat.getDisplayOrDefault(context).rotation
+                }
+            }.getOrDefault(Surface.ROTATION_0)
+        }
+        return cachedRotation
+    }
 
     companion object {
         const val GPS_INTERVAL_MS = 1_000L

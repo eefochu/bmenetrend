@@ -141,9 +141,21 @@ class MavCacheStore(
             }
             if (receiptId.contains("#")) {
                 imagesObj.put(receiptId.substringAfterLast("#"), itemObj)
+                for (p in receiptId.split("#")) {
+                    val trimmed = p.trim()
+                    if (trimmed.isNotEmpty() && trimmed.all { it.isDigit() }) {
+                        imagesObj.put(trimmed, itemObj)
+                    }
+                }
             }
             if (image.receiptId.contains("#")) {
                 imagesObj.put(image.receiptId.substringAfterLast("#"), itemObj)
+                for (p in image.receiptId.split("#")) {
+                    val trimmed = p.trim()
+                    if (trimmed.isNotEmpty() && trimmed.all { it.isDigit() }) {
+                        imagesObj.put(trimmed, itemObj)
+                    }
+                }
             }
             writeRoot(root)
         }
@@ -159,6 +171,18 @@ class MavCacheStore(
             var itemObj = imagesObj.optJSONObject(receiptId)
             if (itemObj == null && receiptId.contains("#")) {
                 itemObj = imagesObj.optJSONObject(receiptId.substringAfterLast("#"))
+                if (itemObj == null) {
+                    for (p in receiptId.split("#")) {
+                        val trimmed = p.trim()
+                        if (trimmed.isNotEmpty() && trimmed.all { it.isDigit() }) {
+                            val cand = imagesObj.optJSONObject(trimmed)
+                            if (cand != null) {
+                                itemObj = cand
+                                break
+                            }
+                        }
+                    }
+                }
             }
             if (itemObj == null) {
                 val keys = imagesObj.keys()
@@ -230,7 +254,11 @@ class MavCacheStore(
         }
     }
 
-    fun getPassHolder(id: String): MavPassHolder? {
+    /**
+     * @param exact only match a holder stored under exactly this id. Use it to decide whether an id
+     * belongs to an electronic passholder at all: the fuzzy fallback would also match unrelated ids.
+     */
+    fun getPassHolder(id: String, exact: Boolean = false): MavPassHolder? {
         if (id.isBlank()) return null
         synchronized(lock) {
             if (!cacheFile.exists()) return null
@@ -238,6 +266,7 @@ class MavCacheStore(
             val holdersObj = root.optJSONObject("passHolders") ?: return null
 
             var obj = holdersObj.optJSONObject(id)
+            if (obj == null && exact) return null
             if (obj == null && id.contains("#")) {
                 obj = holdersObj.optJSONObject(id.substringAfterLast("#"))
             }
@@ -409,6 +438,7 @@ class MavCacheStore(
             put("birthDate", receipt.birthDate ?: 0L)
             put("ticketNumber", receipt.ticketNumber.orEmpty())
             put("receiptId", receipt.receiptId)
+            put("passHolderId", receipt.passHolderId.orEmpty())
             val itemsArr = JSONArray()
             for (item in receipt.items) {
                 itemsArr.put(itemToJson(item))
@@ -423,6 +453,7 @@ class MavCacheStore(
         val passengerName = obj.optString("passengerName", "").ifBlank { null }
         val birthDate = obj.optLong("birthDate", 0L).let { if (it > 0) it else null }
         val ticketNumber = obj.optString("ticketNumber", "").ifBlank { null }
+        val passHolderId = obj.optString("passHolderId", "").ifBlank { null }
 
         val itemsArr = obj.optJSONArray("items") ?: JSONArray()
         val items = mutableListOf<MavTicketItem>()
@@ -436,7 +467,8 @@ class MavCacheStore(
             birthDate = birthDate,
             ticketNumber = ticketNumber,
             receiptId = receiptId,
-            items = items
+            items = items,
+            passHolderId = passHolderId
         )
     }
 

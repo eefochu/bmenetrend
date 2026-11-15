@@ -8,6 +8,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.async
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.SupervisorJob
+import java.util.concurrent.ConcurrentHashMap
 import java.io.File
 import java.util.UUID
 
@@ -106,6 +112,10 @@ class MavRepository(
     private val apiClient: MavApiClient = MavApiClient(),
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {
+    private val inFlightTicketFetches = ConcurrentHashMap<String, Deferred<MavTicketImage?>>()
+    // Shared barcode fetches must outlive whichever caller started them: the login sync and the
+    // ticket view can await the same request, and cancelling one must not fail the other.
+    private val ticketFetchScope = CoroutineScope(SupervisorJob() + ioDispatcher)
     constructor(
         context: Context,
         apiClient: MavApiClient = MavApiClient(),
@@ -135,18 +145,14 @@ class MavRepository(
         val baseSession = apiClient.login(email.trim(), password, uaid)
         val user = runCatching { apiClient.getUserData(baseSession) }.getOrNull()
             ?.let { mergeUser(cacheStore.getUser()?.takeIf { c -> c.email.equals(it.email, ignoreCase = true) }, it) }
-        val fullSession = baseSession.copy(user = user)
+        val resolvedEmail = baseSession.email.ifBlank { user?.email.orEmpty() }.ifBlank { email.trim() }
+        val fullSession = baseSession.copy(
+            email = resolvedEmail,
+            user = user
+        )
         sessionStore.saveSession(fullSession)
         if (user != null) cacheStore.saveUser(user)
         _session.value = fullSession
-
-        // Pre-fetch and cache passengers right after login
-        runCatching {
-            val passengers = apiClient.getPassengers(fullSession)
-            if (passengers.isNotEmpty()) {
-                cacheStore.savePassengers(passengers)
-            }
-        }
 
         fullSession
     }
@@ -154,21 +160,28 @@ class MavRepository(
     suspend fun loginWithGoogle(code: String): MavSession = withContext(ioDispatcher) {
         val uaid = sessionStore.getOrCreateUaid()
         val baseSession = apiClient.loginWithGoogleCode(code, uaid)
+        var currentToken = baseSession.token
         val user = runCatching { apiClient.getUserData(baseSession) }.getOrNull()
             ?.let { mergeUser(baseSession.user ?: cacheStore.getUser()?.takeIf { c -> c.email.equals(it.email, ignoreCase = true) }, it) }
             ?: baseSession.user
-        val fullSession = baseSession.copy(user = user)
+        val resolvedEmail = baseSession.email.ifBlank { user?.email.orEmpty() }
+
+        if (!apiClient.isSamlToken(currentToken)) {
+            val sessionWithEmail = baseSession.copy(email = resolvedEmail)
+            val extraToken = runCatching { apiClient.fetchUserTokenXml(sessionWithEmail) }.getOrNull()
+            if (!extraToken.isNullOrBlank()) {
+                currentToken = extraToken
+            }
+        }
+
+        val fullSession = baseSession.copy(
+            email = resolvedEmail,
+            token = currentToken,
+            user = user
+        )
         sessionStore.saveSession(fullSession)
         if (user != null) cacheStore.saveUser(user)
         _session.value = fullSession
-
-        // Pre-fetch and cache passengers right after login
-        runCatching {
-            val passengers = apiClient.getPassengers(fullSession)
-            if (passengers.isNotEmpty()) {
-                cacheStore.savePassengers(passengers)
-            }
-        }
 
         fullSession
     }
@@ -239,7 +252,13 @@ class MavRepository(
             }
             if (matchingIdx != -1) {
                 val ex = result[matchingIdx]
-                val mergedOrderId = if (ex.orderId.isNotBlank() && !ex.orderId.contains("#")) ex.orderId else order.orderId
+                val mergedOrderId = if (ex.orderId.isNotBlank() && !ex.orderId.contains("#")) {
+                    ex.orderId
+                } else if (order.orderId.isNotBlank() && !order.orderId.contains("#")) {
+                    order.orderId
+                } else {
+                    ex.displayOrderId
+                }
                 val mergedPurchaseDate = if (order.purchaseDate > 0) order.purchaseDate else ex.purchaseDate
                 val mergedPassHolder = ex.passHolder ?: order.passHolder
                 val mergedDeliveryMode = ex.deliveryMode ?: order.deliveryMode
@@ -309,8 +328,13 @@ class MavRepository(
         return cacheStore.getPassengers()
     }
 
+    /** The electronic passholder (BERLETTOK) with exactly this id, if the account has one. */
     fun getCachedPassHolder(id: String): MavPassHolder? {
-        return cacheStore.getPassHolder(id)
+        return cacheStore.getPassHolder(id, exact = true)
+    }
+
+    fun getCachedTicketImage(receiptId: String): MavTicketImage? {
+        return cacheStore.getTicketImage(receiptId)
     }
 
     fun getLastSyncTime(): Long {
@@ -320,7 +344,58 @@ class MavRepository(
     suspend fun syncTicketsAndPasses(): Pair<List<MavOrder>, List<MavOrder>> = withContext(ioDispatcher) {
         val currentSession = _session.value ?: throw MavApiException("Nincs bejelentkezve MÁV fiókba")
 
-        // 1. Refresh user data (name and profile picture)
+        // 1. Fetch active orders FIRST (valid tickets and passes)
+        val active = deduplicateOrders(apiClient.getOrders(currentSession, validOnly = true))
+
+        val previousCache = cacheStore.getOrders()
+        val hadCachedActive = previousCache != null && previousCache.first.isNotEmpty()
+        val hadCachedPast = previousCache != null && previousCache.second.isNotEmpty()
+
+        if (active.isEmpty() && hadCachedActive) {
+            throw MavApiException("A MÁV szerver nem adott vissza aktív jegyeket, a mentett adatok maradnak.")
+        }
+
+        // Cache active orders immediately so UI displays tickets right away
+        cacheStore.saveOrders(active, previousCache?.second.orEmpty())
+
+        // 2. Pre-fetch ticket images for active tickets IMMEDIATELY before secondary sync
+        for (order in active) {
+            for (receipt in order.receipts) {
+                val receiptId = receipt.receiptId
+                val cleanOrderId = order.displayOrderId
+                val isCached = (receiptId.isNotBlank() && cacheStore.getTicketImage(receiptId) != null) ||
+                    (cleanOrderId.isNotBlank() && cacheStore.getTicketImage(cleanOrderId) != null) ||
+                    (order.orderId.isNotBlank() && cacheStore.getTicketImage(order.orderId) != null) ||
+                    (!receipt.ticketNumber.isNullOrBlank() && cacheStore.getTicketImage(receipt.ticketNumber) != null)
+
+                if (!isCached && receiptId.isNotBlank()) {
+                    try {
+                        // Shares the in-flight request with a barcode the user opens meanwhile.
+                        val img = getTicketImage(receiptId)
+                        if (img != null) {
+                            cacheStore.saveTicketImage(receiptId, img)
+                            if (order.orderId.isNotBlank()) {
+                                cacheStore.saveTicketImage(order.orderId, img)
+                            }
+                            if (cleanOrderId.isNotBlank()) {
+                                cacheStore.saveTicketImage(cleanOrderId, img)
+                            }
+                            receipt.ticketNumber?.let { tNum ->
+                                if (tNum.isNotBlank()) cacheStore.saveTicketImage(tNum, img)
+                            }
+                            img.ticketNumber?.let { tNum ->
+                                if (tNum.isNotBlank()) cacheStore.saveTicketImage(tNum, img)
+                            }
+                        }
+                    } catch (e: MavTicketImageThrottledException) {
+                        break
+                    } catch (_: Throwable) {
+                    }
+                }
+            }
+        }
+
+        // 3. Secondary sync: Refresh user data (name and profile picture)
         runCatching {
             val user = mergeUser(currentSession.user, apiClient.getUserData(currentSession))
             val updatedSession = currentSession.copy(user = user)
@@ -329,7 +404,14 @@ class MavRepository(
             _session.value = updatedSession
         }
 
-        // 2. Refresh passengers
+        // 4. Secondary sync: Refresh pass holders and passengers
+        runCatching {
+            val passHolders = apiClient.getAllPassHolders(currentSession)
+            for (holder in passHolders) {
+                if (holder.id.isNotBlank()) cacheStore.savePassHolder(holder.id, holder)
+                holder.hptId?.let { if (it.isNotBlank()) cacheStore.savePassHolder(it, holder) }
+            }
+        }
         runCatching {
             val passengers = apiClient.getPassengers(currentSession)
             if (passengers.isNotEmpty()) {
@@ -337,12 +419,7 @@ class MavRepository(
             }
         }
 
-        // 3. Fetch active orders (valid tickets and passes)
-        val active = deduplicateOrders(apiClient.getOrders(currentSession, validOnly = true))
-
-        // 4. Fetch past orders (strictly exclude any active or currently valid tickets/passes).
-        // If this request fails, keep the previously cached past orders instead of erasing them.
-        val previousCache = cacheStore.getOrders()
+        // 5. Fetch past orders
         val pastRaw = runCatching { apiClient.getOrders(currentSession, validOnly = false) }
             .getOrElse { previousCache?.second.orEmpty() }
         val activeOrderIds = active.map { it.orderId }.toSet()
@@ -353,48 +430,10 @@ class MavRepository(
             !pastOrder.isValidNow
         }
 
-        // 5. Cache orders to disk. A completely empty answer while we have tickets cached is far
-        // more likely a server/session problem than every ticket vanishing, so don't persist it.
-        val hadCachedOrders = previousCache != null &&
-            (previousCache.first.isNotEmpty() || previousCache.second.isNotEmpty())
-        if (active.isEmpty() && past.isEmpty() && hadCachedOrders) {
+        if (active.isEmpty() && past.isEmpty() && (hadCachedActive || hadCachedPast)) {
             throw MavApiException("A MÁV szerver nem adott vissza jegyeket, a mentett adatok maradnak.")
         }
         cacheStore.saveOrders(active, past)
-
-        // 6. Pre-fetch ticket images and pass holders for active tickets
-        for (order in active) {
-            order.passHolder?.id?.let { phId ->
-                if (phId.isNotBlank()) {
-                    runCatching {
-                        val holder = apiClient.getPassHolder(currentSession, phId)
-                        if (holder != null) {
-                            cacheStore.savePassHolder(phId, holder)
-                            if (order.orderId.isNotBlank()) {
-                                cacheStore.savePassHolder(order.orderId, holder)
-                            }
-                        }
-                    }
-                }
-            }
-            for (receipt in order.receipts) {
-                val receiptId = receipt.receiptId
-                if (receiptId.isNotBlank()) {
-                    runCatching {
-                        val img = apiClient.getTicketImage(currentSession, receiptId)
-                        if (img != null) {
-                            cacheStore.saveTicketImage(receiptId, img)
-                            if (order.orderId.isNotBlank()) {
-                                cacheStore.saveTicketImage(order.orderId, img)
-                            }
-                            receipt.ticketNumber?.let { tNum ->
-                                if (tNum.isNotBlank()) cacheStore.saveTicketImage(tNum, img)
-                            }
-                        }
-                    }
-                }
-            }
-        }
 
         Pair(active, past)
     }
@@ -404,6 +443,10 @@ class MavRepository(
         try {
             val orders = apiClient.getOrders(currentSession, validOnly)
             val existing = cacheStore.getOrders()
+            val hadCachedActive = existing != null && existing.first.isNotEmpty()
+            if (validOnly && orders.isEmpty() && hadCachedActive) {
+                return@withContext existing!!.first
+            }
             val activeOrders = if (validOnly) orders else (existing?.first ?: emptyList())
             val pastOrders = if (!validOnly) {
                 val activeOrderIds = activeOrders.map { it.orderId }.toSet()
@@ -412,7 +455,9 @@ class MavRepository(
             } else {
                 existing?.second ?: emptyList()
             }
-            cacheStore.saveOrders(activeOrders, pastOrders)
+            if (activeOrders.isNotEmpty() || !hadCachedActive) {
+                cacheStore.saveOrders(activeOrders, pastOrders)
+            }
             if (validOnly) activeOrders else pastOrders
         } catch (e: Exception) {
             val cached = cacheStore.getOrders()
@@ -430,29 +475,57 @@ class MavRepository(
 
         val currentSession = _session.value ?: return@withContext null
         if (currentSession.token.isBlank()) return@withContext null
-        val fetched = try {
-            apiClient.getTicketImage(currentSession, receiptId)
-        } catch (e: MavTicketImageThrottledException) {
-            throw e // let the caller retry after MÁV's "try again in half a minute"
-        } catch (e: Exception) {
-            null
+
+        val cleanKey = if (receiptId.contains("#")) {
+            receiptId.split("#").map { it.trim() }.lastOrNull { it.isNotEmpty() && it.all { ch -> ch.isDigit() } } ?: receiptId
+        } else receiptId
+
+        val existing = inFlightTicketFetches[cleanKey]
+        if (existing != null) {
+            return@withContext existing.await()
         }
-        if (fetched != null) {
-            cacheStore.saveTicketImage(receiptId, fetched)
+
+        val deferred = ticketFetchScope.async(start = CoroutineStart.LAZY) {
+            try {
+                val fetched = apiClient.getTicketImage(currentSession, receiptId)
+                if (fetched != null) {
+                    cacheStore.saveTicketImage(receiptId, fetched)
+                    if (cleanKey != receiptId) cacheStore.saveTicketImage(cleanKey, fetched)
+                    fetched.ticketNumber?.let { tNum ->
+                        if (tNum.isNotBlank()) cacheStore.saveTicketImage(tNum, fetched)
+                    }
+                }
+                fetched
+            } finally {
+                inFlightTicketFetches.remove(cleanKey)
+            }
         }
-        fetched
+
+        val prior = inFlightTicketFetches.putIfAbsent(cleanKey, deferred)
+        if (prior != null) {
+            deferred.cancel()
+            return@withContext prior.await()
+        }
+
+        deferred.await()
     }
 
+    /**
+     * The electronic passholder (BERLETTOK) with exactly this id, fetching the account's passholders
+     * when the cache doesn't have it yet (e.g. a pass opened right after login, before the sync
+     * reached them). Returns null when the id isn't a passholder, e.g. a saved passenger's id.
+     */
     suspend fun getPassHolder(nevesitesAzonosito: String): MavPassHolder? = withContext(ioDispatcher) {
-        val cached = cacheStore.getPassHolder(nevesitesAzonosito)
+        val cached = cacheStore.getPassHolder(nevesitesAzonosito, exact = true)
         if (cached != null) return@withContext cached
 
         val currentSession = _session.value ?: return@withContext null
-        if (currentSession.token.isBlank()) return@withContext null
-        val fetched = runCatching { apiClient.getPassHolder(currentSession, nevesitesAzonosito) }.getOrNull()
-        if (fetched != null) {
-            cacheStore.savePassHolder(nevesitesAzonosito, fetched)
+        if (currentSession.token.isBlank() && currentSession.vimToken.isNullOrBlank()) return@withContext null
+        val holders = runCatching { apiClient.getAllPassHolders(currentSession) }.getOrNull().orEmpty()
+        for (holder in holders) {
+            if (holder.id.isNotBlank()) cacheStore.savePassHolder(holder.id, holder)
+            holder.hptId?.let { if (it.isNotBlank()) cacheStore.savePassHolder(it, holder) }
         }
-        fetched
+        holders.firstOrNull { it.id == nevesitesAzonosito || it.hptId == nevesitesAzonosito }
     }
 }

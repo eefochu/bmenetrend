@@ -648,11 +648,14 @@ fun NativeTransitMap(
     LaunchedEffect(map, styleLoaded, styleGeneration, lineFocus?.routeId, lineFocus?.providerId,
         lineFocus?.number, lineFocus?.mode, lineFocus?.selectedVehicleId) {
         if (styleLoaded) map?.style?.let {
-            VehicleLayers.configure(it, lineFocus)
-            TransitDiagnostics.event("filter") {
-                "route=${lineFocus?.routeId} provider=${lineFocus?.providerId} number=${lineFocus?.number} selected=${lineFocus?.selectedVehicleId != null} layer=${it.getLayer(VehicleLayers.SYMBOLS) != null} expression=${VehicleLayers.focusFilter(lineFocus)}"
+            if (!it.isFullyLoaded) return@let
+            runCatching {
+                VehicleLayers.configure(it, lineFocus)
+                TransitDiagnostics.event("filter") {
+                    "route=${lineFocus?.routeId} provider=${lineFocus?.providerId} number=${lineFocus?.number} selected=${lineFocus?.selectedVehicleId != null} layer=${runCatching { it.getLayer(VehicleLayers.SYMBOLS) != null }.getOrDefault(false)} expression=${VehicleLayers.focusFilter(lineFocus)}"
+                }
+                map?.let { ready -> logVehicleFrame(ready, "filter-change") }
             }
-            map?.let { ready -> logVehicleFrame(ready, "filter-change") }
         }
     }
     LaunchedEffect(map, styleLoaded, styleGeneration, selectedVehicle?.id) {
@@ -664,32 +667,36 @@ fun NativeTransitMap(
             val started = android.os.SystemClock.uptimeMillis()
             val list = withContext(Dispatchers.Default) { VehicleSceneWindow.select(allVehicles, region, selection?.id, selection) }
             TransitDiagnostics.event("prepare") { "count=${list.size} total=${allVehicles.size} gesture=$userGesture generation=$styleGeneration" }
-            val source = style.getSourceAs<GeoJsonSource>(VehicleMapScene.SOURCE)
-            if (source == null) { vehicleIconKeys.clear(); uploadedVehicles[0] = null }
-            val cached = vehicleIconKeys.toSet()
-            val pending = linkedMapOf<String, Bitmap>()
-            try {
-                val json = withContext(Dispatchers.Default) {
-                    VehicleMapScene.prepare(context.applicationContext, list, selection?.id, cached, pending)
-                }
-                // Live positions refresh every few seconds; never re-tile them under a moving finger.
-                TransitDiagnostics.event("prepared") { "ms=${android.os.SystemClock.uptimeMillis() - started} bytes=${json.length} waitingGesture=$userGesture" }
-                snapshotFlow { userGesture }.first { !it }
-                traceMapWork("BMenetrend.MapVehicles") {
-                    pending.forEach { (id, bitmap) -> style.addImage(id, bitmap); vehicleIconKeys.add(id) }
-                    // MapLibre copies the string here and parses it on its own worker thread. A refresh
-                    // that moved nothing (or only vehicles the focus hides) skips even that and the re-tiling.
-                    if (source == null) VehicleLayers.install(style, json) else if (json != uploadedVehicles[0]) source.setGeoJson(json)
-                    val changed = source == null || json != uploadedVehicles[0]
-                    uploadedVehicles[0] = json
-                    VehicleLayers.configure(style, currentVehicleFocus)
-                    TransitDiagnostics.event("upload") { "count=${list.size} changed=$changed images=${pending.size} ms=${android.os.SystemClock.uptimeMillis() - started} focus=${currentVehicleFocus?.routeId}" }
-                }
-                if (TransitDiagnostics.enabled) {
-                    delay(350)
-                    logVehicleFrame(ready, "after-upload")
-                }
-            } finally { pending.values.forEach(Bitmap::recycle) }
+            if (!style.isFullyLoaded) return@collectLatest
+            runCatching {
+                val source = style.getSourceAs<GeoJsonSource>(VehicleMapScene.SOURCE)
+                if (source == null) { vehicleIconKeys.clear(); uploadedVehicles[0] = null }
+                val cached = vehicleIconKeys.toSet()
+                val pending = linkedMapOf<String, Bitmap>()
+                try {
+                    val json = withContext(Dispatchers.Default) {
+                        VehicleMapScene.prepare(context.applicationContext, list, selection?.id, cached, pending)
+                    }
+                    // Live positions refresh every few seconds; never re-tile them under a moving finger.
+                    TransitDiagnostics.event("prepared") { "ms=${android.os.SystemClock.uptimeMillis() - started} bytes=${json.length} waitingGesture=$userGesture" }
+                    snapshotFlow { userGesture }.first { !it }
+                    traceMapWork("BMenetrend.MapVehicles") {
+                        if (!style.isFullyLoaded) return@traceMapWork
+                        pending.forEach { (id, bitmap) -> style.addImage(id, bitmap); vehicleIconKeys.add(id) }
+                        // MapLibre copies the string here and parses it on its own worker thread. A refresh
+                        // that moved nothing (or only vehicles the focus hides) skips even that and the re-tiling.
+                        if (source == null) VehicleLayers.install(style, json) else if (json != uploadedVehicles[0]) source.setGeoJson(json)
+                        val changed = source == null || json != uploadedVehicles[0]
+                        uploadedVehicles[0] = json
+                        VehicleLayers.configure(style, currentVehicleFocus)
+                        TransitDiagnostics.event("upload") { "count=${list.size} changed=$changed images=${pending.size} ms=${android.os.SystemClock.uptimeMillis() - started} focus=${currentVehicleFocus?.routeId}" }
+                    }
+                    if (TransitDiagnostics.enabled) {
+                        delay(350)
+                        logVehicleFrame(ready, "after-upload")
+                    }
+                } finally { pending.values.forEach(Bitmap::recycle) }
+            }
         }
     }
     LaunchedEffect(map, styleLoaded, styleGeneration, selectedPlace, routeOrigin) {

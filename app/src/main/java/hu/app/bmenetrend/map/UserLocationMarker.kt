@@ -95,29 +95,41 @@ internal object UserLocationLayer {
     const val DOT = "user-location-dot"
 
     fun install(style: Style, density: Float, densityDpi: Int) {
-        if (style.getSource(SOURCE) != null) return
-        style.addImage(DOT, UserLocationMarker.renderDot(density, densityDpi))
-        style.addImage(CONE, UserLocationMarker.renderCone(density, densityDpi))
-        style.addSource(GeoJsonSource(SOURCE))
-        fun layer(id: String) = SymbolLayer(id, SOURCE).withProperties(
-            PropertyFactory.iconImage(id), PropertyFactory.iconAllowOverlap(true), PropertyFactory.iconIgnorePlacement(true),
-            PropertyFactory.iconRotationAlignment("map"), PropertyFactory.iconPitchAlignment("map"))
-        style.addLayer(layer(CONE).withProperties(PropertyFactory.visibility("none")))
-        style.addLayer(layer(DOT))
+        if (!style.isFullyLoaded) return
+        runCatching {
+            if (style.getSource(SOURCE) != null) return
+            style.addImage(DOT, UserLocationMarker.renderDot(density, densityDpi))
+            style.addImage(CONE, UserLocationMarker.renderCone(density, densityDpi))
+            style.addSource(GeoJsonSource(SOURCE))
+            fun layer(id: String) = SymbolLayer(id, SOURCE).withProperties(
+                PropertyFactory.iconImage(id), PropertyFactory.iconAllowOverlap(true), PropertyFactory.iconIgnorePlacement(true),
+                PropertyFactory.iconRotationAlignment("map"), PropertyFactory.iconPitchAlignment("map"))
+            style.addLayer(layer(CONE).withProperties(PropertyFactory.visibility("none")))
+            style.addLayer(layer(DOT))
+        }
     }
 
     fun position(style: Style, point: GeoPoint?) {
-        val source = style.getSourceAs<GeoJsonSource>(SOURCE) ?: return
-        source.setGeoJson(if (point == null) "{\"type\":\"FeatureCollection\",\"features\":[]}"
-            else "{\"type\":\"Feature\",\"properties\":{},\"geometry\":{\"type\":\"Point\",\"coordinates\":[${point.lon},${point.lat}]}}")
+        if (!style.isFullyLoaded) return
+        runCatching {
+            val source = style.getSourceAs<GeoJsonSource>(SOURCE) ?: return
+            source.setGeoJson(if (point == null) "{\"type\":\"FeatureCollection\",\"features\":[]}"
+                else "{\"type\":\"Feature\",\"properties\":{},\"geometry\":{\"type\":\"Point\",\"coordinates\":[${point.lon},${point.lat}]}}")
+        }
     }
 
     fun heading(style: Style, degrees: Float?) {
-        style.getLayerAs<SymbolLayer>(CONE)?.setProperties(
-            PropertyFactory.visibility(if (degrees == null) "none" else "visible"),
-            PropertyFactory.iconRotate(degrees ?: 0f))
+        if (!style.isFullyLoaded) return
+        runCatching {
+            style.getLayerAs<SymbolLayer>(CONE)?.setProperties(
+                PropertyFactory.visibility(if (degrees == null) "none" else "visible"),
+                PropertyFactory.iconRotate(degrees ?: 0f))
+        }
     }
 
     /** Layers added after this one go below it, so the position stays on top of stops and vehicles. */
-    fun below(style: Style): String? = CONE.takeIf { style.getLayer(it) != null }
+    fun below(style: Style): String? {
+        if (!style.isFullyLoaded) return null
+        return runCatching { CONE.takeIf { style.getLayer(it) != null } }.getOrNull()
+    }
 }
