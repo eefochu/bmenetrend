@@ -46,7 +46,7 @@ import org.maplibre.android.style.sources.GeoJsonSource
 import org.maplibre.android.maps.Style
 
 
-/** Keyless OpenFreeMap basemap, with a bundled custom night style. */
+/** Keyless OpenFreeMap basemap, using the same detailed street styles as the web app. */
 @Composable
 fun NativeTransitMap(
     network: TransitNetwork?,
@@ -140,7 +140,7 @@ fun NativeTransitMap(
     val satellite = hu.app.bmenetrend.ui.LocalMapAppearance.current.style == hu.app.bmenetrend.ui.MapStyle.SATELLITE && !offline
     val styleUri = if (offline) { if (darkTheme) "asset://map/offline-dark.json" else "asset://map/offline.json" }
         else if (satellite) "asset://map/satellite.json"
-        else if (darkTheme) "asset://map/night.json" else "https://tiles.openfreemap.org/styles/positron"
+        else "asset://${WebStreetStyle.asset(darkTheme)}"
     val context = LocalContext.current
     // Strings come from LocalResources so they follow configuration changes (Compose lint).
     val resources = androidx.compose.ui.platform.LocalResources.current
@@ -422,15 +422,20 @@ fun NativeTransitMap(
         val ready = map ?: return@LaunchedEffect
         var active = true
         styleLoaded = false
+        val streetImages = linkedMapOf<String, Bitmap>()
         try {
+            if (!offline && !satellite) withContext(Dispatchers.IO) {
+                WebStreetStyle.prepareImages(context.applicationContext, darkTheme, streetImages)
+            }
             // Preparing/copying the archive and reading styles run on IO. HTTP is
             // never a fallback for missing or damaged offline map resources.
             val offlineStyle = if (offline) OfflineBasemap.style(context.applicationContext, darkTheme) else null
             owner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 fun loadStyle() {
                     val builder = if (offlineStyle != null) Style.Builder().fromJson(offlineStyle) else Style.Builder().fromUri(styleUri)
-                    ready.setStyle(builder) { _ ->
+                    ready.setStyle(builder) { loaded ->
                         if (active) {
+                            if (streetImages.isNotEmpty()) loaded.addImages(HashMap(streetImages))
                             styleLoaded = true
                             styleGeneration++
                             onError(null)
@@ -457,7 +462,10 @@ fun NativeTransitMap(
             throw cancelled
         } catch (_: Exception) {
             onError(resources.getString(R.string.engine_map_unavailable))
-        } finally { active = false }
+        } finally {
+            active = false
+            streetImages.values.forEach { it.recycle() }
+        }
     }
     LaunchedEffect(map, styleLoaded, styleGeneration, rapidTransitLines, darkTheme) {
         val ready = map ?: return@LaunchedEffect

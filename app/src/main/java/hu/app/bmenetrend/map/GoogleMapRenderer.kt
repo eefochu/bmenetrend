@@ -61,23 +61,29 @@ internal class GoogleMapRenderer(private val map: GoogleMap, private val density
         while (offsets.size > 8192) offsets.remove(offsets.keys.first())
         this.focus = focus
         this.zoom = zoom
-        sceneFocusKey = scene.focusKey
         val ids = scene.markers.mapTo(HashSet()) { it.id }
+        val retained = GoogleStopRetention.keep(entries.values.map { it.spec }, sceneFocusKey, scene)
+        sceneFocusKey = scene.focusKey
         var mutations = 0
-        for (id in entries.keys.filter { it !in ids }) {
+        for (id in entries.keys.filter { it !in ids && it !in retained }) {
             entries.remove(id)?.let { entry ->
                 entry.marker?.let { it.remove(); mutations++ }
                 entry.arrowMarker?.let { it.remove(); mutations++ }
             }
             if (mutations >= budget()) { withFrameNanos { }; mutations = 0 }
         }
+        for (id in retained) {
+            if (apply(entries.getValue(id), create = false)) mutations++
+            if (mutations >= budget()) { withFrameNanos { }; mutations = 0 }
+        }
         for (spec in scene.markers) {
-            val entry = entries.getOrPut(spec.id) { Entry(spec) }
+            val entry = entries.remove(spec.id) ?: Entry(spec)
+            entries[spec.id] = entry
             entry.spec = spec
             if (apply(entry, create = true)) mutations += if (spec.arrow != null) 2 else 1
             if (mutations >= budget()) { withFrameNanos { }; mutations = 0 }
         }
-        val used = scene.markers.flatMapTo(HashSet()) { listOfNotNull(it.icon, it.dot, it.arrow) }
+        val used = entries.values.flatMapTo(HashSet()) { listOfNotNull(it.spec.icon, it.spec.dot, it.spec.arrow) }
         if (bitmaps.size > used.size + 64) {
             bitmaps.keys.filter { it !in used }.forEach { bitmaps.remove(it)?.recycle() }
             descriptors.clear()

@@ -63,3 +63,14 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+## BMenetrend web-style adaptation
+
+`map/web-light.json` and `map/web-dark.json` copy the sibling BMenetrend web app's
+OpenFreeMap Liberty styles, including its road, building, land-cover and label
+layers. Native adaptations remove GL JS-only `font-faces` and map unknown POI
+classes to the same generic badge fallback. Map labels use OpenFreeMap's Noto Sans
+glyph service on Android. The bundled Material Symbols Rounded subset and its
+Apache 2.0 licence are in `map/fonts/`. Badge colours and glyph names come from
+the copied style metadata. Regenerate the style assets with
+`python3 tools/sync-web-map-styles.py` from the Android repository root.
