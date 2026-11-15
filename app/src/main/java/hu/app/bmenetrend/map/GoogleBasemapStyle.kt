@@ -8,11 +8,22 @@ internal object GoogleBasemapStyle {
             {"elementType":"labels.text.fill","stylers":[{"color":"#b9b9b9"}]},
             {"elementType":"labels.text.stroke","stylers":[{"color":"#1f1f1f"}]},
             {"featureType":"road","elementType":"geometry","stylers":[{"color":"#3c3c3c"}]},
-            {"featureType":"road.highway","elementType":"geometry","stylers":[{"color":"#555555"}]},
-            {"featureType":"poi.park","elementType":"geometry","stylers":[{"color":"#213529"}]},
-            {"featureType":"water","elementType":"geometry","stylers":[{"color":"#142c3b"}]},
+            {"featureType":"road.arterial","elementType":"geometry","stylers":[{"color":"#79644f"}]},
+            {"featureType":"road.highway","elementType":"geometry","stylers":[{"color":"#d6a370"}]},
+            {"featureType":"road.highway","elementType":"geometry.stroke","stylers":[{"color":"#775a41"}]},
+            {"featureType":"road.highway","elementType":"labels.text.fill","stylers":[{"color":"#edcba4"}]},
+            {"featureType":"road.highway","elementType":"labels.text.stroke","stylers":[{"color":"#29231d"}]},
+            {"featureType":"transit.line","elementType":"geometry","stylers":[{"color":"#8d99a6"}]},
+            {"featureType":"landscape","elementType":"geometry","stylers":[{"color":"#1f1f1f"}]},
+            {"featureType":"landscape.man_made","elementType":"geometry","stylers":[{"color":"#1f1f1f"}]},
+            {"featureType":"landscape.natural","elementType":"geometry","stylers":[{"color":"#1f1f1f"}]},
+            {"featureType":"landscape.natural.landcover","elementType":"geometry","stylers":[{"color":"#1f1f1f"}]},
+            {"featureType":"landscape.natural.terrain","elementType":"geometry","stylers":[{"color":"#1f1f1f"}]},
+            {"featureType":"poi.park","elementType":"geometry","stylers":[{"color":"#284d36"}]},
+            {"featureType":"water","elementType":"geometry","stylers":[{"color":"#163f56"}]},
         """.trimIndent() else ""
         return """[$palette
+            {"featureType":"transit.line","elementType":"geometry","stylers":[{"visibility":"on"}]},
             {"featureType":"transit.station.rail","elementType":"labels","stylers":[{"visibility":"off"}]}
         ]""".trimIndent()
     }

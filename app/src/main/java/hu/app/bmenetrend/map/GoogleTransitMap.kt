@@ -93,8 +93,9 @@ internal fun GoogleTransitMap(
     var savedLat by rememberSaveable { mutableDoubleStateOf(47.473) }
     var savedLon by rememberSaveable { mutableDoubleStateOf(18.825) }
     var savedZoom by rememberSaveable { mutableDoubleStateOf(13.2) }
-    // No map ID: standard Maps SDK map display stays on the unlimited no-charge SKU.
+    // No map ID: standard Maps SDK display retains its no-charge SKU.
     val view = remember { MapView(context, GoogleMapOptions()
+        .mapType(if (satellite) GoogleMap.MAP_TYPE_HYBRID else GoogleMap.MAP_TYPE_NORMAL)
         .camera(CameraPosition.fromLatLngZoom(LatLng(savedLat, savedLon), savedZoom.toFloat()))).apply { onCreate(null) } }
     var map by remember(view) { mutableStateOf<GoogleMap?>(null) }
     var renderer by remember(view) { mutableStateOf<GoogleMapRenderer?>(null) }
@@ -158,6 +159,9 @@ internal fun GoogleTransitMap(
                 renderer = GoogleMapRenderer(ready, context.resources.displayMetrics.density)
                 ready.setMinZoomPreference(5f); ready.setMaxZoomPreference(19f)
                 ready.isBuildingsEnabled = false
+                // Indoor floor plans are a separate Google layer, including on satellite.
+                // They ignore JSON styles and can bring station symbols back at close zoom.
+                ready.setIndoorEnabled(false)
                 ready.uiSettings.apply {
                     isMapToolbarEnabled = false; isZoomControlsEnabled = false
                     isMyLocationButtonEnabled = false; isIndoorLevelPickerEnabled = false
@@ -265,8 +269,9 @@ internal fun GoogleTransitMap(
     LaunchedEffect(map, dark, satellite) {
         map?.apply {
             setMapColorScheme(if (dark) MapColorScheme.DARK else MapColorScheme.LIGHT)
+            // Hybrid restores road/place labels on satellite. Its built-in station labels
+            // cannot be selectively filtered by the SDK's local JSON styling.
             mapType = if (satellite) GoogleMap.MAP_TYPE_HYBRID else GoogleMap.MAP_TYPE_NORMAL
-            // Style only Google's background station labels, not our selectable stop overlays.
             setMapStyle(if (satellite) null else MapStyleOptions(GoogleBasemapStyle.json(dark)))
         }
     }
