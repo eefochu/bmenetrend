@@ -158,6 +158,9 @@ internal fun GoogleTransitMap(
                 renderer = GoogleMapRenderer(ready, context.resources.displayMetrics.density)
                 ready.setMinZoomPreference(5f); ready.setMaxZoomPreference(19f)
                 ready.isBuildingsEnabled = false
+                // Indoor floor plans are a separate Google layer, including on satellite.
+                // They ignore JSON styles and can bring station symbols back at close zoom.
+                ready.setIndoorEnabled(false)
                 ready.uiSettings.apply {
                     isMapToolbarEnabled = false; isZoomControlsEnabled = false
                     isMyLocationButtonEnabled = false; isIndoorLevelPickerEnabled = false
@@ -265,7 +268,9 @@ internal fun GoogleTransitMap(
     LaunchedEffect(map, dark, satellite) {
         map?.apply {
             setMapColorScheme(if (dark) MapColorScheme.DARK else MapColorScheme.LIGHT)
-            mapType = if (satellite) GoogleMap.MAP_TYPE_HYBRID else GoogleMap.MAP_TYPE_NORMAL
+            // Hybrid includes Google's unstyleable transit labels. Plain satellite keeps
+            // the imagery while our own selectable stops, vehicles and routes stay above it.
+            mapType = if (satellite) GoogleMap.MAP_TYPE_SATELLITE else GoogleMap.MAP_TYPE_NORMAL
             // Style only Google's background station labels, not our selectable stop overlays.
             setMapStyle(if (satellite) null else MapStyleOptions(GoogleBasemapStyle.json(dark)))
         }

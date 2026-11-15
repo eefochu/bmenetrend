@@ -62,3 +62,20 @@ Departure request keys include the exact selected platform set as well as the st
 Opening another line clears the previous boarding/vehicle highlight. Closing the new line cannot revive the old highlight. Direction-only state updates no longer dismiss an open line preview, equivalent path-point reordering does not refit the camera, and line/vehicle previews do not retain a stale filled stop from an earlier selection.
 
 Line filtering is applied after shared-platform grouping, preserving the same member IDs, source anchor and operator segments in ordinary and highlighted views. Other platforms are still excluded from that marker's departure card.
+
+Google satellite uses the SDK's plain `MAP_TYPE_SATELLITE`, rather than Hybrid.
+Google's Hybrid roads/place/transit labels cannot be filtered with the local JSON
+style, so satellite imagery has no Google label overlay; the app's own selectable
+stops, vehicles, route lines and their labels remain. Google indoor floor plans
+are disabled too, since they ignore JSON styling and can reintroduce station
+symbols at close zoom. This does not recolour satellite imagery or alter the
+street map palette.
+
+Google's dark street style keeps its charcoal base, with green parks and natural
+land cover, blue water, warm arterial roads and light-orange highways with darker
+outlines. Highway text uses a pale warm fill with a dark halo for readability.
+The light street style retains Google's default colours.
+
+Google street maps explicitly show transit-track geometry. In dark mode, tracks
+use a contrasting slate colour so railway lines no longer blend into the charcoal
+base; railway station labels remain hidden and app stop markers remain selectable.
