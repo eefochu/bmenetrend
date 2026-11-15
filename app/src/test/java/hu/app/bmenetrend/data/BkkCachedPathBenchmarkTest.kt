@@ -135,13 +135,11 @@ class BkkCachedPathBenchmarkTest {
         val clientP50Millis = clientTimesNanos[iterations / 2] / 1_000_000.0
         val clientP95Millis = clientTimesNanos[(iterations * 95) / 100] / 1_000_000.0
 
-        // Save evidence to /private/tmp/bkk-primary-android-validation/ and legacy validation dir
-        val primaryOutDir = File("/private/tmp/bkk-primary-android-validation")
-        primaryOutDir.mkdirs()
-        val outDir = File("/private/tmp/bkk-android-gemini-final")
-        outDir.mkdirs()
-        val legacyOutDir = File("/private/tmp/bkk-android-gemini-validation")
-        legacyOutDir.mkdirs()
+        // Save evidence to /private/tmp/ (or /tmp/ on Linux) bkk-primary-android-validation/ and legacy validation dir
+        val baseTmp = File("/private/tmp").takeIf { it.exists() } ?: File("/tmp")
+        val primaryOutDir = File(baseTmp, "bkk-primary-android-validation").apply { mkdirs() }
+        val outDir = File(baseTmp, "bkk-android-gemini-final").apply { mkdirs() }
+        val legacyOutDir = File(baseTmp, "bkk-android-gemini-validation").apply { mkdirs() }
 
         val jsonReport = JSONObject()
             .put("cachedPlannerRoutes", JSONObject()

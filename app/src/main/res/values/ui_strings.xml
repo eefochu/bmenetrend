@@ -136,4 +136,21 @@
     <string name="route_close">Vonalnézet bezárása</string>
     <!-- Optional MÁV tickets tab (mav-tickets module). -->
     <string name="tickets_nav">Jegyek</string>
+
+    <!-- Debug menu & Packet tracer -->
+    <string name="debug_options_title">Debug options</string>
+    <string name="packet_tracer_title">Packet tracer</string>
+    <string name="packet_tracer_empty">Nincs még rögzített hálózati forgalom</string>
+    <string name="packet_tracer_clear">Törlés</string>
+    <string name="packet_tracer_search_hint">Keresés URL vagy tartalom alapján…</string>
+    <string name="packet_tracer_filter_all">Mind (%1$d)</string>
+    <string name="packet_tracer_filter_success">Sikeres (%1$d)</string>
+    <string name="packet_tracer_filter_failed">Hibás (%1$d)</string>
+    <string name="packet_tracer_copied">Másolva a vágólapra</string>
+    <string name="packet_tracer_copy_details">Részletek másolása</string>
+    <string name="packet_tracer_request_headers">Request Headers</string>
+    <string name="packet_tracer_request_body">Request Body</string>
+    <string name="packet_tracer_response_headers">Response Headers</string>
+    <string name="packet_tracer_response_body">Response Body</string>
+    <string name="packet_tracer_error">Hiba</string>
 </resources>

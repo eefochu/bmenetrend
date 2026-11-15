@@ -188,11 +188,13 @@ fun ViaBuszScreen(
     LaunchedEffect(openSettingsRequest) { if (openSettingsRequest > handledSettingsRequest) { showSettings = true; handledSettingsRequest = openSettingsRequest } }
     var showAbout by rememberSaveable { mutableStateOf(false) }
     var showUpdates by rememberSaveable { mutableStateOf(false) }
-    SideEffect { onFullscreenChanged(showSettings || showAbout || showUpdates || searchOpen) }
+    var showDebugOptions by rememberSaveable { mutableStateOf(false) }
+    var showPacketTracer by rememberSaveable { mutableStateOf(false) }
+    SideEffect { onFullscreenChanged(showSettings || showAbout || showUpdates || showDebugOptions || showPacketTracer || searchOpen) }
     var handledSearchRequest by rememberSaveable { mutableIntStateOf(0) }
     LaunchedEffect(openSearchRequest) {
         if (openSearchRequest > handledSearchRequest) {
-            showSettings = false; showAbout = false; showUpdates = false
+            showSettings = false; showAbout = false; showUpdates = false; showDebugOptions = false; showPacketTracer = false
             searchOpen = true; query = ""; handledSearchRequest = openSearchRequest
         }
     }
@@ -316,7 +318,7 @@ fun ViaBuszScreen(
             isExpanded -> collapse()
         }
     }
-    BackHandler(enabled = !searchOpen && !showSettings && !showAbout && !showUpdates, onBack = {
+    BackHandler(enabled = !searchOpen && !showSettings && !showAbout && !showUpdates && !showDebugOptions && !showPacketTracer, onBack = {
         when {
             selectedDeparture != null && routeId != null -> closeLine()
             directionId != null -> directionId = null
@@ -367,7 +369,7 @@ fun ViaBuszScreen(
             if (token != shownStopToken) {
                 routeId=null; directionId=null
                 searchOpen=false
-                showSettings=false; showAbout=false; showUpdates=false
+                showSettings=false; showAbout=false; showUpdates=false; showDebugOptions=false; showPacketTracer=false
                 sheet.partialExpand()
             }
             shownStopToken = token
@@ -604,6 +606,15 @@ fun ViaBuszScreen(
             onOpenUpdates = { showUpdates = true },
             onBack = { showAbout = false }
         )
+    } else if (showPacketTracer) {
+        hu.app.bmenetrend.ui.debug.PacketTracerPage(
+            onBack = { showPacketTracer = false }
+        )
+    } else if (showDebugOptions) {
+        hu.app.bmenetrend.ui.debug.DebugOptionsPage(
+            onOpenPacketTracer = { showPacketTracer = true },
+            onBack = { showDebugOptions = false }
+        )
     } else if (showSettings) {
         SettingsPage(
             state = state,
@@ -616,6 +627,7 @@ fun ViaBuszScreen(
             onClearAllTimetables = onClearAllTimetables,
             onOfflineMode = onOfflineMode, onOfflineDownload = onOfflineDownload, onOfflineCancel = onOfflineCancel,
             onOfflineDelete = onOfflineDelete, onOfflineImport = onOfflineImport, onAutomaticOfflineUpdates = onAutomaticOfflineUpdates,
+            onDebugOptions = { showDebugOptions = true },
             onBack = { showSettings = false }
         )
     }

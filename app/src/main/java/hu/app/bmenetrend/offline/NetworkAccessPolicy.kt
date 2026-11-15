@@ -173,9 +173,22 @@ object NetworkAccessPolicy {
 
     fun requireOnline() { if (mutable.value) throw IOException("Offline mode") }
 
+    private val packetTracerInterceptor by lazy {
+        hu.app.bmenetrend.debug.PacketTracer.createInterceptor()
+    }
+
     @Synchronized fun protect(client: OkHttpClient): OkHttpClient {
-        if (client.interceptors.any { it === guard }) { clients.add(client); return client }
-        return client.newBuilder().addInterceptor(guard).build().also { clients.add(it) }
+        val hasGuard = client.interceptors.any { it === guard }
+        val tracerActive = hu.app.bmenetrend.debug.PacketTracer.enabled
+        val hasTracer = client.interceptors.any { it === packetTracerInterceptor }
+        if (hasGuard && (hasTracer || !tracerActive)) {
+            clients.add(client)
+            return client
+        }
+        val builder = client.newBuilder()
+        if (!hasGuard) builder.addInterceptor(guard)
+        if (tracerActive && !hasTracer) builder.addInterceptor(packetTracerInterceptor)
+        return builder.build().also { clients.add(it) }
     }
 
     private val guard = Interceptor { chain ->

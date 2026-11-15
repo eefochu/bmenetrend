@@ -12,6 +12,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.material3.*
@@ -47,6 +48,7 @@ fun SettingsPage(
     onOfflineImport: (android.net.Uri) -> Unit = {},
     onThemeMode: (ThemeMode) -> Unit = {},
     onMapStyle: (MapStyle) -> Unit = {},
+    onDebugOptions: (() -> Unit)? = null,
 ) {
     var mapCredits by rememberSaveable { mutableStateOf(false) }
     if (mapCredits) MapCreditsDialog { mapCredits = false }
@@ -169,6 +171,20 @@ fun SettingsPage(
                 }
                 OutlinedButton(onClick=onAbout,shape=TransitDesign.controlShape,modifier=Modifier.fillMaxWidth().heightIn(min=56.dp)) {
                     Icon(Icons.Rounded.Info,null,Modifier.size(20.dp));Spacer(Modifier.width(12.dp));Text(stringResource(R.string.ota_about_title))
+                }
+                if (hu.app.bmenetrend.debug.PacketTracer.isDebugBuild && onDebugOptions != null) {
+                    OutlinedButton(
+                        onClick = onDebugOptions,
+                        shape = TransitDesign.controlShape,
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.tertiary
+                        ),
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
+                    ) {
+                        Icon(Icons.Rounded.BugReport, null, Modifier.size(20.dp))
+                        Spacer(Modifier.width(12.dp))
+                        Text(stringResource(R.string.debug_options_title))
+                    }
                 }
                 Spacer(Modifier.height(24.dp))
             }

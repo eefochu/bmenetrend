@@ -12,6 +12,14 @@ import android.app.ApplicationExitInfo
 class BMenetrendApplication : Application() {
     override fun onCreate() {
         super.onCreate()
+        if (hu.app.bmenetrend.debug.PacketTracer.isDebugBuild) {
+            runCatching {
+                val clazz = Class.forName("hu.app.bmenetrend.mav.MavApiClient")
+                val field = clazz.getDeclaredField("debugInterceptor")
+                field.isAccessible = true
+                field.set(null, hu.app.bmenetrend.debug.PacketTracer.createInterceptor())
+            }
+        }
         hu.app.bmenetrend.offline.NetworkAccessPolicy.initialize(this)
         hu.app.bmenetrend.offline.NetworkAccessPolicy.monitorConnectivity(this)
         Thread { hu.app.bmenetrend.data.BkkPlatformIndex.initialize(this) }.start()

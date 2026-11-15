@@ -136,4 +136,21 @@
     <string name="route_close">Close line view</string>
     <!-- Optional MÁV tickets tab (mav-tickets module). -->
     <string name="tickets_nav">Tickets</string>
+
+    <!-- Debug menu & Packet tracer -->
+    <string name="debug_options_title">Debug options</string>
+    <string name="packet_tracer_title">Packet tracer</string>
+    <string name="packet_tracer_empty">No network traffic recorded yet</string>
+    <string name="packet_tracer_clear">Clear</string>
+    <string name="packet_tracer_search_hint">Search URL or payload…</string>
+    <string name="packet_tracer_filter_all">All (%1$d)</string>
+    <string name="packet_tracer_filter_success">Success (%1$d)</string>
+    <string name="packet_tracer_filter_failed">Failed (%1$d)</string>
+    <string name="packet_tracer_copied">Copied to clipboard</string>
+    <string name="packet_tracer_copy_details">Copy details</string>
+    <string name="packet_tracer_request_headers">Request Headers</string>
+    <string name="packet_tracer_request_body">Request Body</string>
+    <string name="packet_tracer_response_headers">Response Headers</string>
+    <string name="packet_tracer_response_body">Response Body</string>
+    <string name="packet_tracer_error">Error</string>
 </resources>

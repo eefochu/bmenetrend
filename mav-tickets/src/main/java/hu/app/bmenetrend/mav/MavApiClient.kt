@@ -1737,8 +1737,11 @@ class MavApiClient(
 
         const val DEFAULT_BASE_URL = "https://vim.mav-start.hu/VIM/PR/20250529/MobileServiceS.svc/rest"
 
+        @Volatile
+        var debugInterceptor: Interceptor? = null
+
         private fun defaultClient(): OkHttpClient {
-            return OkHttpClient.Builder()
+            val builder = OkHttpClient.Builder()
                 .connectTimeout(15, TimeUnit.SECONDS)
                 .readTimeout(20, TimeUnit.SECONDS)
                 .writeTimeout(15, TimeUnit.SECONDS)
@@ -1751,7 +1754,8 @@ class MavApiClient(
                         throw IOException(e.message ?: "Network state error", e)
                     }
                 }
-                .build()
+            debugInterceptor?.let { builder.addInterceptor(it) }
+            return builder.build()
         }
 
         internal fun parseTimestamp(raw: Any?): Long {
