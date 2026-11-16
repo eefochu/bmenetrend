@@ -26,6 +26,7 @@ internal data class GoogleScene(
     val markers: List<GoogleMarkerSpec>,
     val focusKey: String?,
     val offsets: Map<String, StopMarkerLayout.Offset> = emptyMap(),
+    val showStops: Boolean = true,
 )
 
 /** Only the retained region enters the marker pool; focus never discards vehicles from it. */
@@ -94,7 +95,7 @@ internal object GoogleMapScene {
                 stops = group, selected = selected, title = anchor.name,
                 offset = offsets[anchor.id] ?: StopMarkerLayout.Offset())
         }
-        return GoogleScene(stopMarkers + markers, focus?.key, offsets)
+        return GoogleScene(stopMarkers + markers, focus?.key, offsets, showStops)
     }
 
     /**

@@ -1,21 +1,23 @@
-# Keyless map and Night style
+# Keyless map and detailed street styles
 
 The app uses MapLibre Native Android 11.8.0 with OpenFreeMap vector tiles, fonts and sprites. There is no map API key, billing setup or server of your own to configure. Build and run the app normally. Network access is needed for uncached tiles and fonts.
 
 ## Appearance
 
-Light mode uses OpenFreeMap Positron. Dark mode loads `app/src/main/assets/map/night.json`, a local adaptation of OpenFreeMap Dark / OpenMapTiles Dark Matter. It changes cartography rather than tinting the screen:
+Light and dark street modes use the web app's detailed OpenFreeMap Liberty styles,
+bundled as `app/src/main/assets/map/web-light.json` and `web-dark.json`. Dark-mode
+colours match the web reference:
 
 | Feature | Colour |
 | --- | --- |
-| Land | Navy `#111D2C` |
-| Water | Teal-blue `#15516B`, lighter cyan labels |
-| Forests and parks | Emerald `#184838` / `#205443` |
-| Local streets | Slate blue `#465E78` |
-| Main roads | Pale blue-grey `#8195AA` |
-| Motorways | Warm sand `#C39A73` |
-| Railways | Lavender `#9C8DAF` |
-| Place labels | Pale ice `#E1EAF3` with navy halos |
+| Land | Charcoal `#1f1f1f` |
+| Water | Deep blue `#163f56`, white labels |
+| Forests and parks | Woodland `#1d2e23`, grass `#212c24`, parks `#284d36` |
+| Local streets | Grey `#585a5e` with darker edges |
+| Main roads | Warm brown `#79644f` |
+| Motorways | Pale orange `#d6a370` |
+| Railways | Slate `#8d99a6` |
+| Place labels | White `#ffffff` with charcoal halos |
 
 Road widths, zoom rules and label placement remain scale-aware. The existing transport marker colours stay unchanged. The system theme switches the basemap while retaining the current camera and selection. Outside route focus, low zoom hides stops below 12 and vehicles below 9; visible vehicles use coloured dots until zoom 12, then transport icons.
 
@@ -25,7 +27,8 @@ The bundled style can be edited directly or opened in [Maputnik](https://maplibr
 
 - [OpenFreeMap](https://openfreemap.org/) supplies the basemap resources without registration or API keys.
 - Map data: [OpenStreetMap contributors](https://www.openstreetmap.org/copyright).
-- Night style: modified [OpenFreeMap Dark](https://github.com/hyperknot/openfreemap-styles), based on [OpenMapTiles Dark Matter](https://github.com/openmaptiles/dark-matter-gl-style), derived from CartoDB Basemaps by Stamen and Paul Norman for CartoDB Inc. Code and design licence notices are bundled in `app/src/main/assets/map/licenses/`.
+- Active street styles: OpenFreeMap Liberty, adapted by the sibling BMenetrend web app; BSD 3-Clause code / CC BY 4.0 design. Material Symbols badge font: Apache 2.0.
+- Legacy Night style (retained as a reference): modified [OpenFreeMap Dark](https://github.com/hyperknot/openfreemap-styles), based on [OpenMapTiles Dark Matter](https://github.com/openmaptiles/dark-matter-gl-style), derived from CartoDB Basemaps by Stamen and Paul Norman for CartoDB Inc. Code and design licence notices are bundled in `app/src/main/assets/map/licenses/`.
 - Place search remains Photon / OpenStreetMap; transit data remains EMMA and the local operators.
 
 Tile services receive the requesting IP address and the requested map areas. This is an online map, not a claim of offline use or anonymity.
@@ -73,8 +76,39 @@ Google's dark street style keeps its charcoal base, with green parks, blue water
 outlines. Highway text uses a pale warm fill with a dark halo for readability.
 General landscape, terrain and land-cover fills explicitly use the same charcoal
 colour so newly introduced land-cover polygons do not turn the base green as zoom
-changes. Parks retain one green fill. The light street style retains Google's default colours.
+changes. Buildings have subtle grey outlines; parks retain one green fill. Road
+geometry is explicitly enabled. Local roads use a thin grey fill and darker edge
+so supplied street geometry remains distinct. Google still decides which roads
+are supplied at each zoom level. The light street style retains Google's default colours.
 
 Google street maps explicitly show transit-track geometry. In dark mode, tracks
 use a contrasting slate colour so railway lines no longer blend into the charcoal
 base; railway station labels remain hidden and app stop markers remain selectable.
+
+## Detailed web street styles
+
+The app's Street map uses `map/web-light.json` and `map/web-dark.json`, copied from
+`../bmenetrend-web/public/map/google-{light,dark}.json` with
+`python3 tools/sync-web-map-styles.py`. Both retain all 105 Liberty layers, including
+minor streets and paths, buildings, separate woodland/grass/park fills, railways,
+waterways and place labels. They use the web app's unchanged zoom-dependent widths
+and constant land-cover colours. MapLibre Native uses Noto glyphs in place of the
+web-only Google Sans `font-faces` (including upright POI text); POI badges use the same category colours and
+filled Material Symbols from a bundled 32 KB subset, with no runtime font request.
+Badge preparation runs off the main thread, and uploads happen before overlays
+are marked ready. A theme change disposes the previous CPU bitmaps. Style retries
+reuse the prepared badges. Existing camera, retry, offline and transit-overlay
+behaviour remains in place. Offline styles and satellite sources are unchanged.
+
+Google Maps mode keeps its renderer and uses the same supported colour roles,
+including white labels, more visible local streets, green parks and detailed
+road outlines. Its geometry and POI taxonomy come from Google and cannot be made
+identical to the OpenFreeMap style through the free SDK's local JSON rules. Use
+Street map for the same detailed basemap as the web screenshot.
+
+Google's broad land-cover category includes forests, grass and bare ground, so it
+stays charcoal rather than painting the countryside uniformly green. The Google
+renderer retains up to 256 additional uploaded stop markers across ordinary zoom
+changes and keeps their icon bitmaps alive. Visibility still follows the existing
+zoom thresholds; vehicles absent from the current scene are removed, and a route
+focus transition or a view with stops disabled clears retained stops. Google manages its own basemap tile cache.
