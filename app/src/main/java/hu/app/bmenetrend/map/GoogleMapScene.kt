@@ -11,7 +11,6 @@ internal data class GoogleMarkerSpec(
     val id: String,
     val point: GeoPoint,
     val icon: String,
-    val dot: String? = null,
     val scale: Float = 1f,
     val vehicle: Vehicle? = null,
     val stops: List<TransitStop> = emptyList(),
@@ -59,7 +58,7 @@ internal object GoogleMapScene {
             val id = feature.getStringProperty("vehicle-id")
             val vehicle = byId.getValue(id)
             GoogleMarkerSpec("vehicle:$id", vehicle.position, feature.getStringProperty("icon"),
-                dot = feature.getStringProperty("dot"), vehicle = vehicle, selected = id == selectedVehicleId,
+                vehicle = vehicle, selected = id == selectedVehicleId,
                 arrow = if (feature.hasProperty("arrow")) feature.getStringProperty("arrow") else null,
                 heading = if (feature.hasProperty("heading")) feature.getNumberProperty("heading").toFloat() else null,
                 title = listOfNotNull(vehicle.routeNumber, vehicle.destination).joinToString(" · ").ifEmpty { vehicle.providerId })

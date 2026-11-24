@@ -884,9 +884,11 @@ class GoogleMapSceneTest {
             val storedVehicleIds = vehicleMarkers.mapNotNull { it.vehicle?.id }.toSet()
             assertEquals(setOf("veh-1", "veh-2"), storedVehicleIds)
 
-            // Non-rail vehicles remain hidden while trains are visible.
-            assertFalse("TransitMapVisibility.vehicle must be false at 14.5 for BUS", TransitMapVisibility.vehicle("BUS", 14.5))
+            // Non-rail vehicles are visible from 14.0 together with stops; at 14.5 overview is true.
+            assertTrue("TransitMapVisibility.vehicle must be true at 14.5 for BUS", TransitMapVisibility.vehicle("BUS", 14.5))
+            assertTrue("TransitMapVisibility.vehicleOverview must be true at 14.5 unfocused", TransitMapVisibility.vehicleOverview(14.5, focused = false))
             assertTrue("Rail vehicles are visible at 14.5", TransitMapVisibility.vehicle("RAIL", 14.5))
+            assertFalse("Non-rail vehicles hidden below 14.0", TransitMapVisibility.vehicle("BUS", 13.9))
         } finally {
             pending.values.forEach(Bitmap::recycle)
         }
@@ -927,9 +929,10 @@ class GoogleMapSceneTest {
             assertEquals("Full stops retained at zoom 15.5", 2, stopMarkers.sumOf { it.stops.size })
             assertEquals("Full vehicles retained at zoom 15.5", 2, vehicleMarkers.size)
 
-            // Stop visibility is active at zoom 15.5, vehicle visibility is active from 15.0
+            // Stop visibility is active at zoom 15.5, vehicle visibility is active from 14.0
             assertTrue("TransitMapVisibility.stop must be true at 15.5", TransitMapVisibility.stop("BUS", 15.5))
-            assertFalse("TransitMapVisibility.vehicle must be false at 14.99 (hidden below 15)", TransitMapVisibility.vehicle("BUS", 14.99))
+            assertFalse("TransitMapVisibility.vehicle must be false at 13.99 (hidden below 14)", TransitMapVisibility.vehicle("BUS", 13.99))
+            assertTrue("TransitMapVisibility.vehicle must be true at 14.0", TransitMapVisibility.vehicle("BUS", 14.0))
             assertTrue("TransitMapVisibility.vehicle must be true at 15.0", TransitMapVisibility.vehicle("BUS", 15.0))
         } finally {
             pending.values.forEach(Bitmap::recycle)
@@ -1608,9 +1611,10 @@ class GoogleMapSceneTest {
         // Focus extends train visibility below the overview gate.
         assertTrue("Unfocused overview train is visible at zoom 12.0", TransitMapVisibility.vehicle("RAIL", 12.0, focused = false))
         assertFalse("Unfocused overview bus must remain hidden at zoom 12.0", TransitMapVisibility.vehicle("BUS", 12.0, focused = false))
-        assertTrue("Unfocused train is visible below the non-rail threshold", TransitMapVisibility.vehicle("RAIL", 14.99, focused = false))
-        assertEquals("Global unfocused min zoom must remain 15", 15f, TransitMapVisibility.VEHICLE_MIN_ZOOM)
-        assertEquals("vehicleMinZoom(focused = false) must be 15", 15f, TransitMapVisibility.vehicleMinZoom(focused = false))
+        assertTrue("Unfocused train is visible below the non-rail threshold", TransitMapVisibility.vehicle("RAIL", 13.99, focused = false))
+        assertFalse("Unfocused bus is hidden below non-rail threshold", TransitMapVisibility.vehicle("BUS", 13.99, focused = false))
+        assertEquals("Global unfocused min zoom must be 14", 14f, TransitMapVisibility.VEHICLE_MIN_ZOOM)
+        assertEquals("vehicleMinZoom(focused = false) must be 14", 14f, TransitMapVisibility.vehicleMinZoom(focused = false))
         assertEquals("vehicleMinZoom(focused = true) must be 0", 0f, TransitMapVisibility.vehicleMinZoom(focused = true))
 
         assertTrue(
@@ -1967,18 +1971,18 @@ class GoogleMapSceneTest {
     }
 
     @Test
-    fun googlePrepare_defaultZoom15Threshold_normalHidden14To1499_visible15_focusedOverviewUnchanged() {
+    fun googlePrepare_defaultZoom14Threshold_normalHiddenBelow14_visible14_focusedOverviewUnchanged() {
         val allModes = listOf("BUS", "COACH", "TRAM", "TROLLEYBUS", "SUBWAY")
 
-        // Unfocused normal vehicles: hidden at 14.0, 14.5, 14.99
-        for (zoom in listOf(14.0, 14.5, 14.99)) {
+        // Unfocused normal vehicles: hidden below 14.0
+        for (zoom in listOf(0.0, 5.0, 10.0, 12.0, 13.0, 13.5, 13.99)) {
             for (mode in allModes) {
                 assertFalse("Normal unfocused vehicle mode $mode must be hidden at zoom $zoom", TransitMapVisibility.vehicle(mode, zoom, focused = false))
             }
         }
 
-        // Unfocused normal vehicles: visible at 15.0, 15.1, 17.0
-        for (zoom in listOf(15.0, 15.1, 17.0)) {
+        // Unfocused normal vehicles: visible from 14.0 upwards
+        for (zoom in listOf(14.0, 14.5, 14.99, 15.0, 15.1, 17.0)) {
             for (mode in allModes) {
                 assertTrue("Normal unfocused vehicle mode $mode must be visible at zoom $zoom", TransitMapVisibility.vehicle(mode, zoom, focused = false))
             }
@@ -1992,9 +1996,9 @@ class GoogleMapSceneTest {
         }
 
         // Shared helper thresholds
-        assertEquals(15f, TransitMapVisibility.VEHICLE_MIN_ZOOM)
-        assertEquals(15f, TransitMapVisibility.VEHICLE_SYMBOL_MIN_ZOOM)
-        assertEquals(15f, TransitMapVisibility.vehicleMinZoom(focused = false))
+        assertEquals(14f, TransitMapVisibility.VEHICLE_MIN_ZOOM)
+        assertEquals(15f, TransitMapVisibility.VEHICLE_FULL_SIZE_ZOOM)
+        assertEquals(14f, TransitMapVisibility.vehicleMinZoom(focused = false))
         assertEquals(0f, TransitMapVisibility.vehicleMinZoom(focused = true))
     }
 }

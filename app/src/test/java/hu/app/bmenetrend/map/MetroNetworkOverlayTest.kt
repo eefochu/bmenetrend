@@ -15,8 +15,8 @@ import org.robolectric.annotation.Config
 @Config(sdk = [30])
 class MetroNetworkOverlayTest {
     @Test fun persistentTracksStayBelowEveryStationAndVehicleLayer() {
-        for (marker in listOf("station-symbols","station-selected","vehicle-dots-rail","vehicle-dots-road","vehicle-symbols")) {
-            assertEquals(marker,MetroNetworkOverlay.lineAnchor(listOf("basemap",marker,"selected-line-casing")))
+        for (marker in listOf("station-symbols", "station-selected", VehicleLayers.RAIL_OVERVIEW, VehicleLayers.SYMBOLS)) {
+            assertEquals(marker, MetroNetworkOverlay.lineAnchor(listOf("basemap", marker, "selected-line-casing")))
         }
         assertEquals("selected-line-casing",MetroNetworkOverlay.lineAnchor(listOf("basemap","selected-line-casing","station-symbols")))
         val annotations=org.maplibre.android.constants.MapLibreConstants.LAYER_ID_ANNOTATIONS

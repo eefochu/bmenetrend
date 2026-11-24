@@ -360,4 +360,26 @@ class VehicleLayersTest {
         assertNotNull("Expression is constructible and inspectable on JVM", filter)
         assertEquals("true", filter.toString())
     }
+
+    @Test
+    fun sizeExpression_unfocusedUsesStepWithOverviewFactor_focusedUsesDirectProperty() {
+        val focused = VehicleLayers.sizeExpression("large-scale", focused = true)
+        assertEquals("[\"get\", \"large-scale\"]", focused.toString())
+
+        val unfocusedLarge = VehicleLayers.sizeExpression("large-scale", focused = false)
+        val expectedLarge = Expression.step(
+            Expression.zoom(),
+            Expression.product(Expression.get("large-scale"), Expression.literal(VehicleMarkerLayout.OVERVIEW_FACTOR)),
+            Expression.stop(TransitMapVisibility.VEHICLE_FULL_SIZE_ZOOM, Expression.get("large-scale")),
+        )
+        assertEquals(expectedLarge.toString(), unfocusedLarge.toString())
+
+        val unfocusedArrow = VehicleLayers.sizeExpression("arrow-scale", focused = false)
+        val expectedArrow = Expression.step(
+            Expression.zoom(),
+            Expression.product(Expression.get("arrow-scale"), Expression.literal(VehicleMarkerLayout.OVERVIEW_FACTOR)),
+            Expression.stop(TransitMapVisibility.VEHICLE_FULL_SIZE_ZOOM, Expression.get("arrow-scale")),
+        )
+        assertEquals(expectedArrow.toString(), unfocusedArrow.toString())
+    }
 }

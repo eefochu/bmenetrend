@@ -29,7 +29,9 @@ class DepartureTimeTest {
         assertTrue(TransitMapVisibility.vehicle("RAIL", 15.0))
         assertTrue(TransitMapVisibility.vehicle("BUS", 15.0))
         assertTrue(TransitMapVisibility.vehicle("RAIL", 14.9))
-        assertFalse(TransitMapVisibility.vehicle("BUS", 14.9))
+        assertTrue(TransitMapVisibility.vehicle("BUS", 14.9))
+        assertTrue(TransitMapVisibility.vehicle("RAIL", 13.9))
+        assertFalse(TransitMapVisibility.vehicle("BUS", 13.9))
         assertTrue(TransitMapVisibility.stop("BUS", 5.0, focused = true))
     }
     @Test fun favouriteStopsKeepOnlyTheirOwnSourcePlatformAndIgnoreMapDistance() {

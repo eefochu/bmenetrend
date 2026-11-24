@@ -312,6 +312,14 @@ object BkkWorkerParser {
 
     // ---- trip details --------------------------------------------------------------------
 
+    /** The live vehicle `trip-details` reports for [expectedTripId]; null before the trip starts or when it runs another trip. */
+    fun tripVehicle(text: String, expectedTripId: String, now: Instant): Vehicle? {
+        val data = data(text)
+        val row = data.getJSONObject("entry").optJSONObject("vehicle") ?: return null
+        return vehicle(row, routes(data.optJSONObject("references")), now)?.vehicle
+            ?.takeIf { it.tripId == expectedTripId || it.bkkTripId == expectedTripId }
+    }
+
     fun journey(text: String, expectedTripId: String): VehicleJourney {
         val data = data(text)
         val references = data.optJSONObject("references")

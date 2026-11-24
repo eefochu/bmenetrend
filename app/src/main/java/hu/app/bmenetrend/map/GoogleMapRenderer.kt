@@ -83,7 +83,7 @@ internal class GoogleMapRenderer(private val map: GoogleMap, private val density
             if (apply(entry, create = true)) mutations += if (spec.arrow != null) 2 else 1
             if (mutations >= budget()) { withFrameNanos { }; mutations = 0 }
         }
-        val used = entries.values.flatMapTo(HashSet()) { listOfNotNull(it.spec.icon, it.spec.dot, it.spec.arrow) }
+        val used = entries.values.flatMapTo(HashSet()) { listOfNotNull(it.spec.icon, it.spec.arrow) }
         if (bitmaps.size > used.size + 64) {
             bitmaps.keys.filter { it !in used }.forEach { bitmaps.remove(it)?.recycle() }
             descriptors.clear()
@@ -102,8 +102,7 @@ internal class GoogleMapRenderer(private val map: GoogleMap, private val density
             if (entry.visible) { entry.marker?.isVisible = false; entry.visible = false; changed = true }
             return changed
         }
-        // Only trains are visible below the vehicle zoom: they keep their icon, drawn smaller.
-        val overview = vehicle != null && focus == null && zoom < TransitMapVisibility.VEHICLE_SYMBOL_MIN_ZOOM
+        val overview = vehicle != null && TransitMapVisibility.vehicleOverview(zoom, focus != null)
         entry.overview = overview
         val rawKey = spec.icon
         val bitmap = bitmaps[rawKey] ?: return false

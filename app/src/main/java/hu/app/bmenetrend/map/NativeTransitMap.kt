@@ -364,7 +364,7 @@ fun NativeTransitMap(
             /** Drawn vehicles near a tap, with their on-screen centre and drawn radius. */
             fun vehicleTargets(ready: MapLibreMap, tap: PointF, density: Double): List<MapTapResolver.VehicleTarget> {
                 val reach = ((MapTapResolver.MIN_REACH_DP + VehicleMarkerLayout.SELECTED_DIAMETER_DP / 2) * density).toFloat()
-                val overview = currentVehicleFocus == null && ready.cameraPosition.zoom < TransitMapVisibility.VEHICLE_SYMBOL_MIN_ZOOM
+                val overview = TransitMapVisibility.vehicleOverview(ready.cameraPosition.zoom, currentVehicleFocus != null)
                 return ready.queryRenderedFeatures(android.graphics.RectF(tap.x - reach, tap.y - reach, tap.x + reach, tap.y + reach),
                     *VehicleMapScene.layers).mapNotNull { feature ->
                     if (!feature.hasProperty("vehicle-id")) return@mapNotNull null

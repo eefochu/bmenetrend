@@ -968,5 +968,40 @@ class BkkWorkerParserTest {
         assertFalse(result.containsKey("emma:BKK:BOOL_TRUE"))
         assertFalse(result.containsKey("emma:BKK:BOOL_FALSE"))
     }
+
+    @Test
+    fun tripVehicle_parsesVehicleWhenTripMatches_andReturnsNullOnMismatchOrMissing() {
+        val jsonWithVehicle = JSONObject().put("status", "OK").put("data", JSONObject()
+            .put("references", JSONObject().put("routes", JSONObject().put("BKK_B0070", JSONObject()
+                .put("id", "BKK_B0070").put("type", "BUS").put("shortName", "7"))))
+            .put("entry", JSONObject()
+                .put("vehicle", JSONObject()
+                    .put("vehicleId", "BKK_1234")
+                    .put("tripId", "BKK_D1")
+                    .put("routeId", "BKK_B0070")
+                    .put("vehicleRouteType", "BUS")
+                    .put("lastUpdateTime", now.epochSecond - 10)
+                    .put("location", JSONObject().put("lat", 47.49).put("lon", 19.05))
+                    .put("licensePlate", "ABC-123")
+                    .put("label", "Albertfalva"))
+            )
+        ).toString()
+
+        val vehicleMatch = BkkWorkerParser.tripVehicle(jsonWithVehicle, "BKK:D1", now)
+        assertNotNull("Expected vehicle for matching expectedTripId BKK:D1", vehicleMatch)
+        assertEquals("BKK:D1", vehicleMatch!!.tripId)
+        assertEquals("emma:BKK:1234", vehicleMatch.id)
+        assertEquals("bkk", vehicleMatch.providerId)
+
+        val vehicleMismatch = BkkWorkerParser.tripVehicle(jsonWithVehicle, "BKK:D2", now)
+        assertNull("Vehicle running different trip should return null", vehicleMismatch)
+
+        val jsonWithoutVehicle = JSONObject().put("status", "OK").put("data", JSONObject()
+            .put("references", JSONObject().put("routes", JSONObject()))
+            .put("entry", JSONObject())
+        ).toString()
+        val vehicleMissing = BkkWorkerParser.tripVehicle(jsonWithoutVehicle, "BKK:D1", now)
+        assertNull("Missing vehicle in entry must return null", vehicleMissing)
+    }
 }
 

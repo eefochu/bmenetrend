@@ -52,8 +52,7 @@ the application fetches the ticket/pass metadata (e.g. the pass card appears in 
 
 ### Test Credentials Provided by User
 The user has provided a real test account with an active monthly county pass to reproduce and debug:
-- **Google Account Email**: `bazsi.kokai@gmail.com`
-- **Google Account Password**: `-2HeLLoworLdcaT1#`
+- **Credentials**: removed from this document. Use the `MAV_LIVE_*` environment variables read by `MavLiveApiTest`; never commit account details.
 - **Active Pass on Account**:
   - **Product**: `Kedvezményes megyebérlet - Pest megye` (Discounted Pest County Pass)
   - **Purchase / Order ID**: `1023744049` (in raw API responses, composite routing string is `ODAUTI_AJANLAT#CSCSAZON#CSAZON#1023744049`)
@@ -185,7 +184,7 @@ val candidates = listOfNotNull(
 ## 5. Recommended Action Plan for Next Assistant
 
 1. **Direct API Inspection**:
-   - Use `curl` or a standalone test script with the user's test account credentials (`bazsi.kokai@gmail.com` / `-2HeLLoworLdcaT1#`) or inspection of API responses to test:
+   - Use `curl` or a standalone test script with the user's test account credentials (from the `MAV_LIVE_*` environment variables) or inspection of API responses to test:
      1. What does `OrderAndPaymentApi/GetCertificatesImages` on `IK_API_PROD` return for order `1023744049` / doc `1779935735`?
      2. Does `GetPreviousPurchaseDetails` contain the raw Aztec barcode string?
      3. When calling VIM `GetJegykep`, which exact parameter (`bizonylatTechnikaiAzonosito` vs `jegySorszam` vs order ID) succeeds, and what happens if `bizonylatTechnikaiAzonosito` is passed as the first and only candidate?
