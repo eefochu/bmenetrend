@@ -247,6 +247,7 @@ class MainActivity : ComponentActivity() {
                     onMapStyleChanged = model::setMapStyle,
                     onLineOpened = model::loadLine,
                     onDepartureTrip = model::loadDepartureTrip,
+                    onDepartureVehicle = model::findDepartureVehicle,
                     onBoardingStop = model::selectBoardingStop,
                     onClearBoarding = model::clearBoardingSelection,
                     onShowWholeRoute = model::showWholeRoute,
@@ -277,6 +278,7 @@ class MainActivity : ComponentActivity() {
                     // whole live route list, which changes with every vehicle refresh.
                     val focusRouteId = vehicle?.routeId ?: boarding?.routeId
                     val focusRoute = focusRouteId?.let { id -> state.routes.find { it.id == id } }
+                    LaunchedEffect(focusRouteId) { model.setFocusedRoute(focusRouteId) }
                     // Filters the national stop catalogue: built off the main thread, so opening a line never stalls a frame.
                     val focusState by produceState<LineMapFocus?>(null, vehicle?.id, vehicle?.routeId, boarding, focusRoute,
                         state.network?.stops, state.lineDetails, state.vehicleJourney, state.emmaStops) {

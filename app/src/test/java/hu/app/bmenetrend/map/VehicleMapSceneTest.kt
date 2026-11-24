@@ -82,9 +82,10 @@ class VehicleMapSceneTest {
             assertEquals("v1", f1.getStringProperty("vehicle-id"))
             assertFalse("Bus should not be flagged as rail", f1.getBooleanProperty("rail"))
             assertEquals(0, f1.getNumberProperty("priority").toInt())
-            assertEquals(26f / 36f, f1.getNumberProperty("small-scale").toFloat(), 0.001f)
             assertEquals(26f / 36f, f1.getNumberProperty("large-scale").toFloat(), 0.001f)
-            assertEquals(1f, f1.getNumberProperty("dot-scale").toFloat(), 0.001f)
+            assertFalse(f1.hasProperty("small-scale"))
+            assertFalse(f1.hasProperty("dot"))
+            assertFalse(f1.hasProperty("dot-scale"))
             val p1 = f1.geometry() as org.maplibre.geojson.Point
             assertEquals(19.041, p1.longitude(), 0.0001)
             assertEquals(47.491, p1.latitude(), 0.0001)
@@ -94,9 +95,10 @@ class VehicleMapSceneTest {
             assertEquals("v2", f2.getStringProperty("vehicle-id"))
             assertTrue("Train must be flagged as rail", f2.getBooleanProperty("rail"))
             assertEquals(1, f2.getNumberProperty("priority").toInt())
-            assertEquals(30f / 36f, f2.getNumberProperty("small-scale").toFloat(), 0.001f)
             assertEquals(30f / 36f, f2.getNumberProperty("large-scale").toFloat(), 0.001f)
-            assertEquals(10f / 6f, f2.getNumberProperty("dot-scale").toFloat(), 0.001f)
+            assertFalse(f2.hasProperty("small-scale"))
+            assertFalse(f2.hasProperty("dot"))
+            assertFalse(f2.hasProperty("dot-scale"))
             val p2 = f2.geometry() as org.maplibre.geojson.Point
             assertEquals(19.042, p2.longitude(), 0.0001)
             assertEquals(47.492, p2.latitude(), 0.0001)
@@ -106,7 +108,7 @@ class VehicleMapSceneTest {
     }
 
     @Test
-    fun modeStylingDistinguishesMetroHevAndBusIconsAndDots() = runBlocking {
+    fun modeStylingDistinguishesMetroHevAndBusIcons() = runBlocking {
         val metro = vehicle("m4", "M4", "SUBWAY", provider = "bkk")
         val hev = vehicle("h5", "H5", "SUBURBAN_RAILWAY", provider = "hev")
         val bus = vehicle("b1", "100E", "BUS", provider = "bkk")
@@ -141,17 +143,7 @@ class VehicleMapSceneTest {
             assertEquals(108, metroBmp.height)
             assertEquals(480, metroBmp.density)
 
-            val metroDotKey = features[0].getStringProperty("dot")
-            val metroDotBmp = pending.getValue(metroDotKey)
-            assertEquals(18, metroDotBmp.width)
-            assertEquals(18, metroDotBmp.height)
-            assertEquals(480, metroDotBmp.density)
-
-            // Dot should have white ring and non-white center
-            assertEquals(Color.WHITE, metroDotBmp.getPixel(9, 1))
-            val centerColor = metroDotBmp.getPixel(9, 9)
-            assertNotEquals(Color.WHITE, centerColor)
-            assertNotEquals(0, Color.alpha(centerColor))
+            assertFalse("Features must not contain dot property", features[0].hasProperty("dot"))
         } finally {
             pending.values.forEach(Bitmap::recycle)
         }
@@ -354,7 +346,7 @@ class VehicleMapSceneTest {
         val bus2 = vehicle("b2", "8E", "BUS", provider = "bkk")
         val pending = linkedMapOf<String, Bitmap>()
 
-        // 1. Two vehicles with same style: pending should only contain 1 icon and 1 dot bitmap
+        // 1. Two vehicles with same style: pending should only contain 1 icon bitmap
         val json1 = VehicleMapScene.prepare(
             context = app,
             vehicles = listOf(bus1, bus2),
@@ -363,10 +355,10 @@ class VehicleMapSceneTest {
             pending = pending,
         )
         try {
-            assertEquals("One icon and one dot should be rendered for identical bus styles", 2, pending.size)
+            assertEquals("One icon should be rendered for identical bus styles", 1, pending.size)
             val features = FeatureCollection.fromJson(json1).features()!!
             assertEquals(features[0].getStringProperty("icon"), features[1].getStringProperty("icon"))
-            assertEquals(features[0].getStringProperty("dot"), features[1].getStringProperty("dot"))
+            assertFalse(features[0].hasProperty("dot"))
 
             val cached = pending.keys.toSet()
 
@@ -446,30 +438,21 @@ class VehicleMapSceneTest {
             assertEquals(3, features.size)
 
             val hommIconKey = features[0].getStringProperty("icon")
-            val hommDotKey = features[0].getStringProperty("dot")
             val kanyargoIconKey = features[1].getStringProperty("icon")
-            val kanyargoDotKey = features[1].getStringProperty("dot")
             val viabuszIconKey = features[2].getStringProperty("icon")
-            val viabuszDotKey = features[2].getStringProperty("dot")
 
             assertEquals("vehicle-HOMM_BUS-null-null", hommIconKey)
-            assertEquals("vehicle-HOMM_BUS-null-null-dot", hommDotKey)
             assertEquals("vehicle-KANYARGO_BUS-null-null", kanyargoIconKey)
-            assertEquals("vehicle-KANYARGO_BUS-null-null-dot", kanyargoDotKey)
             assertEquals("vehicle-VIABUSZ_BUS-null-null", viabuszIconKey)
-            assertEquals("vehicle-VIABUSZ_BUS-null-null-dot", viabuszDotKey)
 
             // Distinct keys across all 3 local bus styles
-            val allKeys = setOf(hommIconKey, hommDotKey, kanyargoIconKey, kanyargoDotKey, viabuszIconKey, viabuszDotKey)
-            assertEquals("All 3 local operators must have distinct icon and dot keys", 6, allKeys.size)
+            val allKeys = setOf(hommIconKey, kanyargoIconKey, viabuszIconKey)
+            assertEquals("All 3 local operators must have distinct icon keys", 3, allKeys.size)
 
             // Pending bitmap verification
             assertTrue(pending.containsKey(hommIconKey))
-            assertTrue(pending.containsKey(hommDotKey))
             assertTrue(pending.containsKey(kanyargoIconKey))
-            assertTrue(pending.containsKey(kanyargoDotKey))
             assertTrue(pending.containsKey(viabuszIconKey))
-            assertTrue(pending.containsKey(viabuszDotKey))
 
             // Dimensions and density
             val hommBmp = pending.getValue(hommIconKey)
@@ -479,24 +462,6 @@ class VehicleMapSceneTest {
             assertEquals(108, hommBmp.width); assertEquals(108, hommBmp.height)
             assertEquals(108, kanyargoBmp.width); assertEquals(108, kanyargoBmp.height)
             assertEquals(108, viabuszBmp.width); assertEquals(108, viabuszBmp.height)
-
-            val hommDotBmp = pending.getValue(hommDotKey)
-            val kanyargoDotBmp = pending.getValue(kanyargoDotKey)
-            val viabuszDotBmp = pending.getValue(viabuszDotKey)
-
-            assertEquals(18, hommDotBmp.width); assertEquals(18, hommDotBmp.height)
-            assertEquals(18, kanyargoDotBmp.width); assertEquals(18, kanyargoDotBmp.height)
-            assertEquals(18, viabuszDotBmp.width); assertEquals(18, viabuszDotBmp.height)
-
-            // Dot outer ring is white
-            assertEquals(Color.WHITE, hommDotBmp.getPixel(9, 1))
-            assertEquals(Color.WHITE, kanyargoDotBmp.getPixel(9, 1))
-            assertEquals(Color.WHITE, viabuszDotBmp.getPixel(9, 1))
-
-            // Dot center colors use marker.color (HOMM: #BF5700, KanyarGO: #6750A4, ViaBusz: #205C48)
-            assertEquals(0xFFBF5700.toInt(), hommDotBmp.getPixel(9, 9))
-            assertEquals(0xFF6750A4.toInt(), kanyargoDotBmp.getPixel(9, 9))
-            assertEquals(0xFF205C48.toInt(), viabuszDotBmp.getPixel(9, 9))
 
             // Native graphics sampled background pixels: top center of circle above bus body (54, 14)
             assertEquals(0xFFBF5700.toInt(), hommBmp.getPixel(54, 14))
@@ -534,16 +499,16 @@ class VehicleMapSceneTest {
 
             val f1 = features[0]
             assertEquals("v1", f1.getStringProperty("vehicle-id"))
-            assertEquals(26f / 36f, f1.getNumberProperty("small-scale").toFloat(), 0.001f)
             assertEquals(26f / 36f, f1.getNumberProperty("large-scale").toFloat(), 0.001f)
+            assertFalse(f1.hasProperty("small-scale"))
             assertTrue("Feature 1 must have arrow", f1.hasProperty("arrow"))
             assertEquals(0.0, f1.getNumberProperty("heading").toDouble(), 0.001)
             assertEquals(26f / 18f, f1.getNumberProperty("arrow-scale").toFloat(), 0.001f)
 
             val f2 = features[1]
             assertEquals("v2", f2.getStringProperty("vehicle-id"))
-            assertEquals(26f / 36f, f2.getNumberProperty("small-scale").toFloat(), 0.001f)
             assertEquals(26f / 36f, f2.getNumberProperty("large-scale").toFloat(), 0.001f)
+            assertFalse(f2.hasProperty("small-scale"))
             assertTrue("Feature 2 must have arrow", f2.hasProperty("arrow"))
             assertEquals(90.0, f2.getNumberProperty("heading").toDouble(), 0.001)
             assertEquals(26f / 18f, f2.getNumberProperty("arrow-scale").toFloat(), 0.001f)
@@ -551,8 +516,8 @@ class VehicleMapSceneTest {
             val f3 = features[2]
             assertEquals("v3", f3.getStringProperty("vehicle-id"))
             // Selected vehicle body scale is 30 / 36
-            assertEquals(30f / 36f, f3.getNumberProperty("small-scale").toFloat(), 0.001f)
             assertEquals(30f / 36f, f3.getNumberProperty("large-scale").toFloat(), 0.001f)
+            assertFalse(f3.hasProperty("small-scale"))
             assertTrue("Feature 3 must have arrow", f3.hasProperty("arrow"))
             // 360.0 must be normalized to 0.0
             assertEquals(0.0, f3.getNumberProperty("heading").toDouble(), 0.001)
@@ -594,8 +559,10 @@ class VehicleMapSceneTest {
                 assertFalse("Missing/NaN/inf/out-of-range heading must omit 'arrow-scale' field", feature.hasProperty("arrow-scale"))
                 // Standard marker properties are still present
                 assertTrue(feature.hasProperty("icon"))
-                assertTrue(feature.hasProperty("dot"))
-                assertTrue(feature.hasProperty("small-scale"))
+                assertTrue(feature.hasProperty("large-scale"))
+                assertFalse(feature.hasProperty("dot"))
+                assertFalse(feature.hasProperty("small-scale"))
+                assertFalse(feature.hasProperty("dot-scale"))
             }
 
             // No arrow bitmaps should be created in pending

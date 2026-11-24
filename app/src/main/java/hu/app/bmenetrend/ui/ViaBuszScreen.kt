@@ -152,6 +152,7 @@ fun ViaBuszScreen(
     onMapStyleChanged: (MapStyle) -> Unit = {},
     onLineOpened: (String, Boolean) -> Unit = { _, _ -> },
     onDepartureTrip: (String, Departure) -> Unit = { _, _ -> },
+    onDepartureVehicle: (Departure) -> Unit = {},
     onBoardingStop: (String, String, String) -> Unit = { _, _, _ -> },
     onClearBoarding: () -> Unit = {},
     onShowWholeRoute: () -> Unit = {},
@@ -251,6 +252,7 @@ fun ViaBuszScreen(
             directionId = direction
             selectedDeparture = departure
             onLineOpened(lineId,false)
+            onDepartureVehicle(departure)
             searchOpen = false
             // Half open like a line opened from anywhere else, so the highlighted trip stays visible.
             scope.launch { sheetState.bottomSheetState.partialExpand() }
@@ -356,7 +358,7 @@ fun ViaBuszScreen(
     }
     LaunchedEffect(state.selectedVehicle?.id) {
         if (state.selectedVehicle != null) {
-            routeId=null; directionId=null
+            routeId=null; directionId=null; selectedDeparture=null
             searchOpen = false
             sheet.partialExpand()
         }

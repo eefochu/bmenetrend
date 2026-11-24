@@ -15,7 +15,7 @@ import kotlinx.coroutines.ensureActive
 /** Camera-independent vehicle data. MapLibre handles visibility and size during gestures. */
 internal object VehicleMapScene {
     const val SOURCE = "live-vehicles"
-    val layers = arrayOf(VehicleLayers.SYMBOLS, VehicleLayers.ARROWS, VehicleLayers.RAIL_DOTS, VehicleLayers.RAIL_ARROWS, VehicleLayers.ROAD_DOTS)
+    val layers = arrayOf(VehicleLayers.SYMBOLS, VehicleLayers.ARROWS, VehicleLayers.RAIL_OVERVIEW, VehicleLayers.RAIL_OVERVIEW_ARROWS)
 
     suspend fun prepare(
         context: Context,
@@ -33,7 +33,6 @@ internal object VehicleMapScene {
             val metro = MetroLineStyle.forLine(vehicle.routeNumber, vehicle.transportMode)
             val hev = HevLineStyle.forLine(vehicle.routeNumber, vehicle.transportMode)
             val key = "vehicle-${marker.name}-${metro?.number}-${hev?.number}"
-            val dot = "$key-dot"
             val color = hev?.color ?: metro?.color ?: marker.color
             val heading = VehicleMarkerLayout.heading(vehicle)
             val arrow = VehicleMarkerLayout.arrowKey(color).takeIf { heading != null }
@@ -43,9 +42,6 @@ internal object VehicleMapScene {
                     metro != null -> MetroLineStyle.render(context, metro, 108)
                     else -> renderVehicle(context, marker)
                 }.apply { density = 480 }
-            }
-            if (dot !in cachedIcons && dot !in pending) {
-                pending[dot] = renderDot(color)
             }
             if (arrow != null && arrow !in cachedIcons && arrow !in pending) pending[arrow] = VehicleMarkerLayout.renderArrow(color)
             val selected = vehicle.id == selectedId
@@ -61,12 +57,9 @@ internal object VehicleMapScene {
                 .append(",\"route-number\":").appendJsonString(vehicle.routeNumber.orEmpty())
                 .append(",\"transport-mode\":").appendJsonString(vehicle.transportMode.orEmpty())
                 .append(",\"icon\":").appendJsonString(key)
-                .append(",\"dot\":").appendJsonString(dot)
                 .append(",\"rail\":").append(RailSupport.isTrain(vehicle.transportMode))
                 .append(",\"priority\":").append(if (selected) 1 else 0)
-                .append(",\"small-scale\":").append(diameter / VehicleMarkerLayout.ICON_DIAMETER_DP)
                 .append(",\"large-scale\":").append(diameter / VehicleMarkerLayout.ICON_DIAMETER_DP)
-                .append(",\"dot-scale\":").append(if (selected) 10f / 6f else 1f)
             if (arrow != null) {
                 json.append(",\"arrow\":").appendJsonString(arrow)
                     .append(",\"heading\":").append(heading)
@@ -75,16 +68,6 @@ internal object VehicleMapScene {
             json.append("}}")
         }
         return json.append("]}").toString()
-    }
-
-    private fun renderDot(color: Int): Bitmap = Bitmap.createBitmap(18, 18, Bitmap.Config.ARGB_8888).apply {
-        density = 480
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        val canvas = Canvas(this)
-        paint.color = Color.WHITE
-        canvas.drawCircle(9f, 9f, 9f, paint)
-        paint.color = color
-        canvas.drawCircle(9f, 9f, 7.05f, paint)
     }
 
     private fun renderVehicle(context: Context, marker: VehicleMarkerStyle): Bitmap {

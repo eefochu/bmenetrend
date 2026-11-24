@@ -48,6 +48,13 @@ class BkkWorkerRepository(private val client: BkkWorkerClient = BkkWorkerClient(
         return withContext(Dispatchers.Default) { BkkWorkerParser.vehicles(text, Instant.now()) }.filter { it.vehicle.id == vehicle.id }
     }
 
+    /** Every live vehicle of one BKK-identified line, wherever it is (see [BkkWorkerParser.workerRouteId]). */
+    suspend fun routeVehicles(appRouteId: String): List<WorkerVehicle> {
+        val raw = BkkWorkerParser.workerRouteId(appRouteId) ?: return emptyList()
+        val text = client.get("vehicles-for-route", mapOf("routeId" to raw, "includeReferences" to "routes"))
+        return withContext(Dispatchers.Default) { BkkWorkerParser.vehicles(text, Instant.now()) }
+    }
+
     /**
      * Boards for BKK platforms, six per Worker request (`arrivals-and-departures-for-stops`), batches
      * issued concurrently. Every requested BKK platform has an entry: a board (possibly legitimately
@@ -101,9 +108,19 @@ class BkkWorkerRepository(private val client: BkkWorkerClient = BkkWorkerClient(
     }
 
     suspend fun journey(tripId: String): VehicleJourney {
-        val raw = requireNotNull(BkkWorkerParser.workerTripId(tripId)) { "Not a BKK trip" }
-        val text = client.get("trip-details", mapOf("tripId" to raw, "includeReferences" to "routes,trips,stops"))
+        val text = tripDetails(tripId)
         return withContext(Dispatchers.Default) { BkkWorkerParser.journey(text, tripId) }
+    }
+
+    /** The vehicle running [tripId] now; shares the trip-details call (and its cache) with [journey]. */
+    suspend fun tripVehicle(tripId: String): Vehicle? {
+        val text = tripDetails(tripId)
+        return withContext(Dispatchers.Default) { BkkWorkerParser.tripVehicle(text, tripId, Instant.now()) }
+    }
+
+    private suspend fun tripDetails(tripId: String): String {
+        val raw = requireNotNull(BkkWorkerParser.workerTripId(tripId)) { "Not a BKK trip" }
+        return client.get("trip-details", mapOf("tripId" to raw, "includeReferences" to "routes,trips,stops"))
     }
 
     /** Resolve a native Volán vehicle's FUTÁR trip by its shared plate, never by guessing trip IDs. */

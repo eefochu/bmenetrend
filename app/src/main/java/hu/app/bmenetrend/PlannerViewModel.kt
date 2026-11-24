@@ -33,8 +33,10 @@ class PlannerViewModel internal constructor(
     private val loadNetwork: suspend () -> TransitNetwork,
 ) : AndroidViewModel(application) {
     constructor(application: Application) : this(application,
-        BkkFirstPlannerBackend(EmmaPlannerBackend(EmmaGraphqlClient(EmmaGraphqlClient.plannerHttpClient())),
-            BkkPlannerSource.of(BkkWorkerRepository.shared)),
+        PersistentWalkingBackend(
+            BkkFirstPlannerBackend(EmmaPlannerBackend(EmmaGraphqlClient(EmmaGraphqlClient.plannerHttpClient())),
+                BkkPlannerSource.of(BkkWorkerRepository.shared)),
+            WalkingLinkStore(java.io.File(application.filesDir, "planner-walks.tsv"))),
         TransitRepository(application)::planningNetwork)
 
     private val offlineStore = hu.app.bmenetrend.offline.OfflinePackStore(application)
@@ -50,7 +52,7 @@ class PlannerViewModel internal constructor(
     private var searchJob: Job? = null
     private var planJob: Job? = null
     private var warmupJob: Job? = null
-    private var warmupStarted = false
+    private var warmPlan: WarmPlan? = null
     private var searchGeneration = 0
     private var planGeneration = 0
     private var index = emptyList<TransitSearch.StopEntry>()
@@ -171,8 +173,7 @@ class PlannerViewModel internal constructor(
     }
 
     fun edit(field: PlannerField) {
-        warmupJob?.cancel()
-        warmupStarted = false
+        cancelWarmup()
         mutable.update { it.copy(editing = field, nearbyOriginSearch = false, query = "", suggestions = emptyList(), recommendation = null, searchUnavailable = false) }
     }
 
@@ -312,9 +313,8 @@ class PlannerViewModel internal constructor(
                     catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { null }
                 }
                 val remoteStationsAsync = async {
-                    runCatching {
-                        stopsRepository.search(query).stops.take(8).map { PlannerEndpoint.fromStop(it, DataSource.EMMA) }
-                    }.getOrDefault(emptyList())
+                    try { stopsRepository.search(query).stops.take(8).map { PlannerEndpoint.fromStop(it, DataSource.EMMA) } }
+                    catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { emptyList() }
                 }
                 val placesAsync = async {
                     val results = places.search(query).take(6).map { PlannerEndpoint(it.id, it.name, it.address, it.position, isStation = false) }
@@ -373,7 +373,7 @@ class PlannerViewModel internal constructor(
     }
 
     private fun invalidate(cancelWarmup: Boolean = true) {
-        if (cancelWarmup) { warmupJob?.cancel(); warmupStarted = false }
+        if (cancelWarmup) cancelWarmup()
         planGeneration++; planJob?.cancel()
         mutable.update { it.copy(result = null, planning = false, error = null, selectedId = null) }
     }
@@ -396,43 +396,72 @@ class PlannerViewModel internal constructor(
         warmOnlinePlan()
     }
 
-    /** Prepare online national results while the completed form is on screen. */
-    private fun warmOnlinePlan() {
+    /** Inputs that decide a search's answer; a prefetched search is reused only for the same ones. */
+    private data class PlanKey(val origin: GeoPoint, val destination: GeoPoint, val departure: Instant?, val localProviders: Set<String>) {
+        fun matches(other: PlanKey) = destination == other.destination && departure == other.departure &&
+            localProviders == other.localProviders && StopClusters.distanceMeters(origin, other.origin) <= SAME_ORIGIN_METERS
+    }
+    private class WarmPlan(val key: PlanKey, val startedAt: Instant, val ready: Instant, val result: Deferred<TripPlan>)
+
+    private fun cancelWarmup() {
         warmupJob?.cancel()
-        warmupStarted = false
+        warmupJob = null
+        warmPlan = null
+    }
+
+    private fun currentOrigin(current: PlannerState) = if (current.useLocation) location?.let(::currentEndpoint) ?: current.origin else current.origin
+
+    /**
+     * Runs the whole online search (national, bus-only, local timetables and their combinations) while
+     * the completed form is on screen, so Find usually only has to show an answer that is already there.
+     */
+    private fun warmOnlinePlan() {
+        cancelWarmup()
         val current = state.value
         if (current.offline || hu.app.bmenetrend.offline.NetworkAccessPolicy.offline.value || current.editing != null || current.planning) return
-        val origin = if (current.useLocation) location?.let(::currentEndpoint) ?: current.origin else current.origin
+        val origin = currentOrigin(current) ?: return
         val destination = current.destination ?: return
-        if (origin == null || !TripPlanner.supported(origin.position) || !TripPlanner.supported(destination.position) ||
+        if (!TripPlanner.supported(origin.position) || !TripPlanner.supported(destination.position) ||
             StopClusters.distanceMeters(origin.position, destination.position) < 25) return
-        val requested = Instant.now()
-        val ready = current.departure ?: requested
-        if (ready < requested) return
+        val key = PlanKey(origin.position, destination.position, current.departure, current.localProviders)
         warmupJob = viewModelScope.launch {
             delay(250)
-            warmupStarted = true
-            supervisorScope {
-                listOf(false, true).map { bus -> async {
-                    try { backend.routes(origin, destination, ready, bus) }
-                    catch (cancelled: CancellationException) { throw cancelled }
-                    catch (_: Exception) { /* Submission can retry a failed prefetch. */ }
-                } }.awaitAll()
-            }
+            val requested = Instant.now()
+            val ready = current.departure ?: requested
+            if (ready < requested) return@launch
+            val result = async { planner.plan(origin, destination, requested, ready, stopCatalogue, sharedNetwork, current.localProviders) }
+            warmPlan = WarmPlan(key, requested, ready, result)
+            // A failed prefetch is not an error: Find searches again.
+            try { result.await() } catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { }
         }
+    }
+
+    /**
+     * The prefetched answer, when every journey in it can still be caught at [ready] and it is complete;
+     * null means search again. A later departure time can only remove journeys, never add better ones.
+     */
+    private suspend fun joinWarmPlan(warm: WarmPlan, requested: Instant, ready: Instant): TripPlan? {
+        // Wall-clock age, not departure-time distance: a fixed departure's live delays still go stale.
+        if (java.time.Duration.between(warm.startedAt, requested).seconds !in 0..WARM_PLAN_MAX_AGE_SECONDS || ready < warm.ready) return null
+        val plan = try { warm.result.await() } catch (cancelled: CancellationException) {
+            currentCoroutineContext().ensureActive(); return null
+        } catch (_: Exception) { return null }
+        if (plan.partial || plan.itineraries.isEmpty() || plan.itineraries.any { !TripPlanner.feasible(it.legs, ready) }) return null
+        return plan.copy(requestedAt = requested, readyAt = ready)
     }
 
     fun plan(force: Boolean = false) {
         val current = state.value
-        val origin = (if (current.useLocation) location?.let(::currentEndpoint) ?: current.origin else current.origin)
+        val origin = currentOrigin(current)
         if (origin == null) {
             if (current.useLocation) mutable.update { it.copy(error = PlannerError.LOCATION) }
             return
         }
         val destination = current.destination ?: return
-        // Keep an HTTP prefetch already in progress, but cancel a timer that has
-        // not started: the foreground submission will start its own calls now.
-        invalidate(cancelWarmup = force || !warmupStarted)
+        val key = PlanKey(origin.position, destination.position, current.departure, current.localProviders)
+        // A prefetch for exactly this form keeps running and is joined below; anything else is dropped.
+        val warm = warmPlan?.takeIf { !force && !current.offline && it.key.matches(key) }
+        invalidate(cancelWarmup = warm == null)
         if (force) backend.clearRouteCache()
         if (!TripPlanner.supported(origin.position) || !TripPlanner.supported(destination.position)) {
             mutable.update { it.copy(error = PlannerError.OUTSIDE_AREA) }; return
@@ -451,15 +480,13 @@ class PlannerViewModel internal constructor(
             try {
                 val result = if (current.offline) offlinePlanner.plan(origin, destination, requested, ready, current.localProviders)
                 else planWithRecovery(online = {
-                    planner.plan(origin, destination, requested, ready, stopCatalogue, sharedNetwork, current.localProviders)
+                    warm?.let { joinWarmPlan(it, requested, ready) }
+                        ?: planner.plan(origin, destination, requested, ready, stopCatalogue, sharedNetwork, current.localProviders)
                 }, saved = { offlinePlanner.plan(origin, destination, requested, ready, current.localProviders) })
                 val snapshot = result.copy(itineraries = TripPlanner.timelyChoices(result.itineraries, ready))
                 if (generation == planGeneration) mutable.update { it.copy(planning = false, result = snapshot,
                     selectedId = it.selectedId?.takeIf { id -> snapshot.itineraries.any { route -> route.id == id } },
-                    error = if (snapshot.itineraries.isEmpty()) {
-                        if (current.offline) PlannerError.NO_ROUTE
-                        else PlannerError.NO_ROUTE
-                    } else null) }
+                    error = if (snapshot.itineraries.isEmpty()) PlannerError.NO_ROUTE else null) }
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (error: Exception) {
                 val reason = when (error) {
@@ -473,3 +500,8 @@ class PlannerViewModel internal constructor(
         }
     }
 }
+
+/** A GPS origin moving less than this between prefetch and Find still counts as the same search. */
+private const val SAME_ORIGIN_METERS = 20.0
+/** Oldest prefetched search Find may reuse. */
+private const val WARM_PLAN_MAX_AGE_SECONDS = 90L

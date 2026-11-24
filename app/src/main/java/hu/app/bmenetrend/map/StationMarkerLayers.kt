@@ -33,7 +33,7 @@ internal object StationMarkerLayers {
                 PropertyFactory.iconRotationAlignment("map"), PropertyFactory.iconPitchAlignment("viewport"),
             ).withFilter(Expression.eq(Expression.get("id"), Expression.literal("")))
             // Arrows sit under dots, as they did inside each baked sprite.
-            val below = style.getLayer(VehicleLayers.RAIL_DOTS)?.id ?: UserLocationLayer.below(style)
+            val below = style.getLayer(VehicleLayers.RAIL_OVERVIEW)?.id ?: UserLocationLayer.below(style)
                 ?: MapLibreConstants.LAYER_ID_ANNOTATIONS.takeIf { style.getLayer(it) != null }
             (StationMarkers.ARROW_LAYERS.mapIndexed { index, id -> arrows(id, index) } +
                 listOf(dots(StationMarkers.RAIL_LAYER, true), dots(StationMarkers.ROAD_LAYER, false), selected)).forEach { layer ->

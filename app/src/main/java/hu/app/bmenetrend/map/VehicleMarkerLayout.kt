@@ -15,7 +15,7 @@ internal object VehicleMarkerLayout {
     /** The arrow texture is drawn around a circle of this size and scaled with the marker. */
     const val ARROW_DESIGN_DIAMETER_DP = 18f
 
-    /** Trains seen from overview zooms are drawn at this share of their normal size. */
+    /** Vehicles seen below [TransitMapVisibility.VEHICLE_FULL_SIZE_ZOOM] are drawn at this share of their normal size. */
     const val OVERVIEW_FACTOR = 0.7f
 
     fun diameterDp(selected: Boolean, overview: Boolean = false) =

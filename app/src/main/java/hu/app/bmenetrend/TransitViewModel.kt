@@ -75,8 +75,12 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private val bkkRepository = BkkWorkerRepository.shared
     private var bkkVehicles: BkkWorkerRepository.VehicleSnapshot? = null
     private var bkkVehicleJob: Job? = null
-    private var bkkVehicleRequest: Pair<MapBounds?, String?>? = null
-    private var bkkSnapshotRequest: Pair<MapBounds?, String?>? = null
+    /** One BKK vehicle poll: the map area, the open vehicle and the highlighted line, each optional. */
+    private data class BkkVehicleRequest(val area: MapBounds?, val followedId: String?, val routeId: String?)
+    private var bkkVehicleRequest: BkkVehicleRequest? = null
+    private var bkkSnapshotRequest: BkkVehicleRequest? = null
+    private var focusedRouteId: String? = null
+    private var departureVehicleJob: Job? = null
     private var vehicleFeed = LiveVehicleFeed()
     // One lane: the feed's memo is single-threaded, and an older merge can never overwrite a newer one.
     private val vehicleLane = Dispatchers.Default.limitedParallelism(1)
@@ -741,6 +745,11 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     fun selectVehicle(id: String) {
         // A searched vehicle may be outside the loaded map area; selecting it moves the map there.
         val vehicle = mutableVehicles.value.find { it.id == id } ?: state.value.remoteVehicles.vehicles.find { it.id == id } ?: return
+        cancelDepartureVehicle()
+        showVehicle(vehicle)
+    }
+
+    private fun showVehicle(vehicle: Vehicle) {
         manualStop = false
         mutableState.update { it.copy(showNearby = false, selectedVehicle = vehicle, trackedVehicle = null, selectedStopId = null, selectedPlatformIds = emptySet(), selectedPlace = null, boardingSelection = null) }
         vehicle.routeId?.let { loadLine(it) }
@@ -748,7 +757,30 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         ensureBkkVehicles()
     }
 
+    /**
+     * A board departure whose vehicle is not on the map yet opens as its line; once BKK reports the
+     * vehicle running that trip, the view becomes that vehicle, exactly as if it had been tapped on the
+     * map. Any other navigation ([closeVehicle], [clearBoardingSelection], [selectVehicle]) cancels it.
+     */
+    fun findDepartureVehicle(departure: Departure) {
+        cancelDepartureVehicle()
+        val trip = departure.directionId?.takeIf { BkkWorkerParser.workerTripId(it) != null } ?: return
+        if (NetworkAccessPolicy.offline.value || departure.isCancelled) return
+        departureVehicleJob = viewModelScope.launch {
+            val vehicle = try { kotlinx.coroutines.withTimeoutOrNull(BKK_JOURNEY_TIMEOUT_MS) { bkkRepository.tripVehicle(trip) } }
+                catch (cancelled: CancellationException) { throw cancelled }
+                catch (error: Exception) { if (BuildConfig.DEBUG) android.util.Log.w("BkkWorker", "Departure vehicle failed", error); null }
+            if (vehicle != null) showVehicle(vehicle)
+        }
+    }
+
+    private fun cancelDepartureVehicle() {
+        departureVehicleJob?.cancel()
+        departureVehicleJob = null
+    }
+
     fun closeVehicle() {
+        cancelDepartureVehicle()
         journeyGeneration++
         journeyJob?.cancel()
         journeyKey = null
@@ -931,16 +963,18 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
     private fun ensureBkkVehicles(force: Boolean = false) {
         if (NetworkAccessPolicy.offline.value || !mapVisible) return
         val area = mapBounds?.let { view ->
-            val pendingArea = bkkVehicleRequest?.first?.takeIf { bkkVehicleJob?.isActive == true && it.covers(view) }
+            val pendingArea = bkkVehicleRequest?.area?.takeIf { bkkVehicleJob?.isActive == true && it.covers(view) }
             val coveredArea = bkkVehicles?.takeIf {
                 Duration.between(it.fetchedAt, Instant.now()).seconds in 0..LiveVehicleFeed.BKK_MAX_AGE_SECONDS
             }?.covered?.takeIf { it !== NO_AREA && it.covers(view) }
             pendingArea ?: coveredArea ?: BkkWorkerRepository.queryArea(view)
         }
-        // The open vehicle stays on BKK even when the view is too wide for an area query or it is elsewhere.
+        // The open vehicle and every vehicle of the highlighted line stay on BKK even when the view is too
+        // wide for an area query or they are elsewhere.
         val followed = (state.value.selectedVehicle ?: state.value.trackedVehicle)?.takeIf { BkkWorkerRepository.workerVehicleId(it) != null }
-        if (area == null && followed == null) return
-        val request = area to followed?.id
+        val route = focusedRouteId?.takeIf { BkkWorkerParser.workerRouteId(it) != null }
+        if (area == null && followed == null && route == null) return
+        val request = BkkVehicleRequest(area, followed?.id, route)
         if (bkkVehicleJob?.isActive == true && request == bkkVehicleRequest) return
         val current = bkkVehicles
         if (!force && current != null && request == bkkSnapshotRequest && request == bkkVehicleRequest && Duration.between(current.fetchedAt, Instant.now()).toMillis() in 0 until BKK_VEHICLE_POLL_MS) return
@@ -950,10 +984,11 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         bkkVehicleJob = viewModelScope.launch {
             try {
                 val snapshot = coroutineScope {
-                    val single = async { followed?.let { vehicle -> try { bkkRepository.vehicle(vehicle) }
-                        catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { emptyList() } }.orEmpty() }
+                    val single = async { followed?.let { vehicle -> optionalVehicles { bkkRepository.vehicle(vehicle) } }.orEmpty() }
+                    val line = async { route?.let { id -> optionalVehicles { bkkRepository.routeVehicles(id) } }.orEmpty() }
                     val inArea = area?.let { bkkRepository.vehicles(it) }
-                    val extra = single.await().filter { found -> inArea?.vehicles?.none { it.vehicle.id == found.vehicle.id } != false }
+                    val known = inArea?.vehicles.orEmpty().mapTo(HashSet()) { it.vehicle.id }
+                    val extra = (single.await() + line.await()).distinctBy { it.vehicle.id }.filter { it.vehicle.id !in known }
                     when {
                         inArea != null -> if (extra.isEmpty()) inArea else inArea.copy(vehicles = inArea.vehicles + extra)
                         extra.isNotEmpty() -> BkkWorkerRepository.VehicleSnapshot(extra, NO_AREA, Instant.now())
@@ -961,7 +996,7 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                     }
                 }
                 if (generation != NetworkAccessPolicy.generation || NetworkAccessPolicy.offline.value) return@launch
-                TransitDiagnostics.event("bkk-result") { "vehicles=${snapshot?.vehicles?.size ?: 0} hasArea=${area != null} followed=${followed != null}" }
+                TransitDiagnostics.event("bkk-result") { "vehicles=${snapshot?.vehicles?.size ?: 0} hasArea=${area != null} followed=${followed != null} route=${route != null}" }
                 bkkVehicles = snapshot
                 bkkSnapshotRequest = request.takeIf { snapshot != null }
                 recalculateWhenIdle()
@@ -972,6 +1007,16 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                 if (BuildConfig.DEBUG) android.util.Log.w("BkkWorker", "Vehicle refresh failed", error)
             }
         }
+    }
+
+    private suspend fun optionalVehicles(fetch: suspend () -> List<WorkerVehicle>): List<WorkerVehicle> =
+        try { fetch() } catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { emptyList() }
+
+    /** The line highlighted on the map; its live vehicles are polled with the map area (see [ensureBkkVehicles]). */
+    fun setFocusedRoute(routeId: String?) {
+        if (focusedRouteId == routeId) return
+        focusedRouteId = routeId
+        ensureBkkVehicles(force = true)
     }
 
     /**
@@ -1638,7 +1683,11 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
         recalculate()
     }
 
-    fun clearBoardingSelection() { mutableState.update { it.copy(boardingSelection = null) }; recalculate() }
+    fun clearBoardingSelection() {
+        cancelDepartureVehicle()
+        mutableState.update { it.copy(boardingSelection = null) }
+        recalculate()
+    }
     fun showWholeRoute() { mutableState.update { it.copy(fitRouteRequest = it.fitRouteRequest + 1) } }
 
     /**
@@ -1675,7 +1724,8 @@ class TransitViewModel(application: Application) : AndroidViewModel(application)
                     catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { null }
                 }
                 val stationsAsync = async {
-                    runCatching { stopsRepository.search(query).stops }.getOrDefault(emptyList())
+                    try { stopsRepository.search(query).stops }
+                    catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { emptyList() }
                 }
                 val bkk = bkkAsync.await()
                 val bkkStops = bkk?.catalogue?.stops.orEmpty()
@@ -1915,13 +1965,13 @@ private const val BKK_JOURNEY_TIMEOUT_MS = 5_000L
 private val NO_AREA = MapBounds(0.0, 0.0, 0.0, 0.0)
 /** BKK's vehicle cadence and the Worker's 5 s cache make a faster poll pointless. */
 private const val BKK_VEHICLE_POLL_MS = 10_000L
-/** Ordinary stops are drawn from zoom 12; nearby boards follow the map only from just below that. */
+/** Nearby boards follow the map only from here: further out, "nearby" would be whatever lies near the map centre. */
 private const val NEARBY_MIN_ZOOM = 11.0
 
-/** Returns [previous] when content-equal, so identity-keyed UI and map work is skipped. */
 /** FUTÁR's arrivals endpoint answers at most this far ahead (see BkkWorkerRepository). */
 private const val BKK_MAX_WINDOW_MINUTES = 120
 
+/** Returns [previous] when content-equal, so identity-keyed UI and map work is skipped. */
 internal fun <T> List<T>.sameOr(previous: List<T>): List<T> = if (this == previous) previous else this
 
 internal fun nearestStop(network: TransitNetwork, location: GeoPoint): String? = nearestStop(network.stops, location)

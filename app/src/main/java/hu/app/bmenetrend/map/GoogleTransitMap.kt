@@ -182,7 +182,7 @@ internal fun GoogleTransitMap(
                     val crossed = listOf(null, "RAIL").any { mode ->
                         TransitMapVisibility.stop(mode, zoom, focused) != TransitMapVisibility.stop(mode, liveZoom[0], focused) ||
                             TransitMapVisibility.vehicle(mode, zoom, focused) != TransitMapVisibility.vehicle(mode, liveZoom[0], focused)
-                    }
+                    } || TransitMapVisibility.vehicleOverview(zoom, focused) != TransitMapVisibility.vehicleOverview(liveZoom[0], focused)
                     liveZoom[0] = zoom
                     stopRegion = GoogleMapScene.stopRegion(stopRegion, area, zoom)
                     sceneZoom = GoogleMapScene.sceneZoom(zoom)
